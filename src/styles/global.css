@@ -26,6 +26,8 @@ body {
 button {
   font-family: inherit;
   cursor: pointer;
+  border: none;
+  cursor: pointer;
 }
 
 img {
@@ -34,6 +36,8 @@ img {
 }
 
 a {
+  cursor: pointer;
+  text-decoration: none;
   color: inherit;
   text-decoration: none;
 }

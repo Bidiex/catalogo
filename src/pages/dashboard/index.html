@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Catálogo SaaS</title>
+  <link rel="stylesheet" href="/src/styles/global.css">
+  <link rel="stylesheet" href="./dashboard.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="dashboard-header">
+    <div class="header-content">
+      <h1>Mi Catálogo</h1>
+      <div class="header-actions">
+        <span id="userEmail" class="user-email"></span>
+        <button id="logoutBtn" class="btn-logout">Cerrar sesión</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="dashboard-main">
+    
+    <!-- Loading state -->
+    <div id="loadingState" class="loading-state">
+      <p>Cargando...</p>
+    </div>
+
+    <!-- No business state (primer uso) -->
+    <div id="noBusinessState" class="no-business-state" style="display: none;">
+      <div class="welcome-card">
+        <h2>¡Bienvenido! 👋</h2>
+        <p>Comienza creando tu negocio para tener tu catálogo online.</p>
+        <button id="createBusinessBtn" class="btn-primary">Crear mi negocio</button>
+      </div>
+    </div>
+
+    <!-- Business exists state -->
+    <div id="businessExistsState" class="business-state" style="display: none;">
+      
+      <!-- Business info card -->
+      <section class="card">
+        <div class="card-header">
+          <h2>Mi Negocio</h2>
+          <button id="editBusinessBtn" class="btn-secondary-small">Editar</button>
+        </div>
+        <div class="card-content">
+          <div class="business-info">
+            <div class="info-row">
+              <span class="label">Nombre:</span>
+              <span id="businessName" class="value">-</span>
+            </div>
+            <div class="info-row">
+              <span class="label">WhatsApp:</span>
+              <span id="businessWhatsapp" class="value">-</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Enlace del catálogo:</span>
+              <div class="catalog-link">
+                <a id="catalogLink" href="#" target="_blank" class="link">-</a>
+                <button id="copyLinkBtn" class="btn-copy">Copiar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Categories section -->
+      <section class="card">
+        <div class="card-header">
+          <h2>Categorías</h2>
+          <button id="addCategoryBtn" class="btn-primary-small">+ Agregar</button>
+        </div>
+        <div class="card-content">
+          <div id="categoriesList" class="categories-list">
+            <p class="empty-message">No hay categorías aún</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Products section -->
+      <section class="card">
+        <div class="card-header">
+          <h2>Productos</h2>
+          <button id="addProductBtn" class="btn-primary-small">+ Agregar</button>
+        </div>
+        <div class="card-content">
+          <div id="productsList" class="products-list">
+            <p class="empty-message">No hay productos aún</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- Modal para crear/editar negocio -->
+  <div id="businessModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="businessModalTitle">Crear Negocio</h3>
+        <button class="modal-close" id="closeBusinessModal">&times;</button>
+      </div>
+      <form id="businessForm" class="modal-form">
+        <div class="form-group">
+          <label for="businessNameInput">Nombre del negocio *</label>
+          <input type="text" id="businessNameInput" required>
+        </div>
+        <div class="form-group">
+          <label for="businessSlugInput">Slug (URL única) *</label>
+          <input type="text" id="businessSlugInput" required>
+          <small>Ejemplo: mi-negocio</small>
+        </div>
+        <div class="form-group">
+          <label for="businessWhatsappInput">Número de WhatsApp *</label>
+          <input type="tel" id="businessWhatsappInput" placeholder="+573001234567" required>
+          <small>Formato: +57 seguido del número</small>
+        </div>
+        <div class="form-group">
+          <label for="businessDescriptionInput">Descripción</label>
+          <textarea id="businessDescriptionInput" rows="3"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="cancelBusinessBtn">Cancelar</button>
+          <button type="submit" class="btn-primary" id="saveBusinessBtn">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal para crear/editar categoría -->
+  <div id="categoryModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="categoryModalTitle">Nueva Categoría</h3>
+        <button class="modal-close" id="closeCategoryModal">&times;</button>
+      </div>
+      <form id="categoryForm" class="modal-form">
+        <div class="form-group">
+          <label for="categoryNameInput">Nombre de la categoría *</label>
+          <input type="text" id="categoryNameInput" required>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="cancelCategoryBtn">Cancelar</button>
+          <button type="submit" class="btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal para crear/editar producto -->
+  <div id="productModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="productModalTitle">Nuevo Producto</h3>
+        <button class="modal-close" id="closeProductModal">&times;</button>
+      </div>
+      <form id="productForm" class="modal-form">
+        <div class="form-group">
+          <label for="productNameInput">Nombre del producto *</label>
+          <input type="text" id="productNameInput" required>
+        </div>
+        <div class="form-group">
+          <label for="productPriceInput">Precio *</label>
+          <input type="number" id="productPriceInput" step="0.01" min="0" required>
+        </div>
+        <div class="form-group">
+          <label for="productCategoryInput">Categoría</label>
+          <select id="productCategoryInput">
+            <option value="">Sin categoría</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="productDescriptionInput">Descripción</label>
+          <textarea id="productDescriptionInput" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="productImageInput">URL de imagen</label>
+          <input type="url" id="productImageInput" placeholder="https://...">
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="cancelProductBtn">Cancelar</button>
+          <button type="submit" class="btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="./dashboard.js"></script>
+</body>
+</html>
