@@ -609,8 +609,184 @@ body {
   .product-card-actions {
     flex-direction: column;
   }
-  
+
   .btn-manage-options {
     width: 100%;
   }
+}
+
+/* ============================================
+   ICONOS Y TIPOGRAFÍA
+   ============================================ */
+
+/* Iconos en headings */
+.card-header h2 i,
+.dashboard-header h1 i {
+  margin-right: 0.5rem;
+  opacity: 0.8;
+}
+
+/* Iconos en botones */
+button i {
+  font-size: 1.1em;
+  vertical-align: middle;
+}
+
+.btn-primary i,
+.btn-primary-small i,
+.btn-secondary-small i {
+  margin-right: 0.35rem;
+}
+
+.btn-logout i {
+  margin-right: 0.5rem;
+}
+
+/* Mejorar labels con iconos */
+.info-row .label i {
+  margin-right: 0.35rem;
+  opacity: 0.7;
+}
+
+/* Responsive: ocultar texto en móvil, solo iconos */
+@media (max-width: 640px) {
+  .btn-logout span {
+    display: none;
+  }
+
+  .btn-logout {
+    padding: 0.5rem;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-logout i {
+    margin: 0;
+    font-size: 1.2rem;
+  }
+}
+
+/* Welcome card icon */
+.welcome-card i {
+  color: var(--color-primary);
+}
+
+/* ============================================
+   IMAGE UPLOAD
+   ============================================ */
+
+.image-upload-container {
+  width: 100%;
+}
+
+.image-preview {
+  width: 100%;
+  aspect-ratio: 1;
+  max-width: 300px;
+  margin: 0 auto;
+  border: 2px dashed var(--color-border);
+  border-radius: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #f9fafb;
+  overflow: hidden;
+  position: relative;
+}
+
+.image-preview:hover {
+  border-color: var(--color-primary);
+  background: #f0fdf4;
+}
+
+.image-preview i {
+  font-size: 3rem;
+  color: #9ca3af;
+  margin-bottom: 0.5rem;
+}
+
+.image-preview p {
+  color: var(--color-text);
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.image-preview small {
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+
+.image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.image-preview.has-image {
+  border-style: solid;
+  border-color: var(--color-primary);
+}
+
+.image-preview.has-image:hover::after {
+  content: 'Click para cambiar';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.image-upload-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  justify-content: center;
+}
+
+.image-upload-progress {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--color-primary);
+  width: 0%;
+  transition: width 0.3s;
+  animation: progressAnimation 1.5s infinite;
+}
+
+@keyframes progressAnimation {
+  0% { width: 0%; }
+  50% { width: 70%; }
+  100% { width: 100%; }
+}
+
+.image-upload-progress p {
+  color: #6b7280;
+  font-size: 0.9rem;
 }

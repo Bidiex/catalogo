@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,21 +8,25 @@
   <link rel="stylesheet" href="/src/styles/global.css">
   <link rel="stylesheet" href="./dashboard.css">
 </head>
+
 <body>
   <!-- Header -->
   <header class="dashboard-header">
     <div class="header-content">
-      <h1>Mi Catálogo</h1>
+      <h1><i class="ri-store-2-line"></i> Mi Catálogo</h1>
       <div class="header-actions">
         <span id="userEmail" class="user-email"></span>
-        <button id="logoutBtn" class="btn-logout">Cerrar sesión</button>
+        <button id="logoutBtn" class="btn-logout">
+          <i class="ri-logout-box-line"></i>
+          <span>Cerrar sesión</span>
+        </button>
       </div>
     </div>
   </header>
 
   <!-- Main Content -->
   <main class="dashboard-main">
-    
+
     <!-- Loading state -->
     <div id="loadingState" class="loading-state">
       <p>Cargando...</p>
@@ -30,36 +35,45 @@
     <!-- No business state (primer uso) -->
     <div id="noBusinessState" class="no-business-state" style="display: none;">
       <div class="welcome-card">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">
+          <i class="ri-store-2-line"></i>
+        </div>
         <h2>¡Bienvenido! 👋</h2>
         <p>Comienza creando tu negocio para tener tu catálogo online.</p>
-        <button id="createBusinessBtn" class="btn-primary">Crear mi negocio</button>
+        <button id="createBusinessBtn" class="btn-primary">
+          <i class="ri-add-circle-line"></i> Crear mi negocio
+        </button>
       </div>
     </div>
 
     <!-- Business exists state -->
     <div id="businessExistsState" class="business-state" style="display: none;">
-      
+
       <!-- Business info card -->
       <section class="card">
         <div class="card-header">
-          <h2>Mi Negocio</h2>
-          <button id="editBusinessBtn" class="btn-secondary-small">Editar</button>
+          <h2><i class="ri-building-line"></i> Mi Negocio</h2>
+          <button id="editBusinessBtn" class="btn-secondary-small">
+            <i class="ri-edit-line"></i> Editar
+          </button>
         </div>
         <div class="card-content">
           <div class="business-info">
             <div class="info-row">
-              <span class="label">Nombre:</span>
+              <span class="label"><i class="ri-store-line"></i> Nombre:</span>
               <span id="businessName" class="value">-</span>
             </div>
             <div class="info-row">
-              <span class="label">WhatsApp:</span>
+              <span class="label"><i class="ri-whatsapp-line"></i> WhatsApp:</span>
               <span id="businessWhatsapp" class="value">-</span>
             </div>
             <div class="info-row">
-              <span class="label">Enlace del catálogo:</span>
+              <span class="label"><i class="ri-link"></i> Enlace del catálogo:</span>
               <div class="catalog-link">
                 <a id="catalogLink" href="#" target="_blank" class="link">-</a>
-                <button id="copyLinkBtn" class="btn-copy">Copiar</button>
+                <button id="copyLinkBtn" class="btn-copy">
+                  <i class="ri-file-copy-line"></i> Copiar
+                </button>
               </div>
             </div>
           </div>
@@ -69,8 +83,10 @@
       <!-- Categories section -->
       <section class="card">
         <div class="card-header">
-          <h2>Categorías</h2>
-          <button id="addCategoryBtn" class="btn-primary-small">+ Agregar</button>
+          <h2><i class="ri-folder-line"></i> Categorías</h2>
+          <button id="addCategoryBtn" class="btn-primary-small">
+            <i class="ri-add-line"></i> Agregar
+          </button>
         </div>
         <div class="card-content">
           <div id="categoriesList" class="categories-list">
@@ -82,8 +98,10 @@
       <!-- Products section -->
       <section class="card">
         <div class="card-header">
-          <h2>Productos</h2>
-          <button id="addProductBtn" class="btn-primary-small">+ Agregar</button>
+          <h2><i class="ri-shopping-bag-line"></i> Productos</h2>
+          <button id="addProductBtn" class="btn-primary-small">
+            <i class="ri-add-line"></i> Agregar
+          </button>
         </div>
         <div class="card-content">
           <div id="productsList" class="products-list">
@@ -130,6 +148,77 @@
     </div>
   </div>
 
+
+  <!-- Modal para crear/editar producto -->
+  <div id="productModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="productModalTitle">Nuevo Producto</h3>
+        <button class="modal-close" id="closeProductModal">&times;</button>
+      </div>
+      <form id="productForm" class="modal-form">
+
+        <!-- Image Upload Section -->
+        <div class="form-group">
+          <label>Imagen del producto</label>
+          <div class="image-upload-container">
+            <div class="image-preview" id="productImagePreview">
+              <i class="ri-image-line"></i>
+              <p>Click para seleccionar imagen</p>
+              <small>JPG, PNG o WEBP (máx. 5MB)</small>
+            </div>
+            <input type="file" id="productImageInput" accept="image/jpeg,image/jpg,image/png,image/webp"
+              style="display: none;">
+            <div class="image-upload-actions" id="imageUploadActions" style="display: none;">
+              <button type="button" class="btn-secondary-small" id="changeImageBtn">
+                <i class="ri-image-edit-line"></i> Cambiar imagen
+              </button>
+              <button type="button" class="btn-secondary-small danger" id="removeImageBtn">
+                <i class="ri-delete-bin-line"></i> Eliminar
+              </button>
+            </div>
+            <div class="image-upload-progress" id="imageUploadProgress" style="display: none;">
+              <div class="progress-bar">
+                <div class="progress-fill"></div>
+              </div>
+              <p>Subiendo imagen...</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="productNameInput">Nombre del producto *</label>
+          <input type="text" id="productNameInput" required>
+        </div>
+
+        <div class="form-group">
+          <label for="productPriceInput">Precio *</label>
+          <input type="number" id="productPriceInput" step="0.01" min="0" required>
+        </div>
+
+        <div class="form-group">
+          <label for="productCategoryInput">Categoría</label>
+          <select id="productCategoryInput">
+            <option value="">Sin categoría</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="productDescriptionInput">Descripción</label>
+          <textarea id="productDescriptionInput" rows="3"></textarea>
+        </div>
+
+        <!-- Campo oculto para guardar la URL de la imagen -->
+        <input type="hidden" id="productImageUrlHidden">
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="cancelProductBtn">Cancelar</button>
+          <button type="submit" class="btn-primary" id="saveProductBtn">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Modal para crear/editar categoría -->
   <div id="categoryModal" class="modal" style="display: none;">
     <div class="modal-content">
@@ -158,31 +247,63 @@
         <button class="modal-close" id="closeProductModal">&times;</button>
       </div>
       <form id="productForm" class="modal-form">
+
+        <!-- Image Upload Section -->
+        <div class="form-group">
+          <label>Imagen del producto</label>
+          <div class="image-upload-container">
+            <div class="image-preview" id="productImagePreview">
+              <i class="ri-image-line"></i>
+              <p>Click para seleccionar imagen</p>
+              <small>JPG, PNG o WEBP (máx. 5MB)</small>
+            </div>
+            <input type="file" id="productImageInput" accept="image/jpeg,image/jpg,image/png,image/webp"
+              style="display: none;">
+            <div class="image-upload-actions" id="imageUploadActions" style="display: none;">
+              <button type="button" class="btn-secondary-small" id="changeImageBtn">
+                <i class="ri-image-edit-line"></i> Cambiar imagen
+              </button>
+              <button type="button" class="btn-secondary-small danger" id="removeImageBtn">
+                <i class="ri-delete-bin-line"></i> Eliminar
+              </button>
+            </div>
+            <div class="image-upload-progress" id="imageUploadProgress" style="display: none;">
+              <div class="progress-bar">
+                <div class="progress-fill"></div>
+              </div>
+              <p>Subiendo imagen...</p>
+            </div>
+          </div>
+        </div>
+
         <div class="form-group">
           <label for="productNameInput">Nombre del producto *</label>
           <input type="text" id="productNameInput" required>
         </div>
+
         <div class="form-group">
           <label for="productPriceInput">Precio *</label>
           <input type="number" id="productPriceInput" step="0.01" min="0" required>
         </div>
+
         <div class="form-group">
           <label for="productCategoryInput">Categoría</label>
           <select id="productCategoryInput">
             <option value="">Sin categoría</option>
           </select>
         </div>
+
         <div class="form-group">
           <label for="productDescriptionInput">Descripción</label>
           <textarea id="productDescriptionInput" rows="3"></textarea>
         </div>
-        <div class="form-group">
-          <label for="productImageInput">URL de imagen</label>
-          <input type="url" id="productImageInput" placeholder="https://...">
-        </div>
+
+        <!-- Campo oculto para guardar la URL de la imagen -->
+        <input type="hidden" id="productImageUrlHidden">
+
         <div class="modal-actions">
           <button type="button" class="btn-secondary" id="cancelProductBtn">Cancelar</button>
-          <button type="submit" class="btn-primary">Guardar</button>
+          <button type="submit" class="btn-primary" id="saveProductBtn">Guardar</button>
         </div>
       </form>
     </div>
@@ -196,8 +317,9 @@
         <button class="modal-close" id="closeProductOptionsModal">&times;</button>
       </div>
       <div class="modal-body" style="padding: 1.5rem;">
-        
-        <div class="product-options-info" style="margin-bottom: 1.5rem; padding: 1rem; background: #f9fafb; border-radius: 0.5rem;">
+
+        <div class="product-options-info"
+          style="margin-bottom: 1.5rem; padding: 1rem; background: #f9fafb; border-radius: 0.5rem;">
           <h4 id="optionsProductName" style="font-size: 1.1rem; margin-bottom: 0.5rem;"></h4>
           <p style="color: #666; font-size: 0.9rem;">Configura comentarios rápidos y acompañantes para este producto</p>
         </div>
@@ -260,6 +382,9 @@
     </div>
   </div>
 
+
+
   <script type="module" src="./dashboard.js"></script>
 </body>
+
 </html>

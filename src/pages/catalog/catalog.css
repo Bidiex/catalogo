@@ -266,6 +266,7 @@
   from {
     transform: translateX(100%);
   }
+
   to {
     transform: translateX(0);
   }
@@ -478,6 +479,7 @@
     transform: scale(0.9);
     opacity: 0;
   }
+
   to {
     transform: scale(1);
     opacity: 1;
@@ -734,7 +736,7 @@
     font-size: 0.85rem;
     min-height: 36px;
   }
-  
+
   .product-card-price {
     font-size: 1rem;
   }
@@ -747,4 +749,38 @@
   padding: 3rem 1rem;
   font-style: italic;
   font-size: 0.95rem;
+}
+
+/* ============================================
+   ICONOS EN CATÁLOGO
+   ============================================ */
+
+/* Carrito flotante */
+.cart-icon {
+  font-size: 1.5rem;
+  font-style: normal;
+}
+
+/* Botones con iconos */
+.btn-whatsapp i,
+.btn-add-to-cart i {
+  margin-right: 0.5rem;
+  font-size: 1.2em;
+}
+
+.cart-header h2 i {
+  margin-right: 0.5rem;
+}
+
+.cart-close i {
+  font-size: 1.5rem;
+}
+
+.quantity-btn i {
+  font-size: 1.2rem;
+}
+
+/* Mejorar estética general */
+.product-modal-close i {
+  font-size: 1.3rem;
 }

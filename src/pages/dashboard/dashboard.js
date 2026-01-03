@@ -124,7 +124,7 @@ function showBusinessState() {
 function renderBusinessInfo() {
   businessName.textContent = currentBusiness.name
   businessWhatsapp.textContent = currentBusiness.whatsapp_number
-  
+
   const catalogUrl = `${window.location.origin}/src/pages/catalog/index.html?slug=${currentBusiness.slug}`
   catalogLink.href = catalogUrl
   catalogLink.textContent = catalogUrl
@@ -142,9 +142,13 @@ function renderCategories() {
         <div class="category-item-name">${category.name}</div>
       </div>
       <div class="category-item-actions">
-        <button class="btn-icon edit-category" data-id="${category.id}">Editar</button>
-        <button class="btn-icon danger delete-category" data-id="${category.id}">Eliminar</button>
-      </div>
+  <button class="btn-icon edit-category" data-id="${category.id}">
+    <i class="ri-edit-line"></i> Editar
+  </button>
+  <button class="btn-icon danger delete-category" data-id="${category.id}">
+    <i class="ri-delete-bin-line"></i> Eliminar
+  </button>
+</div>
     </div>
   `).join('')
 
@@ -173,23 +177,29 @@ function renderProducts() {
   productsList.innerHTML = products.map(product => `
     <div class="product-card" data-id="${product.id}">
       <div class="product-card-image">
-        ${product.image_url 
-          ? `<img src="${product.image_url}" alt="${product.name}">`
-          : 'Sin imagen'
-        }
+        ${product.image_url
+      ? `<img src="${product.image_url}" alt="${product.name}">`
+      : 'Sin imagen'
+    }
       </div>
       <div class="product-card-content">
         <div class="product-card-name">${product.name}</div>
         <div class="product-card-price">$${parseFloat(product.price).toLocaleString()}</div>
-        ${product.categories?.name 
-          ? `<div class="product-card-category">${product.categories.name}</div>`
-          : ''
-        }
-        <div class="product-card-actions">
-          <button class="btn-icon edit-product" data-id="${product.id}">Editar</button>
-          <button class="btn-manage-options manage-options" data-id="${product.id}">Opciones</button>
-          <button class="btn-icon danger delete-product" data-id="${product.id}">Eliminar</button>
-        </div>
+        ${product.categories?.name
+      ? `<div class="product-card-category">${product.categories.name}</div>`
+      : ''
+    }
+  <div class="product-card-actions">
+  <button class="btn-icon edit-product" data-id="${product.id}">
+    <i class="ri-edit-line"></i> Editar
+  </button>
+  <button class="btn-manage-options manage-options" data-id="${product.id}">
+    <i class="ri-settings-3-line"></i> Opciones
+  </button>
+  <button class="btn-icon danger delete-product" data-id="${product.id}">
+    <i class="ri-delete-bin-line"></i> Eliminar
+  </button>
+</div>
       </div>
     </div>
   `).join('')
@@ -391,6 +401,7 @@ function openProductModal() {
   document.getElementById('productModalTitle').textContent = 'Nuevo Producto'
   document.getElementById('productForm').reset()
   populateCategorySelect()
+  resetProductImageUpload() // ← AGREGAR ESTA LÍNEA
   productModal.style.display = 'flex'
 }
 
@@ -402,11 +413,21 @@ function openEditProductModal(productId) {
   document.getElementById('productNameInput').value = editingProduct.name
   document.getElementById('productPriceInput').value = editingProduct.price
   document.getElementById('productDescriptionInput').value = editingProduct.description || ''
-  document.getElementById('productImageInput').value = editingProduct.image_url || ''
-  
+
   populateCategorySelect()
   document.getElementById('productCategoryInput').value = editingProduct.category_id || ''
-  
+
+  // Cargar imagen si existe
+  if (editingProduct.image_url) {
+    currentProductImage = editingProduct.image_url
+    productImageUrlHidden.value = editingProduct.image_url
+    productImagePreview.innerHTML = `<img src="${editingProduct.image_url}" alt="Preview">`
+    productImagePreview.classList.add('has-image')
+    imageUploadActions.style.display = 'flex'
+  } else {
+    resetProductImageUpload()
+  }
+
   productModal.style.display = 'flex'
 }
 
@@ -414,12 +435,13 @@ function closeProductModal() {
   productModal.style.display = 'none'
   editingProduct = null
   document.getElementById('productForm').reset()
+  resetProductImageUpload() // ← AGREGAR ESTA LÍNEA
 }
 
 function populateCategorySelect() {
   const select = document.getElementById('productCategoryInput')
   select.innerHTML = '<option value="">Sin categoría</option>'
-  
+
   categories.forEach(cat => {
     const option = document.createElement('option')
     option.value = cat.id
@@ -435,7 +457,11 @@ document.getElementById('productForm').addEventListener('submit', async (e) => {
   const price = document.getElementById('productPriceInput').value
   const categoryId = document.getElementById('productCategoryInput').value || null
   const description = document.getElementById('productDescriptionInput').value
-  const imageUrl = document.getElementById('productImageInput').value
+  const imageUrl = productImageUrlHidden.value || currentProductImage || ''
+
+  const saveBtn = document.getElementById('saveProductBtn')
+  saveBtn.disabled = true
+  saveBtn.textContent = 'Guardando...'
 
   try {
     const productData = {
@@ -464,6 +490,9 @@ document.getElementById('productForm').addEventListener('submit', async (e) => {
   } catch (error) {
     console.error('Error saving product:', error)
     alert('Error al guardar el producto')
+  } finally {
+    saveBtn.disabled = false
+    saveBtn.textContent = 'Guardar'
   }
 })
 
@@ -485,7 +514,7 @@ async function deleteProduct(productId) {
 // ============================================
 logoutBtn.addEventListener('click', async () => {
   if (!confirm('¿Cerrar sesión?')) return
-  
+
   await authService.signOut()
   window.location.href = '/src/pages/login/index.html'
 })
@@ -626,12 +655,12 @@ addSideBtn.addEventListener('click', () => {
 
 function openOptionModal(type, optionId = null) {
   editingOptionType = type
-  
+
   if (optionId) {
     // Editar
     const allOptions = [...quickComments, ...sides]
     editingOption = allOptions.find(opt => opt.id === optionId)
-    
+
     optionModalTitle.textContent = type === 'quick_comment' ? 'Editar Comentario' : 'Editar Acompañante'
     optionNameInput.value = editingOption.name
     optionPriceInput.value = editingOption.price || 0
@@ -716,6 +745,117 @@ async function deleteOption(optionId) {
     console.error('Error deleting option:', error)
     alert('Error al eliminar la opción')
   }
+}
+
+// ============================================
+// IMAGE UPLOAD FOR PRODUCTS
+// ============================================
+import { imageService } from '../../services/images.js'
+
+let currentProductImage = null
+let uploadedImagePath = null
+
+const productImagePreview = document.getElementById('productImagePreview')
+const productImageInput = document.getElementById('productImageInput')
+const imageUploadActions = document.getElementById('imageUploadActions')
+const imageUploadProgress = document.getElementById('imageUploadProgress')
+const changeImageBtn = document.getElementById('changeImageBtn')
+const removeImageBtn = document.getElementById('removeImageBtn')
+const productImageUrlHidden = document.getElementById('productImageUrlHidden')
+
+// Click en preview para abrir selector de archivos
+productImagePreview.addEventListener('click', () => {
+  productImageInput.click()
+})
+
+// Cambiar imagen
+changeImageBtn.addEventListener('click', () => {
+  productImageInput.click()
+})
+
+// Cuando se selecciona un archivo
+productImageInput.addEventListener('change', async (e) => {
+  const file = e.target.files[0]
+  if (!file) return
+
+  try {
+    // Mostrar progress
+    imageUploadProgress.style.display = 'block'
+    imageUploadActions.style.display = 'none'
+
+    // Redimensionar imagen antes de subir
+    const resizedFile = await imageService.resizeImage(file, 800, 800, 0.85)
+
+    // Subir imagen
+    const result = await imageService.upload(resizedFile, 'products')
+
+    if (!result.success) {
+      throw new Error(result.error)
+    }
+
+    // Guardar datos
+    currentProductImage = result.url
+    uploadedImagePath = result.path
+    productImageUrlHidden.value = result.url
+
+    // Mostrar preview
+    productImagePreview.innerHTML = `<img src="${result.url}" alt="Preview">`
+    productImagePreview.classList.add('has-image')
+
+    // Mostrar botones de acción
+    imageUploadProgress.style.display = 'none'
+    imageUploadActions.style.display = 'flex'
+
+  } catch (error) {
+    console.error('Error uploading image:', error)
+    alert('Error al subir la imagen: ' + error.message)
+    imageUploadProgress.style.display = 'none'
+  }
+})
+
+// Eliminar imagen
+removeImageBtn.addEventListener('click', async () => {
+  if (!confirm('¿Eliminar la imagen?')) return
+
+  try {
+    // Si hay una imagen subida previamente, eliminarla del storage
+    if (uploadedImagePath) {
+      await imageService.delete(uploadedImagePath)
+    }
+
+    // Resetear preview
+    productImagePreview.innerHTML = `
+      <i class="ri-image-line"></i>
+      <p>Click para seleccionar imagen</p>
+      <small>JPG, PNG o WEBP (máx. 5MB)</small>
+    `
+    productImagePreview.classList.remove('has-image')
+
+    currentProductImage = null
+    uploadedImagePath = null
+    productImageUrlHidden.value = ''
+    imageUploadActions.style.display = 'none'
+
+  } catch (error) {
+    console.error('Error deleting image:', error)
+    alert('Error al eliminar la imagen')
+  }
+})
+
+// Resetear imagen al cerrar modal de producto
+function resetProductImageUpload() {
+  productImagePreview.innerHTML = `
+    <i class="ri-image-line"></i>
+    <p>Click para seleccionar imagen</p>
+    <small>JPG, PNG o WEBP (máx. 5MB)</small>
+  `
+  productImagePreview.classList.remove('has-image')
+  currentProductImage = null
+  uploadedImagePath = null
+  productImageUrlHidden.value = ''
+  imageUploadActions.style.display = 'none'
+  imageUploadProgress.style.display = 'none'
+  productImageInput.value = ''
 }
 
 copyLinkBtn.addEventListener('click', async () => {
