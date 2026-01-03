@@ -1,4 +1,6 @@
 import { authService } from '../../services/auth.js'
+import { notify } from '../../utils/notifications.js'
+import { buttonLoader } from '../../utils/buttonLoader.js'
 
 // Elementos del DOM
 const loginForm = document.getElementById('loginForm')
@@ -38,70 +40,56 @@ backToLoginBtn.addEventListener('click', () => {
 // Manejo del login
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault()
-  
+
   const email = document.getElementById('email').value
   const password = document.getElementById('password').value
   const loginBtn = document.getElementById('loginBtn')
 
-  // Deshabilitar botón mientras procesa
-  loginBtn.disabled = true
-  loginBtn.textContent = 'Iniciando sesión...'
-  errorMessage.style.display = 'none'
+  await buttonLoader.execute(loginBtn, async () => {
+    errorMessage.style.display = 'none'
 
-  const result = await authService.signIn(email, password)
+    const result = await authService.signIn(email, password)
 
-  if (result.success) {
-    // Redirigir al dashboard
-    window.location.href = '/src/pages/dashboard/index.html'
-  } else {
-    // Mostrar error
-    errorMessage.textContent = result.error
-    errorMessage.style.display = 'block'
-    loginBtn.disabled = false
-    loginBtn.textContent = 'Iniciar sesión'
-  }
+    if (result.success) {
+      window.location.href = '/src/pages/dashboard/index.html'
+    } else {
+      errorMessage.textContent = result.error
+      errorMessage.style.display = 'block'
+    }
+  }, 'Iniciando sesión...')
 })
 
 // Manejo del registro
 registerForm.addEventListener('submit', async (e) => {
   e.preventDefault()
-  
+
   const email = document.getElementById('registerEmail').value
   const password = document.getElementById('registerPassword').value
   const confirmPassword = document.getElementById('confirmPassword').value
   const registerBtn = document.getElementById('registerBtn')
 
-  // Validar que las contraseñas coincidan
   if (password !== confirmPassword) {
     registerErrorMessage.textContent = 'Las contraseñas no coinciden'
     registerErrorMessage.style.display = 'block'
     return
   }
 
-  // Deshabilitar botón mientras procesa
-  registerBtn.disabled = true
-  registerBtn.textContent = 'Creando cuenta...'
-  registerErrorMessage.style.display = 'none'
+  await buttonLoader.execute(registerBtn, async () => {
+    registerErrorMessage.style.display = 'none'
 
-  const result = await authService.signUp(email, password)
+    const result = await authService.signUp(email, password)
 
-  if (result.success) {
-    // Mostrar mensaje de éxito
-    registerErrorMessage.style.display = 'block'
-    registerErrorMessage.style.background = '#efe'
-    registerErrorMessage.style.color = '#383'
-    registerErrorMessage.style.borderColor = '#cfc'
-    registerErrorMessage.textContent = '¡Cuenta creada! Revisa tu email para confirmar tu cuenta.'
-    
-    // Limpiar formulario
-    registerForm.reset()
-    registerBtn.disabled = false
-    registerBtn.textContent = 'Crear cuenta'
-  } else {
-    // Mostrar error
-    registerErrorMessage.textContent = result.error
-    registerErrorMessage.style.display = 'block'
-    registerBtn.disabled = false
-    registerBtn.textContent = 'Crear cuenta'
-  }
+    if (result.success) {
+      registerErrorMessage.style.display = 'block'
+      registerErrorMessage.style.background = '#efe'
+      registerErrorMessage.style.color = '#383'
+      registerErrorMessage.style.borderColor = '#cfc'
+      registerErrorMessage.textContent = '¡Cuenta creada! Revisa tu email para confirmar tu cuenta.'
+
+      registerForm.reset()
+    } else {
+      registerErrorMessage.textContent = result.error
+      registerErrorMessage.style.display = 'block'
+    }
+  }, 'Creando cuenta...')
 })

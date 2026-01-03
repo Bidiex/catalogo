@@ -1,5 +1,6 @@
 import { supabase } from '../../config/supabase.js'
 import { cart } from '../../utils/cart.js'
+import { notify } from '../../utils/notifications.js'
 
 // ============================================
 // ESTADO GLOBAL
@@ -182,7 +183,7 @@ function renderBusinessInfo() {
 
 function renderCategoriesNav() {
   const navTrack = categoriesNav.querySelector('.categories-nav-track')
-  
+
   // Botón "Todos"
   let html = '<button class="category-nav-btn active" data-category="all">Todos</button>'
 
@@ -266,10 +267,10 @@ function renderProductCard(product) {
   return `
     <div class="product-card" data-id="${product.id}">
       <div class="product-card-image">
-        ${product.image_url 
-          ? `<img src="${product.image_url}" alt="${product.name}" loading="lazy">`
-          : 'Sin imagen'
-        }
+        ${product.image_url
+      ? `<img src="${product.image_url}" alt="${product.name}" loading="lazy">`
+      : 'Sin imagen'
+    }
       </div>
       <div class="product-card-body">
         <div class="product-card-name">${product.name}</div>
@@ -372,7 +373,7 @@ function renderProductOptions() {
     sidesList.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
       checkbox.addEventListener('change', (e) => {
         const sideOption = e.target.closest('.side-option')
-        
+
         if (e.target.checked) {
           sideOption.classList.add('selected')
           selectedSides.push({
@@ -423,12 +424,15 @@ addToCartBtn.addEventListener('click', () => {
     sides: selectedSides
   }
 
+  // Guardar el nombre ANTES de cerrar el modal
+  const productName = selectedProduct.name
+
   cart.add(selectedProduct, currentQuantity, options)
   updateCartUI()
   closeProductModal()
 
-  // Feedback visual
-  alert(`${selectedProduct.name} agregado al carrito`)
+  // Feedback visual con el nombre guardado
+  notify.success(`${productName} agregado al carrito`, 2000)
 })
 
 // ============================================
@@ -477,7 +481,7 @@ function renderCartItems() {
       optionsText += `<div style="font-size: 0.8rem; color: #666; margin-top: 0.25rem;">• ${item.options.quickComment.name}</div>`
     }
     if (item.options?.sides && item.options.sides.length > 0) {
-      optionsText += item.options.sides.map(side => 
+      optionsText += item.options.sides.map(side =>
         `<div style="font-size: 0.8rem; color: #666; margin-top: 0.25rem;">+ ${side.name} ($${parseFloat(side.price).toLocaleString()})</div>`
       ).join('')
     }
@@ -485,10 +489,10 @@ function renderCartItems() {
     return `
       <div class="cart-item" data-key="${item.itemKey}">
         <div class="cart-item-image">
-          ${item.image_url 
-            ? `<img src="${item.image_url}" alt="${item.name}">`
-            : ''
-          }
+          ${item.image_url
+        ? `<img src="${item.image_url}" alt="${item.name}">`
+        : ''
+      }
         </div>
         <div class="cart-item-info">
           <div class="cart-item-name">${item.name}</div>
@@ -572,30 +576,30 @@ btnWhatsapp.addEventListener('click', () => {
   cartItems.forEach(item => {
     const basePrice = parseFloat(item.price)
     let itemPrice = basePrice
-    
+
     // Calcular precio con acompañantes
     if (item.options?.sides && item.options.sides.length > 0) {
       const sidesTotal = item.options.sides.reduce((sum, side) => sum + parseFloat(side.price), 0)
       itemPrice += sidesTotal
     }
-    
+
     const subtotal = itemPrice * item.quantity
-    
+
     // Línea principal del producto
     message += `• ${item.quantity}x ${item.name} - $${subtotal.toLocaleString()}\n`
-    
+
     // Comentario rápido
     if (item.options?.quickComment) {
       message += `  ↳ ${item.options.quickComment.name}\n`
     }
-    
+
     // Acompañantes
     if (item.options?.sides && item.options.sides.length > 0) {
       item.options.sides.forEach(side => {
         message += `  ↳ + ${side.name} (+$${parseFloat(side.price).toLocaleString()})\n`
       })
     }
-    
+
     message += `\n`
   })
 

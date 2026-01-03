@@ -2,6 +2,9 @@ import { authService } from '../../services/auth.js'
 import { businessService } from '../../services/business.js'
 import { categoryService } from '../../services/categories.js'
 import { productService } from '../../services/products.js'
+import { notify } from '../../utils/notifications.js'
+import { confirm } from '../../utils/notifications.js'
+import { buttonLoader } from '../../utils/buttonLoader.js'
 
 // ============================================
 // ESTADO GLOBAL
@@ -64,7 +67,7 @@ async function init() {
 
   } catch (error) {
     console.error('Error initializing dashboard:', error)
-    alert('Error al cargar el dashboard')
+    notify.error('Error al cargar el dashboard')
   }
 }
 
@@ -99,7 +102,7 @@ async function loadAllData() {
     renderProducts()
   } catch (error) {
     console.error('Error loading data:', error)
-    alert('Error al cargar los datos')
+    notify.error('Error al cargar los datos')
   }
 }
 
@@ -288,32 +291,29 @@ document.getElementById('businessForm').addEventListener('submit', async (e) => 
   const description = document.getElementById('businessDescriptionInput').value
 
   const saveBtn = document.getElementById('saveBusinessBtn')
-  saveBtn.disabled = true
-  saveBtn.textContent = 'Guardando...'
 
-  try {
-    const businessData = { name, slug, whatsapp_number: whatsapp, description }
+  await buttonLoader.execute(saveBtn, async () => {
+    try {
+      const businessData = { name, slug, whatsapp_number: whatsapp, description }
 
-    if (currentBusiness) {
-      // Actualizar
-      await businessService.updateBusiness(currentBusiness.id, businessData)
-      alert('Negocio actualizado correctamente')
-    } else {
-      // Crear
-      currentBusiness = await businessService.createBusiness(businessData)
-      alert('Negocio creado correctamente')
+      if (currentBusiness) {
+        // Actualizar
+        await businessService.updateBusiness(currentBusiness.id, businessData)
+        notify.success('Negocio actualizado correctamente')
+      } else {
+        // Crear
+        currentBusiness = await businessService.createBusiness(businessData)
+        notify.success('Negocio creado correctamente')
+      }
+
+      closeBusinessModal()
+      await loadBusiness()
+
+    } catch (error) {
+      console.error('Error saving business:', error)
+      notify.error('Error al guardar el negocio: ' + error.message)
     }
-
-    closeBusinessModal()
-    await loadBusiness()
-
-  } catch (error) {
-    console.error('Error saving business:', error)
-    alert('Error al guardar el negocio: ' + error.message)
-  } finally {
-    saveBtn.disabled = false
-    saveBtn.textContent = 'Guardar'
-  }
+  }, 'Guardando...')
 })
 
 // ============================================
@@ -350,41 +350,54 @@ document.getElementById('categoryForm').addEventListener('submit', async (e) => 
   e.preventDefault()
 
   const name = document.getElementById('categoryNameInput').value
+  const submitBtn = e.submitter || document.querySelector('#categoryForm button[type="submit"]')
 
-  try {
-    if (editingCategory) {
-      // Actualizar
-      await categoryService.update(editingCategory.id, { name })
-      alert('Categoría actualizada')
-    } else {
-      // Crear
-      await categoryService.create({
-        business_id: currentBusiness.id,
-        name,
-        display_order: categories.length
-      })
-      alert('Categoría creada')
+  await buttonLoader.execute(submitBtn, async () => {
+    try {
+      if (editingCategory) {
+        // Actualizar
+        await categoryService.update(editingCategory.id, { name })
+        notify.success('Categoría actualizada')
+      } else {
+        // Crear
+        await categoryService.create({
+          business_id: currentBusiness.id,
+          name,
+          display_order: categories.length
+        })
+        notify.success('Categoría creada')
+      }
+
+      closeCategoryModal()
+      await loadAllData()
+
+    } catch (error) {
+      console.error('Error saving category:', error)
+      notify.error('Error al guardar la categoría')
     }
-
-    closeCategoryModal()
-    await loadAllData()
-
-  } catch (error) {
-    console.error('Error saving category:', error)
-    alert('Error al guardar la categoría')
-  }
+  }, 'Guardando...')
 })
 
 async function deleteCategory(categoryId) {
-  if (!confirm('¿Eliminar esta categoría? Los productos mantendrán su información.')) return
+  const result = await confirm.show({
+    title: '¿Eliminar categoría?',
+    message: 'Los productos asociados mantendrán su información.',
+    confirmText: 'Eliminar',
+    cancelText: 'Cancelar',
+    type: 'danger'
+  })
+
+  if (!result) return
+
+  const loadingToast = notify.loading('Eliminando categoría...')
 
   try {
     await categoryService.delete(categoryId)
-    alert('Categoría eliminada')
+    notify.updateLoading(loadingToast, 'Categoría eliminada', 'success')
     await loadAllData()
   } catch (error) {
     console.error('Error deleting category:', error)
-    alert('Error al eliminar la categoría')
+    notify.updateLoading(loadingToast, 'Error al eliminar la categoría', 'error')
   }
 }
 
@@ -460,52 +473,59 @@ document.getElementById('productForm').addEventListener('submit', async (e) => {
   const imageUrl = productImageUrlHidden.value || currentProductImage || ''
 
   const saveBtn = document.getElementById('saveProductBtn')
-  saveBtn.disabled = true
-  saveBtn.textContent = 'Guardando...'
 
-  try {
-    const productData = {
-      business_id: currentBusiness.id,
-      name,
-      price: parseFloat(price),
-      category_id: categoryId,
-      description,
-      image_url: imageUrl,
-      display_order: products.length
+  await buttonLoader.execute(saveBtn, async () => {
+    try {
+      const productData = {
+        business_id: currentBusiness.id,
+        name,
+        price: parseFloat(price),
+        category_id: categoryId,
+        description,
+        image_url: imageUrl,
+        display_order: products.length
+      }
+
+      if (editingProduct) {
+        // Actualizar
+        await productService.update(editingProduct.id, productData)
+        notify.success('Producto actualizado')
+      } else {
+        // Crear
+        await productService.create(productData)
+        notify.success('Producto creado')
+      }
+
+      closeProductModal()
+      await loadAllData()
+
+    } catch (error) {
+      console.error('Error saving product:', error)
+      notify.error('Error al guardar el producto')
     }
-
-    if (editingProduct) {
-      // Actualizar
-      await productService.update(editingProduct.id, productData)
-      alert('Producto actualizado')
-    } else {
-      // Crear
-      await productService.create(productData)
-      alert('Producto creado')
-    }
-
-    closeProductModal()
-    await loadAllData()
-
-  } catch (error) {
-    console.error('Error saving product:', error)
-    alert('Error al guardar el producto')
-  } finally {
-    saveBtn.disabled = false
-    saveBtn.textContent = 'Guardar'
-  }
+  }, 'Guardando...')
 })
 
 async function deleteProduct(productId) {
-  if (!confirm('¿Eliminar este producto?')) return
+  const result = await confirm.show({
+    title: '¿Eliminar producto?',
+    message: 'Esta acción no se puede deshacer.',
+    confirmText: 'Eliminar',
+    cancelText: 'Cancelar',
+    type: 'danger'
+  })
+
+  if (!result) return
+
+  const loadingToast = notify.loading('Eliminando producto...')
 
   try {
     await productService.delete(productId)
-    alert('Producto eliminado')
+    notify.updateLoading(loadingToast, 'Producto eliminado', 'success')
     await loadAllData()
   } catch (error) {
     console.error('Error deleting product:', error)
-    alert('Error al eliminar el producto')
+    notify.updateLoading(loadingToast, 'Error al eliminar el producto', 'error')
   }
 }
 
@@ -513,7 +533,15 @@ async function deleteProduct(productId) {
 // OTROS EVENTOS
 // ============================================
 logoutBtn.addEventListener('click', async () => {
-  if (!confirm('¿Cerrar sesión?')) return
+  const result = await confirm.show({
+    title: '¿Cerrar sesión?',
+    message: 'Tendrás que iniciar sesión de nuevo.',
+    confirmText: 'Cerrar sesión',
+    cancelText: 'Cancelar',
+    type: 'info'
+  })
+
+  if (!result) return
 
   await authService.signOut()
   window.location.href = '/src/pages/login/index.html'
@@ -702,48 +730,61 @@ optionForm.addEventListener('submit', async (e) => {
 
   const name = optionNameInput.value
   const price = editingOptionType === 'side' ? parseFloat(optionPriceInput.value) : 0
+  const submitBtn = e.submitter || document.querySelector('#optionForm button[type="submit"]')
 
-  try {
-    const optionData = {
-      product_id: currentProductForOptions.id,
-      type: editingOptionType,
-      name,
-      price,
-      display_order: editingOption ? editingOption.display_order : 0
+  await buttonLoader.execute(submitBtn, async () => {
+    try {
+      const optionData = {
+        product_id: currentProductForOptions.id,
+        type: editingOptionType,
+        name,
+        price,
+        display_order: editingOption ? editingOption.display_order : 0
+      }
+
+      if (editingOption) {
+        // Actualizar
+        await productOptionsService.update(editingOption.id, optionData)
+        notify.success('Opción actualizada')
+      } else {
+        // Crear
+        await productOptionsService.create(optionData)
+        notify.success('Opción creada')
+      }
+
+      closeOptionModalFn()
+      await loadProductOptions(currentProductForOptions.id)
+      renderProductOptionsDashboard()
+
+    } catch (error) {
+      console.error('Error saving option:', error)
+      notify.error('Error al guardar la opción')
     }
-
-    if (editingOption) {
-      // Actualizar
-      await productOptionsService.update(editingOption.id, optionData)
-      alert('Opción actualizada')
-    } else {
-      // Crear
-      await productOptionsService.create(optionData)
-      alert('Opción creada')
-    }
-
-    closeOptionModalFn()
-    await loadProductOptions(currentProductForOptions.id)
-    renderProductOptionsDashboard()
-
-  } catch (error) {
-    console.error('Error saving option:', error)
-    alert('Error al guardar la opción')
-  }
+  }, 'Guardando...')
 })
 
 // Eliminar opción
 async function deleteOption(optionId) {
-  if (!confirm('¿Eliminar esta opción?')) return
+  const result = await confirm.show({
+    title: '¿Eliminar opción?',
+    message: 'Esta acción no se puede deshacer.',
+    confirmText: 'Eliminar',
+    cancelText: 'Cancelar',
+    type: 'danger'
+  })
+
+  if (!result) return
+
+  const loadingToast = notify.loading('Eliminando opción...')
 
   try {
     await productOptionsService.delete(optionId)
-    alert('Opción eliminada')
+    notify.updateLoading(loadingToast, 'Opción eliminada', 'success')
     await loadProductOptions(currentProductForOptions.id)
     renderProductOptionsDashboard()
   } catch (error) {
     console.error('Error deleting option:', error)
-    alert('Error al eliminar la opción')
+    notify.updateLoading(loadingToast, 'Error al eliminar la opción', 'error')
   }
 }
 
@@ -778,10 +819,13 @@ productImageInput.addEventListener('change', async (e) => {
   const file = e.target.files[0]
   if (!file) return
 
+  let loadingToast = null
+
   try {
-    // Mostrar progress
+    // Mostrar progress y notificación
     imageUploadProgress.style.display = 'block'
     imageUploadActions.style.display = 'none'
+    loadingToast = notify.loading('Subiendo imagen...')
 
     // Redimensionar imagen antes de subir
     const resizedFile = await imageService.resizeImage(file, 800, 800, 0.85)
@@ -806,16 +850,33 @@ productImageInput.addEventListener('change', async (e) => {
     imageUploadProgress.style.display = 'none'
     imageUploadActions.style.display = 'flex'
 
+    // Actualizar notificación a éxito
+    notify.updateLoading(loadingToast, 'Imagen subida correctamente', 'success')
+
   } catch (error) {
     console.error('Error uploading image:', error)
-    alert('Error al subir la imagen: ' + error.message)
+
+    if (loadingToast) {
+      notify.updateLoading(loadingToast, 'Error al subir la imagen: ' + error.message, 'error')
+    } else {
+      notify.error('Error al subir la imagen: ' + error.message)
+    }
+
     imageUploadProgress.style.display = 'none'
   }
 })
 
 // Eliminar imagen
 removeImageBtn.addEventListener('click', async () => {
-  if (!confirm('¿Eliminar la imagen?')) return
+  const result = await confirm.show({
+    title: '¿Eliminar imagen?',
+    message: 'Podrás subir otra imagen después.',
+    confirmText: 'Eliminar',
+    cancelText: 'Cancelar',
+    type: 'warning'
+  })
+
+  if (!result) return
 
   try {
     // Si hay una imagen subida previamente, eliminarla del storage
@@ -836,9 +897,11 @@ removeImageBtn.addEventListener('click', async () => {
     productImageUrlHidden.value = ''
     imageUploadActions.style.display = 'none'
 
+    notify.success('Imagen eliminada')
+
   } catch (error) {
     console.error('Error deleting image:', error)
-    alert('Error al eliminar la imagen')
+    notify.error('Error al eliminar la imagen')
   }
 })
 
@@ -862,11 +925,8 @@ copyLinkBtn.addEventListener('click', async () => {
   const url = catalogLink.href
   try {
     await navigator.clipboard.writeText(url)
-    copyLinkBtn.textContent = '¡Copiado!'
-    setTimeout(() => {
-      copyLinkBtn.textContent = 'Copiar'
-    }, 2000)
+    notify.success('Enlace copiado al portapapeles')
   } catch (error) {
-    alert('No se pudo copiar el enlace')
+    notify.error('No se pudo copiar el enlace')
   }
 })

@@ -52,3 +52,383 @@ a {
   color: inherit;
   text-decoration: none;
 }
+
+/* ============================================
+   TOAST NOTIFICATIONS
+   ============================================ */
+
+.toast-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 400px;
+  width: 100%;
+  pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  .toast-container {
+    top: auto;
+    bottom: 1rem;
+    left: 1rem;
+    right: 1rem;
+    max-width: none;
+  }
+}
+
+.toast {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  pointer-events: auto;
+  opacity: 0;
+  transform: translateX(400px);
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  border-left: 4px solid #e5e7eb;
+}
+
+@media (max-width: 640px) {
+  .toast {
+    transform: translateY(100px);
+  }
+}
+
+.toast-show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+@media (max-width: 640px) {
+  .toast-show {
+    transform: translateY(0);
+  }
+}
+
+.toast-hide {
+  opacity: 0;
+  transform: translateX(400px) scale(0.9);
+}
+
+@media (max-width: 640px) {
+  .toast-hide {
+    transform: translateY(100px) scale(0.9);
+  }
+}
+
+/* Tipos de toast */
+.toast-success {
+  border-left-color: #10b981;
+}
+
+.toast-success .toast-icon {
+  color: #10b981;
+}
+
+.toast-error {
+  border-left-color: #ef4444;
+}
+
+.toast-error .toast-icon {
+  color: #ef4444;
+}
+
+.toast-warning {
+  border-left-color: #f59e0b;
+}
+
+.toast-warning .toast-icon {
+  color: #f59e0b;
+}
+
+.toast-info {
+  border-left-color: #3b82f6;
+}
+
+.toast-info .toast-icon {
+  color: #3b82f6;
+}
+
+/* Elementos del toast */
+.toast-icon {
+  flex-shrink: 0;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toast-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.toast-message {
+  color: var(--color-text);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0;
+  word-wrap: break-word;
+}
+
+.toast-close {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25rem;
+  transition: all 0.2s;
+}
+
+.toast-close:hover {
+  background: #f3f4f6;
+  color: var(--color-text);
+}
+
+.toast-close i {
+  font-size: 1.2rem;
+}
+
+/* Toast de carga */
+.toast-loading {
+  border-left-color: #3b82f6;
+}
+
+.toast-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Barra de progreso (opcional) */
+.toast-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: currentColor;
+  opacity: 0.3;
+  animation: progress 4s linear;
+}
+
+@keyframes progress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+/* ============================================
+   CONFIRM DIALOG
+   ============================================ */
+
+.confirm-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.confirm-modal.confirm-show {
+  opacity: 1;
+}
+
+.confirm-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.confirm-content {
+  position: relative;
+  background: white;
+  border-radius: 1rem;
+  padding: 2rem;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  transform: scale(0.9);
+  transition: transform 0.2s;
+}
+
+.confirm-show .confirm-content {
+  transform: scale(1);
+}
+
+.confirm-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  margin: 0 auto 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+}
+
+.confirm-icon-danger {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.confirm-icon-warning {
+  background: #fef3c7;
+  color: #f59e0b;
+}
+
+.confirm-icon-info {
+  background: #dbeafe;
+  color: #3b82f6;
+}
+
+.confirm-title {
+  font-size: 1.5rem;
+  color: var(--color-text);
+  margin-bottom: 0.75rem;
+  font-weight: 700;
+}
+
+.confirm-message {
+  color: #6b7280;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.confirm-actions button {
+  flex: 1;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-confirm-cancel {
+  background: #f3f4f6;
+  color: var(--color-text);
+}
+
+.btn-confirm-cancel:hover {
+  background: #e5e7eb;
+}
+
+.btn-confirm-ok {
+  color: white;
+}
+
+.btn-confirm-danger {
+  background: #ef4444;
+}
+
+.btn-confirm-danger:hover {
+  background: #dc2626;
+}
+
+.btn-confirm-warning {
+  background: #f59e0b;
+}
+
+.btn-confirm-warning:hover {
+  background: #d97706;
+}
+
+.btn-confirm-info {
+  background: #3b82f6;
+}
+
+.btn-confirm-info:hover {
+  background: #2563eb;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .confirm-content {
+    padding: 1.5rem;
+  }
+
+  .confirm-title {
+    font-size: 1.25rem;
+  }
+
+  .confirm-message {
+    font-size: 0.9rem;
+  }
+
+  .confirm-actions {
+    flex-direction: column-reverse;
+  }
+}
+
+/* ============================================
+   BUTTON LOADING STATE
+   ============================================ */
+
+.btn-loading {
+  position: relative;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.btn-spinner {
+  animation: spin 1s linear infinite;
+  margin-right: 0.5rem;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Evitar doble click en todos los botones submit */
+button[type="submit"]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
