@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catálogo</title>
+  <link rel="stylesheet" href="/src/styles/global.css">
+  <link rel="stylesheet" href="./catalog.css">
+</head>
+<body>
+  <!-- Loading state -->
+  <div id="loadingState" class="loading-state">
+    <p>Cargando catálogo...</p>
+  </div>
+
+  <!-- Error state -->
+  <div id="errorState" class="error-state" style="display: none;">
+    <div class="error-content">
+      <h2>😕 Catálogo no encontrado</h2>
+      <p>El catálogo que buscas no existe o no está disponible.</p>
+    </div>
+  </div>
+
+  <!-- Main catalog -->
+  <div id="catalogContent" style="display: none;">
+    
+    <!-- Header -->
+    <header class="catalog-header">
+      <div class="header-content">
+        <div class="business-info">
+          <h1 id="businessName">Cargando...</h1>
+          <p id="businessDescription"></p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Categories navigation -->
+    <nav class="categories-nav" id="categoriesNav">
+      <div class="categories-nav-track">
+        <button class="category-nav-btn active" data-category="all">Todos</button>
+      </div>
+    </nav>
+
+    <!-- Products by category -->
+    <main class="catalog-main">
+      <div id="productsContainer" class="products-container">
+        <!-- Se llenarán dinámicamente -->
+      </div>
+    </main>
+
+    <!-- Cart floating button -->
+    <div class="cart-fab" id="cartFab" style="display: none;">
+      <button class="cart-fab-btn" id="cartFabBtn">
+        <span class="cart-icon">🛒</span>
+        <span class="cart-count" id="cartCount">0</span>
+      </button>
+    </div>
+
+    <!-- Cart panel -->
+    <div class="cart-panel" id="cartPanel" style="display: none;">
+      <div class="cart-overlay" id="cartOverlay"></div>
+      <div class="cart-content">
+        <div class="cart-header">
+          <h2>Tu pedido</h2>
+          <button class="cart-close" id="cartClose">&times;</button>
+        </div>
+
+        <div class="cart-body" id="cartBody">
+          <p class="empty-cart-message">El carrito está vacío</p>
+        </div>
+
+        <div class="cart-footer" id="cartFooter" style="display: none;">
+          <div class="cart-total">
+            <span>Total:</span>
+            <span class="cart-total-amount" id="cartTotalAmount">$0</span>
+          </div>
+          <button class="btn-whatsapp" id="btnWhatsapp">
+            <span>Pedir por WhatsApp</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Product detail modal -->
+  <!-- Product detail modal -->
+<div class="product-modal" id="productModal" style="display: none;">
+  <div class="product-modal-overlay" id="productModalOverlay"></div>
+  <div class="product-modal-content">
+    <button class="product-modal-close" id="productModalClose">&times;</button>
+    
+    <div class="product-modal-image" id="productModalImage">
+      <img src="" alt="">
+    </div>
+
+    <div class="product-modal-info">
+      <h2 id="productModalName">Producto</h2>
+      <p class="product-modal-price" id="productModalPrice">$0</p>
+      <p class="product-modal-description" id="productModalDescription"></p>
+
+      <!-- Quick Comments -->
+      <div class="product-options-section" id="quickCommentsSection" style="display: none;">
+        <h3>Comentarios rápidos</h3>
+        <div class="quick-comments-list" id="quickCommentsList"></div>
+      </div>
+
+      <!-- Sides -->
+      <div class="product-options-section" id="sidesSection" style="display: none;">
+        <h3>Acompañantes</h3>
+        <div class="sides-list" id="sidesList"></div>
+      </div>
+
+      <div class="product-modal-quantity">
+        <button class="quantity-btn" id="decreaseQty">-</button>
+        <span class="quantity-value" id="quantityValue">1</span>
+        <button class="quantity-btn" id="increaseQty">+</button>
+      </div>
+
+      <button class="btn-add-to-cart" id="addToCartBtn">
+        Agregar al carrito
+      </button>
+    </div>
+  </div>
+</div>
+
+  <script type="module" src="./catalog.js"></script>
+</body>
+</html>

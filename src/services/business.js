@@ -74,21 +74,27 @@ export const businessService = {
   },
 
   /**
-   * Generar slug único desde el nombre
-   */
+ * Generar slug único desde el nombre
+ */
   generateSlug(name) {
+    if (!name || typeof name !== 'string') {
+      return ''
+    }
+
     return name
       .toLowerCase()
       .trim()
-      .replace(/[áàäâ]/g, 'a')
-      .replace(/[éèëê]/g, 'e')
-      .replace(/[íìïî]/g, 'i')
-      .replace(/[óòöô]/g, 'o')
-      .replace(/[úùüû]/g, 'u')
-      .replace(/ñ/g, 'n')
+      // Reemplazar caracteres acentuados
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      // Reemplazar caracteres especiales
       .replace(/[^a-z0-9\s-]/g, '')
+      // Reemplazar espacios por guiones
       .replace(/\s+/g, '-')
+      // Reemplazar múltiples guiones por uno solo
       .replace(/-+/g, '-')
+      // Eliminar guiones al inicio y final
+      .replace(/^-+|-+$/g, '')
   },
 
   /**

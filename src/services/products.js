@@ -94,5 +94,26 @@ export const productService = {
       console.error('Error deleting product:', error)
       throw error
     }
+  },
+  
+  async getWithOptions(productId) {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select(`
+        *,
+        categories(name),
+        product_options(*)
+        `)
+      .eq('id', productId)
+      .single()
+
+      if (error) throw error
+    return data
+  } catch (error) {
+    console.error('Error getting product with options:', error)
+    throw error
   }
+}
+
 }

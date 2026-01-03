@@ -188,6 +188,78 @@
     </div>
   </div>
 
+  <!-- Modal para gestionar opciones del producto -->
+  <div id="productOptionsModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3 id="productOptionsModalTitle">Opciones del Producto</h3>
+        <button class="modal-close" id="closeProductOptionsModal">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1.5rem;">
+        
+        <div class="product-options-info" style="margin-bottom: 1.5rem; padding: 1rem; background: #f9fafb; border-radius: 0.5rem;">
+          <h4 id="optionsProductName" style="font-size: 1.1rem; margin-bottom: 0.5rem;"></h4>
+          <p style="color: #666; font-size: 0.9rem;">Configura comentarios rápidos y acompañantes para este producto</p>
+        </div>
+
+        <!-- Quick Comments Section -->
+        <div class="options-section">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h4 style="font-size: 1rem; font-weight: 600;">Comentarios Rápidos</h4>
+            <button class="btn-primary-small" id="addQuickCommentBtn">+ Agregar</button>
+          </div>
+          <div id="quickCommentsListDashboard" class="options-list">
+            <p class="empty-message" style="padding: 1rem; text-align: center; color: #9ca3af; font-size: 0.9rem;">
+              No hay comentarios rápidos
+            </p>
+          </div>
+        </div>
+
+        <!-- Sides Section -->
+        <div class="options-section" style="margin-top: 2rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h4 style="font-size: 1rem; font-weight: 600;">Acompañantes</h4>
+            <button class="btn-primary-small" id="addSideBtn">+ Agregar</button>
+          </div>
+          <div id="sidesListDashboard" class="options-list">
+            <p class="empty-message" style="padding: 1rem; text-align: center; color: #9ca3af; font-size: 0.9rem;">
+              No hay acompañantes
+            </p>
+          </div>
+        </div>
+
+      </div>
+      <div style="padding: 1.5rem; border-top: 1px solid var(--color-border);">
+        <button class="btn-secondary" id="closeProductOptionsBtn" style="width: 100%;">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para crear/editar opción -->
+  <div id="optionModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="optionModalTitle">Nueva Opción</h3>
+        <button class="modal-close" id="closeOptionModal">&times;</button>
+      </div>
+      <form id="optionForm" class="modal-form">
+        <div class="form-group">
+          <label for="optionNameInput">Nombre *</label>
+          <input type="text" id="optionNameInput" required>
+        </div>
+        <div class="form-group" id="optionPriceGroup">
+          <label for="optionPriceInput">Precio adicional</label>
+          <input type="number" id="optionPriceInput" step="0.01" min="0" value="0">
+          <small>Dejar en 0 si no tiene costo adicional</small>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="cancelOptionBtn">Cancelar</button>
+          <button type="submit" class="btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script type="module" src="./dashboard.js"></script>
 </body>
 </html>

@@ -187,6 +187,7 @@ function renderProducts() {
         }
         <div class="product-card-actions">
           <button class="btn-icon edit-product" data-id="${product.id}">Editar</button>
+          <button class="btn-manage-options manage-options" data-id="${product.id}">Opciones</button>
           <button class="btn-icon danger delete-product" data-id="${product.id}">Eliminar</button>
         </div>
       </div>
@@ -198,6 +199,13 @@ function renderProducts() {
     btn.addEventListener('click', (e) => {
       const id = e.target.dataset.id
       openEditProductModal(id)
+    })
+  })
+
+  document.querySelectorAll('.manage-options').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = e.target.dataset.id
+      openProductOptionsModal(id)
     })
   })
 
@@ -252,8 +260,12 @@ function closeBusinessModal() {
 // Auto-generar slug desde el nombre
 document.getElementById('businessNameInput').addEventListener('input', (e) => {
   const slugInput = document.getElementById('businessSlugInput')
-  if (!slugInput.disabled && !slugInput.value) {
-    slugInput.value = businessService.generateSlug(e.target.value)
+  // Solo generar si el campo está habilitado y vacío, o si se está creando
+  if (!slugInput.disabled) {
+    const generatedSlug = businessService.generateSlug(e.target.value)
+    if (generatedSlug) {
+      slugInput.value = generatedSlug
+    }
   }
 })
 
@@ -477,6 +489,234 @@ logoutBtn.addEventListener('click', async () => {
   await authService.signOut()
   window.location.href = '/src/pages/login/index.html'
 })
+
+// ============================================
+// PRODUCT OPTIONS MANAGEMENT
+// ============================================
+import { productOptionsService } from '../../services/productOptions.js'
+
+let currentProductForOptions = null
+let quickComments = []
+let sides = []
+let editingOption = null
+let editingOptionType = null
+
+const productOptionsModal = document.getElementById('productOptionsModal')
+const closeProductOptionsModal = document.getElementById('closeProductOptionsModal')
+const closeProductOptionsBtn = document.getElementById('closeProductOptionsBtn')
+const optionsProductName = document.getElementById('optionsProductName')
+const quickCommentsListDashboard = document.getElementById('quickCommentsListDashboard')
+const sidesListDashboard = document.getElementById('sidesListDashboard')
+const addQuickCommentBtn = document.getElementById('addQuickCommentBtn')
+const addSideBtn = document.getElementById('addSideBtn')
+
+const optionModal = document.getElementById('optionModal')
+const closeOptionModal = document.getElementById('closeOptionModal')
+const cancelOptionBtn = document.getElementById('cancelOptionBtn')
+const optionForm = document.getElementById('optionForm')
+const optionModalTitle = document.getElementById('optionModalTitle')
+const optionNameInput = document.getElementById('optionNameInput')
+const optionPriceInput = document.getElementById('optionPriceInput')
+const optionPriceGroup = document.getElementById('optionPriceGroup')
+
+// Función para abrir modal de opciones
+async function openProductOptionsModal(productId) {
+  const product = products.find(p => p.id === productId)
+  if (!product) return
+
+  currentProductForOptions = product
+  optionsProductName.textContent = product.name
+
+  await loadProductOptions(productId)
+  renderProductOptionsDashboard()
+
+  productOptionsModal.style.display = 'flex'
+}
+
+async function loadProductOptions(productId) {
+  try {
+    const options = await productOptionsService.getByProduct(productId)
+    quickComments = options.filter(opt => opt.type === 'quick_comment')
+    sides = options.filter(opt => opt.type === 'side')
+  } catch (error) {
+    console.error('Error loading product options:', error)
+    quickComments = []
+    sides = []
+  }
+}
+
+function renderProductOptionsDashboard() {
+  // Renderizar comentarios rápidos
+  if (quickComments.length === 0) {
+    quickCommentsListDashboard.innerHTML = '<p class="empty-message" style="padding: 1rem; text-align: center; color: #9ca3af; font-size: 0.9rem;">No hay comentarios rápidos</p>'
+  } else {
+    quickCommentsListDashboard.innerHTML = quickComments.map(comment => `
+      <div class="option-item">
+        <div class="option-item-info">
+          <div class="option-item-name">${comment.name}</div>
+        </div>
+        <div class="option-item-actions">
+          <button class="btn-icon-small edit-option" data-id="${comment.id}" data-type="quick_comment">Editar</button>
+          <button class="btn-icon-small danger delete-option" data-id="${comment.id}">Eliminar</button>
+        </div>
+      </div>
+    `).join('')
+
+    attachOptionEventListeners()
+  }
+
+  // Renderizar acompañantes
+  if (sides.length === 0) {
+    sidesListDashboard.innerHTML = '<p class="empty-message" style="padding: 1rem; text-align: center; color: #9ca3af; font-size: 0.9rem;">No hay acompañantes</p>'
+  } else {
+    sidesListDashboard.innerHTML = sides.map(side => `
+      <div class="option-item">
+        <div class="option-item-info">
+          <div class="option-item-name">${side.name}</div>
+          <div class="option-item-price">+$${parseFloat(side.price).toLocaleString()}</div>
+        </div>
+        <div class="option-item-actions">
+          <button class="btn-icon-small edit-option" data-id="${side.id}" data-type="side">Editar</button>
+          <button class="btn-icon-small danger delete-option" data-id="${side.id}">Eliminar</button>
+        </div>
+      </div>
+    `).join('')
+
+    attachOptionEventListeners()
+  }
+}
+
+function attachOptionEventListeners() {
+  document.querySelectorAll('.edit-option').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = e.target.dataset.id
+      const type = e.target.dataset.type
+      openEditOptionModal(id, type)
+    })
+  })
+
+  document.querySelectorAll('.delete-option').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = e.target.dataset.id
+      deleteOption(id)
+    })
+  })
+}
+
+// Cerrar modal de opciones
+closeProductOptionsModal.addEventListener('click', () => {
+  productOptionsModal.style.display = 'none'
+  currentProductForOptions = null
+})
+
+closeProductOptionsBtn.addEventListener('click', () => {
+  productOptionsModal.style.display = 'none'
+  currentProductForOptions = null
+})
+
+// Abrir modal para agregar comentario rápido
+addQuickCommentBtn.addEventListener('click', () => {
+  openOptionModal('quick_comment')
+})
+
+// Abrir modal para agregar acompañante
+addSideBtn.addEventListener('click', () => {
+  openOptionModal('side')
+})
+
+function openOptionModal(type, optionId = null) {
+  editingOptionType = type
+  
+  if (optionId) {
+    // Editar
+    const allOptions = [...quickComments, ...sides]
+    editingOption = allOptions.find(opt => opt.id === optionId)
+    
+    optionModalTitle.textContent = type === 'quick_comment' ? 'Editar Comentario' : 'Editar Acompañante'
+    optionNameInput.value = editingOption.name
+    optionPriceInput.value = editingOption.price || 0
+  } else {
+    // Crear
+    editingOption = null
+    optionModalTitle.textContent = type === 'quick_comment' ? 'Nuevo Comentario Rápido' : 'Nuevo Acompañante'
+    optionNameInput.value = ''
+    optionPriceInput.value = 0
+  }
+
+  // Mostrar/ocultar campo de precio según el tipo
+  if (type === 'quick_comment') {
+    optionPriceGroup.style.display = 'none'
+  } else {
+    optionPriceGroup.style.display = 'flex'
+  }
+
+  optionModal.style.display = 'flex'
+}
+
+function openEditOptionModal(optionId, type) {
+  openOptionModal(type, optionId)
+}
+
+function closeOptionModalFn() {
+  optionModal.style.display = 'none'
+  editingOption = null
+  editingOptionType = null
+  optionForm.reset()
+}
+
+closeOptionModal.addEventListener('click', closeOptionModalFn)
+cancelOptionBtn.addEventListener('click', closeOptionModalFn)
+
+// Guardar opción
+optionForm.addEventListener('submit', async (e) => {
+  e.preventDefault()
+
+  const name = optionNameInput.value
+  const price = editingOptionType === 'side' ? parseFloat(optionPriceInput.value) : 0
+
+  try {
+    const optionData = {
+      product_id: currentProductForOptions.id,
+      type: editingOptionType,
+      name,
+      price,
+      display_order: editingOption ? editingOption.display_order : 0
+    }
+
+    if (editingOption) {
+      // Actualizar
+      await productOptionsService.update(editingOption.id, optionData)
+      alert('Opción actualizada')
+    } else {
+      // Crear
+      await productOptionsService.create(optionData)
+      alert('Opción creada')
+    }
+
+    closeOptionModalFn()
+    await loadProductOptions(currentProductForOptions.id)
+    renderProductOptionsDashboard()
+
+  } catch (error) {
+    console.error('Error saving option:', error)
+    alert('Error al guardar la opción')
+  }
+})
+
+// Eliminar opción
+async function deleteOption(optionId) {
+  if (!confirm('¿Eliminar esta opción?')) return
+
+  try {
+    await productOptionsService.delete(optionId)
+    alert('Opción eliminada')
+    await loadProductOptions(currentProductForOptions.id)
+    renderProductOptionsDashboard()
+  } catch (error) {
+    console.error('Error deleting option:', error)
+    alert('Error al eliminar la opción')
+  }
+}
 
 copyLinkBtn.addEventListener('click', async () => {
   const url = catalogLink.href
