@@ -5,6 +5,7 @@ import { productService } from '../../services/products.js'
 import { notify } from '../../utils/notifications.js'
 import { confirm } from '../../utils/notifications.js'
 import { buttonLoader } from '../../utils/buttonLoader.js'
+import { Onboarding } from '../../components/onboarding.js'
 
 // ============================================
 // ESTADO GLOBAL
@@ -111,8 +112,11 @@ async function loadAllData() {
 // ============================================
 function showNoBusinessState() {
   loadingState.style.display = 'none'
-  noBusinessState.style.display = 'flex'
+  noBusinessState.style.display = 'none'
   businessExistsState.style.display = 'none'
+  // Iniciar onboarding
+  const onboarding = new Onboarding()
+  onboarding.start()
 }
 
 function showBusinessState() {
@@ -193,14 +197,14 @@ function renderProducts() {
       : ''
     }
   <div class="product-card-actions">
-  <button class="btn-icon edit-product" data-id="${product.id}">
-    <i class="ri-edit-line"></i> Editar
-  </button>
-  <button class="btn-manage-options manage-options" data-id="${product.id}">
+    <button class="btn-manage-options manage-options" data-id="${product.id}">
     <i class="ri-settings-3-line"></i> Opciones
   </button>
+  <button class="btn-icon edit-product" data-id="${product.id}">
+    <i class="ri-edit-line"></i>
+  </button>
   <button class="btn-icon danger delete-product" data-id="${product.id}">
-    <i class="ri-delete-bin-line"></i> Eliminar
+    <i class="ri-delete-bin-line"></i>
   </button>
 </div>
       </div>
