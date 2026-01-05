@@ -3,17 +3,26 @@ import { categoryService } from '../services/categories.js'
 import { productService } from '../services/products.js'
 import { notify } from '../utils/notifications.js'
 import { buttonLoader } from '../utils/buttonLoader.js'
+import { supabase } from '../config/supabase.js'
 
 export class Onboarding {
   constructor() {
+    console.log('🚀 Onboarding constructor llamado')
     this.currentStep = 1
     this.totalSteps = 3
     this.data = {
-      business: {},
+      business: {
+        id: null,
+        name: '',
+        whatsapp: '',
+        description: '',
+        slug: ''
+      },
       categories: [],
       products: []
     }
     this.container = null
+    console.log('📦 Estado inicial:', this.data)
   }
 
   /**
@@ -21,7 +30,11 @@ export class Onboarding {
    */
   start() {
     this.render()
-    this.showStep(1)
+
+    // Pequeño delay para asegurar que el DOM esté listo
+    setTimeout(() => {
+      this.showStep(1)
+    }, 50)
   }
 
   /**
@@ -95,32 +108,41 @@ export class Onboarding {
             </form>
           </div>
 
-          <!-- Step 2: Categories -->
-          <div class="onboarding-step" id="step-2" style="display: none;">
-            <div class="step-icon">
-              <i class="ri-folder-line"></i>
-            </div>
-            <h3>Categorías de productos</h3>
-            <p class="step-description">Organiza tus productos en categorías</p>
-            
-            <div class="categories-manager">
-              <div class="input-with-button">
-                <input type="text" id="onb-category-input" placeholder="Ej: Hamburguesas, Bebidas, Postres...">
-                <button type="button" class="btn-add-item" id="addCategoryBtn">
-                  <i class="ri-add-line"></i> Agregar
-                </button>
-              </div>
+    <!-- Step 2: Categories -->
+    <div class="onboarding-step" id="step-2" style="display: none;">
+      <div class="step-icon">
+        <i class="ri-folder-line"></i>
+      </div>
+      <h3>Categorías de productos</h3>
+      <p class="step-description">Organiza tus productos en categorías</p>
+      
+      <div class="categories-manager">
+        <div class="input-with-button">
+          <input type="text" id="onb-category-input" placeholder="Ej: Hamburguesas, Bebidas, Postres...">
+          <button type="button" class="btn-add-item" id="addCategoryBtn">
+            <i class="ri-add-line"></i> Agregar
+          </button>
+        </div>
 
-              <div class="items-list" id="categoriesList">
-                <p class="empty-list-message">Aún no has agregado categorías</p>
-              </div>
+        <!-- LISTA SIMPLIFICADA -->
+        <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem; min-height: 100px;">
+          <div id="categoriesList" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
+          <p id="emptyMessage" style="text-align: center; color: #9ca3af; padding: 2rem;">Aún no has agregado categorías</p>
+        </div>
 
-              <div class="hint-box">
-                <i class="ri-lightbulb-line"></i>
-                <span>Puedes agregar categorías ahora o hacerlo después desde el dashboard</span>
-              </div>
-            </div>
-          </div>
+        <div class="hint-box">
+          <i class="ri-lightbulb-line"></i>
+          <span>Puedes agregar categorías ahora o hacerlo después desde el dashboard</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hint-box">
+      <i class="ri-lightbulb-line"></i>
+      <span>Puedes agregar categorías ahora o hacerlo después desde el dashboard</span>
+    </div>
+  </div>
+</div>
 
           <!-- Step 3: Products -->
           <div class="onboarding-step" id="step-3" style="display: none;">
@@ -218,6 +240,9 @@ export class Onboarding {
   /**
    * Adjuntar event listeners
    */
+  /**
+ * Adjuntar event listeners
+ */
   attachEventListeners() {
     const nextBtn = document.getElementById('nextBtn')
     const backBtn = document.getElementById('backBtn')
@@ -229,14 +254,30 @@ export class Onboarding {
     skipBtn.addEventListener('click', () => this.skipStep())
     finishBtn.addEventListener('click', () => this.finish())
 
-    // Step 2: Agregar categoría
-    const addCategoryBtn = document.getElementById('addCategoryBtn')
-    const categoryInput = document.getElementById('onb-category-input')
-
-    addCategoryBtn.addEventListener('click', () => this.addCategory())
-    categoryInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
+    // Delegación de eventos para el contenedor completo
+    this.container.addEventListener('click', (e) => {
+      // Botón agregar categoría
+      if (e.target.id === 'addCategoryBtn' || e.target.closest('#addCategoryBtn')) {
         e.preventDefault()
+        e.stopPropagation()
+        console.log('Click en botón agregar categoría detectado')
+        this.addCategory()
+      }
+
+      // Botón eliminar categoría
+      const removeBtn = e.target.closest('.btn-remove-item')
+      if (removeBtn) {
+        e.preventDefault()
+        const index = parseInt(removeBtn.dataset.index)
+        this.removeCategory(index)
+      }
+    })
+
+    // Enter en input de categoría
+    this.container.addEventListener('keypress', (e) => {
+      if (e.target.id === 'onb-category-input' && e.key === 'Enter') {
+        e.preventDefault()
+        console.log('Enter presionado en input categoría')
         this.addCategory()
       }
     })
@@ -272,6 +313,14 @@ export class Onboarding {
 
     // Actualizar botones
     this.updateButtons()
+
+    // Hacer focus en el input de categorías si es paso 2
+    if (step === 2) {
+      setTimeout(() => {
+        const input = document.getElementById('onb-category-input')
+        if (input) input.focus()
+      }, 100)
+    }
   }
 
   /**
@@ -285,7 +334,17 @@ export class Onboarding {
 
     backBtn.style.display = this.currentStep > 1 ? 'block' : 'none'
     skipBtn.style.display = (this.currentStep === 2 || this.currentStep === 3) ? 'block' : 'none'
-    nextBtn.style.display = this.currentStep < this.totalSteps ? 'block' : 'none'
+
+    // Mostrar "Siguiente" en pasos 1, 2 y 3
+    nextBtn.style.display = this.currentStep <= this.totalSteps ? 'block' : 'none'
+
+    // Cambiar texto del botón en paso 3
+    if (this.currentStep === 3) {
+      nextBtn.innerHTML = 'Finalizar <i class="ri-check-line"></i>'
+    } else {
+      nextBtn.innerHTML = 'Siguiente <i class="ri-arrow-right-line"></i>'
+    }
+
     finishBtn.style.display = 'none'
   }
 
@@ -296,6 +355,7 @@ export class Onboarding {
     const nextBtn = document.getElementById('nextBtn')
 
     // Validar paso actual
+    // Validar paso actual
     if (this.currentStep === 1) {
       const form = document.getElementById('businessInfoForm')
       if (!form.checkValidity()) {
@@ -304,13 +364,17 @@ export class Onboarding {
       }
 
       // Guardar datos del negocio
-      this.data.business = {
-        name: document.getElementById('onb-business-name').value,
-        whatsapp: document.getElementById('onb-whatsapp').value,
-        description: document.getElementById('onb-description').value
+      this.data.business.name = document.getElementById('onb-business-name').value
+      this.data.business.whatsapp = document.getElementById('onb-whatsapp').value
+      this.data.business.description = document.getElementById('onb-description').value
+
+      // Si ya tiene ID, significa que ya fue creado, solo avanzar
+      if (this.data.business.id) {
+        this.showStep(2)
+        return
       }
 
-      // Crear negocio en la BD
+      // Crear negocio en la BD solo si no existe
       await buttonLoader.execute(nextBtn, async () => {
         try {
           const slug = businessService.generateSlug(this.data.business.name)
@@ -331,7 +395,6 @@ export class Onboarding {
           notify.error('Error al crear el negocio: ' + error.message)
         }
       }, 'Creando negocio...')
-
     } else if (this.currentStep === 2) {
       // Guardar categorías en la BD
       await buttonLoader.execute(nextBtn, async () => {
@@ -360,31 +423,72 @@ export class Onboarding {
       // Crear producto si se llenó
       await buttonLoader.execute(nextBtn, async () => {
         try {
-          const productName = document.getElementById('onb-product-name').value
+          const productName = document.getElementById('onb-product-name').value.trim()
           const productPrice = document.getElementById('onb-product-price').value
 
+          // Si hay nombre y precio, crear producto
           if (productName && productPrice) {
-            const categoryId = document.getElementById('onb-product-category').value || null
+            console.log('=== Creando producto ===')
+
+            const categorySelectValue = document.getElementById('onb-product-category').value
             const description = document.getElementById('onb-product-description').value
+
+            // Obtener el ID real de la categoría desde Supabase
+            let categoryId = null
+
+            if (categorySelectValue && categorySelectValue !== '' && this.data.categories.length > 0) {
+              const categoryIndex = parseInt(categorySelectValue)
+              const categoryName = this.data.categories[categoryIndex]
+
+              console.log('Buscando categoría:', categoryName)
+
+              // Buscar el ID real de la categoría en Supabase
+              try {
+                const { data: categoryData, error: catError } = await supabase
+                  .from('categories')
+                  .select('id')
+                  .eq('business_id', this.data.business.id)
+                  .eq('name', categoryName)
+                  .single()
+
+                if (!catError && categoryData) {
+                  categoryId = categoryData.id
+                  console.log('ID de categoría encontrado:', categoryId)
+                }
+              } catch (error) {
+                console.error('Error buscando categoría:', error)
+              }
+            }
+
+            console.log('Datos del producto a crear:', {
+              business_id: this.data.business.id,
+              name: productName,
+              price: parseFloat(productPrice),
+              category_id: categoryId,
+              description: description
+            })
 
             await productService.create({
               business_id: this.data.business.id,
               name: productName,
               price: parseFloat(productPrice),
               category_id: categoryId,
-              description: description,
+              description: description || '',
               image_url: '',
               is_available: true,
               display_order: 0
             })
 
             this.data.products.push(productName)
+            console.log('✅ Producto creado exitosamente')
+          } else {
+            console.log('No se creará producto (campos vacíos o incompletos)')
           }
 
           this.showSuccess()
         } catch (error) {
           console.error('Error creating product:', error)
-          notify.error('Error al crear el producto')
+          notify.error('Error al crear el producto: ' + error.message)
         }
       }, 'Finalizando...')
     }
@@ -415,57 +519,150 @@ export class Onboarding {
    * Agregar categoría
    */
   addCategory() {
-    const input = document.getElementById('onb-category-input')
-    const value = input.value.trim()
+    console.log('=== addCategory() NUEVA VERSIÓN ===')
 
-    if (!value) return
+    const input = document.getElementById('onb-category-input')
+
+    if (!input) {
+      console.error('❌ Input no encontrado')
+      notify.error('Error: Input no encontrado')
+      return
+    }
+
+    const value = input.value.trim()
+    console.log('Valor:', value)
+
+    if (!value) {
+      notify.warning('Escribe el nombre de la categoría')
+      return
+    }
 
     if (this.data.categories.includes(value)) {
       notify.warning('Esta categoría ya fue agregada')
       return
     }
 
+    // Agregar a la lista
     this.data.categories.push(value)
-    input.value = ''
+    console.log('✅ Categoría agregada. Total:', this.data.categories.length)
+    console.log('Lista completa:', this.data.categories)
 
+    // Limpiar input
+    input.value = ''
+    input.focus()
+
+    // Renderizar
     this.renderCategories()
+
+    notify.success(`"${value}" agregada`)
+
+    // Verificación adicional
+    setTimeout(() => {
+      const list = document.getElementById('categoriesList')
+      console.log('Verificación post-render:')
+      console.log('  Items en DOM:', list?.children.length)
+      console.log('  Categorías en data:', this.data.categories.length)
+    }, 100)
   }
 
   /**
    * Eliminar categoría
    */
   removeCategory(index) {
+    console.log(`Eliminando índice ${index}:`, this.data.categories[index])
     this.data.categories.splice(index, 1)
+    console.log('Categorías restantes:', this.data.categories)
     this.renderCategories()
+    notify.info('Categoría eliminada')
   }
 
   /**
    * Renderizar lista de categorías
    */
   renderCategories() {
-    const list = document.getElementById('categoriesList')
+    console.log('=== renderCategories() NUEVA VERSIÓN ===')
+    console.log('Categorías:', this.data.categories)
 
-    if (this.data.categories.length === 0) {
-      list.innerHTML = '<p class="empty-list-message">Aún no has agregado categorías</p>'
+    const list = document.getElementById('categoriesList')
+    const emptyMessage = document.getElementById('emptyMessage')
+
+    if (!list) {
+      console.error('❌ categoriesList no encontrado')
       return
     }
 
-    list.innerHTML = this.data.categories.map((cat, index) => `
-      <div class="list-item">
-        <span>${cat}</span>
-        <button type="button" class="btn-remove-item" data-index="${index}">
-          <i class="ri-close-line"></i>
-        </button>
-      </div>
-    `).join('')
+    if (!emptyMessage) {
+      console.error('❌ emptyMessage no encontrado')
+      return
+    }
 
-    // Event listeners para eliminar
-    list.querySelectorAll('.btn-remove-item').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const index = parseInt(e.currentTarget.dataset.index)
+    // Limpiar lista
+    list.innerHTML = ''
+
+    if (this.data.categories.length === 0) {
+      console.log('Sin categorías, mostrando mensaje')
+      emptyMessage.style.display = 'block'
+      list.style.display = 'none'
+      return
+    }
+
+    // Ocultar mensaje vacío
+    emptyMessage.style.display = 'none'
+    list.style.display = 'flex'
+
+    // Crear elementos uno por uno
+    this.data.categories.forEach((cat, index) => {
+      console.log(`Creando elemento para: ${cat}`)
+
+      // Crear contenedor
+      const item = document.createElement('div')
+      item.style.cssText = `
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      background: #f9fafb;
+      border: 1px solid #ddd;
+      border-radius: 0.5rem;
+      width: 100%;
+    `
+
+      // Crear span con el nombre
+      const span = document.createElement('span')
+      span.textContent = cat
+      span.style.cssText = 'font-weight: 500; color: #222; flex: 1;'
+
+      // Crear botón eliminar
+      const button = document.createElement('button')
+      button.type = 'button'
+      button.innerHTML = '<i class="ri-close-line"></i>'
+      button.style.cssText = `
+      background: none;
+      border: none;
+      color: #ef4444;
+      cursor: pointer;
+      padding: 0.25rem;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 0.25rem;
+    `
+      button.onclick = () => {
+        console.log(`Eliminando categoría: ${cat}`)
         this.removeCategory(index)
-      })
+      }
+
+      // Ensamblar
+      item.appendChild(span)
+      item.appendChild(button)
+      list.appendChild(item)
+
+      console.log(`✅ Elemento creado y agregado para: ${cat}`)
     })
+
+    console.log('✅ Render completo. Items en el DOM:', list.children.length)
   }
 
   /**
@@ -475,12 +672,17 @@ export class Onboarding {
     const selectGroup = document.getElementById('onb-category-select-group')
     const select = document.getElementById('onb-product-category')
 
+    console.log('=== updateCategorySelect() ===')
+    console.log('Categorías disponibles:', this.data.categories)
+
     if (this.data.categories.length > 0) {
       selectGroup.style.display = 'flex'
       select.innerHTML = '<option value="">Sin categoría</option>' +
         this.data.categories.map((cat, index) => `<option value="${index}">${cat}</option>`).join('')
+      console.log('Select actualizado con', this.data.categories.length, 'categorías')
     } else {
       selectGroup.style.display = 'none'
+      console.log('No hay categorías, ocultando select')
     }
   }
 
@@ -507,13 +709,13 @@ export class Onboarding {
 
     if (this.data.categories.length > 0) {
       document.getElementById('summary-categories-item').style.display = 'flex'
-      document.getElementById('summary-categories-count').textContent = 
+      document.getElementById('summary-categories-count').textContent =
         `${this.data.categories.length} categoría${this.data.categories.length > 1 ? 's' : ''} creada${this.data.categories.length > 1 ? 's' : ''}`
     }
 
     if (this.data.products.length > 0) {
       document.getElementById('summary-products-item').style.display = 'flex'
-      document.getElementById('summary-products-count').textContent = 
+      document.getElementById('summary-products-count').textContent =
         `${this.data.products.length} producto${this.data.products.length > 1 ? 's' : ''} creado${this.data.products.length > 1 ? 's' : ''}`
     }
   }

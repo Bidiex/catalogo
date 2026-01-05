@@ -114,6 +114,7 @@ function showNoBusinessState() {
   loadingState.style.display = 'none'
   noBusinessState.style.display = 'none'
   businessExistsState.style.display = 'none'
+
   // Iniciar onboarding
   const onboarding = new Onboarding()
   onboarding.start()

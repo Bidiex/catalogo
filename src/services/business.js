@@ -13,18 +13,13 @@ export const businessService = {
         .from('businesses')
         .select('*')
         .eq('user_id', user.id)
-        .single()
+        .maybeSingle()
 
-      if (error) {
-        // Si no existe el negocio, devolver null (no es error)
-        if (error.code === 'PGRST116') return null
-        throw error
-      }
-
+      if (error) throw error
       return data
     } catch (error) {
       console.error('Error getting business:', error)
-      throw error
+      return null
     }
   },
 
