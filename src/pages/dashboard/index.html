@@ -33,16 +33,122 @@
     </div>
 
     <!-- No business state (primer uso) -->
+    <!-- No business state (primer uso) - NUEVO ONBOARDING -->
     <div id="noBusinessState" class="no-business-state" style="display: none;">
-      <div class="welcome-card">
-        <div style="font-size: 3rem; margin-bottom: 1rem;">
-          <i class="ri-store-2-line"></i>
+      <div class="onboarding-wizard">
+
+        <!-- Progress indicator -->
+        <div class="wizard-progress">
+          <div class="progress-step active" data-step="1">
+            <div class="step-number">1</div>
+            <span>Negocio</span>
+          </div>
+          <div class="progress-line"></div>
+          <div class="progress-step" data-step="2">
+            <div class="step-number">2</div>
+            <span>Categorías</span>
+          </div>
+          <div class="progress-line"></div>
+          <div class="progress-step" data-step="3">
+            <div class="step-number">3</div>
+            <span>Listo</span>
+          </div>
         </div>
-        <h2>¡Bienvenido! 👋</h2>
-        <p>Comienza creando tu negocio para tener tu catálogo online.</p>
-        <button id="createBusinessBtn" class="btn-primary">
-          <i class="ri-add-circle-line"></i> Crear mi negocio
-        </button>
+
+        <!-- Step 1: Business -->
+        <div class="wizard-step" id="wizard-step-1">
+          <div class="wizard-header">
+            <i class="ri-store-2-line wizard-icon"></i>
+            <h2>Información de tu negocio</h2>
+            <p>Completa los datos básicos para comenzar</p>
+          </div>
+
+          <form class="wizard-form" id="wizardBusinessForm">
+            <div class="form-group">
+              <label for="wiz-business-name">Nombre del negocio *</label>
+              <input type="text" id="wiz-business-name" placeholder="Ej: Burger Master" required>
+            </div>
+
+            <div class="form-group">
+              <label for="wiz-whatsapp">WhatsApp *</label>
+              <input type="tel" id="wiz-whatsapp" placeholder="+573001234567" required>
+              <small>Incluye código de país (+57 para Colombia)</small>
+            </div>
+
+            <div class="form-group">
+              <label for="wiz-description">Descripción</label>
+              <textarea id="wiz-description" rows="2" placeholder="Describe tu negocio..."></textarea>
+            </div>
+
+            <button type="submit" class="btn-primary btn-block">
+              Continuar <i class="ri-arrow-right-line"></i>
+            </button>
+          </form>
+        </div>
+
+        <!-- Step 2: Categories -->
+        <div class="wizard-step" id="wizard-step-2" style="display: none;">
+          <div class="wizard-header">
+            <i class="ri-folder-line wizard-icon"></i>
+            <h2>Agrega categorías</h2>
+            <p>Organiza tus productos (opcional)</p>
+          </div>
+
+          <div class="wizard-content">
+            <div class="category-input-group">
+              <input type="text" id="wiz-category-input" placeholder="Ej: Hamburguesas, Bebidas...">
+              <button type="button" id="wiz-add-category" class="btn-primary">
+                <i class="ri-add-line"></i>
+              </button>
+            </div>
+
+            <div id="wiz-categories-display" class="categories-display">
+              <!-- Se llenarán con JS -->
+            </div>
+
+            <div class="wizard-actions">
+              <button type="button" id="wiz-skip-categories" class="btn-secondary">
+                Omitir
+              </button>
+              <button type="button" id="wiz-continue-categories" class="btn-primary">
+                Continuar <i class="ri-arrow-right-line"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Success -->
+        <div class="wizard-step" id="wizard-step-3" style="display: none;">
+          <div class="wizard-header success">
+            <i class="ri-checkbox-circle-line wizard-icon"></i>
+            <h2>¡Todo listo! 🎉</h2>
+            <p>Tu negocio está configurado</p>
+          </div>
+
+          <div class="wizard-content">
+            <div class="success-summary">
+              <div class="summary-item">
+                <i class="ri-store-2-line"></i>
+                <div>
+                  <strong>Negocio creado</strong>
+                  <p id="summary-business-name">-</p>
+                </div>
+              </div>
+              <div class="summary-item" id="summary-categories-box" style="display: none;">
+                <i class="ri-folder-line"></i>
+                <div>
+                  <strong>Categorías</strong>
+                  <p id="summary-categories-text">-</p>
+                </div>
+              </div>
+            </div>
+
+            <button type="button" id="wiz-finish" class="btn-primary btn-block">
+              Ir al Dashboard <i class="ri-arrow-right-line"></i>
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
 

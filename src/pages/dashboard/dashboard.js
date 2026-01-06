@@ -5,7 +5,6 @@ import { productService } from '../../services/products.js'
 import { notify } from '../../utils/notifications.js'
 import { confirm } from '../../utils/notifications.js'
 import { buttonLoader } from '../../utils/buttonLoader.js'
-import { Onboarding } from '../../components/onboarding.js'
 
 // ============================================
 // ESTADO GLOBAL
@@ -31,9 +30,6 @@ const businessName = document.getElementById('businessName')
 const businessWhatsapp = document.getElementById('businessWhatsapp')
 const catalogLink = document.getElementById('catalogLink')
 const copyLinkBtn = document.getElementById('copyLinkBtn')
-
-const createBusinessBtn = document.getElementById('createBusinessBtn')
-const editBusinessBtn = document.getElementById('editBusinessBtn')
 
 const addCategoryBtn = document.getElementById('addCategoryBtn')
 const addProductBtn = document.getElementById('addProductBtn')
@@ -112,12 +108,8 @@ async function loadAllData() {
 // ============================================
 function showNoBusinessState() {
   loadingState.style.display = 'none'
-  noBusinessState.style.display = 'none'
+  noBusinessState.style.display = 'flex'
   businessExistsState.style.display = 'none'
-
-  // Iniciar onboarding
-  const onboarding = new Onboarding()
-  onboarding.start()
 }
 
 function showBusinessState() {
@@ -238,8 +230,6 @@ function renderProducts() {
 // ============================================
 // BUSINESS MODAL
 // ============================================
-createBusinessBtn.addEventListener('click', () => openBusinessModal())
-editBusinessBtn.addEventListener('click', () => openBusinessModal(true))
 
 document.getElementById('closeBusinessModal').addEventListener('click', closeBusinessModal)
 document.getElementById('cancelBusinessBtn').addEventListener('click', closeBusinessModal)
@@ -935,3 +925,230 @@ copyLinkBtn.addEventListener('click', async () => {
     notify.error('No se pudo copiar el enlace')
   }
 })
+
+// ============================================
+// WIZARD ONBOARDING - SIMPLE
+// ============================================
+
+let wizardCurrentStep = 1
+let wizardData = {
+  business: null,
+  categories: []
+}
+
+// Elementos del wizard
+const wizardStep1 = document.getElementById('wizard-step-1')
+const wizardStep2 = document.getElementById('wizard-step-2')
+const wizardStep3 = document.getElementById('wizard-step-3')
+
+const wizardBusinessForm = document.getElementById('wizardBusinessForm')
+const wizCategoryInput = document.getElementById('wiz-category-input')
+const wizAddCategoryBtn = document.getElementById('wiz-add-category')
+const wizCategoriesDisplay = document.getElementById('wiz-categories-display')
+const wizSkipCategoriesBtn = document.getElementById('wiz-skip-categories')
+const wizContinueCategoriesBtn = document.getElementById('wiz-continue-categories')
+const wizFinishBtn = document.getElementById('wiz-finish')
+
+// Step 1: Crear negocio
+if (wizardBusinessForm) {
+  wizardBusinessForm.addEventListener('submit', async (e) => {
+    e.preventDefault()
+
+    const name = document.getElementById('wiz-business-name').value.trim()
+    const whatsapp = document.getElementById('wiz-whatsapp').value.trim()
+    const description = document.getElementById('wiz-description').value.trim()
+
+    const submitBtn = e.submitter
+
+    await buttonLoader.execute(submitBtn, async () => {
+      try {
+        const slug = businessService.generateSlug(name)
+        const businessData = {
+          name,
+          slug,
+          whatsapp_number: whatsapp,
+          description
+        }
+
+        const createdBusiness = await businessService.createBusiness(businessData)
+        wizardData.business = createdBusiness
+
+        notify.success('Negocio creado correctamente')
+        showWizardStep(2)
+
+      } catch (error) {
+        console.error('Error creating business:', error)
+        notify.error('Error al crear el negocio: ' + error.message)
+      }
+    }, 'Creando...')
+  })
+}
+
+// Step 2: Agregar categoría
+if (wizAddCategoryBtn) {
+  wizAddCategoryBtn.addEventListener('click', addWizardCategory)
+}
+
+if (wizCategoryInput) {
+  wizCategoryInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      addWizardCategory()
+    }
+  })
+}
+
+function addWizardCategory() {
+  const value = wizCategoryInput.value.trim()
+
+  if (!value) {
+    notify.warning('Escribe el nombre de la categoría')
+    return
+  }
+
+  if (wizardData.categories.includes(value)) {
+    notify.warning('Esta categoría ya existe')
+    return
+  }
+
+  wizardData.categories.push(value)
+  wizCategoryInput.value = ''
+  wizCategoryInput.focus()
+
+  renderWizardCategories()
+  notify.success(`"${value}" agregada`)
+}
+
+function removeWizardCategory(index) {
+  wizardData.categories.splice(index, 1)
+  renderWizardCategories()
+}
+
+function renderWizardCategories() {
+  if (!wizCategoriesDisplay) return
+
+  wizCategoriesDisplay.innerHTML = ''
+
+  wizardData.categories.forEach((cat, index) => {
+    const tag = document.createElement('div')
+    tag.className = 'category-tag'
+
+    const nameSpan = document.createElement('span')
+    nameSpan.className = 'category-tag-name'
+    nameSpan.textContent = cat
+
+    const removeBtn = document.createElement('button')
+    removeBtn.type = 'button'
+    removeBtn.className = 'category-tag-remove'
+    removeBtn.innerHTML = '<i class="ri-close-line"></i>'
+    removeBtn.onclick = () => removeWizardCategory(index)
+
+    tag.appendChild(nameSpan)
+    tag.appendChild(removeBtn)
+    wizCategoriesDisplay.appendChild(tag)
+  })
+}
+
+// Continuar desde categorías
+if (wizContinueCategoriesBtn) {
+  wizContinueCategoriesBtn.addEventListener('click', async () => {
+    await buttonLoader.execute(wizContinueCategoriesBtn, async () => {
+      await saveWizardCategories()
+    }, 'Guardando...')
+  })
+}
+
+// Omitir categorías
+if (wizSkipCategoriesBtn) {
+  wizSkipCategoriesBtn.addEventListener('click', () => {
+    showWizardStep(3)
+  })
+}
+
+async function saveWizardCategories() {
+  try {
+    if (wizardData.categories.length > 0) {
+      const promises = wizardData.categories.map((cat, index) => {
+        return categoryService.create({
+          business_id: wizardData.business.id,
+          name: cat,
+          display_order: index
+        })
+      })
+
+      await Promise.all(promises)
+      notify.success('Categorías guardadas')
+    }
+
+    showWizardStep(3)
+
+  } catch (error) {
+    console.error('Error saving categories:', error)
+    notify.error('Error al guardar las categorías')
+  }
+}
+
+// Finalizar wizard
+if (wizFinishBtn) {
+  wizFinishBtn.addEventListener('click', () => {
+    window.location.reload()
+  })
+}
+
+// Mostrar paso del wizard
+function showWizardStep(step) {
+  wizardCurrentStep = step
+
+  // Ocultar todos los pasos
+  if (wizardStep1) wizardStep1.style.display = 'none'
+  if (wizardStep2) wizardStep2.style.display = 'none'
+  if (wizardStep3) wizardStep3.style.display = 'none'
+
+  // Mostrar paso actual
+  if (step === 1 && wizardStep1) wizardStep1.style.display = 'block'
+  if (step === 2 && wizardStep2) wizardStep2.style.display = 'block'
+  if (step === 3 && wizardStep3) wizardStep3.style.display = 'block'
+
+  // Actualizar progress
+  document.querySelectorAll('.progress-step').forEach((el, index) => {
+    const stepNum = index + 1
+    if (stepNum < step) {
+      el.classList.add('completed')
+      el.classList.remove('active')
+    } else if (stepNum === step) {
+      el.classList.add('active')
+      el.classList.remove('completed')
+    } else {
+      el.classList.remove('active', 'completed')
+    }
+  })
+
+  // Actualizar líneas de progreso
+  document.querySelectorAll('.progress-line').forEach((line, index) => {
+    if (index + 1 < step) {
+      line.style.background = 'var(--color-primary)'
+    } else {
+      line.style.background = '#e5e7eb'
+    }
+  })
+
+  // Llenar resumen en paso 3
+  if (step === 3) {
+    const summaryBusinessName = document.getElementById('summary-business-name')
+    const summaryCategories = document.getElementById('summary-categories-box')
+    const summaryCategoriesText = document.getElementById('summary-categories-text')
+
+    if (summaryBusinessName && wizardData.business) {
+      summaryBusinessName.textContent = wizardData.business.name
+    }
+
+    if (summaryCategories && summaryCategoriesText) {
+      if (wizardData.categories.length > 0) {
+        summaryCategories.style.display = 'flex'
+        summaryCategoriesText.textContent = `${wizardData.categories.length} categoría${wizardData.categories.length > 1 ? 's' : ''}`
+      } else {
+        summaryCategories.style.display = 'none'
+      }
+    }
+  }
+}
