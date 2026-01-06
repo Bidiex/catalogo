@@ -933,13 +933,15 @@ copyLinkBtn.addEventListener('click', async () => {
 let wizardCurrentStep = 1
 let wizardData = {
   business: null,
-  categories: []
+  categories: [],
+  categoriesIds: [] // IDs reales de Supabase
 }
 
 // Elementos del wizard
 const wizardStep1 = document.getElementById('wizard-step-1')
 const wizardStep2 = document.getElementById('wizard-step-2')
 const wizardStep3 = document.getElementById('wizard-step-3')
+const wizardStep4 = document.getElementById('wizard-step-4')
 
 const wizardBusinessForm = document.getElementById('wizardBusinessForm')
 const wizCategoryInput = document.getElementById('wiz-category-input')
@@ -947,6 +949,8 @@ const wizAddCategoryBtn = document.getElementById('wiz-add-category')
 const wizCategoriesDisplay = document.getElementById('wiz-categories-display')
 const wizSkipCategoriesBtn = document.getElementById('wiz-skip-categories')
 const wizContinueCategoriesBtn = document.getElementById('wiz-continue-categories')
+const wizSkipProductBtn = document.getElementById('wiz-skip-product')
+const wizContinueProductBtn = document.getElementById('wiz-continue-product')
 const wizFinishBtn = document.getElementById('wiz-finish')
 
 // Step 1: Crear negocio
@@ -1054,6 +1058,8 @@ if (wizContinueCategoriesBtn) {
   wizContinueCategoriesBtn.addEventListener('click', async () => {
     await buttonLoader.execute(wizContinueCategoriesBtn, async () => {
       await saveWizardCategories()
+      updateProductCategorySelect()
+      showWizardStep(3)
     }, 'Guardando...')
   })
 }
@@ -1061,6 +1067,7 @@ if (wizContinueCategoriesBtn) {
 // Omitir categorías
 if (wizSkipCategoriesBtn) {
   wizSkipCategoriesBtn.addEventListener('click', () => {
+    updateProductCategorySelect()
     showWizardStep(3)
   })
 }
@@ -1076,15 +1083,74 @@ async function saveWizardCategories() {
         })
       })
 
-      await Promise.all(promises)
+      const createdCategories = await Promise.all(promises)
+      wizardData.categoriesIds = createdCategories.map(c => c.id)
+      
       notify.success('Categorías guardadas')
     }
-
-    showWizardStep(3)
-
   } catch (error) {
     console.error('Error saving categories:', error)
     notify.error('Error al guardar las categorías')
+    throw error
+  }
+}
+
+// Actualizar select de categorías en paso 3
+function updateProductCategorySelect() {
+  const selectGroup = document.getElementById('wiz-product-category-group')
+  const select = document.getElementById('wiz-product-category')
+
+  if (wizardData.categories.length > 0 && selectGroup && select) {
+    selectGroup.style.display = 'flex'
+    select.innerHTML = '<option value="">Sin categoría</option>' +
+      wizardData.categories.map((cat, index) => 
+        `<option value="${wizardData.categoriesIds[index] || ''}">${cat}</option>`
+      ).join('')
+  }
+}
+
+// Step 3: Producto
+if (wizContinueProductBtn) {
+  wizContinueProductBtn.addEventListener('click', async () => {
+    await buttonLoader.execute(wizContinueProductBtn, async () => {
+      await saveWizardProduct()
+      showWizardStep(4)
+    }, 'Finalizando...')
+  })
+}
+
+if (wizSkipProductBtn) {
+  wizSkipProductBtn.addEventListener('click', () => {
+    showWizardStep(4)
+  })
+}
+
+async function saveWizardProduct() {
+  try {
+    const name = document.getElementById('wiz-product-name').value.trim()
+    const price = document.getElementById('wiz-product-price').value
+    const categoryId = document.getElementById('wiz-product-category').value || null
+    const description = document.getElementById('wiz-product-description').value.trim()
+
+    if (name && price) {
+      await productService.create({
+        business_id: wizardData.business.id,
+        name,
+        price: parseFloat(price),
+        category_id: categoryId,
+        description,
+        image_url: '',
+        is_available: true,
+        display_order: 0
+      })
+
+      wizardData.product = name
+      notify.success('Producto creado')
+    }
+  } catch (error) {
+    console.error('Error saving product:', error)
+    notify.error('Error al crear el producto')
+    throw error
   }
 }
 
@@ -1103,11 +1169,13 @@ function showWizardStep(step) {
   if (wizardStep1) wizardStep1.style.display = 'none'
   if (wizardStep2) wizardStep2.style.display = 'none'
   if (wizardStep3) wizardStep3.style.display = 'none'
+  if (wizardStep4) wizardStep4.style.display = 'none'
 
   // Mostrar paso actual
   if (step === 1 && wizardStep1) wizardStep1.style.display = 'block'
   if (step === 2 && wizardStep2) wizardStep2.style.display = 'block'
   if (step === 3 && wizardStep3) wizardStep3.style.display = 'block'
+  if (step === 4 && wizardStep4) wizardStep4.style.display = 'block'
 
   // Actualizar progress
   document.querySelectorAll('.progress-step').forEach((el, index) => {
@@ -1132,11 +1200,13 @@ function showWizardStep(step) {
     }
   })
 
-  // Llenar resumen en paso 3
-  if (step === 3) {
+  // Llenar resumen en paso 4
+  if (step === 4) {
     const summaryBusinessName = document.getElementById('summary-business-name')
     const summaryCategories = document.getElementById('summary-categories-box')
     const summaryCategoriesText = document.getElementById('summary-categories-text')
+    const summaryProduct = document.getElementById('summary-product-box')
+    const summaryProductText = document.getElementById('summary-product-text')
 
     if (summaryBusinessName && wizardData.business) {
       summaryBusinessName.textContent = wizardData.business.name
@@ -1149,6 +1219,11 @@ function showWizardStep(step) {
       } else {
         summaryCategories.style.display = 'none'
       }
+    }
+
+    if (summaryProduct && summaryProductText && wizardData.product) {
+      summaryProduct.style.display = 'flex'
+      summaryProductText.textContent = wizardData.product
     }
   }
 }

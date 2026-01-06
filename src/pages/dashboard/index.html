@@ -32,7 +32,6 @@
       <p>Cargando...</p>
     </div>
 
-    <!-- No business state (primer uso) -->
     <!-- No business state (primer uso) - NUEVO ONBOARDING -->
     <div id="noBusinessState" class="no-business-state" style="display: none;">
       <div class="onboarding-wizard">
@@ -51,6 +50,11 @@
           <div class="progress-line"></div>
           <div class="progress-step" data-step="3">
             <div class="step-number">3</div>
+            <span>Producto</span>
+          </div>
+          <div class="progress-line"></div>
+          <div class="progress-step" data-step="4">
+            <div class="step-number">4</div>
             <span>Listo</span>
           </div>
         </div>
@@ -117,8 +121,52 @@
           </div>
         </div>
 
-        <!-- Step 3: Success -->
+        <!-- Step 3: Product -->
         <div class="wizard-step" id="wizard-step-3" style="display: none;">
+          <div class="wizard-header">
+            <i class="ri-shopping-bag-line wizard-icon"></i>
+            <h2>Primer producto</h2>
+            <p>Agrega tu primer producto (opcional)</p>
+          </div>
+
+          <div class="wizard-content">
+            <form class="wizard-form" id="wizardProductForm">
+              <div class="form-group">
+                <label for="wiz-product-name">Nombre del producto</label>
+                <input type="text" id="wiz-product-name" placeholder="Ej: Hamburguesa Clásica">
+              </div>
+
+              <div class="form-group">
+                <label for="wiz-product-price">Precio</label>
+                <input type="number" id="wiz-product-price" step="0.01" min="0" placeholder="0.00">
+              </div>
+
+              <div class="form-group" id="wiz-product-category-group" style="display: none;">
+                <label for="wiz-product-category">Categoría</label>
+                <select id="wiz-product-category">
+                  <option value="">Sin categoría</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="wiz-product-description">Descripción</label>
+                <textarea id="wiz-product-description" rows="2" placeholder="Describe el producto..."></textarea>
+              </div>
+            </form>
+
+            <div class="wizard-actions">
+              <button type="button" id="wiz-skip-product" class="btn-secondary">
+                Omitir
+              </button>
+              <button type="button" id="wiz-continue-product" class="btn-primary">
+                Finalizar <i class="ri-check-line"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4: Success -->
+        <div class="wizard-step" id="wizard-step-4" style="display: none;">
           <div class="wizard-header success">
             <i class="ri-checkbox-circle-line wizard-icon"></i>
             <h2>¡Todo listo! 🎉</h2>
@@ -139,6 +187,13 @@
                 <div>
                   <strong>Categorías</strong>
                   <p id="summary-categories-text">-</p>
+                </div>
+              </div>
+              <div class="summary-item" id="summary-product-box" style="display: none;">
+                <i class="ri-shopping-bag-line"></i>
+                <div>
+                  <strong>Producto</strong>
+                  <p id="summary-product-text">-</p>
                 </div>
               </div>
             </div>
