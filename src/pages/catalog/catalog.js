@@ -566,73 +566,222 @@ cartOverlay.addEventListener('click', () => {
 // ============================================
 // WHATSAPP ORDER
 // ============================================
-btnWhatsapp.addEventListener('click', async () => {
+// ============================================
+// CHECKOUT & WHATSAPP ORDER
+// ============================================
+
+const checkoutModal = document.getElementById('checkoutModal')
+const checkoutModalOverlay = document.getElementById('checkoutModalOverlay')
+const checkoutModalClose = document.getElementById('checkoutModalClose')
+const checkoutForm = document.getElementById('checkoutForm')
+const cancelCheckoutBtn = document.getElementById('cancelCheckoutBtn')
+
+// Abrir modal de checkout
+btnWhatsapp.addEventListener('click', () => {
+  const cartItems = cart.get()
+  if (cartItems.length === 0) {
+    notify.warning('El carrito está vacío')
+    return
+  }
+
+  // Abrir modal
+  checkoutModal.style.display = 'flex'
+  
+  // Focus en el primer campo
+  setTimeout(() => {
+    document.getElementById('clientName').focus()
+  }, 100)
+})
+
+// Cerrar modal
+function closeCheckoutModal() {
+  checkoutModal.style.display = 'none'
+  checkoutForm.reset()
+}
+
+checkoutModalClose.addEventListener('click', closeCheckoutModal)
+checkoutModalOverlay.addEventListener('click', closeCheckoutModal)
+cancelCheckoutBtn.addEventListener('click', closeCheckoutModal)
+
+// Enviar pedido
+checkoutForm.addEventListener('submit', async (e) => {
+  e.preventDefault()
+
+  // Capturar datos del formulario
+  const clientData = {
+    nombre: document.getElementById('clientName').value.trim(),
+    telefono: document.getElementById('clientPhone').value.trim(),
+    direccion: document.getElementById('clientAddress').value.trim(),
+    metodo_pago: document.getElementById('paymentMethod').value,
+    observaciones: document.getElementById('clientNotes').value.trim()
+  }
+
+  // Generar mensaje de WhatsApp
+  await sendWhatsAppOrder(clientData)
+})
+
+async function sendWhatsAppOrder(clientData) {
   const cartItems = cart.get()
   if (cartItems.length === 0) return
 
-  // Obtener la plantilla personalizada del negocio
-  const { data } = await supabase
-    .from('businesses')
-    .select('whatsapp_message_template')
-    .eq('id', currentBusiness.id)
-    .single()
+  try {
+    // Obtener la plantilla personalizada del negocio
+    const { data } = await supabase
+      .from('businesses')
+      .select('whatsapp_message_template')
+      .eq('id', currentBusiness.id)
+      .single()
 
-  // Plantilla por defecto si no hay una personalizada
-  const defaultTemplate = `Hola, quiero hacer el siguiente pedido:
+    // Plantilla por defecto si no hay una personalizada
+    const defaultTemplate = `Hola, quiero hacer el siguiente pedido:
 
 {productos}
 
 Total: {total}
 
+Mis datos:
+{nombre}
+{telefono}
+{direccion}
+Método de pago: {metodo_pago}
+
 ¡Gracias!`
 
-  let template = data?.whatsapp_message_template || defaultTemplate
+    let template = data?.whatsapp_message_template || defaultTemplate
 
-  // Construir lista de productos
-  const productsList = cartItems.map(item => {
-    const basePrice = parseFloat(item.price)
-    let itemPrice = basePrice
+    // Construir lista de productos
+    const productsList = cartItems.map(item => {
+      const basePrice = parseFloat(item.price)
+      let itemPrice = basePrice
 
-    // Calcular precio con acompañantes
-    if (item.options?.sides && item.options.sides.length > 0) {
-      const sidesTotal = item.options.sides.reduce((sum, side) => sum + parseFloat(side.price), 0)
-      itemPrice += sidesTotal
+      // Calcular precio con acompañantes
+      if (item.options?.sides && item.options.sides.length > 0) {
+        const sidesTotal = item.options.sides.reduce((sum, side) => sum + parseFloat(side.price), 0)
+        itemPrice += sidesTotal
+      }
+
+      const subtotal = itemPrice * item.quantity
+
+      // Línea principal del producto
+      let line = `- ${item.quantity}x ${item.name} ($${subtotal.toLocaleString('es-CO')})`
+
+      // Comentario rápido
+      if (item.options?.quickComment) {
+        line += `\n  ${item.options.quickComment.name}`
+      }
+
+      // Acompañantes
+      if (item.options?.sides && item.options.sides.length > 0) {
+        const sidesText = item.options.sides.map(s => `${s.name} (+$${parseFloat(s.price).toLocaleString('es-CO')})`).join(', ')
+        line += `\n  Con: ${sidesText}`
+      }
+
+      return line
+    }).join('\n')
+
+    // Calcular total
+    const total = cart.getTotal()
+
+    // Reemplazar tokens con datos reales
+    let message = template
+      .replace(/{productos}/g, productsList)
+      .replace(/{total}/g, `$${total.toLocaleString('es-CO')}`)
+      .replace(/{nombre}/g, clientData.nombre)
+      .replace(/{telefono}/g, clientData.telefono)
+      .replace(/{direccion}/g, clientData.direccion)
+      .replace(/{metodo_pago}/g, clientData.metodo_pago)
+
+    // Agregar observaciones si existen
+    if (clientData.observaciones) {
+      message += `\n\nObservaciones: ${clientData.observaciones}`
     }
 
-    const subtotal = itemPrice * item.quantity
+    // Codificar y abrir WhatsApp
+    const encodedMessage = encodeURIComponent(message)
+    const whatsappUrl = `https://wa.me/${currentBusiness.whatsapp_number}?text=${encodedMessage}`
 
-    // Línea principal del producto
-    let line = `- ${item.quantity}x ${item.name} ($${subtotal.toLocaleString('es-CO')})`
+    // Cerrar modal
+    closeCheckoutModal()
 
-    // Comentario rápido
-    if (item.options?.quickComment) {
-      line += `\n  ${item.options.quickComment.name}`
+    // Cerrar panel del carrito
+    cartPanel.style.display = 'none'
+
+    // Abrir WhatsApp
+    window.open(whatsappUrl, '_blank')
+
+    // Feedback
+    notify.success('¡Pedido listo! Te redirigimos a WhatsApp')
+
+    // Opcional: Limpiar carrito después de enviar
+    // cart.clear()
+    // updateCartUI()
+
+  } catch (error) {
+    console.error('Error sending WhatsApp order:', error)
+    notify.error('Error al generar el pedido')
+  }
+}
+
+// Validación de teléfono
+const phoneInput = document.getElementById('clientPhone')
+phoneInput.addEventListener('input', (e) => {
+  // Permitir solo números
+  e.target.value = e.target.value.replace(/[^0-9]/g, '')
+})
+
+// Guardar datos del cliente para próximos pedidos
+function saveClientData(clientData) {
+  try {
+    localStorage.setItem('clientData', JSON.stringify(clientData))
+  } catch (error) {
+    console.error('Error saving client data:', error)
+  }
+}
+
+// Cargar datos guardados
+function loadSavedClientData() {
+  try {
+    const saved = localStorage.getItem('clientData')
+    if (saved) {
+      const data = JSON.parse(saved)
+      document.getElementById('clientName').value = data.nombre || ''
+      document.getElementById('clientPhone').value = data.telefono || ''
+      document.getElementById('clientAddress').value = data.direccion || ''
+      document.getElementById('paymentMethod').value = data.metodo_pago || ''
     }
+  } catch (error) {
+    console.error('Error loading client data:', error)
+  }
+}
 
-    // Acompañantes
-    if (item.options?.sides && item.options.sides.length > 0) {
-      const sidesText = item.options.sides.map(s => `${s.name} (+$${parseFloat(s.price).toLocaleString('es-CO')})`).join(', ')
-      line += `\n  Con: ${sidesText}`
-    }
+// Llamar al abrir el modal
+btnWhatsapp.addEventListener('click', () => {
+  const cartItems = cart.get()
+  if (cartItems.length === 0) {
+    notify.warning('El carrito está vacío')
+    return
+  }
 
-    return line
-  }).join('\n')
+  checkoutModal.style.display = 'flex'
+  loadSavedClientData() // ← Cargar datos guardados
+  
+  setTimeout(() => {
+    document.getElementById('clientName').focus()
+  }, 100)
+})
 
-  // Calcular total
-  const total = cart.getTotal()
+// Guardar al enviar
+checkoutForm.addEventListener('submit', async (e) => {
+  e.preventDefault()
 
-  // Reemplazar tokens
-  const message = template
-    .replace(/{productos}/g, productsList)
-    .replace(/{total}/g, `$${total.toLocaleString('es-CO')}`)
-    .replace(/{nombre}/g, '[Por completar]')
-    .replace(/{direccion}/g, '[Por completar]')
-    .replace(/{telefono}/g, '[Por completar]')
-    .replace(/{metodo_pago}/g, '[Por completar]')
+  const clientData = {
+    nombre: document.getElementById('clientName').value.trim(),
+    telefono: document.getElementById('clientPhone').value.trim(),
+    direccion: document.getElementById('clientAddress').value.trim(),
+    metodo_pago: document.getElementById('paymentMethod').value,
+    observaciones: document.getElementById('clientNotes').value.trim()
+  }
 
-  // Codificar y abrir WhatsApp
-  const encodedMessage = encodeURIComponent(message)
-  const whatsappUrl = `https://wa.me/${currentBusiness.whatsapp_number}?text=${encodedMessage}`
-
-  window.open(whatsappUrl, '_blank')
+  saveClientData(clientData) // ← Guardar para próximos pedidos
+  await sendWhatsAppOrder(clientData)
 })

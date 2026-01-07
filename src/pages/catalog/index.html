@@ -136,6 +136,75 @@
     </div>
   </div>
 
+
+  <!-- Checkout Modal -->
+  <div class="checkout-modal" id="checkoutModal" style="display: none;">
+    <div class="checkout-modal-overlay" id="checkoutModalOverlay"></div>
+    <div class="checkout-modal-content">
+      <div class="checkout-modal-header">
+        <h2><i class="ri-user-line"></i> Completa tus datos</h2>
+        <button class="checkout-modal-close" id="checkoutModalClose">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+
+      <form class="checkout-form" id="checkoutForm">
+        <div class="form-group">
+          <label for="clientName">
+            <i class="ri-user-line"></i> Nombre completo *
+          </label>
+          <input type="text" id="clientName" name="clientName" placeholder="Ej: Juan Pérez" required>
+        </div>
+
+        <div class="form-group">
+          <label for="clientPhone">
+            <i class="ri-phone-line"></i> Teléfono *
+          </label>
+          <input type="tel" id="clientPhone" name="clientPhone" placeholder="Ej: 3001234567" required>
+        </div>
+
+        <div class="form-group">
+          <label for="clientAddress">
+            <i class="ri-map-pin-line"></i> Dirección de entrega *
+          </label>
+          <textarea id="clientAddress" name="clientAddress" rows="2" placeholder="Ej: Calle 123 #45-67, Apto 301"
+            required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="paymentMethod">
+            <i class="ri-bank-card-line"></i> Método de pago *
+          </label>
+          <select id="paymentMethod" name="paymentMethod" required>
+            <option value="">Selecciona un método</option>
+            <option value="Efectivo">Efectivo</option>
+            <option value="Transferencia">Transferencia</option>
+            <option value="Tarjeta">Tarjeta</option>
+            <option value="Nequi">Nequi</option>
+            <option value="Daviplata">Daviplata</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="clientNotes">
+            <i class="ri-message-3-line"></i> Observaciones (opcional)
+          </label>
+          <textarea id="clientNotes" name="clientNotes" rows="2" placeholder="Ej: Tocar el timbre 2 veces"></textarea>
+        </div>
+
+        <div class="checkout-actions">
+          <button type="button" class="btn-cancel" id="cancelCheckoutBtn">
+            Cancelar
+          </button>
+          <button type="submit" class="btn-confirm">
+            <i class="ri-whatsapp-fill"></i>
+            Enviar pedido
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script type="module" src="./catalog.js"></script>
 </body>
 

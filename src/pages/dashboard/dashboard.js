@@ -5,6 +5,7 @@ import { productService } from '../../services/products.js'
 import { notify } from '../../utils/notifications.js'
 import { confirm } from '../../utils/notifications.js'
 import { buttonLoader } from '../../utils/buttonLoader.js'
+import { supabase } from '../../config/supabase.js'
 
 // ============================================
 // ESTADO GLOBAL
