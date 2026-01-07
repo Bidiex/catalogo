@@ -73,11 +73,10 @@ async function loadBusiness() {
     currentBusiness = await businessService.getMyBusiness()
 
     if (!currentBusiness) {
-      // No tiene negocio, mostrar pantalla de bienvenida
       showNoBusinessState()
     } else {
-      // Tiene negocio, cargar datos
       await loadAllData()
+      await loadWhatsAppTemplate() // ← AGREGAR ESTA LÍNEA
       showBusinessState()
     }
   } catch (error) {
@@ -1085,7 +1084,7 @@ async function saveWizardCategories() {
 
       const createdCategories = await Promise.all(promises)
       wizardData.categoriesIds = createdCategories.map(c => c.id)
-      
+
       notify.success('Categorías guardadas')
     }
   } catch (error) {
@@ -1103,7 +1102,7 @@ function updateProductCategorySelect() {
   if (wizardData.categories.length > 0 && selectGroup && select) {
     selectGroup.style.display = 'flex'
     select.innerHTML = '<option value="">Sin categoría</option>' +
-      wizardData.categories.map((cat, index) => 
+      wizardData.categories.map((cat, index) =>
         `<option value="${wizardData.categoriesIds[index] || ''}">${cat}</option>`
       ).join('')
   }
@@ -1227,3 +1226,132 @@ function showWizardStep(step) {
     }
   }
 }
+
+// ============================================
+// WHATSAPP TEMPLATE EDITOR
+// ============================================
+
+const whatsappTemplateInput = document.getElementById('whatsappTemplateInput')
+const saveTemplateBtn = document.getElementById('saveTemplateBtn')
+const previewTemplateBtn = document.getElementById('previewTemplateBtn')
+const templatePreview = document.getElementById('templatePreview')
+
+// Inicializar: cargar plantilla actual
+async function loadWhatsAppTemplate() {
+  if (!currentBusiness) return
+
+  try {
+    const { data, error } = await supabase
+      .from('businesses')
+      .select('whatsapp_message_template')
+      .eq('id', currentBusiness.id)
+      .single()
+
+    if (error) throw error
+
+    if (data?.whatsapp_message_template) {
+      whatsappTemplateInput.value = data.whatsapp_message_template
+    } else {
+      // Plantilla por defecto
+      whatsappTemplateInput.value = `Hola, quiero hacer el siguiente pedido:
+
+{productos}
+
+Total: {total}
+
+¡Gracias!`
+    }
+  } catch (error) {
+    console.error('Error loading template:', error)
+  }
+}
+
+// Insertar token al hacer clic
+document.querySelectorAll('.token-chip').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const token = btn.dataset.token
+    const textarea = whatsappTemplateInput
+    const cursorPos = textarea.selectionStart
+    const textBefore = textarea.value.substring(0, cursorPos)
+    const textAfter = textarea.value.substring(cursorPos)
+
+    textarea.value = textBefore + token + textAfter
+    textarea.focus()
+
+    // Colocar cursor después del token insertado
+    const newCursorPos = cursorPos + token.length
+    textarea.setSelectionRange(newCursorPos, newCursorPos)
+
+    // Feedback visual
+    btn.style.transform = 'scale(0.95)'
+    setTimeout(() => {
+      btn.style.transform = ''
+    }, 150)
+  })
+})
+
+// Guardar plantilla
+if (saveTemplateBtn) {
+  saveTemplateBtn.addEventListener('click', async () => {
+    const template = whatsappTemplateInput.value.trim()
+
+    if (!template) {
+      notify.warning('La plantilla no puede estar vacía')
+      return
+    }
+
+    await buttonLoader.execute(saveTemplateBtn, async () => {
+      try {
+        const { error } = await supabase
+          .from('businesses')
+          .update({ whatsapp_message_template: template })
+          .eq('id', currentBusiness.id)
+
+        if (error) throw error
+
+        notify.success('Plantilla guardada correctamente')
+      } catch (error) {
+        console.error('Error saving template:', error)
+        notify.error('Error al guardar la plantilla')
+      }
+    }, 'Guardando...')
+  })
+}
+
+// Vista previa
+if (previewTemplateBtn) {
+  previewTemplateBtn.addEventListener('click', () => {
+    const template = whatsappTemplateInput.value
+
+    // Datos de ejemplo
+    const exampleData = {
+      productos: `- 2x Hamburguesa Clásica ($20.000)
+  Con: Papas medianas, Gaseosa
+- 1x Papas grandes ($8.000)`,
+      total: '$48.000',
+      nombre: 'Juan Pérez',
+      direccion: 'Calle 123 #45-67, Apto 301',
+      telefono: '+57 300 123 4567',
+      metodo_pago: 'Efectivo'
+    }
+
+    // Reemplazar tokens
+    let preview = template
+    Object.keys(exampleData).forEach(key => {
+      const regex = new RegExp(`\\{${key}\\}`, 'g')
+      preview = preview.replace(regex, exampleData[key])
+    })
+
+    // Mostrar preview
+    const previewBox = templatePreview.querySelector('.preview-box')
+    previewBox.textContent = preview
+    templatePreview.style.display = 'block'
+
+    // Scroll suave hacia el preview
+    templatePreview.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  })
+}
+
+// Cargar plantilla cuando se carga el negocio
+// (esto ya se ejecuta en la función loadBusiness existente,
+// solo necesitamos llamar a loadWhatsAppTemplate allí)

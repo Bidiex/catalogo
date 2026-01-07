@@ -271,6 +271,65 @@
         </div>
       </section>
 
+      <!-- WhatsApp Template Section -->
+      <section class="card">
+        <div class="card-header">
+          <h2><i class="ri-whatsapp-line"></i> Mensaje de WhatsApp</h2>
+        </div>
+        <div class="card-content">
+          <div class="whatsapp-template-editor">
+            <div class="template-help">
+              <p><strong>Personaliza el mensaje que se enviará por WhatsApp</strong></p>
+              <p class="help-text">Usa los tokens para insertar información dinámica del pedido:</p>
+            </div>
+
+            <div class="tokens-grid">
+              <button class="token-chip" data-token="{productos}" title="Lista de productos del pedido">
+                <i class="ri-shopping-basket-line"></i> {productos}
+              </button>
+              <button class="token-chip" data-token="{total}" title="Total del pedido">
+                <i class="ri-money-dollar-circle-line"></i> {total}
+              </button>
+              <button class="token-chip" data-token="{nombre}" title="Nombre del cliente">
+                <i class="ri-user-line"></i> {nombre}
+              </button>
+              <button class="token-chip" data-token="{direccion}" title="Dirección de entrega">
+                <i class="ri-map-pin-line"></i> {direccion}
+              </button>
+              <button class="token-chip" data-token="{telefono}" title="Teléfono del cliente">
+                <i class="ri-phone-line"></i> {telefono}
+              </button>
+              <button class="token-chip" data-token="{metodo_pago}" title="Método de pago">
+                <i class="ri-bank-card-line"></i> {metodo_pago}
+              </button>
+            </div>
+
+            <div class="form-group" style="margin-top: 1.5rem;">
+              <label for="whatsappTemplateInput">
+                <i class="ri-message-3-line"></i> Plantilla del mensaje
+              </label>
+              <textarea id="whatsappTemplateInput" class="whatsapp-template-textarea" rows="10"
+                placeholder="Escribe tu mensaje aquí y haz clic en los tokens para insertarlos..."></textarea>
+              <small>Haz clic en los tokens de arriba para insertarlos en la plantilla</small>
+            </div>
+
+            <div class="template-actions">
+              <button id="previewTemplateBtn" class="btn-secondary">
+                <i class="ri-eye-line"></i> Vista previa
+              </button>
+              <button id="saveTemplateBtn" class="btn-primary">
+                <i class="ri-save-line"></i> Guardar plantilla
+              </button>
+            </div>
+
+            <div id="templatePreview" class="template-preview" style="display: none;">
+              <h4><i class="ri-file-text-line"></i> Vista previa con datos de ejemplo:</h4>
+              <div class="preview-box"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </div>
 
   </main>

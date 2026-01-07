@@ -566,14 +566,30 @@ cartOverlay.addEventListener('click', () => {
 // ============================================
 // WHATSAPP ORDER
 // ============================================
-btnWhatsapp.addEventListener('click', () => {
+btnWhatsapp.addEventListener('click', async () => {
   const cartItems = cart.get()
   if (cartItems.length === 0) return
 
-  // Construir mensaje
-  let message = `¡Hola! Quiero hacer el siguiente pedido desde *${currentBusiness.name}*:\n\n`
+  // Obtener la plantilla personalizada del negocio
+  const { data } = await supabase
+    .from('businesses')
+    .select('whatsapp_message_template')
+    .eq('id', currentBusiness.id)
+    .single()
 
-  cartItems.forEach(item => {
+  // Plantilla por defecto si no hay una personalizada
+  const defaultTemplate = `Hola, quiero hacer el siguiente pedido:
+
+{productos}
+
+Total: {total}
+
+¡Gracias!`
+
+  let template = data?.whatsapp_message_template || defaultTemplate
+
+  // Construir lista de productos
+  const productsList = cartItems.map(item => {
     const basePrice = parseFloat(item.price)
     let itemPrice = basePrice
 
@@ -586,30 +602,37 @@ btnWhatsapp.addEventListener('click', () => {
     const subtotal = itemPrice * item.quantity
 
     // Línea principal del producto
-    message += `• ${item.quantity}x ${item.name} - $${subtotal.toLocaleString()}\n`
+    let line = `- ${item.quantity}x ${item.name} ($${subtotal.toLocaleString('es-CO')})`
 
     // Comentario rápido
     if (item.options?.quickComment) {
-      message += `  ↳ ${item.options.quickComment.name}\n`
+      line += `\n  ${item.options.quickComment.name}`
     }
 
     // Acompañantes
     if (item.options?.sides && item.options.sides.length > 0) {
-      item.options.sides.forEach(side => {
-        message += `  ↳ + ${side.name} (+$${parseFloat(side.price).toLocaleString()})\n`
-      })
+      const sidesText = item.options.sides.map(s => `${s.name} (+$${parseFloat(s.price).toLocaleString('es-CO')})`).join(', ')
+      line += `\n  Con: ${sidesText}`
     }
 
-    message += `\n`
-  })
+    return line
+  }).join('\n')
 
+  // Calcular total
   const total = cart.getTotal()
-  message += `*Total: $${total.toLocaleString()}*\n\n¡Gracias!`
 
-  // Codificar mensaje
+  // Reemplazar tokens
+  const message = template
+    .replace(/{productos}/g, productsList)
+    .replace(/{total}/g, `$${total.toLocaleString('es-CO')}`)
+    .replace(/{nombre}/g, '[Por completar]')
+    .replace(/{direccion}/g, '[Por completar]')
+    .replace(/{telefono}/g, '[Por completar]')
+    .replace(/{metodo_pago}/g, '[Por completar]')
+
+  // Codificar y abrir WhatsApp
   const encodedMessage = encodeURIComponent(message)
   const whatsappUrl = `https://wa.me/${currentBusiness.whatsapp_number}?text=${encodedMessage}`
 
-  // Abrir WhatsApp
   window.open(whatsappUrl, '_blank')
 })
