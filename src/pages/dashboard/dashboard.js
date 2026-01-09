@@ -2,6 +2,8 @@ import { authService } from '../../services/auth.js'
 import { businessService } from '../../services/business.js'
 import { categoryService } from '../../services/categories.js'
 import { productService } from '../../services/products.js'
+import { paymentMethodsService } from '../../services/paymentMethods.js'
+import { businessHoursService } from '../../services/businessHours.js'
 import { notify } from '../../utils/notifications.js'
 import { confirm } from '../../utils/notifications.js'
 import { buttonLoader } from '../../utils/buttonLoader.js'
@@ -14,8 +16,11 @@ let currentUser = null
 let currentBusiness = null
 let categories = []
 let products = []
+let paymentMethods = []
+let businessHours = []
 let editingCategory = null
 let editingProduct = null
+let editingPaymentMethod = null
 
 // ============================================
 // ELEMENTOS DEL DOM
@@ -77,17 +82,17 @@ async function init() {
 // ============================================
 function initSidebarNavigation() {
   const navItems = document.querySelectorAll('.nav-item[data-section]')
-  
+
   navItems.forEach(item => {
     item.addEventListener('click', (e) => {
       e.preventDefault()
       const section = item.dataset.section
-      
+
       // Remover active de todos los nav items
       navItems.forEach(nav => nav.classList.remove('active'))
       // Agregar active al item clickeado
       item.classList.add('active')
-      
+
       // Cambiar sección
       switchSection(section)
     })
@@ -111,10 +116,10 @@ function initSearchFunctionality() {
   if (searchCategoriesInput && clearCategoriesSearch) {
     searchCategoriesInput.addEventListener('input', (e) => {
       const query = e.target.value.trim().toLowerCase()
-      
+
       if (query) {
         clearCategoriesSearch.style.display = 'flex'
-        const filtered = categories.filter(cat => 
+        const filtered = categories.filter(cat =>
           cat.name.toLowerCase().includes(query)
         )
         renderCategories(filtered)
@@ -139,10 +144,10 @@ function initSearchFunctionality() {
   if (searchProductsInput && clearProductsSearch) {
     searchProductsInput.addEventListener('input', (e) => {
       const query = e.target.value.trim().toLowerCase()
-      
+
       if (query) {
         clearProductsSearch.style.display = 'flex'
-        const filtered = products.filter(prod => 
+        const filtered = products.filter(prod =>
           prod.name.toLowerCase().includes(query) ||
           (prod.categories?.name && prod.categories.name.toLowerCase().includes(query)) ||
           (prod.description && prod.description.toLowerCase().includes(query))
@@ -222,15 +227,19 @@ async function loadBusiness() {
 
 async function loadAllData() {
   try {
-    // Cargar categorías y productos en paralelo
-    [categories, products] = await Promise.all([
+    // Cargar categorías, productos, métodos de pago y horarios en paralelo
+    [categories, products, paymentMethods, businessHours] = await Promise.all([
       categoryService.getByBusiness(currentBusiness.id),
-      productService.getByBusiness(currentBusiness.id)
+      productService.getByBusiness(currentBusiness.id),
+      paymentMethodsService.getByBusiness(currentBusiness.id),
+      businessHoursService.getByBusiness(currentBusiness.id)
     ])
 
     renderBusinessInfo()
     renderCategories()
     renderProducts()
+    renderPaymentMethods()
+    renderBusinessHours()
     updateDashboardStats()
   } catch (error) {
     console.error('Error loading data:', error)
@@ -267,10 +276,10 @@ function updateDashboardStats() {
   if (statMostViewedProduct) {
     const viewsKey = `product_views_${currentBusiness.id}`
     const productViews = JSON.parse(localStorage.getItem(viewsKey) || '{}')
-    
+
     let mostViewed = null
     let maxViews = 0
-    
+
     Object.keys(productViews).forEach(productId => {
       if (productViews[productId] > maxViews) {
         maxViews = productViews[productId]
@@ -1567,3 +1576,267 @@ if (previewTemplateBtn) {
 // Cargar plantilla cuando se carga el negocio
 // (esto ya se ejecuta en la función loadBusiness existente,
 // solo necesitamos llamar a loadWhatsAppTemplate allí)
+
+// ============================================
+// PAYMENT METHODS MANAGEMENT
+// ============================================
+
+const paymentMethodsList = document.getElementById('paymentMethodsList')
+const addPaymentMethodBtn = document.getElementById('addPaymentMethodBtn')
+const paymentMethodModal = document.getElementById('paymentMethodModal')
+const closePaymentMethodModal = document.getElementById('closePaymentMethodModal')
+const cancelPaymentMethodBtn = document.getElementById('cancelPaymentMethodBtn')
+const paymentMethodForm = document.getElementById('paymentMethodForm')
+const paymentMethodModalTitle = document.getElementById('paymentMethodModalTitle')
+const paymentMethodNameInput = document.getElementById('paymentMethodNameInput')
+
+// Render payment methods list
+function renderPaymentMethods() {
+  if (!paymentMethodsList) return
+
+  if (paymentMethods.length === 0) {
+    paymentMethodsList.innerHTML = '<p class="empty-message">No hay métodos de pago configurados</p>'
+    return
+  }
+
+  paymentMethodsList.innerHTML = paymentMethods.map(method => `
+    <div class="payment-method-item" data-id="${method.id}">
+      <div class="payment-method-info">
+        <div class="payment-method-name">${method.name}</div>
+      </div>
+      <div class="payment-method-actions">
+        <button class="btn-icon edit-payment-method" data-id="${method.id}">
+          <i class="ri-edit-line"></i> Editar
+        </button>
+        <button class="btn-icon danger delete-payment-method" data-id="${method.id}">
+          <i class="ri-delete-bin-line"></i> Eliminar
+        </button>
+      </div>
+    </div>
+  `).join('')
+
+  // Event listeners
+  document.querySelectorAll('.edit-payment-method').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = e.target.dataset.id || e.target.closest('.edit-payment-method').dataset.id
+      openEditPaymentMethodModal(id)
+    })
+  })
+
+  document.querySelectorAll('.delete-payment-method').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = e.target.dataset.id || e.target.closest('.delete-payment-method').dataset.id
+      deletePaymentMethod(id)
+    })
+  })
+}
+
+// Open modal to add payment method
+if (addPaymentMethodBtn) {
+  addPaymentMethodBtn.addEventListener('click', () => {
+    openPaymentMethodModal()
+  })
+}
+
+function openPaymentMethodModal() {
+  editingPaymentMethod = null
+  paymentMethodModalTitle.textContent = 'Nuevo Método de Pago'
+  paymentMethodNameInput.value = ''
+  paymentMethodModal.style.display = 'flex'
+}
+
+function openEditPaymentMethodModal(methodId) {
+  editingPaymentMethod = paymentMethods.find(m => m.id === methodId)
+  if (!editingPaymentMethod) return
+
+  paymentMethodModalTitle.textContent = 'Editar Método de Pago'
+  paymentMethodNameInput.value = editingPaymentMethod.name
+  paymentMethodModal.style.display = 'flex'
+}
+
+function closePaymentMethodModalFn() {
+  paymentMethodModal.style.display = 'none'
+  editingPaymentMethod = null
+  paymentMethodForm.reset()
+}
+
+if (closePaymentMethodModal) {
+  closePaymentMethodModal.addEventListener('click', closePaymentMethodModalFn)
+}
+
+if (cancelPaymentMethodBtn) {
+  cancelPaymentMethodBtn.addEventListener('click', closePaymentMethodModalFn)
+}
+
+// Save payment method
+if (paymentMethodForm) {
+  paymentMethodForm.addEventListener('submit', async (e) => {
+    e.preventDefault()
+
+    const name = paymentMethodNameInput.value.trim()
+    const submitBtn = e.submitter || document.querySelector('#paymentMethodForm button[type="submit"]')
+
+    await buttonLoader.execute(submitBtn, async () => {
+      try {
+        if (editingPaymentMethod) {
+          // Update
+          await paymentMethodsService.update(editingPaymentMethod.id, { name })
+          notify.success('Método de pago actualizado')
+        } else {
+          // Create
+          await paymentMethodsService.create({
+            business_id: currentBusiness.id,
+            name,
+            is_active: true,
+            display_order: paymentMethods.length
+          })
+          notify.success('Método de pago creado')
+        }
+
+        closePaymentMethodModalFn()
+        await loadAllData()
+
+      } catch (error) {
+        console.error('Error saving payment method:', error)
+        notify.error('Error al guardar el método de pago')
+      }
+    }, 'Guardando...')
+  })
+}
+
+// Delete payment method
+async function deletePaymentMethod(methodId) {
+  const result = await confirm.show({
+    title: '¿Eliminar método de pago?',
+    message: 'Esta acción no se puede deshacer.',
+    confirmText: 'Eliminar',
+    cancelText: 'Cancelar',
+    type: 'danger'
+  })
+
+  if (!result) return
+
+  const loadingToast = notify.loading('Eliminando método de pago...')
+
+  try {
+    await paymentMethodsService.delete(methodId)
+    notify.updateLoading(loadingToast, 'Método de pago eliminado', 'success')
+    await loadAllData()
+  } catch (error) {
+    console.error('Error deleting payment method:', error)
+    notify.updateLoading(loadingToast, 'Error al eliminar el método de pago', 'error')
+  }
+}
+
+// ============================================
+// BUSINESS HOURS MANAGEMENT
+// ============================================
+
+const businessHoursGrid = document.getElementById('businessHoursGrid')
+const saveBusinessHoursBtn = document.getElementById('saveBusinessHoursBtn')
+
+const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+
+// Render business hours grid
+function renderBusinessHours() {
+  if (!businessHoursGrid) return
+
+  // Crear horarios por defecto si no existen
+  const hoursData = []
+  for (let day = 0; day <= 6; day++) {
+    const existingHour = businessHours.find(h => h.day_of_week === day)
+    hoursData.push(existingHour || {
+      day_of_week: day,
+      is_open: day >= 1 && day <= 5, // Lunes a Viernes abierto por defecto
+      open_time: '09:00',
+      close_time: '18:00'
+    })
+  }
+
+  businessHoursGrid.innerHTML = hoursData.map(hour => `
+    <div class="business-hour-row">
+      <div class="business-hour-day">
+        <input 
+          type="checkbox" 
+          id="day-${hour.day_of_week}" 
+          class="day-checkbox"
+          data-day="${hour.day_of_week}"
+          ${hour.is_open ? 'checked' : ''}
+        >
+        <label for="day-${hour.day_of_week}">${dayNames[hour.day_of_week]}</label>
+      </div>
+      <div class="business-hour-times">
+        <div class="time-input-group">
+          <label>Abre:</label>
+          <input 
+            type="time" 
+            class="time-input open-time" 
+            data-day="${hour.day_of_week}"
+            value="${hour.open_time}"
+            ${!hour.is_open ? 'disabled' : ''}
+          >
+        </div>
+        <div class="time-input-group">
+          <label>Cierra:</label>
+          <input 
+            type="time" 
+            class="time-input close-time" 
+            data-day="${hour.day_of_week}"
+            value="${hour.close_time}"
+            ${!hour.is_open ? 'disabled' : ''}
+          >
+        </div>
+      </div>
+    </div>
+  `).join('')
+
+  // Event listeners para checkboxes
+  document.querySelectorAll('.day-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', (e) => {
+      const day = parseInt(e.target.dataset.day)
+      const openTimeInput = document.querySelector(`.open-time[data-day="${day}"]`)
+      const closeTimeInput = document.querySelector(`.close-time[data-day="${day}"]`)
+
+      if (e.target.checked) {
+        openTimeInput.disabled = false
+        closeTimeInput.disabled = false
+      } else {
+        openTimeInput.disabled = true
+        closeTimeInput.disabled = true
+      }
+    })
+  })
+}
+
+// Save business hours
+if (saveBusinessHoursBtn) {
+  saveBusinessHoursBtn.addEventListener('click', async () => {
+    await buttonLoader.execute(saveBusinessHoursBtn, async () => {
+      try {
+        const hoursToSave = []
+
+        for (let day = 0; day <= 6; day++) {
+          const checkbox = document.querySelector(`.day-checkbox[data-day="${day}"]`)
+          const openTime = document.querySelector(`.open-time[data-day="${day}"]`)
+          const closeTime = document.querySelector(`.close-time[data-day="${day}"]`)
+
+          hoursToSave.push({
+            business_id: currentBusiness.id,
+            day_of_week: day,
+            is_open: checkbox.checked,
+            open_time: openTime.value,
+            close_time: closeTime.value
+          })
+        }
+
+        await businessHoursService.upsert(hoursToSave)
+        notify.success('Horarios guardados correctamente')
+        await loadAllData()
+
+      } catch (error) {
+        console.error('Error saving business hours:', error)
+        notify.error('Error al guardar los horarios')
+      }
+    }, 'Guardando...')
+  })
+}

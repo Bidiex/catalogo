@@ -87,387 +87,425 @@
       <!-- Main Content -->
       <main class="dashboard-main">
 
-    <!-- Loading state -->
-    <div id="loadingState" class="loading-state">
-      <p>Cargando...</p>
-    </div>
-
-    <!-- No business state (primer uso) - NUEVO ONBOARDING -->
-    <div id="noBusinessState" class="no-business-state" style="display: none;">
-      <div class="onboarding-wizard">
-
-        <!-- Progress indicator -->
-        <div class="wizard-progress">
-          <div class="progress-step active" data-step="1">
-            <div class="step-number">1</div>
-            <span>Negocio</span>
-          </div>
-          <div class="progress-line"></div>
-          <div class="progress-step" data-step="2">
-            <div class="step-number">2</div>
-            <span>Categorías</span>
-          </div>
-          <div class="progress-line"></div>
-          <div class="progress-step" data-step="3">
-            <div class="step-number">3</div>
-            <span>Producto</span>
-          </div>
-          <div class="progress-line"></div>
-          <div class="progress-step" data-step="4">
-            <div class="step-number">4</div>
-            <span>Listo</span>
-          </div>
+        <!-- Loading state -->
+        <div id="loadingState" class="loading-state">
+          <p>Cargando...</p>
         </div>
 
-        <!-- Step 1: Business -->
-        <div class="wizard-step" id="wizard-step-1">
-          <div class="wizard-header">
-            <i class="ri-store-2-line wizard-icon"></i>
-            <h2>Información de tu negocio</h2>
-            <p>Completa los datos básicos para comenzar</p>
-          </div>
+        <!-- No business state (primer uso) - NUEVO ONBOARDING -->
+        <div id="noBusinessState" class="no-business-state" style="display: none;">
+          <div class="onboarding-wizard">
 
-          <form class="wizard-form" id="wizardBusinessForm">
-            <div class="form-group">
-              <label for="wiz-business-name">Nombre del negocio *</label>
-              <input type="text" id="wiz-business-name" placeholder="Ej: Burger Master" required>
+            <!-- Progress indicator -->
+            <div class="wizard-progress">
+              <div class="progress-step active" data-step="1">
+                <div class="step-number">1</div>
+                <span>Negocio</span>
+              </div>
+              <div class="progress-line"></div>
+              <div class="progress-step" data-step="2">
+                <div class="step-number">2</div>
+                <span>Categorías</span>
+              </div>
+              <div class="progress-line"></div>
+              <div class="progress-step" data-step="3">
+                <div class="step-number">3</div>
+                <span>Producto</span>
+              </div>
+              <div class="progress-line"></div>
+              <div class="progress-step" data-step="4">
+                <div class="step-number">4</div>
+                <span>Listo</span>
+              </div>
             </div>
 
-            <div class="form-group">
-              <label for="wiz-whatsapp">WhatsApp *</label>
-              <input type="tel" id="wiz-whatsapp" placeholder="+573001234567" required>
-              <small>Incluye código de país (+57 para Colombia)</small>
-            </div>
-
-            <div class="form-group">
-              <label for="wiz-description">Descripción</label>
-              <textarea id="wiz-description" rows="2" placeholder="Describe tu negocio..."></textarea>
-            </div>
-
-            <button type="submit" class="btn-primary btn-block">
-              Continuar <i class="ri-arrow-right-line"></i>
-            </button>
-          </form>
-        </div>
-
-        <!-- Step 2: Categories -->
-        <div class="wizard-step" id="wizard-step-2" style="display: none;">
-          <div class="wizard-header">
-            <i class="ri-folder-line wizard-icon"></i>
-            <h2>Agrega categorías</h2>
-            <p>Organiza tus productos (opcional)</p>
-          </div>
-
-          <div class="wizard-content">
-            <div class="category-input-group">
-              <input type="text" id="wiz-category-input" placeholder="Ej: Hamburguesas, Bebidas...">
-              <button type="button" id="wiz-add-category" class="btn-primary">
-                <i class="ri-add-line"></i>
-              </button>
-            </div>
-
-            <div id="wiz-categories-display" class="categories-display">
-              <!-- Se llenarán con JS -->
-            </div>
-
-            <div class="wizard-actions">
-              <button type="button" id="wiz-skip-categories" class="btn-secondary">
-                Omitir
-              </button>
-              <button type="button" id="wiz-continue-categories" class="btn-primary">
-                Continuar <i class="ri-arrow-right-line"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Step 3: Product -->
-        <div class="wizard-step" id="wizard-step-3" style="display: none;">
-          <div class="wizard-header">
-            <i class="ri-shopping-bag-line wizard-icon"></i>
-            <h2>Primer producto</h2>
-            <p>Agrega tu primer producto (opcional)</p>
-          </div>
-
-          <div class="wizard-content">
-            <form class="wizard-form" id="wizardProductForm">
-              <div class="form-group">
-                <label for="wiz-product-name">Nombre del producto</label>
-                <input type="text" id="wiz-product-name" placeholder="Ej: Hamburguesa Clásica">
+            <!-- Step 1: Business -->
+            <div class="wizard-step" id="wizard-step-1">
+              <div class="wizard-header">
+                <i class="ri-store-2-line wizard-icon"></i>
+                <h2>Información de tu negocio</h2>
+                <p>Completa los datos básicos para comenzar</p>
               </div>
 
-              <div class="form-group">
-                <label for="wiz-product-price">Precio</label>
-                <input type="number" id="wiz-product-price" step="0.01" min="0" placeholder="0.00">
-              </div>
-
-              <div class="form-group" id="wiz-product-category-group" style="display: none;">
-                <label for="wiz-product-category">Categoría</label>
-                <select id="wiz-product-category">
-                  <option value="">Sin categoría</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label for="wiz-product-description">Descripción</label>
-                <textarea id="wiz-product-description" rows="2" placeholder="Describe el producto..."></textarea>
-              </div>
-            </form>
-
-            <div class="wizard-actions">
-              <button type="button" id="wiz-skip-product" class="btn-secondary">
-                Omitir
-              </button>
-              <button type="button" id="wiz-continue-product" class="btn-primary">
-                Finalizar <i class="ri-check-line"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Step 4: Success -->
-        <div class="wizard-step" id="wizard-step-4" style="display: none;">
-          <div class="wizard-header success">
-            <i class="ri-checkbox-circle-line wizard-icon"></i>
-            <h2>¡Todo listo! 🎉</h2>
-            <p>Tu negocio está configurado</p>
-          </div>
-
-          <div class="wizard-content">
-            <div class="success-summary">
-              <div class="summary-item">
-                <i class="ri-store-2-line"></i>
-                <div>
-                  <strong>Negocio creado</strong>
-                  <p id="summary-business-name">-</p>
+              <form class="wizard-form" id="wizardBusinessForm">
+                <div class="form-group">
+                  <label for="wiz-business-name">Nombre del negocio *</label>
+                  <input type="text" id="wiz-business-name" placeholder="Ej: Burger Master" required>
                 </div>
-              </div>
-              <div class="summary-item" id="summary-categories-box" style="display: none;">
-                <i class="ri-folder-line"></i>
-                <div>
-                  <strong>Categorías</strong>
-                  <p id="summary-categories-text">-</p>
+
+                <div class="form-group">
+                  <label for="wiz-whatsapp">WhatsApp *</label>
+                  <input type="tel" id="wiz-whatsapp" placeholder="+573001234567" required>
+                  <small>Incluye código de país (+57 para Colombia)</small>
                 </div>
-              </div>
-              <div class="summary-item" id="summary-product-box" style="display: none;">
-                <i class="ri-shopping-bag-line"></i>
-                <div>
-                  <strong>Producto</strong>
-                  <p id="summary-product-text">-</p>
+
+                <div class="form-group">
+                  <label for="wiz-description">Descripción</label>
+                  <textarea id="wiz-description" rows="2" placeholder="Describe tu negocio..."></textarea>
                 </div>
+
+                <button type="submit" class="btn-primary btn-block">
+                  Continuar <i class="ri-arrow-right-line"></i>
+                </button>
+              </form>
+            </div>
+
+            <!-- Step 2: Categories -->
+            <div class="wizard-step" id="wizard-step-2" style="display: none;">
+              <div class="wizard-header">
+                <i class="ri-folder-line wizard-icon"></i>
+                <h2>Agrega categorías</h2>
+                <p>Organiza tus productos (opcional)</p>
               </div>
-            </div>
 
-            <button type="button" id="wiz-finish" class="btn-primary btn-block">
-              Ir al Dashboard <i class="ri-arrow-right-line"></i>
-            </button>
-          </div>
-        </div>
+              <div class="wizard-content">
+                <div class="category-input-group">
+                  <input type="text" id="wiz-category-input" placeholder="Ej: Hamburguesas, Bebidas...">
+                  <button type="button" id="wiz-add-category" class="btn-primary">
+                    <i class="ri-add-line"></i>
+                  </button>
+                </div>
 
-      </div>
-    </div>
+                <div id="wiz-categories-display" class="categories-display">
+                  <!-- Se llenarán con JS -->
+                </div>
 
-    <!-- Business exists state -->
-    <div id="businessExistsState" class="business-state" style="display: none;">
-
-      <!-- Section: Dashboard (Default) -->
-      <div id="section-dashboard" class="dashboard-section active">
-        <div class="stats-grid">
-          <!-- Total Categorías Card -->
-          <div class="stat-card">
-            <div class="stat-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">
-              <i class="ri-folder-line"></i>
-            </div>
-            <div class="stat-content">
-              <div class="stat-label">Total Categorías</div>
-              <div class="stat-value" id="statTotalCategories">0</div>
-            </div>
-          </div>
-
-          <!-- Total Productos Card -->
-          <div class="stat-card">
-            <div class="stat-icon" style="background: rgba(37, 200, 37, 0.1); color: var(--color-primary);">
-              <i class="ri-shopping-bag-line"></i>
-            </div>
-            <div class="stat-content">
-              <div class="stat-label">Total Productos</div>
-              <div class="stat-value" id="statTotalProducts">0</div>
-            </div>
-          </div>
-
-          <!-- Visitas al Catálogo Card -->
-          <div class="stat-card">
-            <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
-              <i class="ri-eye-line"></i>
-            </div>
-            <div class="stat-content">
-              <div class="stat-label">Visitas al Catálogo</div>
-              <div class="stat-value" id="statCatalogVisits">0</div>
-            </div>
-          </div>
-
-          <!-- Producto Más Visto Card -->
-          <div class="stat-card">
-            <div class="stat-icon" style="background: rgba(236, 72, 153, 0.1); color: #ec4899;">
-              <i class="ri-star-line"></i>
-            </div>
-            <div class="stat-content">
-              <div class="stat-label">Producto Más Visto</div>
-              <div class="stat-value-small" id="statMostViewedProduct">-</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Section: Mi Negocio -->
-      <div id="section-business" class="dashboard-section" style="display: none;">
-        <section class="card">
-          <div class="card-header">
-            <h2><i class="ri-building-line"></i> Mi Negocio</h2>
-          </div>
-          <div class="card-content">
-            <div class="business-info">
-              <div class="info-row">
-                <span class="label"><i class="ri-store-line"></i> Nombre:</span>
-                <span id="businessName" class="value">-</span>
-              </div>
-              <div class="info-row">
-                <span class="label"><i class="ri-whatsapp-line"></i> WhatsApp:</span>
-                <span id="businessWhatsapp" class="value">-</span>
-              </div>
-              <div class="info-row">
-                <span class="label"><i class="ri-link"></i> Enlace del catálogo:</span>
-                <div class="catalog-link">
-                  <a id="catalogLink" href="#" target="_blank" class="link">-</a>
-                  <button id="copyLinkBtn" class="btn-copy">
-                    <i class="ri-file-copy-line"></i> Copiar
+                <div class="wizard-actions">
+                  <button type="button" id="wiz-skip-categories" class="btn-secondary">
+                    Omitir
+                  </button>
+                  <button type="button" id="wiz-continue-categories" class="btn-primary">
+                    Continuar <i class="ri-arrow-right-line"></i>
                   </button>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
-      </div>
 
-      <!-- Section: Categorías -->
-      <div id="section-categories" class="dashboard-section" style="display: none;">
-        <section class="card">
-          <div class="card-header">
-            <h2><i class="ri-folder-line"></i> Categorías</h2>
-            <button id="addCategoryBtn" class="btn-primary-small">
-              <i class="ri-add-line"></i> Agregar
-            </button>
-          </div>
-          <div class="card-content">
-            <!-- Search Bar -->
-            <div class="search-bar-container">
-              <div class="search-bar">
-                <i class="ri-search-line"></i>
-                <input type="text" id="searchCategoriesInput" placeholder="Buscar categorías..." />
-                <button id="clearCategoriesSearch" class="search-clear" style="display: none;">
-                  <i class="ri-close-line"></i>
+            <!-- Step 3: Product -->
+            <div class="wizard-step" id="wizard-step-3" style="display: none;">
+              <div class="wizard-header">
+                <i class="ri-shopping-bag-line wizard-icon"></i>
+                <h2>Primer producto</h2>
+                <p>Agrega tu primer producto (opcional)</p>
+              </div>
+
+              <div class="wizard-content">
+                <form class="wizard-form" id="wizardProductForm">
+                  <div class="form-group">
+                    <label for="wiz-product-name">Nombre del producto</label>
+                    <input type="text" id="wiz-product-name" placeholder="Ej: Hamburguesa Clásica">
+                  </div>
+
+                  <div class="form-group">
+                    <label for="wiz-product-price">Precio</label>
+                    <input type="number" id="wiz-product-price" step="0.01" min="0" placeholder="0.00">
+                  </div>
+
+                  <div class="form-group" id="wiz-product-category-group" style="display: none;">
+                    <label for="wiz-product-category">Categoría</label>
+                    <select id="wiz-product-category">
+                      <option value="">Sin categoría</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="wiz-product-description">Descripción</label>
+                    <textarea id="wiz-product-description" rows="2" placeholder="Describe el producto..."></textarea>
+                  </div>
+                </form>
+
+                <div class="wizard-actions">
+                  <button type="button" id="wiz-skip-product" class="btn-secondary">
+                    Omitir
+                  </button>
+                  <button type="button" id="wiz-continue-product" class="btn-primary">
+                    Finalizar <i class="ri-check-line"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 4: Success -->
+            <div class="wizard-step" id="wizard-step-4" style="display: none;">
+              <div class="wizard-header success">
+                <i class="ri-checkbox-circle-line wizard-icon"></i>
+                <h2>¡Todo listo! 🎉</h2>
+                <p>Tu negocio está configurado</p>
+              </div>
+
+              <div class="wizard-content">
+                <div class="success-summary">
+                  <div class="summary-item">
+                    <i class="ri-store-2-line"></i>
+                    <div>
+                      <strong>Negocio creado</strong>
+                      <p id="summary-business-name">-</p>
+                    </div>
+                  </div>
+                  <div class="summary-item" id="summary-categories-box" style="display: none;">
+                    <i class="ri-folder-line"></i>
+                    <div>
+                      <strong>Categorías</strong>
+                      <p id="summary-categories-text">-</p>
+                    </div>
+                  </div>
+                  <div class="summary-item" id="summary-product-box" style="display: none;">
+                    <i class="ri-shopping-bag-line"></i>
+                    <div>
+                      <strong>Producto</strong>
+                      <p id="summary-product-text">-</p>
+                    </div>
+                  </div>
+                </div>
+
+                <button type="button" id="wiz-finish" class="btn-primary btn-block">
+                  Ir al Dashboard <i class="ri-arrow-right-line"></i>
                 </button>
               </div>
             </div>
-            <div id="categoriesList" class="categories-list">
-              <p class="empty-message">No hay categorías aún</p>
-            </div>
+
           </div>
-        </section>
-      </div>
+        </div>
 
-      <!-- Section: Productos -->
-      <div id="section-products" class="dashboard-section" style="display: none;">
-        <section class="card">
-          <div class="card-header">
-            <h2><i class="ri-shopping-bag-line"></i> Productos</h2>
-            <button id="addProductBtn" class="btn-primary-small">
-              <i class="ri-add-line"></i> Agregar
-            </button>
-          </div>
-          <div class="card-content">
-            <!-- Search Bar -->
-            <div class="search-bar-container">
-              <div class="search-bar">
-                <i class="ri-search-line"></i>
-                <input type="text" id="searchProductsInput" placeholder="Buscar productos..." />
-                <button id="clearProductsSearch" class="search-clear" style="display: none;">
-                  <i class="ri-close-line"></i>
-                </button>
-              </div>
-            </div>
-            <div id="productsList" class="products-list">
-              <p class="empty-message">No hay productos aún</p>
-            </div>
-          </div>
-        </section>
-      </div>
+        <!-- Business exists state -->
+        <div id="businessExistsState" class="business-state" style="display: none;">
 
-      <!-- Section: WhatsApp -->
-      <div id="section-whatsapp" class="dashboard-section" style="display: none;">
-        <section class="card">
-          <div class="card-header">
-            <h2><i class="ri-whatsapp-line"></i> Mensaje de WhatsApp</h2>
-          </div>
-          <div class="card-content">
-            <div class="whatsapp-template-editor">
-              <div class="template-help">
-                <p><strong>Personaliza el mensaje que se enviará por WhatsApp</strong></p>
-                <p class="help-text">Usa los tokens para insertar información dinámica del pedido:</p>
+          <!-- Section: Dashboard (Default) -->
+          <div id="section-dashboard" class="dashboard-section active">
+            <div class="stats-grid">
+              <!-- Total Categorías Card -->
+              <div class="stat-card">
+                <div class="stat-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">
+                  <i class="ri-folder-line"></i>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-label">Total Categorías</div>
+                  <div class="stat-value" id="statTotalCategories">0</div>
+                </div>
               </div>
 
-              <div class="tokens-grid">
-                <button class="token-chip" data-token="{productos}" title="Lista de productos del pedido">
-                  <i class="ri-shopping-basket-line"></i> {productos}
-                </button>
-                <button class="token-chip" data-token="{total}" title="Total del pedido">
-                  <i class="ri-money-dollar-circle-line"></i> {total}
-                </button>
-                <button class="token-chip" data-token="{nombre}" title="Nombre del cliente">
-                  <i class="ri-user-line"></i> {nombre}
-                </button>
-                <button class="token-chip" data-token="{direccion}" title="Dirección de entrega">
-                  <i class="ri-map-pin-line"></i> {direccion}
-                </button>
-                <button class="token-chip" data-token="{telefono}" title="Teléfono del cliente">
-                  <i class="ri-phone-line"></i> {telefono}
-                </button>
-                <button class="token-chip" data-token="{metodo_pago}" title="Método de pago">
-                  <i class="ri-bank-card-line"></i> {metodo_pago}
-                </button>
+              <!-- Total Productos Card -->
+              <div class="stat-card">
+                <div class="stat-icon" style="background: rgba(37, 200, 37, 0.1); color: var(--color-primary);">
+                  <i class="ri-shopping-bag-line"></i>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-label">Total Productos</div>
+                  <div class="stat-value" id="statTotalProducts">0</div>
+                </div>
               </div>
 
-              <div class="form-group" style="margin-top: 1.5rem;">
-                <label for="whatsappTemplateInput">
-                  <i class="ri-message-3-line"></i> Plantilla del mensaje
-                </label>
-                <textarea id="whatsappTemplateInput" class="whatsapp-template-textarea" rows="10"
-                  placeholder="Escribe tu mensaje aquí y haz clic en los tokens para insertarlos..."></textarea>
-                <small>Haz clic en los tokens de arriba para insertarlos en la plantilla</small>
+              <!-- Visitas al Catálogo Card -->
+              <div class="stat-card">
+                <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
+                  <i class="ri-eye-line"></i>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-label">Visitas al Catálogo</div>
+                  <div class="stat-value" id="statCatalogVisits">0</div>
+                </div>
               </div>
 
-              <div class="template-actions">
-                <button id="previewTemplateBtn" class="btn-secondary">
-                  <i class="ri-eye-line"></i> Vista previa
-                </button>
-                <button id="saveTemplateBtn" class="btn-primary">
-                  <i class="ri-save-line"></i> Guardar plantilla
-                </button>
-              </div>
-
-              <div id="templatePreview" class="template-preview" style="display: none;">
-                <h4><i class="ri-file-text-line"></i> Vista previa con datos de ejemplo:</h4>
-                <div class="preview-box"></div>
+              <!-- Producto Más Visto Card -->
+              <div class="stat-card">
+                <div class="stat-icon" style="background: rgba(236, 72, 153, 0.1); color: #ec4899;">
+                  <i class="ri-star-line"></i>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-label">Producto Más Visto</div>
+                  <div class="stat-value-small" id="statMostViewedProduct">-</div>
+                </div>
               </div>
             </div>
           </div>
-        </section>
-      </div>
+
+          <!-- Section: Mi Negocio -->
+          <div id="section-business" class="dashboard-section" style="display: none;">
+            <section class="card">
+              <div class="card-header">
+                <h2><i class="ri-building-line"></i> Mi Negocio</h2>
+              </div>
+              <div class="card-content">
+                <div class="business-info">
+                  <div class="info-row">
+                    <span class="label"><i class="ri-store-line"></i> Nombre:</span>
+                    <span id="businessName" class="value">-</span>
+                  </div>
+                  <div class="info-row">
+                    <span class="label"><i class="ri-whatsapp-line"></i> WhatsApp:</span>
+                    <span id="businessWhatsapp" class="value">-</span>
+                  </div>
+                  <div class="info-row">
+                    <span class="label"><i class="ri-link"></i> Enlace del catálogo:</span>
+                    <div class="catalog-link">
+                      <a id="catalogLink" href="#" target="_blank" class="link">-</a>
+                      <button id="copyLinkBtn" class="btn-copy">
+                        <i class="ri-file-copy-line"></i> Copiar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Payment Methods Section -->
+            <section class="card" style="margin-top: 1.5rem;">
+              <div class="card-header">
+                <h2><i class="ri-bank-card-line"></i> Métodos de Pago</h2>
+                <button id="addPaymentMethodBtn" class="btn-primary-small">
+                  <i class="ri-add-line"></i> Agregar
+                </button>
+              </div>
+              <div class="card-content">
+                <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 1rem;">
+                  Configura los métodos de pago que tus clientes podrán seleccionar al hacer un pedido.
+                </p>
+                <div id="paymentMethodsList" class="payment-methods-list">
+                  <p class="empty-message">No hay métodos de pago configurados</p>
+                </div>
+              </div>
+          </div>
+          </section>
+
+          <!-- Business Hours Section -->
+          <section class="card" style="margin-top: 1.5rem;">
+            <div class="card-header">
+              <h2><i class="ri-time-line"></i> Horarios de Servicio</h2>
+              <button id="saveBusinessHoursBtn" class="btn-primary-small">
+                <i class="ri-save-line"></i> Guardar Horarios
+              </button>
+            </div>
+            <div class="card-content">
+              <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 1.5rem;">
+                Configura los horarios en que tu negocio está abierto. Los clientes solo podrán hacer pedidos durante
+                estos horarios.
+              </p>
+              <div id="businessHoursGrid" class="business-hours-grid">
+                <!-- Se llenará dinámicamente con JavaScript -->
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Section: Categorías -->
+        <div id="section-categories" class="dashboard-section" style="display: none;">
+          <section class="card">
+            <div class="card-header">
+              <h2><i class="ri-folder-line"></i> Categorías</h2>
+              <button id="addCategoryBtn" class="btn-primary-small">
+                <i class="ri-add-line"></i> Agregar
+              </button>
+            </div>
+            <div class="card-content">
+              <!-- Search Bar -->
+              <div class="search-bar-container">
+                <div class="search-bar">
+                  <i class="ri-search-line"></i>
+                  <input type="text" id="searchCategoriesInput" placeholder="Buscar categorías..." />
+                  <button id="clearCategoriesSearch" class="search-clear" style="display: none;">
+                    <i class="ri-close-line"></i>
+                  </button>
+                </div>
+              </div>
+              <div id="categoriesList" class="categories-list">
+                <p class="empty-message">No hay categorías aún</p>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Section: Productos -->
+        <div id="section-products" class="dashboard-section" style="display: none;">
+          <section class="card">
+            <div class="card-header">
+              <h2><i class="ri-shopping-bag-line"></i> Productos</h2>
+              <button id="addProductBtn" class="btn-primary-small">
+                <i class="ri-add-line"></i> Agregar
+              </button>
+            </div>
+            <div class="card-content">
+              <!-- Search Bar -->
+              <div class="search-bar-container">
+                <div class="search-bar">
+                  <i class="ri-search-line"></i>
+                  <input type="text" id="searchProductsInput" placeholder="Buscar productos..." />
+                  <button id="clearProductsSearch" class="search-clear" style="display: none;">
+                    <i class="ri-close-line"></i>
+                  </button>
+                </div>
+              </div>
+              <div id="productsList" class="products-list">
+                <p class="empty-message">No hay productos aún</p>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Section: WhatsApp -->
+        <div id="section-whatsapp" class="dashboard-section" style="display: none;">
+          <section class="card">
+            <div class="card-header">
+              <h2><i class="ri-whatsapp-line"></i> Mensaje de WhatsApp</h2>
+            </div>
+            <div class="card-content">
+              <div class="whatsapp-template-editor">
+                <div class="template-help">
+                  <p><strong>Personaliza el mensaje que se enviará por WhatsApp</strong></p>
+                  <p class="help-text">Usa los tokens para insertar información dinámica del pedido:</p>
+                </div>
+
+                <div class="tokens-grid">
+                  <button class="token-chip" data-token="{productos}" title="Lista de productos del pedido">
+                    <i class="ri-shopping-basket-line"></i> {productos}
+                  </button>
+                  <button class="token-chip" data-token="{total}" title="Total del pedido">
+                    <i class="ri-money-dollar-circle-line"></i> {total}
+                  </button>
+                  <button class="token-chip" data-token="{nombre}" title="Nombre del cliente">
+                    <i class="ri-user-line"></i> {nombre}
+                  </button>
+                  <button class="token-chip" data-token="{direccion}" title="Dirección de entrega">
+                    <i class="ri-map-pin-line"></i> {direccion}
+                  </button>
+                  <button class="token-chip" data-token="{telefono}" title="Teléfono del cliente">
+                    <i class="ri-phone-line"></i> {telefono}
+                  </button>
+                  <button class="token-chip" data-token="{metodo_pago}" title="Método de pago">
+                    <i class="ri-bank-card-line"></i> {metodo_pago}
+                  </button>
+                </div>
+
+                <div class="form-group" style="margin-top: 1.5rem;">
+                  <label for="whatsappTemplateInput">
+                    <i class="ri-message-3-line"></i> Plantilla del mensaje
+                  </label>
+                  <textarea id="whatsappTemplateInput" class="whatsapp-template-textarea" rows="10"
+                    placeholder="Escribe tu mensaje aquí y haz clic en los tokens para insertarlos..."></textarea>
+                  <small>Haz clic en los tokens de arriba para insertarlos en la plantilla</small>
+                </div>
+
+                <div class="template-actions">
+                  <button id="previewTemplateBtn" class="btn-secondary">
+                    <i class="ri-eye-line"></i> Vista previa
+                  </button>
+                  <button id="saveTemplateBtn" class="btn-primary">
+                    <i class="ri-save-line"></i> Guardar plantilla
+                  </button>
+                </div>
+
+                <div id="templatePreview" class="template-preview" style="display: none;">
+                  <h4><i class="ri-file-text-line"></i> Vista previa con datos de ejemplo:</h4>
+                  <div class="preview-box"></div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
 
     </div>
 
-      </main>
-    </div>
+    </main>
+  </div>
   </div>
 
   <!-- Modal para crear/editar negocio -->
@@ -733,6 +771,26 @@
         <div class="modal-actions">
           <button type="button" class="btn-secondary" id="cancelOptionBtn">Cancelar</button>
           <button type="submit" class="btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal para crear/editar método de pago -->
+  <div id="paymentMethodModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="paymentMethodModalTitle">Nuevo Método de Pago</h3>
+        <button class="modal-close" id="closePaymentMethodModal">&times;</button>
+      </div>
+      <form id="paymentMethodForm" class="modal-form">
+        <div class="form-group">
+          <label for="paymentMethodNameInput">Nombre del método de pago *</label>
+          <input type="text" id="paymentMethodNameInput" placeholder="Ej: Efectivo, Tarjeta, Transferencia" required>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="cancelPaymentMethodBtn">Cancelar</button>
+          <button type="submit" class="btn-primary" id="savePaymentMethodBtn">Guardar</button>
         </div>
       </form>
     </div>

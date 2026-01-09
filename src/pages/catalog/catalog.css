@@ -1063,3 +1063,127 @@
     width: 100%;
   }
 }
+
+/* ============================================
+   BUSINESS STATUS BADGE
+   ============================================ */
+
+.business-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 2rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-top: 0.75rem;
+}
+
+.business-status-badge.open {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.business-status-badge.closed {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.business-status-badge i {
+  font-size: 1.1rem;
+}
+
+/* ============================================
+   CLOSED MODAL
+   ============================================ */
+
+.closed-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 4000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.closed-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.closed-modal-content {
+  position: relative;
+  background: white;
+  border-radius: 1rem;
+  padding: 2rem;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: modalZoom 0.3s ease-out;
+}
+
+.closed-modal-icon {
+  width: 80px;
+  height: 80px;
+  background: #fee2e2;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+}
+
+.closed-modal-icon i {
+  font-size: 2.5rem;
+  color: #dc2626;
+}
+
+.closed-modal-content h2 {
+  font-size: 1.5rem;
+  color: var(--color-text);
+  margin-bottom: 0.75rem;
+}
+
+.closed-modal-content p {
+  color: #6b7280;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.closed-modal-content .next-opening {
+  background: #f0fdf4;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  color: #16a34a;
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+}
+
+.closed-modal-content .next-opening strong {
+  font-weight: 700;
+}
+
+.closed-modal-content .btn-primary {
+  width: 100%;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.closed-modal-content .btn-primary:hover {
+  opacity: 0.9;
+}

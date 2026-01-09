@@ -8,6 +8,9 @@ import { notify } from '../../utils/notifications.js'
 let currentBusiness = null
 let categories = []
 let products = []
+let paymentMethods = []
+let businessHours = []
+let businessStatus = { isOpen: true, message: '' }
 let selectedProduct = null
 let productOptions = []
 let currentQuantity = 1
@@ -137,12 +140,12 @@ function trackProductView(businessId, productId) {
   try {
     const viewsKey = `product_views_${businessId}`
     const productViews = JSON.parse(localStorage.getItem(viewsKey) || '{}')
-    
+
     if (!productViews[productId]) {
       productViews[productId] = 0
     }
     productViews[productId] += 1
-    
+
     localStorage.setItem(viewsKey, JSON.stringify(productViews))
   } catch (error) {
     console.error('Error tracking product view:', error)
@@ -171,6 +174,30 @@ async function loadCatalogData() {
 
     if (productsError) throw productsError
     products = productsData || []
+
+    // Cargar métodos de pago
+    const { data: paymentMethodsData, error: paymentMethodsError } = await supabase
+      .from('payment_methods')
+      .select('*')
+      .eq('business_id', currentBusiness.id)
+      .eq('is_active', true)
+      .order('display_order', { ascending: true })
+
+    if (paymentMethodsError) throw paymentMethodsError
+    paymentMethods = paymentMethodsData || []
+
+    // Cargar horarios de negocio
+    const { data: hoursData, error: hoursError } = await supabase
+      .from('business_hours')
+      .select('*')
+      .eq('business_id', currentBusiness.id)
+      .order('day_of_week', { ascending: true })
+
+    if (hoursError) throw hoursError
+    businessHours = hoursData || []
+
+    // Verificar si el negocio está abierto
+    checkBusinessStatus()
 
   } catch (error) {
     console.error('Error loading catalog data:', error)
@@ -256,7 +283,7 @@ function renderProducts(filteredCategoryId = 'all', searchQuery = '') {
   // Filtrar por búsqueda
   if (searchQuery.trim()) {
     const query = searchQuery.trim().toLowerCase()
-    filteredProducts = filteredProducts.filter(prod => 
+    filteredProducts = filteredProducts.filter(prod =>
       prod.name.toLowerCase().includes(query) ||
       (prod.description && prod.description.toLowerCase().includes(query)) ||
       (prod.categories?.name && prod.categories.name.toLowerCase().includes(query))
@@ -358,7 +385,7 @@ function initCatalogSearch() {
     catalogSearchInput.addEventListener('input', (e) => {
       const query = e.target.value.trim()
       currentSearchQuery = query
-      
+
       if (query) {
         clearCatalogSearch.style.display = 'flex'
         // Renderizar con búsqueda y categoría actual
@@ -678,21 +705,32 @@ const checkoutForm = document.getElementById('checkoutForm')
 const cancelCheckoutBtn = document.getElementById('cancelCheckoutBtn')
 
 // Abrir modal de checkout
-btnWhatsapp.addEventListener('click', () => {
-  const cartItems = cart.get()
-  if (cartItems.length === 0) {
-    notify.warning('El carrito está vacío')
-    return
-  }
+// Poblar métodos de pago
+function populatePaymentMethods() {
+  const paymentMethodSelect = document.getElementById('paymentMethod')
 
-  // Abrir modal
-  checkoutModal.style.display = 'flex'
-  
-  // Focus en el primer campo
-  setTimeout(() => {
-    document.getElementById('clientName').focus()
-  }, 100)
-})
+  // Limpiar opciones existentes excepto la primera
+  paymentMethodSelect.innerHTML = '<option value="">Selecciona un método</option>'
+
+  // Si hay métodos de pago configurados, usarlos
+  if (paymentMethods && paymentMethods.length > 0) {
+    paymentMethods.forEach(method => {
+      const option = document.createElement('option')
+      option.value = method.name
+      option.textContent = method.name
+      paymentMethodSelect.appendChild(option)
+    })
+  } else {
+    // Métodos por defecto si no hay configurados
+    const defaultMethods = ['Efectivo', 'Transferencia', 'Tarjeta', 'Nequi', 'Daviplata']
+    defaultMethods.forEach(method => {
+      const option = document.createElement('option')
+      option.value = method
+      option.textContent = method
+      paymentMethodSelect.appendChild(option)
+    })
+  }
+}
 
 // Cerrar modal
 function closeCheckoutModal() {
@@ -855,6 +893,168 @@ function loadSavedClientData() {
   }
 }
 
+// ============================================
+// BUSINESS HOURS CHECKING
+// ============================================
+
+function checkBusinessStatus() {
+  if (!businessHours || businessHours.length === 0) {
+    // Si no hay horarios configurados, asumir que está abierto
+    businessStatus = { isOpen: true, message: 'Abierto' }
+    renderBusinessStatus()
+    return
+  }
+
+  const now = new Date()
+  const currentDay = now.getDay() // 0 = Sunday, 6 = Saturday
+  const currentTime = now.toTimeString().slice(0, 5) // "HH:MM"
+
+  // Buscar horario del día actual
+  const todayHours = businessHours.find(h => h.day_of_week === currentDay)
+
+  if (!todayHours || !todayHours.is_open) {
+    businessStatus = {
+      isOpen: false,
+      message: 'Cerrado hoy',
+      nextOpening: getNextOpeningTime()
+    }
+    renderBusinessStatus()
+    return
+  }
+
+  // Comparar hora actual con horarios
+  if (currentTime >= todayHours.open_time && currentTime < todayHours.close_time) {
+    businessStatus = {
+      isOpen: true,
+      message: `Abierto hasta las ${todayHours.close_time}`
+    }
+  } else {
+    businessStatus = {
+      isOpen: false,
+      message: currentTime < todayHours.open_time
+        ? `Cerrado - Abre a las ${todayHours.open_time}`
+        : `Cerrado - Abre mañana`,
+      nextOpening: getNextOpeningTime()
+    }
+  }
+
+  renderBusinessStatus()
+}
+
+function getNextOpeningTime() {
+  const now = new Date()
+  const currentDay = now.getDay()
+  const currentTime = now.toTimeString().slice(0, 5)
+
+  const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+
+  // Buscar en los próximos 7 días
+  for (let i = 0; i < 7; i++) {
+    const checkDay = (currentDay + i) % 7
+    const dayHours = businessHours.find(h => h.day_of_week === checkDay)
+
+    if (dayHours && dayHours.is_open) {
+      // Si es hoy y aún no ha abierto
+      if (i === 0 && currentTime < dayHours.open_time) {
+        return `Hoy a las ${dayHours.open_time}`
+      }
+      // Si es otro día
+      if (i > 0) {
+        return `${dayNames[checkDay]} a las ${dayHours.open_time}`
+      }
+    }
+  }
+
+  return 'Horario no disponible'
+}
+
+function renderBusinessStatus() {
+  // Crear badge de estado si no existe
+  let statusBadge = document.getElementById('businessStatusBadge')
+  if (!statusBadge) {
+    const headerContent = document.querySelector('.header-content')
+    if (headerContent) {
+      statusBadge = document.createElement('div')
+      statusBadge.id = 'businessStatusBadge'
+      statusBadge.className = 'business-status-badge'
+      headerContent.appendChild(statusBadge)
+    }
+  }
+
+  if (statusBadge) {
+    statusBadge.className = `business-status-badge ${businessStatus.isOpen ? 'open' : 'closed'}`
+    statusBadge.innerHTML = `
+      <i class="ri-${businessStatus.isOpen ? 'check' : 'close'}-circle-fill"></i>
+      <span>${businessStatus.message}</span>
+    `
+  }
+}
+
+// Llamar al abrir el modal - ACTUALIZADO
+btnWhatsapp.addEventListener('click', () => {
+  const cartItems = cart.get()
+  if (cartItems.length === 0) {
+    notify.warning('El carrito está vacío')
+    return
+  }
+
+  // Verificar si el negocio está abierto
+  if (!businessStatus.isOpen) {
+    showClosedModal()
+    return
+  }
+
+  // Poblar métodos de pago dinámicamente
+  populatePaymentMethods()
+
+  // Abrir modal
+  checkoutModal.style.display = 'flex'
+
+  // Cargar datos guardados
+  loadSavedClientData()
+
+  // Focus en el primer campo
+  setTimeout(() => {
+    document.getElementById('clientName').focus()
+  }, 100)
+})
+
+// Modal de negocio cerrado
+function showClosedModal() {
+  const existingModal = document.getElementById('closedModal')
+  if (existingModal) {
+    existingModal.remove()
+  }
+
+  const modal = document.createElement('div')
+  modal.id = 'closedModal'
+  modal.className = 'closed-modal'
+  modal.innerHTML = `
+    <div class="closed-modal-overlay"></div>
+    <div class="closed-modal-content">
+      <div class="closed-modal-icon">
+        <i class="ri-time-line"></i>
+      </div>
+      <h2>Negocio Cerrado</h2>
+      <p>Lo sentimos, actualmente no estamos recibiendo pedidos.</p>
+      ${businessStatus.nextOpening ? `<p class="next-opening">Abrimos: <strong>${businessStatus.nextOpening}</strong></p>` : ''}
+      <button class="btn-primary" id="closeClosedModal">
+        Entendido
+      </button>
+    </div>
+  `
+
+  document.body.appendChild(modal)
+
+  // Event listeners
+  const closeBtn = modal.querySelector('#closeClosedModal')
+  const overlay = modal.querySelector('.closed-modal-overlay')
+
+  closeBtn.addEventListener('click', () => modal.remove())
+  overlay.addEventListener('click', () => modal.remove())
+}
+
+
 // Llamar al abrir el modal
 btnWhatsapp.addEventListener('click', () => {
   const cartItems = cart.get()
@@ -865,7 +1065,7 @@ btnWhatsapp.addEventListener('click', () => {
 
   checkoutModal.style.display = 'flex'
   loadSavedClientData() // ← Cargar datos guardados
-  
+
   setTimeout(() => {
     document.getElementById('clientName').focus()
   }, 100)
