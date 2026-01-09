@@ -10,22 +10,82 @@
 </head>
 
 <body>
-  <!-- Header -->
-  <header class="dashboard-header">
-    <div class="header-content">
-      <h1><i class="ri-store-2-line"></i> Mi Catálogo</h1>
-      <div class="header-actions">
-        <span id="userEmail" class="user-email"></span>
+  <!-- Dashboard Layout Container -->
+  <div class="dashboard-container">
+    <!-- Sidebar -->
+    <aside class="dashboard-sidebar">
+      <!-- Logo Section -->
+      <div class="sidebar-logo">
+        <div class="logo-icon">
+          <i class="ri-store-2-line"></i>
+        </div>
+        <div class="logo-text">
+          <h2>Mi Catálogo</h2>
+          <p id="businessBranchName" class="branch-name">Panel de control</p>
+        </div>
+      </div>
+
+      <!-- Navigation Menu -->
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" data-section="dashboard">
+          <i class="ri-dashboard-line"></i>
+          <span>Dashboard</span>
+        </a>
+        <div class="nav-section-divider">
+          <span>GESTIÓN</span>
+        </div>
+        <a href="#" class="nav-item" data-section="business">
+          <i class="ri-building-line"></i>
+          <span>Mi Negocio</span>
+        </a>
+        <a href="#" class="nav-item" data-section="categories">
+          <i class="ri-folder-line"></i>
+          <span>Categorías</span>
+        </a>
+        <a href="#" class="nav-item" data-section="products">
+          <i class="ri-shopping-bag-line"></i>
+          <span>Productos</span>
+        </a>
+        <a href="#" class="nav-item" data-section="whatsapp">
+          <i class="ri-whatsapp-line"></i>
+          <span>WhatsApp</span>
+        </a>
+      </nav>
+
+      <!-- User Section -->
+      <div class="sidebar-user">
+        <div class="user-info">
+          <div class="user-avatar">
+            <i class="ri-user-line"></i>
+          </div>
+          <div class="user-details">
+            <span id="userEmail" class="user-name"></span>
+            <span class="user-role">Propietario</span>
+          </div>
+        </div>
         <button id="logoutBtn" class="btn-logout">
           <i class="ri-logout-box-line"></i>
-          <span>Cerrar sesión</span>
         </button>
       </div>
-    </div>
-  </header>
+    </aside>
 
-  <!-- Main Content -->
-  <main class="dashboard-main">
+    <!-- Main Content Area -->
+    <div class="dashboard-content">
+      <!-- Top Header Bar -->
+      <header class="dashboard-header">
+        <div class="header-content">
+          <h1 id="pageTitle">Dashboard</h1>
+          <div class="header-actions">
+            <button id="editBusinessBtn" class="btn-header-action" style="display: none;">
+              <i class="ri-edit-line"></i>
+              <span>Editar Negocio</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="dashboard-main">
 
     <!-- Loading state -->
     <div id="loadingState" class="loading-state">
@@ -210,129 +270,205 @@
     <!-- Business exists state -->
     <div id="businessExistsState" class="business-state" style="display: none;">
 
-      <!-- Business info card -->
-      <section class="card">
-        <div class="card-header">
-          <h2><i class="ri-building-line"></i> Mi Negocio</h2>
-          <button id="editBusinessBtn" class="btn-secondary-small">
-            <i class="ri-edit-line"></i> Editar
-          </button>
+      <!-- Section: Dashboard (Default) -->
+      <div id="section-dashboard" class="dashboard-section active">
+        <div class="stats-grid">
+          <!-- Total Categorías Card -->
+          <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">
+              <i class="ri-folder-line"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">Total Categorías</div>
+              <div class="stat-value" id="statTotalCategories">0</div>
+            </div>
+          </div>
+
+          <!-- Total Productos Card -->
+          <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(37, 200, 37, 0.1); color: var(--color-primary);">
+              <i class="ri-shopping-bag-line"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">Total Productos</div>
+              <div class="stat-value" id="statTotalProducts">0</div>
+            </div>
+          </div>
+
+          <!-- Visitas al Catálogo Card -->
+          <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
+              <i class="ri-eye-line"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">Visitas al Catálogo</div>
+              <div class="stat-value" id="statCatalogVisits">0</div>
+            </div>
+          </div>
+
+          <!-- Producto Más Visto Card -->
+          <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(236, 72, 153, 0.1); color: #ec4899;">
+              <i class="ri-star-line"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">Producto Más Visto</div>
+              <div class="stat-value-small" id="statMostViewedProduct">-</div>
+            </div>
+          </div>
         </div>
-        <div class="card-content">
-          <div class="business-info">
-            <div class="info-row">
-              <span class="label"><i class="ri-store-line"></i> Nombre:</span>
-              <span id="businessName" class="value">-</span>
-            </div>
-            <div class="info-row">
-              <span class="label"><i class="ri-whatsapp-line"></i> WhatsApp:</span>
-              <span id="businessWhatsapp" class="value">-</span>
-            </div>
-            <div class="info-row">
-              <span class="label"><i class="ri-link"></i> Enlace del catálogo:</span>
-              <div class="catalog-link">
-                <a id="catalogLink" href="#" target="_blank" class="link">-</a>
-                <button id="copyLinkBtn" class="btn-copy">
-                  <i class="ri-file-copy-line"></i> Copiar
-                </button>
+      </div>
+
+      <!-- Section: Mi Negocio -->
+      <div id="section-business" class="dashboard-section" style="display: none;">
+        <section class="card">
+          <div class="card-header">
+            <h2><i class="ri-building-line"></i> Mi Negocio</h2>
+          </div>
+          <div class="card-content">
+            <div class="business-info">
+              <div class="info-row">
+                <span class="label"><i class="ri-store-line"></i> Nombre:</span>
+                <span id="businessName" class="value">-</span>
+              </div>
+              <div class="info-row">
+                <span class="label"><i class="ri-whatsapp-line"></i> WhatsApp:</span>
+                <span id="businessWhatsapp" class="value">-</span>
+              </div>
+              <div class="info-row">
+                <span class="label"><i class="ri-link"></i> Enlace del catálogo:</span>
+                <div class="catalog-link">
+                  <a id="catalogLink" href="#" target="_blank" class="link">-</a>
+                  <button id="copyLinkBtn" class="btn-copy">
+                    <i class="ri-file-copy-line"></i> Copiar
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
-      <!-- Categories section -->
-      <section class="card">
-        <div class="card-header">
-          <h2><i class="ri-folder-line"></i> Categorías</h2>
-          <button id="addCategoryBtn" class="btn-primary-small">
-            <i class="ri-add-line"></i> Agregar
-          </button>
-        </div>
-        <div class="card-content">
-          <div id="categoriesList" class="categories-list">
-            <p class="empty-message">No hay categorías aún</p>
+      <!-- Section: Categorías -->
+      <div id="section-categories" class="dashboard-section" style="display: none;">
+        <section class="card">
+          <div class="card-header">
+            <h2><i class="ri-folder-line"></i> Categorías</h2>
+            <button id="addCategoryBtn" class="btn-primary-small">
+              <i class="ri-add-line"></i> Agregar
+            </button>
           </div>
-        </div>
-      </section>
-
-      <!-- Products section -->
-      <section class="card">
-        <div class="card-header">
-          <h2><i class="ri-shopping-bag-line"></i> Productos</h2>
-          <button id="addProductBtn" class="btn-primary-small">
-            <i class="ri-add-line"></i> Agregar
-          </button>
-        </div>
-        <div class="card-content">
-          <div id="productsList" class="products-list">
-            <p class="empty-message">No hay productos aún</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- WhatsApp Template Section -->
-      <section class="card">
-        <div class="card-header">
-          <h2><i class="ri-whatsapp-line"></i> Mensaje de WhatsApp</h2>
-        </div>
-        <div class="card-content">
-          <div class="whatsapp-template-editor">
-            <div class="template-help">
-              <p><strong>Personaliza el mensaje que se enviará por WhatsApp</strong></p>
-              <p class="help-text">Usa los tokens para insertar información dinámica del pedido:</p>
+          <div class="card-content">
+            <!-- Search Bar -->
+            <div class="search-bar-container">
+              <div class="search-bar">
+                <i class="ri-search-line"></i>
+                <input type="text" id="searchCategoriesInput" placeholder="Buscar categorías..." />
+                <button id="clearCategoriesSearch" class="search-clear" style="display: none;">
+                  <i class="ri-close-line"></i>
+                </button>
+              </div>
             </div>
-
-            <div class="tokens-grid">
-              <button class="token-chip" data-token="{productos}" title="Lista de productos del pedido">
-                <i class="ri-shopping-basket-line"></i> {productos}
-              </button>
-              <button class="token-chip" data-token="{total}" title="Total del pedido">
-                <i class="ri-money-dollar-circle-line"></i> {total}
-              </button>
-              <button class="token-chip" data-token="{nombre}" title="Nombre del cliente">
-                <i class="ri-user-line"></i> {nombre}
-              </button>
-              <button class="token-chip" data-token="{direccion}" title="Dirección de entrega">
-                <i class="ri-map-pin-line"></i> {direccion}
-              </button>
-              <button class="token-chip" data-token="{telefono}" title="Teléfono del cliente">
-                <i class="ri-phone-line"></i> {telefono}
-              </button>
-              <button class="token-chip" data-token="{metodo_pago}" title="Método de pago">
-                <i class="ri-bank-card-line"></i> {metodo_pago}
-              </button>
-            </div>
-
-            <div class="form-group" style="margin-top: 1.5rem;">
-              <label for="whatsappTemplateInput">
-                <i class="ri-message-3-line"></i> Plantilla del mensaje
-              </label>
-              <textarea id="whatsappTemplateInput" class="whatsapp-template-textarea" rows="10"
-                placeholder="Escribe tu mensaje aquí y haz clic en los tokens para insertarlos..."></textarea>
-              <small>Haz clic en los tokens de arriba para insertarlos en la plantilla</small>
-            </div>
-
-            <div class="template-actions">
-              <button id="previewTemplateBtn" class="btn-secondary">
-                <i class="ri-eye-line"></i> Vista previa
-              </button>
-              <button id="saveTemplateBtn" class="btn-primary">
-                <i class="ri-save-line"></i> Guardar plantilla
-              </button>
-            </div>
-
-            <div id="templatePreview" class="template-preview" style="display: none;">
-              <h4><i class="ri-file-text-line"></i> Vista previa con datos de ejemplo:</h4>
-              <div class="preview-box"></div>
+            <div id="categoriesList" class="categories-list">
+              <p class="empty-message">No hay categorías aún</p>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
+
+      <!-- Section: Productos -->
+      <div id="section-products" class="dashboard-section" style="display: none;">
+        <section class="card">
+          <div class="card-header">
+            <h2><i class="ri-shopping-bag-line"></i> Productos</h2>
+            <button id="addProductBtn" class="btn-primary-small">
+              <i class="ri-add-line"></i> Agregar
+            </button>
+          </div>
+          <div class="card-content">
+            <!-- Search Bar -->
+            <div class="search-bar-container">
+              <div class="search-bar">
+                <i class="ri-search-line"></i>
+                <input type="text" id="searchProductsInput" placeholder="Buscar productos..." />
+                <button id="clearProductsSearch" class="search-clear" style="display: none;">
+                  <i class="ri-close-line"></i>
+                </button>
+              </div>
+            </div>
+            <div id="productsList" class="products-list">
+              <p class="empty-message">No hay productos aún</p>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Section: WhatsApp -->
+      <div id="section-whatsapp" class="dashboard-section" style="display: none;">
+        <section class="card">
+          <div class="card-header">
+            <h2><i class="ri-whatsapp-line"></i> Mensaje de WhatsApp</h2>
+          </div>
+          <div class="card-content">
+            <div class="whatsapp-template-editor">
+              <div class="template-help">
+                <p><strong>Personaliza el mensaje que se enviará por WhatsApp</strong></p>
+                <p class="help-text">Usa los tokens para insertar información dinámica del pedido:</p>
+              </div>
+
+              <div class="tokens-grid">
+                <button class="token-chip" data-token="{productos}" title="Lista de productos del pedido">
+                  <i class="ri-shopping-basket-line"></i> {productos}
+                </button>
+                <button class="token-chip" data-token="{total}" title="Total del pedido">
+                  <i class="ri-money-dollar-circle-line"></i> {total}
+                </button>
+                <button class="token-chip" data-token="{nombre}" title="Nombre del cliente">
+                  <i class="ri-user-line"></i> {nombre}
+                </button>
+                <button class="token-chip" data-token="{direccion}" title="Dirección de entrega">
+                  <i class="ri-map-pin-line"></i> {direccion}
+                </button>
+                <button class="token-chip" data-token="{telefono}" title="Teléfono del cliente">
+                  <i class="ri-phone-line"></i> {telefono}
+                </button>
+                <button class="token-chip" data-token="{metodo_pago}" title="Método de pago">
+                  <i class="ri-bank-card-line"></i> {metodo_pago}
+                </button>
+              </div>
+
+              <div class="form-group" style="margin-top: 1.5rem;">
+                <label for="whatsappTemplateInput">
+                  <i class="ri-message-3-line"></i> Plantilla del mensaje
+                </label>
+                <textarea id="whatsappTemplateInput" class="whatsapp-template-textarea" rows="10"
+                  placeholder="Escribe tu mensaje aquí y haz clic en los tokens para insertarlos..."></textarea>
+                <small>Haz clic en los tokens de arriba para insertarlos en la plantilla</small>
+              </div>
+
+              <div class="template-actions">
+                <button id="previewTemplateBtn" class="btn-secondary">
+                  <i class="ri-eye-line"></i> Vista previa
+                </button>
+                <button id="saveTemplateBtn" class="btn-primary">
+                  <i class="ri-save-line"></i> Guardar plantilla
+                </button>
+              </div>
+
+              <div id="templatePreview" class="template-preview" style="display: none;">
+                <h4><i class="ri-file-text-line"></i> Vista previa con datos de ejemplo:</h4>
+                <div class="preview-box"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
 
     </div>
 
-  </main>
+      </main>
+    </div>
+  </div>
 
   <!-- Modal para crear/editar negocio -->
   <div id="businessModal" class="modal" style="display: none;">

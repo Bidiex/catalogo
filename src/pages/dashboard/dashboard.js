@@ -60,12 +60,146 @@ async function init() {
     currentUser = await authService.getCurrentUser()
     userEmailSpan.textContent = currentUser.email
 
+    // Inicializar navegación del sidebar
+    initSidebarNavigation()
+
     // Cargar negocio
     await loadBusiness()
 
   } catch (error) {
     console.error('Error initializing dashboard:', error)
     notify.error('Error al cargar el dashboard')
+  }
+}
+
+// ============================================
+// SIDEBAR NAVIGATION
+// ============================================
+function initSidebarNavigation() {
+  const navItems = document.querySelectorAll('.nav-item[data-section]')
+  
+  navItems.forEach(item => {
+    item.addEventListener('click', (e) => {
+      e.preventDefault()
+      const section = item.dataset.section
+      
+      // Remover active de todos los nav items
+      navItems.forEach(nav => nav.classList.remove('active'))
+      // Agregar active al item clickeado
+      item.classList.add('active')
+      
+      // Cambiar sección
+      switchSection(section)
+    })
+  })
+
+  // Por defecto mostrar Dashboard
+  switchSection('dashboard')
+
+  // Inicializar búsquedas
+  initSearchFunctionality()
+}
+
+// ============================================
+// SEARCH FUNCTIONALITY
+// ============================================
+function initSearchFunctionality() {
+  // Búsqueda de categorías
+  const searchCategoriesInput = document.getElementById('searchCategoriesInput')
+  const clearCategoriesSearch = document.getElementById('clearCategoriesSearch')
+
+  if (searchCategoriesInput && clearCategoriesSearch) {
+    searchCategoriesInput.addEventListener('input', (e) => {
+      const query = e.target.value.trim().toLowerCase()
+      
+      if (query) {
+        clearCategoriesSearch.style.display = 'flex'
+        const filtered = categories.filter(cat => 
+          cat.name.toLowerCase().includes(query)
+        )
+        renderCategories(filtered)
+      } else {
+        clearCategoriesSearch.style.display = 'none'
+        renderCategories()
+      }
+    })
+
+    clearCategoriesSearch.addEventListener('click', () => {
+      searchCategoriesInput.value = ''
+      clearCategoriesSearch.style.display = 'none'
+      renderCategories()
+      searchCategoriesInput.focus()
+    })
+  }
+
+  // Búsqueda de productos
+  const searchProductsInput = document.getElementById('searchProductsInput')
+  const clearProductsSearch = document.getElementById('clearProductsSearch')
+
+  if (searchProductsInput && clearProductsSearch) {
+    searchProductsInput.addEventListener('input', (e) => {
+      const query = e.target.value.trim().toLowerCase()
+      
+      if (query) {
+        clearProductsSearch.style.display = 'flex'
+        const filtered = products.filter(prod => 
+          prod.name.toLowerCase().includes(query) ||
+          (prod.categories?.name && prod.categories.name.toLowerCase().includes(query)) ||
+          (prod.description && prod.description.toLowerCase().includes(query))
+        )
+        renderProducts(filtered)
+      } else {
+        clearProductsSearch.style.display = 'none'
+        renderProducts()
+      }
+    })
+
+    clearProductsSearch.addEventListener('click', () => {
+      searchProductsInput.value = ''
+      clearProductsSearch.style.display = 'none'
+      renderProducts()
+      searchProductsInput.focus()
+    })
+  }
+}
+
+function switchSection(sectionName) {
+  // Ocultar todas las secciones
+  const sections = document.querySelectorAll('.dashboard-section')
+  sections.forEach(section => {
+    section.classList.remove('active')
+    section.style.display = 'none'
+  })
+
+  // Mostrar la sección seleccionada
+  const targetSection = document.getElementById(`section-${sectionName}`)
+  if (targetSection) {
+    targetSection.classList.add('active')
+    targetSection.style.display = 'block'
+  }
+
+  // Actualizar título del header
+  updatePageTitle(sectionName)
+}
+
+function updatePageTitle(sectionName) {
+  const pageTitle = document.getElementById('pageTitle')
+  if (!pageTitle) return
+
+  const titles = {
+    'dashboard': 'Dashboard',
+    'business': 'Mi Negocio',
+    'categories': 'Categorías',
+    'products': 'Productos',
+    'whatsapp': 'Mensaje de WhatsApp'
+  }
+
+  pageTitle.textContent = titles[sectionName] || 'Dashboard'
+
+  // Mostrar/ocultar botón de editar negocio
+  const editBusinessBtn = document.getElementById('editBusinessBtn')
+  if (editBusinessBtn) {
+    editBusinessBtn.style.display = sectionName === 'business' ? 'flex' : 'none'
   }
 }
 
@@ -97,9 +231,60 @@ async function loadAllData() {
     renderBusinessInfo()
     renderCategories()
     renderProducts()
+    updateDashboardStats()
   } catch (error) {
     console.error('Error loading data:', error)
     notify.error('Error al cargar los datos')
+  }
+}
+
+// ============================================
+// DASHBOARD STATS
+// ============================================
+function updateDashboardStats() {
+  // Total Categorías
+  const statTotalCategories = document.getElementById('statTotalCategories')
+  if (statTotalCategories) {
+    statTotalCategories.textContent = categories.length
+  }
+
+  // Total Productos
+  const statTotalProducts = document.getElementById('statTotalProducts')
+  if (statTotalProducts) {
+    statTotalProducts.textContent = products.length
+  }
+
+  // Visitas al Catálogo (desde localStorage o backend)
+  const statCatalogVisits = document.getElementById('statCatalogVisits')
+  if (statCatalogVisits) {
+    const visitsKey = `catalog_visits_${currentBusiness.id}`
+    const visits = localStorage.getItem(visitsKey) || '0'
+    statCatalogVisits.textContent = parseInt(visits).toLocaleString()
+  }
+
+  // Producto Más Visto (desde localStorage o backend)
+  const statMostViewedProduct = document.getElementById('statMostViewedProduct')
+  if (statMostViewedProduct) {
+    const viewsKey = `product_views_${currentBusiness.id}`
+    const productViews = JSON.parse(localStorage.getItem(viewsKey) || '{}')
+    
+    let mostViewed = null
+    let maxViews = 0
+    
+    Object.keys(productViews).forEach(productId => {
+      if (productViews[productId] > maxViews) {
+        maxViews = productViews[productId]
+        mostViewed = products.find(p => p.id === productId)
+      }
+    })
+
+    if (mostViewed) {
+      statMostViewedProduct.textContent = mostViewed.name
+    } else if (products.length > 0) {
+      statMostViewedProduct.textContent = products[0].name
+    } else {
+      statMostViewedProduct.textContent = '-'
+    }
   }
 }
 
@@ -125,18 +310,30 @@ function renderBusinessInfo() {
   businessName.textContent = currentBusiness.name
   businessWhatsapp.textContent = currentBusiness.whatsapp_number
 
+  // Actualizar nombre en el sidebar
+  const businessBranchName = document.getElementById('businessBranchName')
+  if (businessBranchName) {
+    businessBranchName.textContent = currentBusiness.name
+  }
+
   const catalogUrl = `${window.location.origin}/src/pages/catalog/index.html?slug=${currentBusiness.slug}`
   catalogLink.href = catalogUrl
   catalogLink.textContent = catalogUrl
 }
 
-function renderCategories() {
-  if (categories.length === 0) {
-    categoriesList.innerHTML = '<p class="empty-message">No hay categorías aún</p>'
+let filteredCategories = []
+let filteredProducts = []
+
+function renderCategories(categoriesToRender = null) {
+  const catsToShow = categoriesToRender !== null ? categoriesToRender : categories
+  filteredCategories = catsToShow
+
+  if (catsToShow.length === 0) {
+    categoriesList.innerHTML = '<p class="empty-message">No se encontraron categorías</p>'
     return
   }
 
-  categoriesList.innerHTML = categories.map(category => `
+  categoriesList.innerHTML = catsToShow.map(category => `
     <div class="category-item" data-id="${category.id}">
       <div class="category-item-info">
         <div class="category-item-name">${category.name}</div>
@@ -155,26 +352,29 @@ function renderCategories() {
   // Event listeners
   document.querySelectorAll('.edit-category').forEach(btn => {
     btn.addEventListener('click', (e) => {
-      const id = e.target.dataset.id
+      const id = e.target.dataset.id || e.target.closest('.edit-category').dataset.id
       openEditCategoryModal(id)
     })
   })
 
   document.querySelectorAll('.delete-category').forEach(btn => {
     btn.addEventListener('click', (e) => {
-      const id = e.target.dataset.id
+      const id = e.target.dataset.id || e.target.closest('.delete-category').dataset.id
       deleteCategory(id)
     })
   })
 }
 
-function renderProducts() {
-  if (products.length === 0) {
-    productsList.innerHTML = '<p class="empty-message">No hay productos aún</p>'
+function renderProducts(productsToRender = null) {
+  const prodsToShow = productsToRender !== null ? productsToRender : products
+  filteredProducts = prodsToShow
+
+  if (prodsToShow.length === 0) {
+    productsList.innerHTML = '<p class="empty-message">No se encontraron productos</p>'
     return
   }
 
-  productsList.innerHTML = products.map(product => `
+  productsList.innerHTML = prodsToShow.map(product => `
     <div class="product-card" data-id="${product.id}">
       <div class="product-card-image">
         ${product.image_url
@@ -207,21 +407,21 @@ function renderProducts() {
   // Event listeners
   document.querySelectorAll('.edit-product').forEach(btn => {
     btn.addEventListener('click', (e) => {
-      const id = e.target.dataset.id
+      const id = e.target.dataset.id || e.target.closest('.edit-product').dataset.id
       openEditProductModal(id)
     })
   })
 
   document.querySelectorAll('.manage-options').forEach(btn => {
     btn.addEventListener('click', (e) => {
-      const id = e.target.dataset.id
+      const id = e.target.dataset.id || e.target.closest('.manage-options').dataset.id
       openProductOptionsModal(id)
     })
   })
 
   document.querySelectorAll('.delete-product').forEach(btn => {
     btn.addEventListener('click', (e) => {
-      const id = e.target.dataset.id
+      const id = e.target.dataset.id || e.target.closest('.delete-product').dataset.id
       deleteProduct(id)
     })
   })
@@ -233,6 +433,14 @@ function renderProducts() {
 
 document.getElementById('closeBusinessModal').addEventListener('click', closeBusinessModal)
 document.getElementById('cancelBusinessBtn').addEventListener('click', closeBusinessModal)
+
+// Botón de editar negocio en el header
+const editBusinessBtn = document.getElementById('editBusinessBtn')
+if (editBusinessBtn) {
+  editBusinessBtn.addEventListener('click', () => {
+    openBusinessModal(true)
+  })
+}
 
 function openBusinessModal(isEdit = false) {
   const modalTitle = document.getElementById('businessModalTitle')
@@ -303,6 +511,7 @@ document.getElementById('businessForm').addEventListener('submit', async (e) => 
 
       closeBusinessModal()
       await loadBusiness()
+      updateDashboardStats()
 
     } catch (error) {
       console.error('Error saving business:', error)
@@ -365,6 +574,7 @@ document.getElementById('categoryForm').addEventListener('submit', async (e) => 
 
       closeCategoryModal()
       await loadAllData()
+      updateDashboardStats()
 
     } catch (error) {
       console.error('Error saving category:', error)
@@ -493,6 +703,7 @@ document.getElementById('productForm').addEventListener('submit', async (e) => {
 
       closeProductModal()
       await loadAllData()
+      updateDashboardStats()
 
     } catch (error) {
       console.error('Error saving product:', error)

@@ -13,6 +13,8 @@ let productOptions = []
 let currentQuantity = 1
 let selectedQuickComment = null
 let selectedSides = []
+let currentSearchQuery = ''
+let currentCategoryFilter = 'all'
 
 // ============================================
 // ELEMENTOS DEL DOM
@@ -86,6 +88,9 @@ async function init() {
     // Cargar carrito del localStorage
     updateCartUI()
 
+    // Inicializar búsqueda
+    initCatalogSearch()
+
     showCatalog()
 
   } catch (error) {
@@ -106,9 +111,41 @@ async function loadBusiness(slug) {
     if (!data) throw new Error('Business not found')
 
     currentBusiness = data
+
+    // Trackear visita al catálogo
+    trackCatalogVisit(currentBusiness.id)
   } catch (error) {
     console.error('Error loading business:', error)
     throw error
+  }
+}
+
+// ============================================
+// TRACKING FUNCTIONS
+// ============================================
+function trackCatalogVisit(businessId) {
+  try {
+    const visitsKey = `catalog_visits_${businessId}`
+    const currentVisits = parseInt(localStorage.getItem(visitsKey) || '0')
+    localStorage.setItem(visitsKey, (currentVisits + 1).toString())
+  } catch (error) {
+    console.error('Error tracking catalog visit:', error)
+  }
+}
+
+function trackProductView(businessId, productId) {
+  try {
+    const viewsKey = `product_views_${businessId}`
+    const productViews = JSON.parse(localStorage.getItem(viewsKey) || '{}')
+    
+    if (!productViews[productId]) {
+      productViews[productId] = 0
+    }
+    productViews[productId] += 1
+    
+    localStorage.setItem(viewsKey, JSON.stringify(productViews))
+  } catch (error) {
+    console.error('Error tracking product view:', error)
   }
 }
 
@@ -201,43 +238,68 @@ function renderCategoriesNav() {
       navTrack.querySelectorAll('.category-nav-btn').forEach(b => b.classList.remove('active'))
       e.target.classList.add('active')
 
-      // Filtrar productos
+      // Filtrar productos con búsqueda actual
       const categoryId = e.target.dataset.category
-      filterProductsByCategory(categoryId)
+      currentCategoryFilter = categoryId
+      renderProducts(categoryId, currentSearchQuery)
     })
   })
 }
 
-function renderProducts(filteredCategoryId = 'all') {
-  if (products.length === 0) {
-    productsContainer.innerHTML = '<p class="empty-message">No hay productos disponibles</p>'
+function renderProducts(filteredCategoryId = 'all', searchQuery = '') {
+  currentCategoryFilter = filteredCategoryId
+  currentSearchQuery = searchQuery
+
+  // Aplicar filtros
+  let filteredProducts = products
+
+  // Filtrar por búsqueda
+  if (searchQuery.trim()) {
+    const query = searchQuery.trim().toLowerCase()
+    filteredProducts = filteredProducts.filter(prod => 
+      prod.name.toLowerCase().includes(query) ||
+      (prod.description && prod.description.toLowerCase().includes(query)) ||
+      (prod.categories?.name && prod.categories.name.toLowerCase().includes(query))
+    )
+  }
+
+  // Filtrar por categoría
+  if (filteredCategoryId !== 'all') {
+    filteredProducts = filteredProducts.filter(p => p.category_id === filteredCategoryId)
+  }
+
+  if (filteredProducts.length === 0) {
+    if (searchQuery.trim() || filteredCategoryId !== 'all') {
+      productsContainer.innerHTML = '<p class="empty-message">No se encontraron productos</p>'
+    } else {
+      productsContainer.innerHTML = '<p class="empty-message">No hay productos disponibles</p>'
+    }
     return
   }
 
   let html = ''
 
-  if (filteredCategoryId === 'all') {
-    // Mostrar por categorías
+  if (filteredCategoryId === 'all' && !searchQuery.trim()) {
+    // Mostrar por categorías (vista normal sin búsqueda)
     if (categories.length > 0) {
       categories.forEach(category => {
-        const categoryProducts = products.filter(p => p.category_id === category.id)
+        const categoryProducts = filteredProducts.filter(p => p.category_id === category.id)
         if (categoryProducts.length > 0) {
           html += renderCategorySection(category, categoryProducts)
         }
       })
 
       // Productos sin categoría
-      const uncategorizedProducts = products.filter(p => !p.category_id)
+      const uncategorizedProducts = filteredProducts.filter(p => !p.category_id)
       if (uncategorizedProducts.length > 0) {
         html += renderCategorySection({ name: 'Otros' }, uncategorizedProducts)
       }
     } else {
       // No hay categorías, mostrar todos
-      html += `<div class="products-grid">${products.map(renderProductCard).join('')}</div>`
+      html += `<div class="products-grid">${filteredProducts.map(renderProductCard).join('')}</div>`
     }
   } else {
-    // Filtrar por categoría específica
-    const filteredProducts = products.filter(p => p.category_id === filteredCategoryId)
+    // Mostrar como grid simple (cuando hay búsqueda o filtro de categoría)
     html += `<div class="products-grid">${filteredProducts.map(renderProductCard).join('')}</div>`
   }
 
@@ -281,13 +343,52 @@ function renderProductCard(product) {
 }
 
 function filterProductsByCategory(categoryId) {
-  renderProducts(categoryId)
+  currentCategoryFilter = categoryId
+  renderProducts(categoryId, currentSearchQuery)
+}
+
+// ============================================
+// CATALOG SEARCH FUNCTIONALITY
+// ============================================
+function initCatalogSearch() {
+  const catalogSearchInput = document.getElementById('catalogSearchInput')
+  const clearCatalogSearch = document.getElementById('clearCatalogSearch')
+
+  if (catalogSearchInput && clearCatalogSearch) {
+    catalogSearchInput.addEventListener('input', (e) => {
+      const query = e.target.value.trim()
+      currentSearchQuery = query
+      
+      if (query) {
+        clearCatalogSearch.style.display = 'flex'
+        // Renderizar con búsqueda y categoría actual
+        renderProducts(currentCategoryFilter, query)
+      } else {
+        clearCatalogSearch.style.display = 'none'
+        // Renderizar solo con categoría actual
+        renderProducts(currentCategoryFilter, '')
+      }
+    })
+
+    clearCatalogSearch.addEventListener('click', () => {
+      catalogSearchInput.value = ''
+      clearCatalogSearch.style.display = 'none'
+      currentSearchQuery = ''
+      // Renderizar solo con categoría actual
+      renderProducts(currentCategoryFilter, '')
+      catalogSearchInput.focus()
+    })
+  }
 }
 
 // ============================================
 // PRODUCT MODAL
 // ============================================
 async function openProductModal(productId) {
+  // Trackear visualización del producto
+  if (currentBusiness) {
+    trackProductView(currentBusiness.id, productId)
+  }
   selectedProduct = products.find(p => p.id === productId)
   if (!selectedProduct) return
 
