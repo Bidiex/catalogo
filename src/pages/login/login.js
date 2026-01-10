@@ -9,6 +9,7 @@ const toggleRegisterBtn = document.getElementById('toggleRegister')
 const backToLoginBtn = document.getElementById('backToLogin')
 const errorMessage = document.getElementById('errorMessage')
 const registerErrorMessage = document.getElementById('registerErrorMessage')
+const googleLoginBtn = document.getElementById('googleLoginBtn')
 
 // Verificar si ya hay sesión activa
 checkExistingSession()
@@ -27,6 +28,7 @@ toggleRegisterBtn.addEventListener('click', () => {
   toggleRegisterBtn.style.display = 'none'
   registerForm.style.display = 'flex'
   document.querySelector('.divider').style.display = 'none'
+  googleLoginBtn.style.display = 'none'
 })
 
 backToLoginBtn.addEventListener('click', () => {
@@ -35,9 +37,10 @@ backToLoginBtn.addEventListener('click', () => {
   toggleRegisterBtn.style.display = 'block'
   document.querySelector('.divider').style.display = 'flex'
   registerErrorMessage.style.display = 'none'
+  googleLoginBtn.style.display = 'flex'
 })
 
-// Manejo del login
+// Manejo del login con email/password
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault()
 
@@ -57,6 +60,19 @@ loginForm.addEventListener('submit', async (e) => {
       errorMessage.style.display = 'block'
     }
   }, 'Iniciando sesión...')
+})
+
+// Manejo del login con Google
+googleLoginBtn.addEventListener('click', async () => {
+  await buttonLoader.execute(googleLoginBtn, async () => {
+    const result = await authService.signInWithGoogle()
+    
+    if (!result.success) {
+      errorMessage.textContent = result.error || 'Error al iniciar sesión con Google'
+      errorMessage.style.display = 'block'
+    }
+    // Si tiene éxito, Supabase redirige automáticamente
+  }, 'Redirigiendo a Google...')
 })
 
 // Manejo del registro
@@ -84,9 +100,14 @@ registerForm.addEventListener('submit', async (e) => {
       registerErrorMessage.style.background = '#efe'
       registerErrorMessage.style.color = '#383'
       registerErrorMessage.style.borderColor = '#cfc'
-      registerErrorMessage.textContent = '¡Cuenta creada! Revisa tu email para confirmar tu cuenta.'
+      registerErrorMessage.textContent = '¡Cuenta creada! Ya puedes iniciar sesión.'
 
       registerForm.reset()
+      
+      // Volver al formulario de login después de 2 segundos
+      setTimeout(() => {
+        backToLoginBtn.click()
+      }, 2000)
     } else {
       registerErrorMessage.textContent = result.error
       registerErrorMessage.style.display = 'block'
