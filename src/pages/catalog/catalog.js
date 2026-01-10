@@ -839,17 +839,14 @@ Método de pago: {metodo_pago}
     const encodedMessage = encodeURIComponent(message)
     const whatsappUrl = `https://wa.me/${currentBusiness.whatsapp_number}?text=${encodedMessage}`
 
-    // Cerrar modal
+    // Cerrar modal de checkout
     closeCheckoutModal()
 
     // Cerrar panel del carrito
     cartPanel.style.display = 'none'
 
-    // Abrir WhatsApp
-    window.open(whatsappUrl, '_blank')
-
-    // Feedback
-    notify.success('¡Pedido listo! Te redirigimos a WhatsApp')
+    // Opcional: Feedback visual de redirección
+    showRedirectModal(whatsappUrl)
 
     // Opcional: Limpiar carrito después de enviar
     // cart.clear()
@@ -1055,21 +1052,7 @@ function showClosedModal() {
 }
 
 
-// Llamar al abrir el modal
-btnWhatsapp.addEventListener('click', () => {
-  const cartItems = cart.get()
-  if (cartItems.length === 0) {
-    notify.warning('El carrito está vacío')
-    return
-  }
 
-  checkoutModal.style.display = 'flex'
-  loadSavedClientData() // ← Cargar datos guardados
-
-  setTimeout(() => {
-    document.getElementById('clientName').focus()
-  }, 100)
-})
 
 // Guardar al enviar
 checkoutForm.addEventListener('submit', async (e) => {
@@ -1086,3 +1069,33 @@ checkoutForm.addEventListener('submit', async (e) => {
   saveClientData(clientData) // ← Guardar para próximos pedidos
   await sendWhatsAppOrder(clientData)
 })
+// ============================================
+// REDIRECT MODAL
+// ============================================
+function showRedirectModal(url) {
+  const modal = document.createElement('div')
+  modal.className = 'redirect-modal'
+  modal.innerHTML = `
+    <div class="redirect-modal-content">
+      <div class="redirect-icon">
+        <i class="ri-whatsapp-line"></i>
+      </div>
+      <h2>Enviando pedido a WhatsApp</h2>
+      <p>Serás redirigido en unos segundos...</p>
+      <div class="redirect-spinner"></div>
+    </div>
+  `
+  document.body.appendChild(modal)
+
+  // Redirigir después de 3 segundos
+  setTimeout(() => {
+    window.open(url, '_blank')
+    // Remover modal y mostrar éxito
+    setTimeout(() => {
+      modal.remove()
+      notify.success('¡Pedido enviado con éxito!')
+      cart.clear()
+      updateCartUI()
+    }, 1000)
+  }, 3000)
+}
