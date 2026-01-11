@@ -1051,7 +1051,6 @@ const promotionImageInput = document.getElementById('promotionImageInput')
 const promotionImagePreview = document.getElementById('promotionImagePreview')
 const promotionImageActions = document.getElementById('promotionImageActions')
 const promotionImageUrlHidden = document.getElementById('promotionImageUrlHidden')
-const promotionProductsSelector = document.getElementById('promotionProductsSelector')
 
 // Initialize Promotions listeners
 if (addPromotionBtn) addPromotionBtn.addEventListener('click', () => openPromotionModal())
@@ -1221,22 +1220,6 @@ function renderPromotions() {
 
 function openPromotionModal(promotionId = null) {
   resetPromotionImageUpload()
-  promotionProductsSelector.innerHTML = ''
-
-  // Render product checkboxes
-  if (products.length > 0) {
-    products.forEach(prod => {
-      const div = document.createElement('div')
-      div.className = 'product-checkbox-item'
-      div.innerHTML = `
-        <input type="checkbox" id="promo_prod_${prod.id}" value="${prod.id}">
-        <label for="promo_prod_${prod.id}">${prod.name} ($${prod.price})</label>
-      `
-      promotionProductsSelector.appendChild(div)
-    })
-  } else {
-    promotionProductsSelector.innerHTML = '<p class="text-sm text-gray-500">No hay productos disponibles.</p>'
-  }
 
   if (promotionId) {
     editingPromotion = promotions.find(p => p.id === promotionId)
@@ -1263,14 +1246,6 @@ function openPromotionModal(promotionId = null) {
       promotionImagePreview.innerHTML = `<img src="${editingPromotion.image_url}" alt="Preview" style="object-fit:cover; width:100%; height:100%; border-radius:8px;">`
       promotionImagePreview.classList.add('has-image')
       promotionImageActions.style.display = 'flex'
-    }
-
-    // Products
-    if (editingPromotion.product_ids && Array.isArray(editingPromotion.product_ids)) {
-      editingPromotion.product_ids.forEach(pid => {
-        const cb = document.getElementById(`promo_prod_${pid}`)
-        if (cb) cb.checked = true
-      })
     }
 
   } else {
@@ -1477,10 +1452,6 @@ document.getElementById('promotionForm').addEventListener('submit', async (e) =>
   const isActive = document.getElementById('promotionActiveInput').checked
   const imageUrl = promotionImageUrlHidden.value
 
-  const selectedProducts = []
-  document.querySelectorAll('#promotionProductsSelector input:checked').forEach(cb => {
-    selectedProducts.push(cb.value)
-  })
 
   await buttonLoader.execute(savePromotionBtn, async () => {
     try {
@@ -1492,8 +1463,7 @@ document.getElementById('promotionForm').addEventListener('submit', async (e) =>
         image_url: imageUrl,
         start_date: startDate,
         end_date: endDate,
-        is_active: isActive,
-        product_ids: selectedProducts
+        is_active: isActive
       }
 
       if (editingPromotion) {

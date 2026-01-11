@@ -324,24 +324,6 @@ async function openPromotionModal(promo) {
 
   promotionQuantityValue.textContent = currentQuantity
 
-  // Render Products List if available (needs fetching products names if only IDs stored)
-  // We have `products` array loaded in catalog. We can map IDs to names.
-  if (promo.product_ids && promo.product_ids.length > 0) {
-    promotionProductsSection.style.display = 'block'
-    const productNames = promo.product_ids.map(id => {
-      const p = products.find(prod => prod.id === id) // Note: IDs might be strings/numbers check types
-      return p ? p.name : null
-    }).filter(Boolean)
-
-    if (productNames.length > 0) {
-      promotionProductsList.innerHTML = productNames.map(name => `<li>${name}</li>`).join('')
-    } else {
-      promotionProductsSection.style.display = 'none'
-    }
-  } else {
-    promotionProductsSection.style.display = 'none'
-  }
-
   // Load and render options from database
   try {
     const options = await promotionOptionsService.getByPromotion(promo.id)
