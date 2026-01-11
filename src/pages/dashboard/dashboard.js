@@ -10,6 +10,7 @@ import { buttonLoader } from '../../utils/buttonLoader.js'
 import { supabase } from '../../config/supabase.js'
 import { productOptionsService } from '../../services/productOptions.js'
 import { promotionsService } from '../../services/promotions.js'
+import { promotionOptionsService } from '../../services/promotionOptions.js'
 import { imageService } from '../../services/images.js'
 
 // ============================================
@@ -28,8 +29,6 @@ let editingPaymentMethod = null
 let promotions = []
 let editingPromotion = null
 let currentPromotionImage = null
-let promotionQuickComments = []
-let promotionSides = []
 
 // ============================================
 // ELEMENTOS DEL DOM
@@ -955,32 +954,56 @@ optionForm.addEventListener('submit', async (e) => {
   e.preventDefault()
 
   const name = optionNameInput.value
-  const price = editingOptionType === 'side' ? parseFloat(optionPriceInput.value) : 0
+  const price = (editingOptionType === 'side' || editingPromotionOptionType === 'side') ? parseFloat(optionPriceInput.value) : 0
   const submitBtn = e.submitter || document.querySelector('#optionForm button[type="submit"]')
 
   await buttonLoader.execute(submitBtn, async () => {
     try {
-      const optionData = {
-        product_id: currentProductForOptions.id,
-        type: editingOptionType,
-        name,
-        price,
-        display_order: editingOption ? editingOption.display_order : 0
-      }
+      // Check if we're working with promotions or products
+      if (currentPromotionForOptions) {
+        // PROMOTION OPTIONS
+        const optionData = {
+          promotion_id: currentPromotionForOptions.id,
+          type: editingPromotionOptionType,
+          name,
+          price,
+          display_order: editingPromotionOption ? editingPromotionOption.display_order : 0
+        }
 
-      if (editingOption) {
-        // Actualizar
-        await productOptionsService.update(editingOption.id, optionData)
-        notify.success('Opción actualizada')
-      } else {
-        // Crear
-        await productOptionsService.create(optionData)
-        notify.success('Opción creada')
-      }
+        if (editingPromotionOption) {
+          await promotionOptionsService.update(editingPromotionOption.id, optionData)
+          notify.success('Opción actualizada')
+        } else {
+          await promotionOptionsService.create(optionData)
+          notify.success('Opción creada')
+        }
 
-      closeOptionModalFn()
-      await loadProductOptions(currentProductForOptions.id)
-      renderProductOptionsDashboard()
+        closeOptionModalFn()
+        await loadPromotionOptions(currentPromotionForOptions.id)
+        renderPromotionOptionsDashboard()
+
+      } else if (currentProductForOptions) {
+        // PRODUCT OPTIONS
+        const optionData = {
+          product_id: currentProductForOptions.id,
+          type: editingOptionType,
+          name,
+          price,
+          display_order: editingOption ? editingOption.display_order : 0
+        }
+
+        if (editingOption) {
+          await productOptionsService.update(editingOption.id, optionData)
+          notify.success('Opción actualizada')
+        } else {
+          await productOptionsService.create(optionData)
+          notify.success('Opción creada')
+        }
+
+        closeOptionModalFn()
+        await loadProductOptions(currentProductForOptions.id)
+        renderProductOptionsDashboard()
+      }
 
     } catch (error) {
       console.error('Error saving option:', error)
@@ -1160,6 +1183,9 @@ function renderPromotions() {
         </p>
       </div>
       <div class="promotion-actions">
+        <button class="btn-manage-options manage-promotion-options" data-id="${promo.id}">
+          <i class="ri-settings-3-line"></i> Opciones
+        </button>
         <button class="btn-icon edit-promotion" data-id="${promo.id}">
           <i class="ri-edit-line"></i>
         </button>
@@ -1171,6 +1197,13 @@ function renderPromotions() {
   `).join('')
 
   // Listeners
+  document.querySelectorAll('.manage-promotion-options').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = btn.dataset.id
+      openPromotionOptionsModal(id)
+    })
+  })
+
   document.querySelectorAll('.edit-promotion').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const id = btn.dataset.id
@@ -1240,18 +1273,11 @@ function openPromotionModal(promotionId = null) {
       })
     }
 
-    // Store extra configs (quick comments / sides) for when saving
-    promotionQuickComments = editingPromotion.quick_comments || []
-    promotionSides = editingPromotion.sides || []
-
-    updateConfigStatus()
-
   } else {
     editingPromotion = null
     document.getElementById('promotionModalTitle').textContent = 'Nueva Promoción'
     document.getElementById('promotionForm').reset()
     document.getElementById('promotionActiveInput').checked = true
-    promotionQuickComments = []
     promotionSides = []
     updateConfigStatus()
   }
@@ -1264,34 +1290,183 @@ function closePromotionModalFunc() {
   editingPromotion = null
 }
 
-// Config Buttons Listeners (Quick Comments / Sides for Promotions)
-// These would open the same modals but save to different temporary arrays
-// For simplicity, we might reuse `openProductOptionsModal` logic but adapted, 
-// OR simpler: just say we will reuse the existing Option Modal to add to the arrays directly.
+// ============================================
+// PROMOTION OPTIONS MANAGEMENT (Like Product Options)
+// ============================================
+let currentPromotionForOptions = null
+let promotionQuickComments = []
+let promotionSides = []
 
-document.getElementById('promotionCommentsBtn').addEventListener('click', () => {
-  // Logic to manage promotion specific comments
-  // For now, let's keep it simple: We need a way to manage these lists.
-  // Ideally we reuse the Product Options UI but bind it to `promotionQuickComments`
-  alert('Funcionalidad de configuración avanzada pendiente de implementación detallada. Se guardará vacío por ahora.')
-})
+// Modal elements (reuse product options modal)
+const promotionOptionsModal = document.getElementById('productOptionsModal')
+const optionsPromotionName = document.getElementById('optionsProductName')
 
-document.getElementById('promotionSidesBtn').addEventListener('click', () => {
-  // Logic to manage promotion specific sides
-  alert('Funcionalidad de configuración avanzada pendiente de implementación detallada. Se guardará vacío por ahora.')
-})
+async function openPromotionOptionsModal(promotionId) {
+  const promotion = promotions.find(p => p.id === promotionId)
+  if (!promotion) return
 
-function updateConfigStatus() {
-  const statusEl = document.getElementById('promotionConfigStatus')
-  const comments = promotionQuickComments.length
-  const sidesCount = promotionSides.length
+  currentPromotionForOptions = promotion
+  currentProductForOptions = null // Clear product context
 
-  if (comments === 0 && sidesCount === 0) {
-    statusEl.textContent = 'Ninguna configuración extra'
-  } else {
-    statusEl.textContent = `${comments} comentarios, ${sidesCount} acompañantes`
+  optionsPromotionName.textContent = promotion.title
+
+  await loadPromotionOptions(promotion.id)
+  renderPromotionOptionsDashboard()
+
+  promotionOptionsModal.style.display = 'flex'
+}
+
+async function loadPromotionOptions(promotionId) {
+  try {
+    const options = await promotionOptionsService.getByPromotion(promotionId)
+    promotionQuickComments = options.filter(opt => opt.type === 'quick_comment')
+    promotionSides = options.filter(opt => opt.type === 'side')
+  } catch (error) {
+    console.error('Error loading promotion options:', error)
+    promotionQuickComments = []
+    promotionSides = []
   }
 }
+
+function renderPromotionOptionsDashboard() {
+  const quickCommentsListDashboard = document.getElementById('quickCommentsListDashboard')
+  const sidesListDashboard = document.getElementById('sidesListDashboard')
+
+  // Render quick comments
+  if (promotionQuickComments.length > 0) {
+    quickCommentsListDashboard.innerHTML = promotionQuickComments.map(comment => `
+      <div class="option-item">
+        <span>${comment.name}</span>
+        <div class="option-actions">
+          <button class="btn-icon-small edit-promo-option" data-id="${comment.id}" data-type="quick_comment">
+            <i class="ri-edit-line"></i>
+          </button>
+          <button class="btn-icon-small danger delete-promo-option" data-id="${comment.id}">
+            <i class="ri-delete-bin-line"></i>
+          </button>
+        </div>
+      </div>
+    `).join('')
+  } else {
+    quickCommentsListDashboard.innerHTML = '<p class="empty-message" style="padding: 1rem; text-align: center; color: #9ca3af; font-size: 0.9rem;">No hay comentarios rápidos</p>'
+  }
+
+  // Render sides
+  if (promotionSides.length > 0) {
+    sidesListDashboard.innerHTML = promotionSides.map(side => `
+      <div class="option-item">
+        <span>${side.name} (+$${parseFloat(side.price).toLocaleString()})</span>
+        <div class="option-actions">
+          <button class="btn-icon-small edit-promo-option" data-id="${side.id}" data-type="side">
+            <i class="ri-edit-line"></i>
+          </button>
+          <button class="btn-icon-small danger delete-promo-option" data-id="${side.id}">
+            <i class="ri-delete-bin-line"></i>
+          </button>
+        </div>
+      </div>
+    `).join('')
+  } else {
+    sidesListDashboard.innerHTML = '<p class="empty-message" style="padding: 1rem; text-align: center; color: #9ca3af; font-size: 0.9rem;">No hay acompañantes</p>'
+  }
+
+  // Add listeners
+  document.querySelectorAll('.edit-promo-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id
+      const type = btn.dataset.type
+      openPromotionOptionEditModal(id, type)
+    })
+  })
+
+  document.querySelectorAll('.delete-promo-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id
+      deletePromotionOption(id)
+    })
+  })
+}
+
+// Override add buttons to work for promotions (already declared earlier)
+// const addQuickCommentBtn = document.getElementById('addQuickCommentBtn')
+// const addSideBtn = document.getElementById('addSideBtn')
+
+// Store original listeners
+const originalAddCommentListener = addQuickCommentBtn.onclick
+const originalAddSideListener = addSideBtn.onclick
+
+// Replace with dynamic listeners
+addQuickCommentBtn.onclick = null
+addSideBtn.onclick = null
+
+addQuickCommentBtn.addEventListener('click', () => {
+  if (currentPromotionForOptions) {
+    openPromotionOptionEditModal(null, 'quick_comment')
+  } else if (currentProductForOptions) {
+    openOptionModal('comment')
+  }
+})
+
+addSideBtn.addEventListener('click', () => {
+  if (currentPromotionForOptions) {
+    openPromotionOptionEditModal(null, 'side')
+  } else if (currentProductForOptions) {
+    openOptionModal('side')
+  }
+})
+
+let editingPromotionOption = null
+let editingPromotionOptionType = null
+
+function openPromotionOptionEditModal(optionId = null, type) {
+  editingPromotionOptionType = type
+
+  if (optionId) {
+    const allOptions = [...promotionQuickComments, ...promotionSides]
+    editingPromotionOption = allOptions.find(opt => opt.id === optionId)
+
+    optionModalTitle.textContent = type === 'quick_comment' ? 'Editar Comentario' : 'Editar Acompañante'
+    optionNameInput.value = editingPromotionOption.name
+    optionPriceInput.value = editingPromotionOption.price || 0
+  } else {
+    editingPromotionOption = null
+    optionModalTitle.textContent = type === 'quick_comment' ? 'Nuevo Comentario Rápido' : 'Nuevo Acompañante'
+    optionNameInput.value = ''
+    optionPriceInput.value = 0
+  }
+
+  if (type === 'quick_comment') {
+    optionPriceGroup.style.display = 'none'
+  } else {
+    optionPriceGroup.style.display = 'flex'
+  }
+
+  optionModal.style.display = 'flex'
+}
+
+async function deletePromotionOption(optionId) {
+  const result = await confirm.show({
+    title: '¿Eliminar opción?',
+    message: 'Esta acción no se puede deshacer',
+    confirmText: 'Eliminar',
+    type: 'danger'
+  })
+
+  if (!result) return
+
+  const loadingToast = notify.loading('Eliminando opción...')
+
+  try {
+    await promotionOptionsService.delete(optionId)
+    notify.updateLoading(loadingToast, 'Opción eliminada', 'success')
+    await loadPromotionOptions(currentPromotionForOptions.id)
+    renderPromotionOptionsDashboard()
+  } catch (error) {
+    console.error('Error deleting option:', error)
+    notify.updateLoading(loadingToast, 'Error al eliminar la opción', 'error')
+  }
+}
+
 
 document.getElementById('promotionForm').addEventListener('submit', async (e) => {
   e.preventDefault()
@@ -1320,9 +1495,7 @@ document.getElementById('promotionForm').addEventListener('submit', async (e) =>
         start_date: startDate,
         end_date: endDate,
         is_active: isActive,
-        product_ids: selectedProducts,
-        quick_comments: promotionQuickComments,
-        sides: promotionSides
+        product_ids: selectedProducts
       }
 
       if (editingPromotion) {

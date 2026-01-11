@@ -2,6 +2,8 @@ import { supabase } from '../../config/supabase.js'
 import { cart } from '../../utils/cart.js'
 import { notify } from '../../utils/notifications.js'
 import { promotionsService } from '../../services/promotions.js'
+import { promotionOptionsService } from '../../services/promotionOptions.js'
+
 
 // ============================================
 // ESTADO GLOBAL
@@ -301,7 +303,7 @@ function startPromoAutoplay() {
 }
 
 // Promotion Modal
-function openPromotionModal(promo) {
+async function openPromotionModal(promo) {
   if (currentBusiness) {
     // Track view if needed tracking for promos
   }
@@ -340,8 +342,22 @@ function openPromotionModal(promo) {
     promotionProductsSection.style.display = 'none'
   }
 
-  // Render Options (Quick Comments / Sides)
-  renderPromotionOptions(promo)
+  // Load and render options from database
+  try {
+    const options = await promotionOptionsService.getByPromotion(promo.id)
+    const quickComments = options.filter(opt => opt.type === 'quick_comment')
+    const sides = options.filter(opt => opt.type === 'side')
+
+    // Store in promo object for renderPromotionOptions
+    promo.quick_comments = quickComments
+    promo.sides = sides
+
+    renderPromotionOptions(promo)
+  } catch (error) {
+    console.error('Error loading promotion options:', error)
+    // Fallback to JSON fields if they exist
+    renderPromotionOptions(promo)
+  }
 
   promotionModal.style.display = 'flex'
 }
