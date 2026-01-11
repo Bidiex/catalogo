@@ -1278,8 +1278,6 @@ function openPromotionModal(promotionId = null) {
     document.getElementById('promotionModalTitle').textContent = 'Nueva Promoción'
     document.getElementById('promotionForm').reset()
     document.getElementById('promotionActiveInput').checked = true
-    promotionSides = []
-    updateConfigStatus()
   }
 
   promotionModal.style.display = 'flex'
