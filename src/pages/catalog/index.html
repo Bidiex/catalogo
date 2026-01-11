@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Catálogo</title>
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" id="dynamicFavicon" />
   <link rel="stylesheet" href="/src/styles/global.css">
   <link rel="stylesheet" href="./catalog.css">
 </head>
@@ -29,6 +30,9 @@
     <!-- Header -->
     <header class="catalog-header">
       <div class="header-content">
+        <div class="business-logo" id="headerLogo"
+          style="display: none; width: 60px; height: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; flex-shrink: 0; background-color: white;">
+        </div>
         <div class="business-info">
           <h1 id="businessName">Cargando...</h1>
           <p id="businessDescription"></p>

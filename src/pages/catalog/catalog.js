@@ -528,6 +528,23 @@ function renderBusinessInfo() {
   businessName.textContent = currentBusiness.name
   businessDescription.textContent = currentBusiness.description || ''
   document.title = `${currentBusiness.name} - Catálogo`
+
+  // Render Logo and Favicon
+  const headerLogo = document.getElementById('headerLogo')
+  if (headerLogo) {
+    if (currentBusiness.logo_url) {
+      headerLogo.style.display = 'block'
+      headerLogo.innerHTML = `<img src="${currentBusiness.logo_url}" alt="${currentBusiness.name}" style="object-fit:cover; width:100%; height:100%;">`
+
+      // Update Favicon
+      const favicon = document.getElementById('dynamicFavicon')
+      if (favicon) {
+        favicon.href = currentBusiness.logo_url
+      }
+    } else {
+      headerLogo.style.display = 'none'
+    }
+  }
 }
 
 function renderCategoriesNav() {

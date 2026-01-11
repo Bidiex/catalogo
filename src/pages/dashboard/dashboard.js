@@ -30,6 +30,100 @@ let promotions = []
 let editingPromotion = null
 let currentPromotionImage = null
 
+// Wizard onboarding logo
+let wizardLogoUrl = null
+
+// ============================================
+// ONBOARDING WIZARD - LOGO UPLOAD
+// ============================================
+const wizLogoPreview = document.getElementById('wiz-logo-preview')
+const wizLogoInput = document.getElementById('wiz-logo-input')
+const wizLogoActions = document.getElementById('wiz-logo-actions')
+const wizLogoProgress = document.getElementById('wiz-logo-progress')
+const wizLogoUrlHidden = document.getElementById('wiz-logo-url-hidden')
+const wizChangeLogoBtn = document.getElementById('wiz-change-logo')
+const wizRemoveLogoBtn = document.getElementById('wiz-remove-logo')
+
+if (wizLogoPreview) {
+  wizLogoPreview.addEventListener('click', () => {
+    wizLogoInput.click()
+  })
+}
+
+if (wizChangeLogoBtn) {
+  wizChangeLogoBtn.addEventListener('click', () => {
+    wizLogoInput.click()
+  })
+}
+
+if (wizRemoveLogoBtn) {
+  wizRemoveLogoBtn.addEventListener('click', () => {
+    resetWizardLogoUpload()
+  })
+}
+
+if (wizLogoInput) {
+  wizLogoInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    if (!file.type.match('image/(jpeg|jpg|png|webp)')) {
+      notify.error('Solo se permiten archivos JPG, PNG o WEBP')
+      return
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      notify.error('El archivo debe pesar menos de 2MB')
+      return
+    }
+
+    const progressDiv = wizLogoProgress
+    const progressBar = progressDiv.querySelector('.progress-fill')
+    progressDiv.style.display = 'flex'
+    progressBar.style.width = '0%'
+
+    try {
+      const resizedFile = await imageService.resizeImage(file, 512, 512, 0.9)
+      progressBar.style.width = '50%'
+
+      const result = await imageService.upload(resizedFile, 'businesses')
+
+      if (result.success) {
+        progressBar.style.width = '100%'
+        wizardLogoUrl = result.url
+        wizLogoUrlHidden.value = result.url
+
+        wizLogoPreview.innerHTML = `<img src="${result.url}" alt="Logo" style="object-fit:cover; width:100%; height:100%; border-radius:8px;">`
+        wizLogoPreview.classList.add('has-image')
+        wizLogoActions.style.display = 'flex'
+
+        setTimeout(() => {
+          progressDiv.style.display = 'none'
+        }, 500)
+
+        notify.success('Logo cargado correctamente', 2000)
+      }
+    } catch (error) {
+      console.error('Error uploading logo:', error)
+      notify.error('Error al cargar el logo')
+      progressDiv.style.display = 'none'
+    }
+  })
+}
+
+function resetWizardLogoUpload() {
+  wizardLogoUrl = null
+  wizLogoUrlHidden.value = ''
+  wizLogoInput.value = ''
+  wizLogoPreview.innerHTML = `
+    <i class="ri-image-line"></i>
+    <p>Click para seleccionar logo</p>
+    <small>JPG, PNG o WEBP (máx. 2MB)</small>
+  `
+  wizLogoPreview.classList.remove('has-image')
+  wizLogoActions.style.display = 'none'
+}
+
 // ============================================
 // ELEMENTOS DEL DOM
 // ============================================
@@ -111,6 +205,9 @@ function initSidebarNavigation() {
 
   // Inicializar búsquedas
   initSearchFunctionality()
+
+  // Inicializar carga de logo
+  initBusinessLogoUpload()
 }
 
 // ============================================
@@ -172,6 +269,83 @@ function initSearchFunctionality() {
       clearProductsSearch.style.display = 'none'
       renderProducts()
       searchProductsInput.focus()
+    })
+  }
+}
+
+function initBusinessLogoUpload() {
+  const businessLogoDisplay = document.getElementById('business-logo-display')
+  const businessLogoInput = document.getElementById('business-logo-input')
+  const changeBusinessLogoBtn = document.getElementById('changeBusinessLogoBtn')
+  const logoUploadProgress = document.getElementById('logo-upload-progress')
+
+  if (businessLogoDisplay) {
+    businessLogoDisplay.addEventListener('click', () => {
+      businessLogoInput.click()
+    })
+  }
+
+  if (changeBusinessLogoBtn) {
+    changeBusinessLogoBtn.addEventListener('click', () => {
+      businessLogoInput.click()
+    })
+  }
+
+  if (businessLogoInput) {
+    businessLogoInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0]
+      if (!file) return
+
+      if (!file.type.match('image/(jpeg|jpg|png|webp)')) {
+        notify.error('Solo se permiten archivos JPG, PNG o WEBP')
+        return
+      }
+
+      if (file.size > 2 * 1024 * 1024) {
+        notify.error('El archivo debe pesar menos de 2MB')
+        return
+      }
+
+      // Show progress
+      if (logoUploadProgress) {
+        logoUploadProgress.style.display = 'block'
+        const bar = logoUploadProgress.querySelector('.progress-fill')
+        if (bar) bar.style.width = '0%'
+      }
+
+      try {
+        // Resize image
+        const resizedFile = await imageService.resizeImage(file, 512, 512, 0.9)
+
+        if (logoUploadProgress) {
+          const bar = logoUploadProgress.querySelector('.progress-fill')
+          if (bar) bar.style.width = '50%'
+        }
+
+        const result = await imageService.upload(resizedFile, 'businesses')
+
+        if (result.success) {
+          if (logoUploadProgress) {
+            const bar = logoUploadProgress.querySelector('.progress-fill')
+            if (bar) bar.style.width = '100%'
+          }
+
+          // Update business with new logo
+          await businessService.updateBusiness(currentBusiness.id, { logo_url: result.url })
+
+          currentBusiness.logo_url = result.url
+          renderBusinessInfo()
+          notify.success('Logo actualizado correctamente')
+
+          setTimeout(() => {
+            if (logoUploadProgress) logoUploadProgress.style.display = 'none'
+          }, 500)
+        }
+      } catch (error) {
+        console.error('Error updating logo:', error)
+        notify.error('Error al actualizar el logo')
+        if (logoUploadProgress) logoUploadProgress.style.display = 'none'
+      }
     })
   }
 }
@@ -326,6 +500,16 @@ function showBusinessState() {
 function renderBusinessInfo() {
   businessName.textContent = currentBusiness.name
   businessWhatsapp.textContent = currentBusiness.whatsapp_number
+
+  // Update logo display
+  const logoDisplay = document.getElementById('business-logo-display')
+  if (logoDisplay) {
+    if (currentBusiness.logo_url) {
+      logoDisplay.innerHTML = `<img src="${currentBusiness.logo_url}" alt="Logo" style="object-fit:cover; width:100%; height:100%;">`
+    } else {
+      logoDisplay.innerHTML = `<i class="ri-store-2-line" style="font-size: 3rem; color: #9ca3af;"></i>`
+    }
+  }
 
   // Actualizar nombre en el sidebar
   const businessBranchName = document.getElementById('businessBranchName')
@@ -1726,7 +1910,8 @@ if (wizardBusinessForm) {
           name,
           slug,
           whatsapp_number: whatsapp,
-          description
+          description,
+          logo_url: wizardLogoUrl || null
         }
 
         const createdBusiness = await businessService.createBusiness(businessData)

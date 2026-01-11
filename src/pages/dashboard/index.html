@@ -132,6 +132,35 @@
               </div>
 
               <form class="wizard-form" id="wizardBusinessForm">
+                <!-- Logo Upload -->
+                <div class="form-group">
+                  <label>Logo del negocio (opcional)</label>
+                  <div class="image-upload-container">
+                    <div class="image-preview" id="wiz-logo-preview">
+                      <i class="ri-image-line"></i>
+                      <p>Click para seleccionar logo</p>
+                      <small>JPG, PNG o WEBP (máx. 2MB)</small>
+                    </div>
+                    <input type="file" id="wiz-logo-input" accept="image/jpeg,image/jpg,image/png,image/webp"
+                      style="display: none;">
+                    <div class="image-upload-actions" id="wiz-logo-actions" style="display: none;">
+                      <button type="button" class="btn-secondary-small" id="wiz-change-logo">
+                        <i class="ri-image-edit-line"></i> Cambiar logo
+                      </button>
+                      <button type="button" class="btn-secondary-small danger" id="wiz-remove-logo">
+                        <i class="ri-delete-bin-line"></i> Eliminar
+                      </button>
+                    </div>
+                    <div class="image-upload-progress" id="wiz-logo-progress" style="display: none;">
+                      <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                      </div>
+                      <p>Subiendo logo...</p>
+                    </div>
+                  </div>
+                  <input type="hidden" id="wiz-logo-url-hidden">
+                </div>
+
                 <div class="form-group">
                   <label for="wiz-business-name">Nombre del negocio *</label>
                   <input type="text" id="wiz-business-name" placeholder="Ej: Burger Master" required>
@@ -331,6 +360,27 @@
               </div>
               <div class="card-content">
                 <div class="business-info">
+                  <!-- Logo Section -->
+                  <div class="logo-display-container"
+                    style="display: flex; flex-direction: column; align-items: center; margin-bottom: 2rem;">
+                    <div class="image-preview" id="business-logo-display"
+                      style="width: 150px; height: 150px; margin-bottom: 1rem; border-radius: 50%; overflow: hidden; background: #f3f4f6; display: flex; align-items: center; justify-content: center; border: 2px solid #e5e7eb; cursor: pointer;">
+                      <i class="ri-store-2-line" style="font-size: 3rem; color: #9ca3af;"></i>
+                    </div>
+                    <input type="file" id="business-logo-input" accept="image/jpeg,image/jpg,image/png,image/webp"
+                      style="display: none;">
+                    <button type="button" id="changeBusinessLogoBtn" class="btn-secondary-small">
+                      <i class="ri-image-edit-line"></i> Cambiar Logo
+                    </button>
+                    <div id="logo-upload-progress" style="display: none; width: 150px; margin-top: 0.5rem;">
+                      <div class="progress-bar"
+                        style="height: 4px; background: #eee; border-radius: 2px; overflow: hidden;">
+                        <div class="progress-fill" style="height: 100%; background: var(--primary-color); width: 0%;">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   <div class="info-row">
                     <span class="label"><i class="ri-store-line"></i> Nombre:</span>
                     <span id="businessName" class="value">-</span>
