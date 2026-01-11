@@ -46,6 +46,10 @@
           <i class="ri-shopping-bag-line"></i>
           <span>Productos</span>
         </a>
+        <a href="#" class="nav-item" data-section="promotions">
+          <i class="ri-price-tag-3-line"></i>
+          <span>Promociones</span>
+        </a>
         <a href="#" class="nav-item" data-section="whatsapp">
           <i class="ri-whatsapp-line"></i>
           <span>WhatsApp</span>
@@ -441,6 +445,27 @@
             </section>
           </div>
 
+          <!-- Section: Promociones -->
+          <div id="section-promotions" class="dashboard-section" style="display: none;">
+            <section class="card">
+              <div class="card-header">
+                <h2><i class="ri-price-tag-3-line"></i> Promociones y Combos</h2>
+                <button id="addPromotionBtn" class="btn-primary-small">
+                  <i class="ri-add-line"></i> Agregar
+                </button>
+              </div>
+              <div class="card-content">
+                <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 1.5rem;">
+                  Crea banners promocionales que aparecerán en la parte superior de tu catálogo.
+                </p>
+                <div id="promotionsList" class="promotions-list">
+                  <p class="empty-message">No hay promociones activas</p>
+                </div>
+              </div>
+            </section>
+          </div>
+
+
           <!-- Section: WhatsApp -->
           <div id="section-whatsapp" class="dashboard-section" style="display: none;">
             <section class="card">
@@ -801,6 +826,113 @@
 
 
   <script type="module" src="./dashboard.js"></script>
+
+  <!-- Modal para crear/editar promoción -->
+  <div id="promotionModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 700px;">
+      <div class="modal-header">
+        <h3 id="promotionModalTitle">Nueva Promoción</h3>
+        <button class="modal-close" id="closePromotionModal">&times;</button>
+      </div>
+      <form id="promotionForm" class="modal-form">
+
+        <!-- Image Upload Section (16:9) -->
+        <div class="form-group">
+          <label>Banner de la promoción (Formato 16:9)</label>
+          <div class="image-upload-container wide">
+            <div class="image-preview wide" id="promotionImagePreview">
+              <i class="ri-image-add-line"></i>
+              <p>Click para seleccionar imagen</p>
+              <small>Recomendado: 1280x720px (JPG, PNG, WEBP)</small>
+            </div>
+            <input type="file" id="promotionImageInput" accept="image/jpeg,image/jpg,image/png,image/webp"
+              style="display: none;">
+            <div class="image-upload-actions" id="promotionImageActions" style="display: none;">
+              <button type="button" class="btn-secondary-small" id="changePromotionImageBtn">
+                <i class="ri-image-edit-line"></i> Cambiar
+              </button>
+              <button type="button" class="btn-secondary-small danger" id="removePromotionImageBtn">
+                <i class="ri-delete-bin-line"></i> Eliminar
+              </button>
+            </div>
+            <div class="image-upload-progress" id="promotionImageProgress" style="display: none;">
+              <div class="progress-bar">
+                <div class="progress-fill"></div>
+              </div>
+              <p>Subiendo imagen...</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="promotionTitleInput">Título *</label>
+            <input type="text" id="promotionTitleInput" placeholder="Ej: Combo Familiar" required>
+          </div>
+          <div class="form-group">
+            <label for="promotionPriceInput">Precio *</label>
+            <input type="number" id="promotionPriceInput" step="0.01" min="0" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="promotionDescriptionInput">Descripción</label>
+          <textarea id="promotionDescriptionInput" rows="2"
+            placeholder="Describe lo que incluye la promoción..."></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="promotionStartDate">Fecha inicio (opcional)</label>
+            <input type="datetime-local" id="promotionStartDate">
+          </div>
+          <div class="form-group">
+            <label for="promotionEndDate">Fecha fin (opcional)</label>
+            <input type="datetime-local" id="promotionEndDate">
+          </div>
+        </div>
+
+        <!-- Product Selection -->
+        <div class="form-group">
+          <label>Productos incluidos (opcional)</label>
+          <p class="help-text-small">Selecciona los productos que conforman este combo para control de inventario.</p>
+          <div id="promotionProductsSelector" class="products-selector">
+            <!-- Se llenará con JS -->
+          </div>
+        </div>
+
+        <!-- Options Buttons -->
+        <div class="form-group">
+          <label>Configuración adicional</label>
+          <div class="action-buttons-row">
+            <button type="button" class="btn-secondary-small" id="promotionCommentsBtn">
+              <i class="ri-message-3-line"></i> Comentarios rápidos
+            </button>
+            <button type="button" class="btn-secondary-small" id="promotionSidesBtn">
+              <i class="ri-restaurant-line"></i> Acompañantes
+            </button>
+          </div>
+          <small id="promotionConfigStatus" class="config-status">Ninguna configuración extra</small>
+        </div>
+
+        <div class="form-group">
+          <label class="switch-container">
+            <input type="checkbox" id="promotionActiveInput" checked>
+            <span class="switch-slider"></span>
+            <span class="switch-label">Promoción activa</span>
+          </label>
+        </div>
+
+        <!-- Campo oculto para la imagen -->
+        <input type="hidden" id="promotionImageUrlHidden">
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="cancelPromotionBtn">Cancelar</button>
+          <button type="submit" class="btn-primary" id="savePromotionBtn">Guardar Promoción</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </body>
 
 </html>

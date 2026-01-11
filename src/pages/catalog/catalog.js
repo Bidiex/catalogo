@@ -1,6 +1,7 @@
 import { supabase } from '../../config/supabase.js'
 import { cart } from '../../utils/cart.js'
 import { notify } from '../../utils/notifications.js'
+import { promotionsService } from '../../services/promotions.js'
 
 // ============================================
 // ESTADO GLOBAL
@@ -18,6 +19,14 @@ let selectedQuickComment = null
 let selectedSides = []
 let currentSearchQuery = ''
 let currentCategoryFilter = 'all'
+
+// Promotions State
+let promotions = []
+let currentPromoSlide = 0
+let promoAutoPlayInterval = null
+let selectedPromotion = null
+let selectedPromoQuickComment = null
+let selectedPromoSides = []
 
 // ============================================
 // ELEMENTOS DEL DOM
@@ -61,6 +70,29 @@ const quickCommentsList = document.getElementById('quickCommentsList')
 const sidesSection = document.getElementById('sidesSection')
 const sidesList = document.getElementById('sidesList')
 
+// Promo Elements
+const promoBannerContainer = document.getElementById('promoBannerContainer')
+const promoSlides = document.getElementById('promoSlides')
+const carouselIndicators = document.getElementById('carouselIndicators')
+
+const promotionModal = document.getElementById('promotionModal')
+const promotionModalOverlay = document.getElementById('promotionModalOverlay')
+const promotionModalClose = document.getElementById('promotionModalClose')
+const promotionModalImage = document.getElementById('promotionModalImage')
+const promotionModalTitle = document.getElementById('promotionModalTitle')
+const promotionModalPrice = document.getElementById('promotionModalPrice')
+const promotionModalDescription = document.getElementById('promotionModalDescription')
+const promotionProductsSection = document.getElementById('promotionProductsSection')
+const promotionProductsList = document.getElementById('promotionProductsList')
+const promotionQuickCommentsSection = document.getElementById('promotionQuickCommentsSection')
+const promotionQuickCommentsList = document.getElementById('promotionQuickCommentsList')
+const promotionSidesSection = document.getElementById('promotionSidesSection')
+const promotionSidesList = document.getElementById('promotionSidesList')
+const promotionDecreaseQty = document.getElementById('promotionDecreaseQty')
+const promotionIncreaseQty = document.getElementById('promotionIncreaseQty')
+const promotionQuantityValue = document.getElementById('promotionQuantityValue')
+const addPromotionToCartBtn = document.getElementById('addPromotionToCartBtn')
+
 // ============================================
 // INICIALIZACIÓN
 // ============================================
@@ -87,6 +119,7 @@ async function init() {
     renderBusinessInfo()
     renderCategoriesNav()
     renderProducts()
+    renderPromotionsCarousel()
 
     // Cargar carrito del localStorage
     updateCartUI()
@@ -120,35 +153,6 @@ async function loadBusiness(slug) {
   } catch (error) {
     console.error('Error loading business:', error)
     throw error
-  }
-}
-
-// ============================================
-// TRACKING FUNCTIONS
-// ============================================
-function trackCatalogVisit(businessId) {
-  try {
-    const visitsKey = `catalog_visits_${businessId}`
-    const currentVisits = parseInt(localStorage.getItem(visitsKey) || '0')
-    localStorage.setItem(visitsKey, (currentVisits + 1).toString())
-  } catch (error) {
-    console.error('Error tracking catalog visit:', error)
-  }
-}
-
-function trackProductView(businessId, productId) {
-  try {
-    const viewsKey = `product_views_${businessId}`
-    const productViews = JSON.parse(localStorage.getItem(viewsKey) || '{}')
-
-    if (!productViews[productId]) {
-      productViews[productId] = 0
-    }
-    productViews[productId] += 1
-
-    localStorage.setItem(viewsKey, JSON.stringify(productViews))
-  } catch (error) {
-    console.error('Error tracking product view:', error)
   }
 }
 
@@ -196,12 +200,292 @@ async function loadCatalogData() {
     if (hoursError) throw hoursError
     businessHours = hoursData || []
 
+    // Cargar Promociones Activas
+    try {
+      promotions = await promotionsService.getActiveByBusiness(currentBusiness.id)
+    } catch (err) {
+      console.error('Error loading promotions', err)
+      promotions = []
+    }
+
     // Verificar si el negocio está abierto
     checkBusinessStatus()
 
   } catch (error) {
     console.error('Error loading catalog data:', error)
     throw error
+  }
+}
+
+// ============================================
+// PROMOTIONS LOGIC
+// ============================================
+
+function renderPromotionsCarousel() {
+  if (!promotions || promotions.length === 0) {
+    if (promoBannerContainer) promoBannerContainer.style.display = 'none'
+    return
+  }
+
+  if (promoBannerContainer) promoBannerContainer.style.display = 'block'
+
+  // Render Slides
+  const slidesHtml = promotions.map((promo, index) => `
+    <div class="promo-slide ${index === 0 ? 'active' : ''}" data-index="${index}">
+      ${promo.image_url
+      ? `<img src="${promo.image_url}" alt="${promo.title}" onclick="window.openPromoDetails(${index})">`
+      : `
+          <div class="promo-placeholder" onclick="window.openPromoDetails(${index})">
+            <i class="ri-fire-line"></i>
+            <span>${promo.title}</span>
+            <span style="font-size: 0.9rem; font-weight: normal; margin-top:0.25rem;">Ver detalles</span>
+          </div>
+        `
+    }
+      <div class="promo-info-overlay" onclick="window.openPromoDetails(${index})">
+        <div class="promo-info-title">${promo.title}</div>
+        <div class="promo-info-price">$${parseFloat(promo.price).toLocaleString()}</div>
+      </div>
+    </div>
+  `).join('')
+
+  promoSlides.innerHTML = slidesHtml
+
+  // Render Indicators
+  if (promotions.length > 1) {
+    const indicatorsHtml = promotions.map((_, index) => `
+      <div class="carousel-dot ${index === 0 ? 'active' : ''}" onclick="window.goToPromoSlide(${index})"></div>
+    `).join('')
+    carouselIndicators.innerHTML = indicatorsHtml
+
+    // Start Autoplay
+    startPromoAutoplay()
+  } else {
+    carouselIndicators.innerHTML = ''
+  }
+}
+
+// Expose these to window so onclick works easily (module scope)
+window.goToPromoSlide = (index) => {
+  if (index < 0 || index >= promotions.length) return
+
+  // Update slides
+  const slides = document.querySelectorAll('.promo-slide')
+  slides.forEach(s => s.classList.remove('active'))
+  if (slides[index]) slides[index].classList.add('active')
+
+  // Update indicators
+  const dots = document.querySelectorAll('.carousel-dot')
+  dots.forEach(d => d.classList.remove('active'))
+  if (dots[index]) dots[index].classList.add('active')
+
+  currentPromoSlide = index
+
+  // Reset timer
+  startPromoAutoplay()
+}
+
+window.openPromoDetails = (index) => {
+  const promo = promotions[index]
+  if (promo) openPromotionModal(promo)
+}
+
+function startPromoAutoplay() {
+  if (promoAutoPlayInterval) clearInterval(promoAutoPlayInterval)
+
+  promoAutoPlayInterval = setInterval(() => {
+    let next = currentPromoSlide + 1
+    if (next >= promotions.length) next = 0
+    window.goToPromoSlide(next)
+  }, 5000) // 5 seconds
+}
+
+// Promotion Modal
+function openPromotionModal(promo) {
+  if (currentBusiness) {
+    // Track view if needed tracking for promos
+  }
+  selectedPromotion = promo
+  currentQuantity = 1
+  selectedPromoQuickComment = null
+  selectedPromoSides = []
+
+  promotionModalTitle.textContent = promo.title
+  promotionModalPrice.textContent = `$${parseFloat(promo.price).toLocaleString()}`
+  promotionModalDescription.textContent = promo.description || ''
+
+  if (promo.image_url) {
+    promotionModalImage.innerHTML = `<img src="${promo.image_url}" alt="${promo.title}">`
+  } else {
+    promotionModalImage.innerHTML = `<div class="promo-placeholder"><i class="ri-price-tag-3-line"></i><span>${promo.title}</span></div>`
+  }
+
+  promotionQuantityValue.textContent = currentQuantity
+
+  // Render Products List if available (needs fetching products names if only IDs stored)
+  // We have `products` array loaded in catalog. We can map IDs to names.
+  if (promo.product_ids && promo.product_ids.length > 0) {
+    promotionProductsSection.style.display = 'block'
+    const productNames = promo.product_ids.map(id => {
+      const p = products.find(prod => prod.id === id) // Note: IDs might be strings/numbers check types
+      return p ? p.name : null
+    }).filter(Boolean)
+
+    if (productNames.length > 0) {
+      promotionProductsList.innerHTML = productNames.map(name => `<li>${name}</li>`).join('')
+    } else {
+      promotionProductsSection.style.display = 'none'
+    }
+  } else {
+    promotionProductsSection.style.display = 'none'
+  }
+
+  // Render Options (Quick Comments / Sides)
+  renderPromotionOptions(promo)
+
+  promotionModal.style.display = 'flex'
+}
+
+function renderPromotionOptions(promo) {
+  // Quick Comments
+  const quickComments = promo.quick_comments || []
+  if (quickComments.length > 0) {
+    promotionQuickCommentsSection.style.display = 'block'
+    promotionQuickCommentsList.innerHTML = quickComments.map((comment, index) => `
+          <div class="quick-comment-option">
+            <input 
+              type="radio" 
+              id="promo-comment-${index}" 
+              name="promoQuickComment" 
+              value="${comment.name}"
+            >
+            <label for="promo-comment-${index}">${comment.name}</label>
+          </div>
+        `).join('')
+
+    promotionQuickCommentsList.querySelectorAll('input').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        if (e.target.checked) selectedPromoQuickComment = { name: e.target.value }
+      })
+    })
+  } else {
+    promotionQuickCommentsSection.style.display = 'none'
+  }
+
+  // Sides
+  const sides = promo.sides || []
+  if (sides.length > 0) {
+    promotionSidesSection.style.display = 'block'
+    promotionSidesList.innerHTML = sides.map((side, index) => `
+          <div class="side-option">
+            <div class="side-option-left">
+              <input 
+                type="checkbox" 
+                id="promo-side-${index}" 
+                value="${side.name}"
+                data-price="${side.price}"
+              >
+              <label for="promo-side-${index}" class="side-option-name">${side.name}</label>
+            </div>
+            <span class="side-option-price">+$${parseFloat(side.price).toLocaleString()}</span>
+          </div>
+        `).join('')
+
+    promotionSidesList.querySelectorAll('input').forEach(cb => {
+      cb.addEventListener('change', (e) => {
+        const sideOption = e.target.closest('.side-option')
+        const sideName = e.target.value
+        const sidePrice = parseFloat(e.target.dataset.price)
+
+        if (e.target.checked) {
+          sideOption.classList.add('selected')
+          selectedPromoSides.push({ name: sideName, price: sidePrice })
+        } else {
+          sideOption.classList.remove('selected')
+          selectedPromoSides = selectedPromoSides.filter(s => s.name !== sideName)
+        }
+      })
+    })
+  } else {
+    promotionSidesSection.style.display = 'none'
+  }
+}
+
+function closePromotionModalFunc() {
+  promotionModal.style.display = 'none'
+  selectedPromotion = null
+}
+
+if (promotionModalClose) promotionModalClose.addEventListener('click', closePromotionModalFunc)
+if (promotionModalOverlay) promotionModalOverlay.addEventListener('click', closePromotionModalFunc)
+
+if (promotionDecreaseQty) {
+  promotionDecreaseQty.addEventListener('click', () => {
+    if (currentQuantity > 1) {
+      currentQuantity--
+      promotionQuantityValue.textContent = currentQuantity
+    }
+  })
+}
+
+if (promotionIncreaseQty) {
+  promotionIncreaseQty.addEventListener('click', () => {
+    currentQuantity++
+    promotionQuantityValue.textContent = currentQuantity
+  })
+}
+
+if (addPromotionToCartBtn) {
+  addPromotionToCartBtn.addEventListener('click', () => {
+    if (!selectedPromotion) return
+
+    const options = {
+      quickComment: selectedPromoQuickComment,
+      sides: selectedPromoSides,
+      isPromotion: true // Flag to identify in cart if needed
+    }
+
+    const promoItem = {
+      id: selectedPromotion.id,
+      name: selectedPromotion.title, // Map title to name for cart consistency
+      price: selectedPromotion.price,
+      image_url: selectedPromotion.image_url,
+      is_promotion: true
+    }
+
+    cart.add(promoItem, currentQuantity, options)
+    updateCartUI()
+    closePromotionModalFunc()
+    notify.success(`${selectedPromotion.title} agregado al carrito`, 2000)
+  })
+}
+
+// ============================================
+// TRACKING FUNCTIONS
+// ============================================
+function trackCatalogVisit(businessId) {
+  try {
+    const visitsKey = `catalog_visits_${businessId}`
+    const currentVisits = parseInt(localStorage.getItem(visitsKey) || '0')
+    localStorage.setItem(visitsKey, (currentVisits + 1).toString())
+  } catch (error) {
+    console.error('Error tracking catalog visit:', error)
+  }
+}
+
+function trackProductView(businessId, productId) {
+  try {
+    const viewsKey = `product_views_${businessId}`
+    const productViews = JSON.parse(localStorage.getItem(viewsKey) || '{}')
+
+    if (!productViews[productId]) {
+      productViews[productId] = 0
+    }
+    productViews[productId] += 1
+
+    localStorage.setItem(viewsKey, JSON.stringify(productViews))
+  } catch (error) {
+    console.error('Error tracking product view:', error)
   }
 }
 
@@ -367,11 +651,6 @@ function renderProductCard(product) {
       </div>
     </div>
   `
-}
-
-function filterProductsByCategory(categoryId) {
-  currentCategoryFilter = categoryId
-  renderProducts(categoryId, currentSearchQuery)
 }
 
 // ============================================
@@ -692,9 +971,6 @@ cartOverlay.addEventListener('click', () => {
 })
 
 // ============================================
-// WHATSAPP ORDER
-// ============================================
-// ============================================
 // CHECKOUT & WHATSAPP ORDER
 // ============================================
 
@@ -746,7 +1022,6 @@ cancelCheckoutBtn.addEventListener('click', closeCheckoutModal)
 checkoutForm.addEventListener('submit', async (e) => {
   e.preventDefault()
 
-  // Capturar datos del formulario
   // Capturar datos del formulario
   const clientData = {
     nombre: document.getElementById('clientName').value.trim(),
@@ -1065,11 +1340,6 @@ function showClosedModal() {
   overlay.addEventListener('click', () => modal.remove())
 }
 
-
-
-
-// Guardar al enviar
-// (Duplicate removed)
 // ============================================
 // REDIRECT MODAL
 // ============================================

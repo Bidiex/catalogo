@@ -47,13 +47,21 @@
       </div>
     </div>
 
-    <!-- Promo Banner -->
-    <div class="promo-banner-container">
-      <div class="promo-banner">
-        <div class="promo-placeholder">
-          <i class="ri-fire-line"></i>
-          <span>Ofertas del día</span>
+    <!-- Promo Banner / Carousel -->
+    <div class="promo-banner-container" id="promoBannerContainer" style="display: none;">
+      <div class="promo-carousel" id="promoCarousel">
+        <div class="promo-slides-container" id="promoSlides">
+          <!-- Slides injected by JS -->
+          <div class="promo-slide active">
+            <div class="promo-placeholder">
+              <i class="ri-fire-line"></i>
+              <span>Cargando promociones...</span>
+            </div>
+          </div>
         </div>
+        <div class="carousel-indicators" id="carouselIndicators"></div>
+
+        <!-- Optional Controls if needed, but we rely on autoplay/indicators -->
       </div>
     </div>
 
@@ -157,6 +165,62 @@
     </div>
   </div>
 
+
+  <!-- Promotion detail modal -->
+  <div class="product-modal" id="promotionModal" style="display: none;">
+    <div class="product-modal-overlay" id="promotionModalOverlay"></div>
+    <div class="product-modal-content">
+      <button class="product-modal-close" id="promotionModalClose">
+        <i class="ri-close-line"></i>
+      </button>
+
+      <div class="product-modal-image" id="promotionModalImage">
+        <img src="" alt="">
+      </div>
+
+      <div class="product-modal-info">
+        <h2 id="promotionModalTitle">Promoción</h2>
+        <p class="product-modal-price" id="promotionModalPrice">$0</p>
+        <p class="product-modal-description" id="promotionModalDescription"></p>
+
+        <!-- Product List included -->
+        <div class="product-options-section" id="promotionProductsSection" style="display: none;">
+          <h3>Incluye:</h3>
+          <ul class="promotion-products-list" id="promotionProductsList"
+            style="list-style: disc; padding-left: 1.5rem; color: #666; margin-bottom: 1rem;">
+            <!-- LI items -->
+          </ul>
+        </div>
+
+        <!-- Quick Comments -->
+        <div class="product-options-section" id="promotionQuickCommentsSection" style="display: none;">
+          <h3>Comentarios rápidos</h3>
+          <div class="quick-comments-list" id="promotionQuickCommentsList"></div>
+        </div>
+
+        <!-- Sides -->
+        <div class="product-options-section" id="promotionSidesSection" style="display: none;">
+          <h3>Acompañantes</h3>
+          <div class="sides-list" id="promotionSidesList"></div>
+        </div>
+
+        <div class="product-modal-quantity">
+          <button class="quantity-btn" id="promotionDecreaseQty">
+            <i class="ri-subtract-line"></i>
+          </button>
+          <span class="quantity-value" id="promotionQuantityValue">1</span>
+          <button class="quantity-btn" id="promotionIncreaseQty">
+            <i class="ri-add-line"></i>
+          </button>
+        </div>
+
+        <button class="btn-add-to-cart" id="addPromotionToCartBtn">
+          <i class="ri-shopping-cart-line"></i>
+          Agregar al carrito
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Checkout Modal -->
   <div class="checkout-modal" id="checkoutModal" style="display: none;">
