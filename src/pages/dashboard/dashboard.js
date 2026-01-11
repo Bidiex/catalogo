@@ -1552,6 +1552,7 @@ if (previewTemplateBtn) {
       total: '$48.000',
       nombre: 'Juan Pérez',
       direccion: 'Calle 123 #45-67, Apto 301',
+      barrio: 'Recreo',
       telefono: '+57 300 123 4567',
       metodo_pago: 'Efectivo'
     }

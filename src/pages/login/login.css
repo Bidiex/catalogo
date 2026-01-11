@@ -26,7 +26,7 @@
 .login-header .logo-icon {
   width: 48px;
   height: 48px;
-  background-color: #3b82f6;
+  background-color: #4ced17;
   color: white;
   border-radius: 12px;
   display: flex;
@@ -78,8 +78,8 @@
 
 .form-group input:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: #4ced17;
+  box-shadow: 0 0 0 3px rgba(76, 237, 23, 0.1);
 }
 
 .form-group input::placeholder {
@@ -103,7 +103,7 @@
 }
 
 .btn-primary {
-  background-color: #2563eb;
+  background-color: #4ced17;
   color: white;
   padding: 0.75rem;
   border: none;
@@ -120,7 +120,7 @@
 }
 
 .btn-primary:hover {
-  background-color: #1d4ed8;
+  background-color: #3bce0f;
 }
 
 .btn-primary:disabled {
@@ -166,7 +166,7 @@
 
 .btn-secondary {
   background: white;
-  color: #2563eb;
+  color: #4ced17;
   padding: 0.75rem;
   border: none;
   border-radius: 8px;
@@ -181,7 +181,7 @@
 }
 
 .btn-secondary:hover {
-  color: #1d4ed8;
+  color: #3bce0f;
   background: transparent;
 }
 

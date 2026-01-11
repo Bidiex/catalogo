@@ -747,15 +747,17 @@ checkoutForm.addEventListener('submit', async (e) => {
   e.preventDefault()
 
   // Capturar datos del formulario
+  // Capturar datos del formulario
   const clientData = {
     nombre: document.getElementById('clientName').value.trim(),
     telefono: document.getElementById('clientPhone').value.trim(),
     direccion: document.getElementById('clientAddress').value.trim(),
+    barrio: document.getElementById('clientBarrio').value.trim(),
     metodo_pago: document.getElementById('paymentMethod').value,
     observaciones: document.getElementById('clientNotes').value.trim()
   }
 
-  // Generar mensaje de WhatsApp
+  saveClientData(clientData) // Guardar para próximos pedidos
   await sendWhatsAppOrder(clientData)
 })
 
@@ -827,8 +829,17 @@ Método de pago: {metodo_pago}
       .replace(/{total}/g, `$${total.toLocaleString('es-CO')}`)
       .replace(/{nombre}/g, clientData.nombre)
       .replace(/{telefono}/g, clientData.telefono)
-      .replace(/{direccion}/g, clientData.direccion)
       .replace(/{metodo_pago}/g, clientData.metodo_pago)
+      .replace(/{barrio}/g, clientData.barrio) // Reemplazo directo si existe el token
+
+    // Lógica inteligente para dirección:
+    // Si la plantilla YA incluía {barrio}, solo reemplazamos {direccion} tal cual.
+    // Si la plantilla NO incluía {barrio}, lo agregamos a la dirección para mantener compatibilidad.
+    if (template.includes('{barrio}')) {
+      message = message.replace(/{direccion}/g, clientData.direccion)
+    } else {
+      message = message.replace(/{direccion}/g, `${clientData.direccion} - ${clientData.barrio}`)
+    }
 
     // Agregar observaciones si existen
     if (clientData.observaciones) {
@@ -883,6 +894,9 @@ function loadSavedClientData() {
       document.getElementById('clientName').value = data.nombre || ''
       document.getElementById('clientPhone').value = data.telefono || ''
       document.getElementById('clientAddress').value = data.direccion || ''
+      if (document.getElementById('clientBarrio')) {
+        document.getElementById('clientBarrio').value = data.barrio || ''
+      }
       document.getElementById('paymentMethod').value = data.metodo_pago || ''
     }
   } catch (error) {
@@ -1055,20 +1069,7 @@ function showClosedModal() {
 
 
 // Guardar al enviar
-checkoutForm.addEventListener('submit', async (e) => {
-  e.preventDefault()
-
-  const clientData = {
-    nombre: document.getElementById('clientName').value.trim(),
-    telefono: document.getElementById('clientPhone').value.trim(),
-    direccion: document.getElementById('clientAddress').value.trim(),
-    metodo_pago: document.getElementById('paymentMethod').value,
-    observaciones: document.getElementById('clientNotes').value.trim()
-  }
-
-  saveClientData(clientData) // ← Guardar para próximos pedidos
-  await sendWhatsAppOrder(clientData)
-})
+// (Duplicate removed)
 // ============================================
 // REDIRECT MODAL
 // ============================================

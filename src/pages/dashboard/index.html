@@ -365,147 +365,150 @@
                 </div>
               </div>
 
-          </section>
+            </section>
 
-          <!-- Business Hours Section -->
-          <section class="card" style="margin-top: 1.5rem;">
-            <div class="card-header">
-              <h2><i class="ri-time-line"></i> Horarios de Servicio</h2>
-              <button id="saveBusinessHoursBtn" class="btn-primary-small">
-                <i class="ri-save-line"></i> Guardar Horarios
-              </button>
-            </div>
-            <div class="card-content">
-              <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 1.5rem;">
-                Configura los horarios en que tu negocio está abierto. Los clientes solo podrán hacer pedidos durante
-                estos horarios.
-              </p>
-              <div id="businessHoursGrid" class="business-hours-grid">
-                <!-- Se llenará dinámicamente con JavaScript -->
+            <!-- Business Hours Section -->
+            <section class="card" style="margin-top: 1.5rem;">
+              <div class="card-header">
+                <h2><i class="ri-time-line"></i> Horarios de Servicio</h2>
+                <button id="saveBusinessHoursBtn" class="btn-primary-small">
+                  <i class="ri-save-line"></i> Guardar Horarios
+                </button>
               </div>
-            </div>
-          </section>
+              <div class="card-content">
+                <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 1.5rem;">
+                  Configura los horarios en que tu negocio está abierto. Los clientes solo podrán hacer pedidos durante
+                  estos horarios.
+                </p>
+                <div id="businessHoursGrid" class="business-hours-grid">
+                  <!-- Se llenará dinámicamente con JavaScript -->
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- Section: Categorías -->
+          <div id="section-categories" class="dashboard-section" style="display: none;">
+            <section class="card">
+              <div class="card-header">
+                <h2><i class="ri-folder-line"></i> Categorías</h2>
+                <button id="addCategoryBtn" class="btn-primary-small">
+                  <i class="ri-add-line"></i> Agregar
+                </button>
+              </div>
+              <div class="card-content">
+                <!-- Search Bar -->
+                <div class="search-bar-container">
+                  <div class="search-bar">
+                    <i class="ri-search-line"></i>
+                    <input type="text" id="searchCategoriesInput" placeholder="Buscar categorías..." />
+                    <button id="clearCategoriesSearch" class="search-clear" style="display: none;">
+                      <i class="ri-close-line"></i>
+                    </button>
+                  </div>
+                </div>
+                <div id="categoriesList" class="categories-list">
+                  <p class="empty-message">No hay categorías aún</p>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- Section: Productos -->
+          <div id="section-products" class="dashboard-section" style="display: none;">
+            <section class="card">
+              <div class="card-header">
+                <h2><i class="ri-shopping-bag-line"></i> Productos</h2>
+                <button id="addProductBtn" class="btn-primary-small">
+                  <i class="ri-add-line"></i> Agregar
+                </button>
+              </div>
+              <div class="card-content">
+                <!-- Search Bar -->
+                <div class="search-bar-container">
+                  <div class="search-bar">
+                    <i class="ri-search-line"></i>
+                    <input type="text" id="searchProductsInput" placeholder="Buscar productos..." />
+                    <button id="clearProductsSearch" class="search-clear" style="display: none;">
+                      <i class="ri-close-line"></i>
+                    </button>
+                  </div>
+                </div>
+                <div id="productsList" class="products-list">
+                  <p class="empty-message">No hay productos aún</p>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- Section: WhatsApp -->
+          <div id="section-whatsapp" class="dashboard-section" style="display: none;">
+            <section class="card">
+              <div class="card-header">
+                <h2><i class="ri-whatsapp-line"></i> Mensaje de WhatsApp</h2>
+              </div>
+              <div class="card-content">
+                <div class="whatsapp-template-editor">
+                  <div class="template-help">
+                    <p><strong>Personaliza el mensaje que se enviará por WhatsApp</strong></p>
+                    <p class="help-text">Usa los tokens para insertar información dinámica del pedido:</p>
+                  </div>
+
+                  <div class="tokens-grid">
+                    <button class="token-chip" data-token="{productos}" title="Lista de productos del pedido">
+                      <i class="ri-shopping-basket-line"></i> {productos}
+                    </button>
+                    <button class="token-chip" data-token="{total}" title="Total del pedido">
+                      <i class="ri-money-dollar-circle-line"></i> {total}
+                    </button>
+                    <button class="token-chip" data-token="{nombre}" title="Nombre del cliente">
+                      <i class="ri-user-line"></i> {nombre}
+                    </button>
+                    <button class="token-chip" data-token="{direccion}" title="Dirección de entrega">
+                      <i class="ri-map-pin-line"></i> {direccion}
+                    </button>
+                    <button class="token-chip" data-token="{telefono}" title="Teléfono del cliente">
+                      <i class="ri-phone-line"></i> {telefono}
+                    </button>
+                    <button class="token-chip" data-token="{barrio}" title="Barrio">
+                      <i class="ri-map-pin-2-line"></i> {barrio}
+                    </button>
+                    <button class="token-chip" data-token="{metodo_pago}" title="Método de pago">
+                      <i class="ri-bank-card-line"></i> {metodo_pago}
+                    </button>
+                  </div>
+
+                  <div class="form-group" style="margin-top: 1.5rem;">
+                    <label for="whatsappTemplateInput">
+                      <i class="ri-message-3-line"></i> Plantilla del mensaje
+                    </label>
+                    <textarea id="whatsappTemplateInput" class="whatsapp-template-textarea" rows="10"
+                      placeholder="Escribe tu mensaje aquí y haz clic en los tokens para insertarlos..."></textarea>
+                    <small>Haz clic en los tokens de arriba para insertarlos en la plantilla</small>
+                  </div>
+
+                  <div class="template-actions">
+                    <button id="previewTemplateBtn" class="btn-secondary">
+                      <i class="ri-eye-line"></i> Vista previa
+                    </button>
+                    <button id="saveTemplateBtn" class="btn-primary">
+                      <i class="ri-save-line"></i> Guardar plantilla
+                    </button>
+                  </div>
+
+                  <div id="templatePreview" class="template-preview" style="display: none;">
+                    <h4><i class="ri-file-text-line"></i> Vista previa con datos de ejemplo:</h4>
+                    <div class="preview-box"></div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
         </div>
 
-        <!-- Section: Categorías -->
-        <div id="section-categories" class="dashboard-section" style="display: none;">
-          <section class="card">
-            <div class="card-header">
-              <h2><i class="ri-folder-line"></i> Categorías</h2>
-              <button id="addCategoryBtn" class="btn-primary-small">
-                <i class="ri-add-line"></i> Agregar
-              </button>
-            </div>
-            <div class="card-content">
-              <!-- Search Bar -->
-              <div class="search-bar-container">
-                <div class="search-bar">
-                  <i class="ri-search-line"></i>
-                  <input type="text" id="searchCategoriesInput" placeholder="Buscar categorías..." />
-                  <button id="clearCategoriesSearch" class="search-clear" style="display: none;">
-                    <i class="ri-close-line"></i>
-                  </button>
-                </div>
-              </div>
-              <div id="categoriesList" class="categories-list">
-                <p class="empty-message">No hay categorías aún</p>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <!-- Section: Productos -->
-        <div id="section-products" class="dashboard-section" style="display: none;">
-          <section class="card">
-            <div class="card-header">
-              <h2><i class="ri-shopping-bag-line"></i> Productos</h2>
-              <button id="addProductBtn" class="btn-primary-small">
-                <i class="ri-add-line"></i> Agregar
-              </button>
-            </div>
-            <div class="card-content">
-              <!-- Search Bar -->
-              <div class="search-bar-container">
-                <div class="search-bar">
-                  <i class="ri-search-line"></i>
-                  <input type="text" id="searchProductsInput" placeholder="Buscar productos..." />
-                  <button id="clearProductsSearch" class="search-clear" style="display: none;">
-                    <i class="ri-close-line"></i>
-                  </button>
-                </div>
-              </div>
-              <div id="productsList" class="products-list">
-                <p class="empty-message">No hay productos aún</p>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <!-- Section: WhatsApp -->
-        <div id="section-whatsapp" class="dashboard-section" style="display: none;">
-          <section class="card">
-            <div class="card-header">
-              <h2><i class="ri-whatsapp-line"></i> Mensaje de WhatsApp</h2>
-            </div>
-            <div class="card-content">
-              <div class="whatsapp-template-editor">
-                <div class="template-help">
-                  <p><strong>Personaliza el mensaje que se enviará por WhatsApp</strong></p>
-                  <p class="help-text">Usa los tokens para insertar información dinámica del pedido:</p>
-                </div>
-
-                <div class="tokens-grid">
-                  <button class="token-chip" data-token="{productos}" title="Lista de productos del pedido">
-                    <i class="ri-shopping-basket-line"></i> {productos}
-                  </button>
-                  <button class="token-chip" data-token="{total}" title="Total del pedido">
-                    <i class="ri-money-dollar-circle-line"></i> {total}
-                  </button>
-                  <button class="token-chip" data-token="{nombre}" title="Nombre del cliente">
-                    <i class="ri-user-line"></i> {nombre}
-                  </button>
-                  <button class="token-chip" data-token="{direccion}" title="Dirección de entrega">
-                    <i class="ri-map-pin-line"></i> {direccion}
-                  </button>
-                  <button class="token-chip" data-token="{telefono}" title="Teléfono del cliente">
-                    <i class="ri-phone-line"></i> {telefono}
-                  </button>
-                  <button class="token-chip" data-token="{metodo_pago}" title="Método de pago">
-                    <i class="ri-bank-card-line"></i> {metodo_pago}
-                  </button>
-                </div>
-
-                <div class="form-group" style="margin-top: 1.5rem;">
-                  <label for="whatsappTemplateInput">
-                    <i class="ri-message-3-line"></i> Plantilla del mensaje
-                  </label>
-                  <textarea id="whatsappTemplateInput" class="whatsapp-template-textarea" rows="10"
-                    placeholder="Escribe tu mensaje aquí y haz clic en los tokens para insertarlos..."></textarea>
-                  <small>Haz clic en los tokens de arriba para insertarlos en la plantilla</small>
-                </div>
-
-                <div class="template-actions">
-                  <button id="previewTemplateBtn" class="btn-secondary">
-                    <i class="ri-eye-line"></i> Vista previa
-                  </button>
-                  <button id="saveTemplateBtn" class="btn-primary">
-                    <i class="ri-save-line"></i> Guardar plantilla
-                  </button>
-                </div>
-
-                <div id="templatePreview" class="template-preview" style="display: none;">
-                  <h4><i class="ri-file-text-line"></i> Vista previa con datos de ejemplo:</h4>
-                  <div class="preview-box"></div>
-                </div>
-              </div>
-            </div>
-          </section>
-        </div>
-
+      </main>
     </div>
-
-    </main>
-  </div>
   </div>
 
   <!-- Modal para crear/editar negocio -->
