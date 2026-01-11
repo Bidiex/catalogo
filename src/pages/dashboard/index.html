@@ -557,6 +557,36 @@
                     <label for="whatsappTemplateInput">
                       <i class="ri-message-3-line"></i> Plantilla del mensaje
                     </label>
+
+                    <!-- Editor Toolbar -->
+                    <div class="editor-toolbar">
+                      <div class="toolbar-group">
+                        <button type="button" class="toolbar-btn" data-format="bold" title="Negrita (*texto*)"><i
+                            class="ri-bold"></i></button>
+                        <button type="button" class="toolbar-btn" data-format="italic" title="Cursiva (_texto_)"><i
+                            class="ri-italic"></i></button>
+                        <button type="button" class="toolbar-btn" data-format="monospace"
+                          title="Monoespacio (```texto```)"><i class="ri-code-view"></i></button>
+                      </div>
+                      <div class="toolbar-group">
+                        <div class="emoji-dropdown">
+                          <button type="button" class="toolbar-btn" id="toggleEmojiBtn" title="Insertar Emoji"><i
+                              class="ri-emotion-line"></i></button>
+                          <div id="emojiPicker" class="emoji-picker" style="display:none;">
+                            <div class="emoji-tabs">
+                              <button type="button" class="emoji-tab active" data-category="faces">😊</button>
+                              <button type="button" class="emoji-tab" data-category="food">🍔</button>
+                              <button type="button" class="emoji-tab" data-category="objects">💡</button>
+                              <button type="button" class="emoji-tab" data-category="symbols">✅</button>
+                            </div>
+                            <div class="emoji-grid" id="emojiGrid">
+                              <!-- Filled by JS -->
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     <textarea id="whatsappTemplateInput" class="whatsapp-template-textarea" rows="10"
                       placeholder="Escribe tu mensaje aquí y haz clic en los tokens para insertarlos..."></textarea>
                     <small>Haz clic en los tokens de arriba para insertarlos en la plantilla</small>

@@ -208,6 +208,9 @@ function initSidebarNavigation() {
 
   // Inicializar carga de logo
   initBusinessLogoUpload()
+
+  // Inicializar editor de WhatsApp
+  initWhatsAppEditor()
 }
 
 // ============================================
@@ -2297,6 +2300,133 @@ if (previewTemplateBtn) {
 // Cargar plantilla cuando se carga el negocio
 // (esto ya se ejecuta en la función loadBusiness existente,
 // solo necesitamos llamar a loadWhatsAppTemplate allí)
+
+
+// ============================================
+// WHATSAPP EDITOR TOOLBAR & EMOJI PICKER
+// ============================================
+
+const emojiCategories = {
+  faces: ['😊', '😂', '🥰', '😍', '😎', '🤔', '😅', '😭', '🤯', '🥳', '😡', '😱', '👋', '👍', '👎', '👏', '🙏', '💪', '👀', '✨'],
+  food: ['🍔', '🍕', '🌭', '🍟', '🌮', '🥗', '🍦', '🍩', '🍪', '🍫', '🍺', '🍷', '☕', '🥤', '🍎', '🍓', '🥑', '🥦', '🥩', '🥓'],
+  objects: ['💡', '🎉', '🎁', '🎈', '🛒', '🛍️', '💰', '💳', '📱', '💻', '⌚', '📷', '🚲', '🚗', '✈️', '🏠', '💼', '📦', '🔔', '📅'],
+  symbols: ['✅', '❌', '💲', '💯', '🔥', '⭐', '❤️', '💙', '💚', '💛', '💜', '🧡', '❗', '❓', '➡️', '⬅️', '⬆️', '⬇️', '🕒', '🏁']
+}
+
+function initWhatsAppEditor() {
+  const toggleEmojiBtn = document.getElementById('toggleEmojiBtn')
+  const emojiPicker = document.getElementById('emojiPicker')
+  const emojiGrid = document.getElementById('emojiGrid')
+  const emojiTabs = document.querySelectorAll('.emoji-tab')
+  const textarea = whatsappTemplateInput
+
+  // Formatting Buttons
+  document.querySelectorAll('.toolbar-btn[data-format]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const format = btn.dataset.format
+      let wrapper = ''
+
+      if (format === 'bold') wrapper = '*'
+      if (format === 'italic') wrapper = '_'
+      if (format === 'monospace') wrapper = '```'
+
+      insertWrapperAtCursor(textarea, wrapper)
+    })
+  })
+
+  // Toggle Picker
+  if (toggleEmojiBtn && emojiPicker) {
+    toggleEmojiBtn.addEventListener('click', (e) => {
+      e.stopPropagation()
+      const isVisible = emojiPicker.style.display === 'block'
+      emojiPicker.style.display = isVisible ? 'none' : 'block'
+
+      if (!isVisible && emojiGrid.children.length === 0) {
+        renderEmojis('faces') // Default category
+      }
+    })
+
+    // Close on outside click
+    document.addEventListener('click', (e) => {
+      if (!emojiPicker.contains(e.target) && e.target !== toggleEmojiBtn && !toggleEmojiBtn.contains(e.target)) {
+        emojiPicker.style.display = 'none'
+      }
+    })
+  }
+
+  // Category Tabs
+  emojiTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      emojiTabs.forEach(t => t.classList.remove('active'))
+      tab.classList.add('active')
+      renderEmojis(tab.dataset.category)
+    })
+  })
+
+  // Render Emojis
+  function renderEmojis(category) {
+    if (!emojiGrid) return
+
+    const emojis = emojiCategories[category] || []
+    emojiGrid.innerHTML = emojis.map(emoji => `
+          <button type="button" class="emoji-btn">${emoji}</button>
+      `).join('')
+
+    // Add listeners to new buttons
+    emojiGrid.querySelectorAll('.emoji-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        insertTextAtCursor(textarea, btn.textContent)
+      })
+    })
+  }
+}
+
+function insertTextAtCursor(textarea, text) {
+  const start = textarea.selectionStart
+  const end = textarea.selectionEnd
+  const before = textarea.value.substring(0, start)
+  const after = textarea.value.substring(end)
+
+  textarea.value = before + text + after
+
+  // Trigger input event for auto-resize or other listeners
+  textarea.dispatchEvent(new Event('input'))
+
+  const newPos = start + text.length
+  textarea.selectionStart = newPos
+  textarea.selectionEnd = newPos
+  textarea.focus()
+}
+
+function insertWrapperAtCursor(textarea, wrapper) {
+  const start = textarea.selectionStart
+  const end = textarea.selectionEnd
+
+  if (start === end) {
+    // No selection, insert empty wrapper
+    const before = textarea.value.substring(0, start)
+    const after = textarea.value.substring(end)
+    textarea.value = before + wrapper + wrapper + after
+
+    // Place cursor inside
+    const newPos = start + wrapper.length
+    textarea.selectionStart = newPos
+    textarea.selectionEnd = newPos
+  } else {
+    // Wrap selection
+    const before = textarea.value.substring(0, start)
+    const selected = textarea.value.substring(start, end)
+    const after = textarea.value.substring(end)
+
+    textarea.value = before + wrapper + selected + wrapper + after
+
+    const newPos = end + (wrapper.length * 2)
+    textarea.selectionStart = newPos
+    textarea.selectionEnd = newPos
+  }
+  textarea.dispatchEvent(new Event('input'))
+  textarea.focus()
+}
 
 // ============================================
 // PAYMENT METHODS MANAGEMENT
