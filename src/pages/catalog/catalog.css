@@ -748,6 +748,12 @@
   object-fit: cover;
 }
 
+/* Promotion modal image - 16:9 aspect ratio */
+#promotionModal .product-modal-image {
+  aspect-ratio: 16/9;
+}
+
+
 .product-modal-info {
   padding: 1.5rem;
 }

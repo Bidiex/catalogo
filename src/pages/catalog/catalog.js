@@ -453,10 +453,13 @@ if (addPromotionToCartBtn) {
       is_promotion: true
     }
 
+    // Guardar el título ANTES de cerrar el modal
+    const promoTitle = selectedPromotion.title
+
     cart.add(promoItem, currentQuantity, options)
     updateCartUI()
     closePromotionModalFunc()
-    notify.success(`${selectedPromotion.title} agregado al carrito`, 2000)
+    notify.success(`${promoTitle} agregado al carrito`, 2000)
   })
 }
 
