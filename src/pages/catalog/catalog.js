@@ -345,7 +345,7 @@ function renderCategorySection(category, categoryProducts) {
   return `
     <div class="category-section">
       <h2>${category.name}</h2>
-      <div class="products-grid">
+      <div class="products-row">
         ${categoryProducts.map(renderProductCard).join('')}
       </div>
     </div>
