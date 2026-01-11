@@ -774,7 +774,6 @@ logoutBtn.addEventListener('click', async () => {
 // ============================================
 // PRODUCT OPTIONS MANAGEMENT
 // ============================================
-import { productOptionsService } from '../../services/productOptions.js'
 
 let currentProductForOptions = null
 let quickComments = []
@@ -802,30 +801,219 @@ const optionPriceGroup = document.getElementById('optionPriceGroup')
 
 // Función para abrir modal de opciones
 async function openProductOptionsModal(productId) {
-  const product = products.find(p => p.id === productId)
-  if (!product) return
+  currentProductForOptions = products.find(p => p.id === productId)
+  if (!currentProductForOptions) return
 
+  // Resetear estado
+  quickComments = []
+  sides = []
 
+  optionsProductName.textContent = currentProductForOptions.name
 
-  // ... (rest of the file until end of openProductOptionsModal)
-  currentProductForOptions = product
-  optionsProductName.textContent = product.name
+  await loadProductOptions(productId)
+  renderProductOptionsDashboard()
 
-  // Clean previous listeners for comments/sides buttons
-  const newAddCommentBtn = addQuickCommentBtn.cloneNode(true)
-  addQuickCommentBtn.parentNode.replaceChild(newAddCommentBtn, addQuickCommentBtn)
-
-  const newAddSideBtn = addSideBtn.cloneNode(true)
-  addSideBtn.parentNode.replaceChild(newAddSideBtn, addSideBtn)
-
-  newAddCommentBtn.addEventListener('click', () => openOptionModal('comment'))
-  newAddSideBtn.addEventListener('click', () => openOptionModal('side'))
-
-  await loadProductOptions(product.id)
   productOptionsModal.style.display = 'flex'
 }
 
-// ... (existing code for options modals ...)
+async function loadProductOptions(productId) {
+  try {
+    const options = await productOptionsService.getByProduct(productId)
+    quickComments = options.filter(opt => opt.type === 'quick_comment')
+    sides = options.filter(opt => opt.type === 'side')
+  } catch (error) {
+    console.error('Error loading product options:', error)
+    quickComments = []
+    sides = []
+  }
+}
+
+function renderProductOptionsDashboard() {
+  // Renderizar comentarios rápidos
+  if (quickComments.length === 0) {
+    quickCommentsListDashboard.innerHTML = '<p class="empty-message" style="padding: 1rem; text-align: center; color: #9ca3af; font-size: 0.9rem;">No hay comentarios rápidos</p>'
+  } else {
+    quickCommentsListDashboard.innerHTML = quickComments.map(comment => `
+      <div class="option-item">
+        <div class="option-item-info">
+          <div class="option-item-name">${comment.name}</div>
+        </div>
+        <div class="option-item-actions">
+          <button class="btn-icon-small edit-option" data-id="${comment.id}" data-type="quick_comment">Editar</button>
+          <button class="btn-icon-small danger delete-option" data-id="${comment.id}">Eliminar</button>
+        </div>
+      </div>
+    `).join('')
+
+    attachOptionEventListeners()
+  }
+
+  // Renderizar acompañantes
+  if (sides.length === 0) {
+    sidesListDashboard.innerHTML = '<p class="empty-message" style="padding: 1rem; text-align: center; color: #9ca3af; font-size: 0.9rem;">No hay acompañantes</p>'
+  } else {
+    sidesListDashboard.innerHTML = sides.map(side => `
+      <div class="option-item">
+        <div class="option-item-info">
+          <div class="option-item-name">${side.name}</div>
+          <div class="option-item-price">+$${parseFloat(side.price).toLocaleString()}</div>
+        </div>
+        <div class="option-item-actions">
+          <button class="btn-icon-small edit-option" data-id="${side.id}" data-type="side">Editar</button>
+          <button class="btn-icon-small danger delete-option" data-id="${side.id}">Eliminar</button>
+        </div>
+      </div>
+    `).join('')
+
+    attachOptionEventListeners()
+  }
+}
+
+function attachOptionEventListeners() {
+  document.querySelectorAll('.edit-option').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = e.target.dataset.id
+      const type = e.target.dataset.type
+      openEditOptionModal(id, type)
+    })
+  })
+
+  document.querySelectorAll('.delete-option').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = e.target.dataset.id
+      deleteOption(id)
+    })
+  })
+}
+
+// Cerrar modal de opciones
+closeProductOptionsModal.addEventListener('click', () => {
+  productOptionsModal.style.display = 'none'
+  currentProductForOptions = null
+})
+
+closeProductOptionsBtn.addEventListener('click', () => {
+  productOptionsModal.style.display = 'none'
+  currentProductForOptions = null
+})
+
+// Abrir modal para agregar comentario rápido
+addQuickCommentBtn.addEventListener('click', () => {
+  openOptionModal('quick_comment')
+})
+
+// Abrir modal para agregar acompañante
+addSideBtn.addEventListener('click', () => {
+  openOptionModal('side')
+})
+
+function openOptionModal(type, optionId = null) {
+  editingOptionType = type
+
+  if (optionId) {
+    // Editar
+    const allOptions = [...quickComments, ...sides]
+    editingOption = allOptions.find(opt => opt.id === optionId)
+
+    optionModalTitle.textContent = type === 'quick_comment' ? 'Editar Comentario' : 'Editar Acompañante'
+    optionNameInput.value = editingOption.name
+    optionPriceInput.value = editingOption.price || 0
+  } else {
+    // Crear
+    editingOption = null
+    optionModalTitle.textContent = type === 'quick_comment' ? 'Nuevo Comentario Rápido' : 'Nuevo Acompañante'
+    optionNameInput.value = ''
+    optionPriceInput.value = 0
+  }
+
+  // Mostrar/ocultar campo de precio según el tipo
+  if (type === 'quick_comment') {
+    optionPriceGroup.style.display = 'none'
+  } else {
+    optionPriceGroup.style.display = 'flex'
+  }
+
+  optionModal.style.display = 'flex'
+}
+
+function openEditOptionModal(optionId, type) {
+  openOptionModal(type, optionId)
+}
+
+function closeOptionModalFn() {
+  optionModal.style.display = 'none'
+  editingOption = null
+  editingOptionType = null
+  optionForm.reset()
+}
+
+closeOptionModal.addEventListener('click', closeOptionModalFn)
+cancelOptionBtn.addEventListener('click', closeOptionModalFn)
+
+// Guardar opción
+optionForm.addEventListener('submit', async (e) => {
+  e.preventDefault()
+
+  const name = optionNameInput.value
+  const price = editingOptionType === 'side' ? parseFloat(optionPriceInput.value) : 0
+  const submitBtn = e.submitter || document.querySelector('#optionForm button[type="submit"]')
+
+  await buttonLoader.execute(submitBtn, async () => {
+    try {
+      const optionData = {
+        product_id: currentProductForOptions.id,
+        type: editingOptionType,
+        name,
+        price,
+        display_order: editingOption ? editingOption.display_order : 0
+      }
+
+      if (editingOption) {
+        // Actualizar
+        await productOptionsService.update(editingOption.id, optionData)
+        notify.success('Opción actualizada')
+      } else {
+        // Crear
+        await productOptionsService.create(optionData)
+        notify.success('Opción creada')
+      }
+
+      closeOptionModalFn()
+      await loadProductOptions(currentProductForOptions.id)
+      renderProductOptionsDashboard()
+
+    } catch (error) {
+      console.error('Error saving option:', error)
+      notify.error('Error al guardar la opción')
+    }
+  }, 'Guardando...')
+})
+
+// Eliminar opción
+async function deleteOption(optionId) {
+  const result = await confirm.show({
+    title: '¿Eliminar opción?',
+    message: 'Esta acción no se puede deshacer.',
+    confirmText: 'Eliminar',
+    cancelText: 'Cancelar',
+    type: 'danger'
+  })
+
+  if (!result) return
+
+  const loadingToast = notify.loading('Eliminando opción...')
+
+  try {
+    await productOptionsService.delete(optionId)
+    notify.updateLoading(loadingToast, 'Opción eliminada', 'success')
+    await loadProductOptions(currentProductForOptions.id)
+    renderProductOptionsDashboard()
+  } catch (error) {
+    console.error('Error deleting option:', error)
+    notify.updateLoading(loadingToast, 'Error al eliminar la opción', 'error')
+  }
+}
+
 
 // ============================================
 // PROMOTIONS MANAGEMENT
@@ -1208,235 +1396,14 @@ if (promotionsNavItem) {
 // Add 'promotions' to updatePageTitle map (it was inside the function scope so we can't easily reach it 
 // unless we replace the whole function or file).
 // Since we are replacing a large block, let's include the necessary imports at top and add the logic.
-// But wait, the previous `replace_file_content` failed. 
-// I will use `replace_file_content` to add imports at top, and then append the new logic.
-
-// Actually, I can just append the new logic at the end of the file, and ensure it hooks in.
-// But imports need to be at top. 
-
-
-
-
-// Abrir modal de opciones de producto
-async function openProductOptionsModal(productId) {
-  currentProductForOptions = products.find(p => p.id === productId)
-  if (!currentProductForOptions) return
-
-  // Resetear estado
-  quickComments = []
-  sides = []
-
-  await loadProductOptions(productId)
-  renderProductOptionsDashboard()
-
-  productOptionsModal.style.display = 'flex'
-}
-
-async function loadProductOptions(productId) {
-  try {
-    const options = await productOptionsService.getByProduct(productId)
-    quickComments = options.filter(opt => opt.type === 'quick_comment')
-    sides = options.filter(opt => opt.type === 'side')
-  } catch (error) {
-    console.error('Error loading product options:', error)
-    quickComments = []
-    sides = []
-  }
-}
-
-function renderProductOptionsDashboard() {
-  // Renderizar comentarios rápidos
-  if (quickComments.length === 0) {
-    quickCommentsListDashboard.innerHTML = '<p class="empty-message" style="padding: 1rem; text-align: center; color: #9ca3af; font-size: 0.9rem;">No hay comentarios rápidos</p>'
-  } else {
-    quickCommentsListDashboard.innerHTML = quickComments.map(comment => `
-      <div class="option-item">
-        <div class="option-item-info">
-          <div class="option-item-name">${comment.name}</div>
-        </div>
-        <div class="option-item-actions">
-          <button class="btn-icon-small edit-option" data-id="${comment.id}" data-type="quick_comment">Editar</button>
-          <button class="btn-icon-small danger delete-option" data-id="${comment.id}">Eliminar</button>
-        </div>
-      </div>
-    `).join('')
-
-    attachOptionEventListeners()
-  }
-
-  // Renderizar acompañantes
-  if (sides.length === 0) {
-    sidesListDashboard.innerHTML = '<p class="empty-message" style="padding: 1rem; text-align: center; color: #9ca3af; font-size: 0.9rem;">No hay acompañantes</p>'
-  } else {
-    sidesListDashboard.innerHTML = sides.map(side => `
-      <div class="option-item">
-        <div class="option-item-info">
-          <div class="option-item-name">${side.name}</div>
-          <div class="option-item-price">+$${parseFloat(side.price).toLocaleString()}</div>
-        </div>
-        <div class="option-item-actions">
-          <button class="btn-icon-small edit-option" data-id="${side.id}" data-type="side">Editar</button>
-          <button class="btn-icon-small danger delete-option" data-id="${side.id}">Eliminar</button>
-        </div>
-      </div>
-    `).join('')
-
-    attachOptionEventListeners()
-  }
-}
-
-function attachOptionEventListeners() {
-  document.querySelectorAll('.edit-option').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const id = e.target.dataset.id
-      const type = e.target.dataset.type
-      openEditOptionModal(id, type)
-    })
-  })
-
-  document.querySelectorAll('.delete-option').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const id = e.target.dataset.id
-      deleteOption(id)
-    })
-  })
-}
-
-// Cerrar modal de opciones
-closeProductOptionsModal.addEventListener('click', () => {
-  productOptionsModal.style.display = 'none'
-  currentProductForOptions = null
-})
-
-closeProductOptionsBtn.addEventListener('click', () => {
-  productOptionsModal.style.display = 'none'
-  currentProductForOptions = null
-})
-
-// Abrir modal para agregar comentario rápido
-addQuickCommentBtn.addEventListener('click', () => {
-  openOptionModal('quick_comment')
-})
-
-// Abrir modal para agregar acompañante
-addSideBtn.addEventListener('click', () => {
-  openOptionModal('side')
-})
-
-function openOptionModal(type, optionId = null) {
-  editingOptionType = type
-
-  if (optionId) {
-    // Editar
-    const allOptions = [...quickComments, ...sides]
-    editingOption = allOptions.find(opt => opt.id === optionId)
-
-    optionModalTitle.textContent = type === 'quick_comment' ? 'Editar Comentario' : 'Editar Acompañante'
-    optionNameInput.value = editingOption.name
-    optionPriceInput.value = editingOption.price || 0
-  } else {
-    // Crear
-    editingOption = null
-    optionModalTitle.textContent = type === 'quick_comment' ? 'Nuevo Comentario Rápido' : 'Nuevo Acompañante'
-    optionNameInput.value = ''
-    optionPriceInput.value = 0
-  }
-
-  // Mostrar/ocultar campo de precio según el tipo
-  if (type === 'quick_comment') {
-    optionPriceGroup.style.display = 'none'
-  } else {
-    optionPriceGroup.style.display = 'flex'
-  }
-
-  optionModal.style.display = 'flex'
-}
-
-function openEditOptionModal(optionId, type) {
-  openOptionModal(type, optionId)
-}
-
-function closeOptionModalFn() {
-  optionModal.style.display = 'none'
-  editingOption = null
-  editingOptionType = null
-  optionForm.reset()
-}
-
-closeOptionModal.addEventListener('click', closeOptionModalFn)
-cancelOptionBtn.addEventListener('click', closeOptionModalFn)
-
-// Guardar opción
-optionForm.addEventListener('submit', async (e) => {
-  e.preventDefault()
-
-  const name = optionNameInput.value
-  const price = editingOptionType === 'side' ? parseFloat(optionPriceInput.value) : 0
-  const submitBtn = e.submitter || document.querySelector('#optionForm button[type="submit"]')
-
-  await buttonLoader.execute(submitBtn, async () => {
-    try {
-      const optionData = {
-        product_id: currentProductForOptions.id,
-        type: editingOptionType,
-        name,
-        price,
-        display_order: editingOption ? editingOption.display_order : 0
-      }
-
-      if (editingOption) {
-        // Actualizar
-        await productOptionsService.update(editingOption.id, optionData)
-        notify.success('Opción actualizada')
-      } else {
-        // Crear
-        await productOptionsService.create(optionData)
-        notify.success('Opción creada')
-      }
-
-      closeOptionModalFn()
-      await loadProductOptions(currentProductForOptions.id)
-      renderProductOptionsDashboard()
-
-    } catch (error) {
-      console.error('Error saving option:', error)
-      notify.error('Error al guardar la opción')
-    }
-  }, 'Guardando...')
-})
-
-// Eliminar opción
-async function deleteOption(optionId) {
-  const result = await confirm.show({
-    title: '¿Eliminar opción?',
-    message: 'Esta acción no se puede deshacer.',
-    confirmText: 'Eliminar',
-    cancelText: 'Cancelar',
-    type: 'danger'
-  })
-
-  if (!result) return
-
-  const loadingToast = notify.loading('Eliminando opción...')
-
-  try {
-    await productOptionsService.delete(optionId)
-    notify.updateLoading(loadingToast, 'Opción eliminada', 'success')
-    await loadProductOptions(currentProductForOptions.id)
-    renderProductOptionsDashboard()
-  } catch (error) {
-    console.error('Error deleting option:', error)
-    notify.updateLoading(loadingToast, 'Error al eliminar la opción', 'error')
-  }
-}
 
 // ============================================
 // IMAGE UPLOAD FOR PRODUCTS
 // ============================================
-import { imageService } from '../../services/images.js'
 
 let currentProductImage = null
 let uploadedImagePath = null
+
 
 const productImagePreview = document.getElementById('productImagePreview')
 const productImageInput = document.getElementById('productImageInput')
