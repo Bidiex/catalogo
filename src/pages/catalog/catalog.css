@@ -73,7 +73,7 @@
 }
 
 .catalog-header.scrolled .header-content {
-  padding: 1rem;
+  padding: 0.75rem 1rem;
 }
 
 .catalog-header.scrolled #businessStatusBadge {
