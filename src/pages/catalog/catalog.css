@@ -1011,13 +1011,6 @@
     /* Critical for flex scrolling to work properly */
   }
 
-  /* Ensure options sections are always visible when rendered */
-  .product-modal-info .product-options-section {
-    display: block;
-    margin-top: 1.5rem;
-    padding-top: 1.5rem;
-  }
-
   /* Force visibility of options if JS enables them */
   .product-options-section[style*="display: block"] {
     display: block !important;
