@@ -1566,7 +1566,7 @@ addQuickCommentBtn.addEventListener('click', () => {
   if (currentPromotionForOptions) {
     openPromotionOptionEditModal(null, 'quick_comment')
   } else if (currentProductForOptions) {
-    openOptionModal('comment')
+    openOptionModal('quick_comment')
   }
 })
 
@@ -1641,6 +1641,17 @@ document.getElementById('promotionForm').addEventListener('submit', async (e) =>
   const endDate = document.getElementById('promotionEndDate').value || null
   const isActive = document.getElementById('promotionActiveInput').checked
   const imageUrl = promotionImageUrlHidden.value
+
+  // Validation
+  if (!startDate || !endDate) {
+    notify.warning('Las fechas de inicio y fin son obligatorias')
+    return
+  }
+
+  if (new Date(endDate) <= new Date(startDate)) {
+    notify.warning('La fecha de fin debe ser posterior a la fecha de inicio')
+    return
+  }
 
 
   await buttonLoader.execute(savePromotionBtn, async () => {
