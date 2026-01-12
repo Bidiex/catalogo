@@ -100,9 +100,9 @@ const addPromotionToCartBtn = document.getElementById('addPromotionToCartBtn')
 // ============================================
 init()
 
-console.log('CATALOG JS LOADED - VERSION: MOBILE FIXES V4')
+console.log('CATALOG JS LOADED - VERSION: MOBILE FIXES V5')
 // ALERT TEMPORAL PARA VERIFICACIÓN DE DESPLIEGUE MEJORA MÓVIL
-alert('🛠️ DEBUG MÓVIL V4\n\nAbra una promoción.\nVerá texto de debug al final de la descripción (QC: X, Sides: X).')
+alert('🛠️ DEBUG MÓVIL V5\n\nAbra una promoción.\nSi hubo ERROR de red/fetch, saldrá en la descripción.')
 
 async function init() {
   try {
@@ -349,7 +349,7 @@ async function openPromotionModal(promo) {
     promo.sides = sides
 
     // DEBUG: Inject stats into description to verify data on mobile
-    const debugStats = `\n\n[DEBUG V4]\nQC: ${quickComments.length}\nSides: ${sides.length}`
+    const debugStats = `\n\n[DEBUG V5]\nPID: ${promo.id}\nQC: ${quickComments.length}\nSides: ${sides.length}`
     if (promotionModalDescription.textContent) {
       promotionModalDescription.textContent += debugStats
     } else {
@@ -359,6 +359,15 @@ async function openPromotionModal(promo) {
     renderPromotionOptions(promo)
   } catch (error) {
     console.error('Error loading promotion options:', error)
+
+    // DEBUG: Show error in modal
+    const errorStats = `\n\n[DEBUG V5 ERROR]\n${error.message || error}`
+    if (promotionModalDescription.textContent) {
+      promotionModalDescription.textContent += errorStats
+    } else {
+      promotionModalDescription.textContent = errorStats
+    }
+
     // Fallback to JSON fields if they exist
     renderPromotionOptions(promo)
   }
