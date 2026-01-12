@@ -1053,6 +1053,17 @@
     width: 100%;
   }
 
+  /* CRITICAL: FORCE VISIBILITY BY ID FOR PROMOTION SECTIONS */
+  #promotionQuickCommentsSection:not(.hidden),
+  #promotionSidesSection:not(.hidden) {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    height: auto !important;
+    margin-top: 1rem !important;
+    margin-bottom: 1rem !important;
+  }
+
   /* Ensure quantity controls are visible */
   .product-modal-quantity {
     margin-top: 1.5rem;
@@ -1544,76 +1555,6 @@
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-/* Redirect Modal */
-.redirect-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.7);
-  z-index: 4000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-}
-
-.redirect-modal-content {
-  background: white;
-  padding: 2.5rem;
-  border-radius: 1rem;
-  text-align: center;
-  max-width: 400px;
-  width: 100%;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  animation: modalZoom 0.3s ease-out;
-}
-
-.redirect-icon {
-  width: 80px;
-  height: 80px;
-  background: #dcfce7;
-  color: #22c55e;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 3rem;
-  margin: 0 auto 1.5rem;
-}
-
-.redirect-modal-content h2 {
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
-  color: #1a1a1a;
-}
-
-.redirect-modal-content p {
-  color: #6b7280;
-  margin-bottom: 2rem;
-}
-
-.redirect-spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #22c55e;
-  border-radius: 50%;
-  margin: 0 auto;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-
-  100% {
-    transform: rotate(360deg);
   }
 }
 
