@@ -34,7 +34,6 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 1.5rem 1rem;
-  transition: padding 0.3s ease;
 }
 
 /* Top row: Logo + Name */
@@ -53,10 +52,6 @@
 /* Bottom row: Description + Status */
 .header-bottom-row {
   margin-top: 0.5rem;
-  transition: opacity 0.3s ease, max-height 0.3s ease;
-  opacity: 1;
-  max-height: 200px;
-  overflow: hidden;
 }
 
 .header-bottom-row p {
@@ -65,23 +60,18 @@
   margin: 0;
 }
 
-/* Scrolled state - hide bottom row */
+/* Scrolled state - hide bottom row instantly */
 .catalog-header.scrolled .header-bottom-row {
-  opacity: 0;
-  max-height: 0;
-  margin-top: 0;
+  display: none;
 }
 
 .catalog-header.scrolled .header-content {
   padding: 0.75rem 1rem;
+  padding-bottom: 0.75rem;
 }
 
 .catalog-header.scrolled #businessStatusBadge {
-  opacity: 0;
-  max-height: 0;
-  overflow: hidden;
-  padding: 0;
-  margin: 0;
+  display: none;
 }
 
 /* Search Bar */
