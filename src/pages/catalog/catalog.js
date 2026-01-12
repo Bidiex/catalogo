@@ -100,7 +100,9 @@ const addPromotionToCartBtn = document.getElementById('addPromotionToCartBtn')
 // ============================================
 init()
 
-console.log('CATALOG JS LOADED - VERSION: MOBILE FIXES V2 (JS FORCED DISPLAY)')
+console.log('CATALOG JS LOADED - VERSION: MOBILE FIXES V3')
+// ALERT TEMPORAL PARA VERIFICACIÓN DE DESPLIEGUE MEJORA MÓVIL
+alert('🛠️ DEBUG MÓVIL V3\n\nEl código nuevo se ha cargado.\nRevise los estilos del modal.')
 
 async function init() {
   try {
