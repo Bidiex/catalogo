@@ -1012,9 +1012,8 @@
   }
 
   /* Force visibility of options if JS enables them */
-  .product-options-section.visible {
-    display: block !important;
-    visibility: visible !important;
+  .hidden {
+    display: none !important;
   }
 }
 

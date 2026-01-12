@@ -366,8 +366,7 @@ function renderPromotionOptions(promo) {
 
   if (quickComments.length > 0) {
     console.log('Showing quick comments section')
-    promotionQuickCommentsSection.style.display = 'block'
-    promotionQuickCommentsSection.classList.add('visible')
+    promotionQuickCommentsSection.classList.remove('hidden')
     promotionQuickCommentsList.innerHTML = quickComments.map((comment, index) => `
           <div class="quick-comment-option">
             <input 
@@ -387,8 +386,7 @@ function renderPromotionOptions(promo) {
     })
   } else {
     console.log('Hiding quick comments section (no comments)')
-    promotionQuickCommentsSection.style.display = 'none'
-    promotionQuickCommentsSection.classList.remove('visible')
+    promotionQuickCommentsSection.classList.add('hidden')
   }
 
   // Sides
@@ -398,8 +396,7 @@ function renderPromotionOptions(promo) {
 
   if (sides.length > 0) {
     console.log('Showing sides section')
-    promotionSidesSection.style.display = 'block'
-    promotionSidesSection.classList.add('visible')
+    promotionSidesSection.classList.remove('hidden')
     promotionSidesList.innerHTML = sides.map((side, index) => `
           <div class="side-option">
             <div class="side-option-left">
@@ -432,8 +429,7 @@ function renderPromotionOptions(promo) {
     })
   } else {
     console.log('Hiding sides section (no sides)')
-    promotionSidesSection.style.display = 'none'
-    promotionSidesSection.classList.remove('visible')
+    promotionSidesSection.classList.add('hidden')
   }
 
   console.log('=== renderPromotionOptions COMPLETED ===')
@@ -442,6 +438,10 @@ function renderPromotionOptions(promo) {
 function closePromotionModalFunc() {
   promotionModal.style.display = 'none'
   selectedPromotion = null
+
+  // Reset visibility states
+  promotionQuickCommentsSection.classList.add('hidden')
+  promotionSidesSection.classList.add('hidden')
 }
 
 if (promotionModalClose) promotionModalClose.addEventListener('click', closePromotionModalFunc)
@@ -776,8 +776,7 @@ function renderProductOptions() {
 
   // Renderizar comentarios rápidos
   if (quickComments.length > 0) {
-    quickCommentsSection.style.display = 'block'
-    quickCommentsSection.classList.add('visible')
+    quickCommentsSection.classList.remove('hidden')
     quickCommentsList.innerHTML = quickComments.map((comment, index) => `
       <div class="quick-comment-option">
         <input 
@@ -803,14 +802,12 @@ function renderProductOptions() {
       })
     })
   } else {
-    quickCommentsSection.style.display = 'none'
-    quickCommentsSection.classList.remove('visible')
+    quickCommentsSection.classList.add('hidden')
   }
 
   // Renderizar acompañantes
   if (sides.length > 0) {
-    sidesSection.style.display = 'block'
-    sidesSection.classList.add('visible')
+    sidesSection.classList.remove('hidden')
     sidesList.innerHTML = sides.map(side => `
       <div class="side-option" data-id="${side.id}">
         <div class="side-option-left">
@@ -846,8 +843,7 @@ function renderProductOptions() {
       })
     })
   } else {
-    sidesSection.style.display = 'none'
-    sidesSection.classList.remove('visible')
+    sidesSection.classList.add('hidden')
   }
 }
 
@@ -858,6 +854,10 @@ function closeProductModal() {
   currentQuantity = 1
   selectedQuickComment = null
   selectedSides = []
+
+  // Reset visibility states
+  quickCommentsSection.classList.add('hidden')
+  sidesSection.classList.add('hidden')
 }
 
 productModalClose.addEventListener('click', closeProductModal)
