@@ -978,11 +978,31 @@
   }
 
   /* Mobile fix for Product/Promotion Modal Info */
+  .product-modal-content {
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+    /* Consistent height */
+  }
+
+  .product-modal-image {
+    flex-shrink: 0;
+    max-height: 200px;
+    /* Limit image height on small screens */
+  }
+
   .product-modal-info {
+    flex: 1;
+    overflow-y: auto;
+    /* Scroll ONLY the info part */
     max-height: none;
-    overflow: visible;
-    padding-bottom: 4rem;
-    /* Ensure space for bottom actions */
+    /* Let flex handle height */
+    padding-bottom: 2rem;
+  }
+
+  /* Force visibility of options if JS enables them */
+  .product-options-section[style*="display: block"] {
+    display: block !important;
   }
 }
 
