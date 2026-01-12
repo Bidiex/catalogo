@@ -128,10 +128,12 @@ async function init() {
     // Cargar carrito del localStorage
     updateCartUI()
 
-    // Inicializar búsqueda
     initCatalogSearch()
 
     showCatalog()
+
+    // Header scroll compression
+    initHeaderScrollCompression()
 
   } catch (error) {
     console.error('Error loading catalog:', error)
@@ -1461,4 +1463,26 @@ function showRedirectModal(url) {
       updateCartUI()
     }, 1000)
   }, 3000)
+}
+
+// ============================================
+// HEADER SCROLL COMPRESSION
+// ============================================
+function initHeaderScrollCompression() {
+  const catalogHeader = document.getElementById('catalogHeader')
+  if (!catalogHeader) return
+
+  const scrollThreshold = window.innerHeight * 0.1 // 10% del viewport
+
+  window.addEventListener('scroll', function () {
+    if (window.scrollY >= scrollThreshold) {
+      if (!catalogHeader.classList.contains('compressed')) {
+        catalogHeader.classList.add('compressed')
+      }
+    } else {
+      if (catalogHeader.classList.contains('compressed')) {
+        catalogHeader.classList.remove('compressed')
+      }
+    }
+  })
 }

@@ -28,12 +28,17 @@
   <div id="catalogContent" style="display: none;">
 
     <!-- Header -->
-    <header class="catalog-header">
+    <header class="catalog-header" id="catalogHeader">
       <div class="header-content">
-        <div class="business-logo" id="headerLogo"
-          style="display: none; width: 60px; height: 60px; border-radius: 50%; overflow: hidden; margin-right: 1rem; flex-shrink: 0; background-color: white;">
+        <!-- Logo Block -->
+        <div class="header-logo-block">
+          <div class="business-logo" id="headerLogo"
+            style="display: none; width: 60px; height: 60px; border-radius: 50%; overflow: hidden; flex-shrink: 0; background-color: white;">
+          </div>
         </div>
-        <div class="business-info">
+
+        <!-- Info Block -->
+        <div class="header-info-block">
           <h1 id="businessName">Cargando...</h1>
           <p id="businessDescription"></p>
         </div>
