@@ -1472,17 +1472,13 @@ function initHeaderScrollCompression() {
   const catalogHeader = document.getElementById('catalogHeader')
   if (!catalogHeader) return
 
-  const scrollThreshold = window.innerHeight * 0.1 // 10% del viewport
-
   window.addEventListener('scroll', function () {
-    if (window.scrollY >= scrollThreshold) {
-      if (!catalogHeader.classList.contains('compressed')) {
-        catalogHeader.classList.add('compressed')
-      }
+    if (window.scrollY > 0) {
+      // Any scroll - hide description and status
+      catalogHeader.classList.add('scrolled')
     } else {
-      if (catalogHeader.classList.contains('compressed')) {
-        catalogHeader.classList.remove('compressed')
-      }
+      // At the very top - show everything
+      catalogHeader.classList.remove('scrolled')
     }
   })
 }
