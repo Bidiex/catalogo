@@ -991,6 +991,12 @@
     /* Limit image height on small screens */
   }
 
+  /* Specific fix for promotion modal images (16:9 aspect ratio) */
+  #promotionModal .product-modal-image {
+    max-height: 150px;
+    /* Reduce height for promotion images to leave more room for options */
+  }
+
   .product-modal-info {
     flex: 1;
     overflow-y: auto;
@@ -998,11 +1004,27 @@
     max-height: none;
     /* Let flex handle height */
     padding-bottom: 2rem;
+    /* Ensure scrollable content has enough space */
+    min-height: 0;
+    /* Critical for flex scrolling to work properly */
   }
 
   /* Force visibility of options if JS enables them */
   .product-options-section[style*="display: block"] {
     display: block !important;
+    visibility: visible !important;
+  }
+
+  /* Ensure promotion modal options are visible and scrollable */
+  #promotionQuickCommentsSection,
+  #promotionSidesSection {
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  #promotionQuickCommentsSection[style*="display: none"],
+  #promotionSidesSection[style*="display: none"] {
+    display: none !important;
   }
 }
 
