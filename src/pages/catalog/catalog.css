@@ -1012,9 +1012,9 @@
   }
 
   /* Force visibility of options if JS enables them */
-  .hidden {
+  /* .hidden {
     display: none !important;
-  }
+  } */
 }
 
 /* Empty states */
@@ -1572,4 +1572,13 @@
   100% {
     transform: rotate(360deg);
   }
+}
+
+/* Asegurar visibilidad de opciones en móvil */
+.product-options-section {
+  display: block;
+}
+
+.product-options-section.hidden {
+  display: none;
 }
