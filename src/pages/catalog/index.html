@@ -122,35 +122,50 @@
   </div>
 
   <!-- Product detail modal -->
-  <!-- Product detail modal -->
   <div class="product-modal" id="productModal" style="display: none;">
     <div class="product-modal-overlay" id="productModalOverlay"></div>
     <div class="product-modal-content">
-      <button class="product-modal-close" id="productModalClose">
-        <i class="ri-close-line"></i>
-      </button>
 
-      <div class="product-modal-image" id="productModalImage">
-        <img src="" alt="">
+      <!-- Modal Header (Fixed) -->
+      <div class="product-modal-header">
+        <span class="product-modal-header-title" id="productModalHeaderTitle"></span>
+        <div class="product-modal-header-actions">
+          <button class="product-modal-action-btn" id="productShareBtn">
+            <i class="ri-share-line"></i>
+          </button>
+          <button class="product-modal-action-btn" id="productModalClose">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
       </div>
 
-      <div class="product-modal-info">
-        <h2 id="productModalName">Producto</h2>
-        <p class="product-modal-price" id="productModalPrice">$0</p>
-        <p class="product-modal-description" id="productModalDescription"></p>
-
-        <!-- Quick Comments -->
-        <div class="product-options-section hidden" id="quickCommentsSection">
-          <h3>Comentarios rápidos</h3>
-          <div class="quick-comments-list" id="quickCommentsList"></div>
+      <!-- Modal Body (Scrollable) -->
+      <div class="product-modal-body">
+        <div class="product-modal-image" id="productModalImage">
+          <img src="" alt="">
         </div>
 
-        <!-- Sides -->
-        <div class="product-options-section hidden" id="sidesSection">
-          <h3>Acompañantes</h3>
-          <div class="sides-list" id="sidesList"></div>
-        </div>
+        <div class="product-modal-info">
+          <h2 id="productModalName">Producto</h2>
+          <p class="product-modal-price" id="productModalPrice">$0</p>
+          <p class="product-modal-description" id="productModalDescription"></p>
 
+          <!-- Quick Comments -->
+          <div class="product-options-section hidden" id="quickCommentsSection">
+            <h3>Comentarios rápidos</h3>
+            <div class="quick-comments-list" id="quickCommentsList"></div>
+          </div>
+
+          <!-- Sides -->
+          <div class="product-options-section hidden" id="sidesSection">
+            <h3>Acompañantes</h3>
+            <div class="sides-list" id="sidesList"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer (Fixed) -->
+      <div class="product-modal-footer">
         <div class="product-modal-quantity">
           <button class="quantity-btn" id="decreaseQty">
             <i class="ri-subtract-line"></i>
@@ -160,12 +175,12 @@
             <i class="ri-add-line"></i>
           </button>
         </div>
-
         <button class="btn-add-to-cart" id="addToCartBtn">
           <i class="ri-shopping-cart-line"></i>
           Agregar al carrito
         </button>
       </div>
+
     </div>
   </div>
 
@@ -174,31 +189,47 @@
   <div class="product-modal" id="promotionModal" style="display: none;">
     <div class="product-modal-overlay" id="promotionModalOverlay"></div>
     <div class="product-modal-content">
-      <button class="product-modal-close" id="promotionModalClose">
-        <i class="ri-close-line"></i>
-      </button>
 
-      <div class="product-modal-image" id="promotionModalImage">
-        <img src="" alt="">
+      <!-- Modal Header (Fixed) -->
+      <div class="product-modal-header">
+        <span class="product-modal-header-title" id="promotionModalHeaderTitle"></span>
+        <div class="product-modal-header-actions">
+          <button class="product-modal-action-btn" id="promotionShareBtn">
+            <i class="ri-share-line"></i>
+          </button>
+          <button class="product-modal-action-btn" id="promotionModalClose">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
       </div>
 
-      <div class="product-modal-info">
-        <h2 id="promotionModalTitle">Promoción</h2>
-        <p class="product-modal-price" id="promotionModalPrice">$0</p>
-        <p class="product-modal-description" id="promotionModalDescription"></p>
-
-        <!-- Quick Comments -->
-        <div class="product-options-section hidden" id="promotionQuickCommentsSection">
-          <h3>Comentarios rápidos</h3>
-          <div class="quick-comments-list" id="promotionQuickCommentsList"></div>
+      <!-- Modal Body (Scrollable) -->
+      <div class="product-modal-body">
+        <div class="product-modal-image" id="promotionModalImage">
+          <img src="" alt="">
         </div>
 
-        <!-- Sides -->
-        <div class="product-options-section hidden" id="promotionSidesSection">
-          <h3>Acompañantes</h3>
-          <div class="sides-list" id="promotionSidesList"></div>
-        </div>
+        <div class="product-modal-info">
+          <h2 id="promotionModalTitle">Promoción</h2>
+          <p class="product-modal-price" id="promotionModalPrice">$0</p>
+          <p class="product-modal-description" id="promotionModalDescription"></p>
 
+          <!-- Quick Comments -->
+          <div class="product-options-section hidden" id="promotionQuickCommentsSection">
+            <h3>Comentarios rápidos</h3>
+            <div class="quick-comments-list" id="promotionQuickCommentsList"></div>
+          </div>
+
+          <!-- Sides -->
+          <div class="product-options-section hidden" id="promotionSidesSection">
+            <h3>Acompañantes</h3>
+            <div class="sides-list" id="promotionSidesList"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer (Fixed) -->
+      <div class="product-modal-footer">
         <div class="product-modal-quantity">
           <button class="quantity-btn" id="promotionDecreaseQty">
             <i class="ri-subtract-line"></i>
@@ -208,12 +239,12 @@
             <i class="ri-add-line"></i>
           </button>
         </div>
-
         <button class="btn-add-to-cart" id="addPromotionToCartBtn">
           <i class="ri-shopping-cart-line"></i>
           Agregar al carrito
         </button>
       </div>
+
     </div>
   </div>
 

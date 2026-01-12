@@ -322,6 +322,12 @@ async function openPromotionModal(promo) {
   promotionModalPrice.textContent = `$${parseFloat(promo.price).toLocaleString()}`
   promotionModalDescription.textContent = promo.description || ''
 
+  // Update header title
+  const promotionModalHeaderTitle = document.getElementById('promotionModalHeaderTitle')
+  if (promotionModalHeaderTitle) {
+    promotionModalHeaderTitle.textContent = promo.title
+  }
+
   if (promo.image_url) {
     promotionModalImage.innerHTML = `<img src="${promo.image_url}" alt="${promo.title}">`
   } else {
@@ -346,10 +352,6 @@ async function openPromotionModal(promo) {
     promo.quick_comments = quickComments
     promo.sides = sides
 
-    // Store in promo object for renderPromotionOptions
-    promo.quick_comments = quickComments
-    promo.sides = sides
-
     renderPromotionOptions(promo)
   } catch (error) {
     console.error('Error loading promotion options:', error)
@@ -359,6 +361,21 @@ async function openPromotionModal(promo) {
   }
 
   promotionModal.style.display = 'flex'
+
+  // Setup scroll listener for header title
+  const promotionModalBody = document.querySelector('#promotionModal .product-modal-body')
+  const promotionModalHeader = document.querySelector('#promotionModal .product-modal-header')
+
+  if (promotionModalBody && promotionModalHeader) {
+    promotionModalBody.addEventListener('scroll', function () {
+      if (promotionModalBody.scrollTop > 50) {
+        promotionModalHeader.classList.add('scrolled')
+      } else {
+        promotionModalHeader.classList.remove('scrolled')
+      }
+    })
+  }
+
   console.log('=== openPromotionModal COMPLETED ===')
 }
 
@@ -759,6 +776,12 @@ async function openProductModal(productId) {
   productModalDescription.textContent = selectedProduct.description || 'Sin descripción'
   quantityValue.textContent = currentQuantity
 
+  // Update header title
+  const productModalHeaderTitle = document.getElementById('productModalHeaderTitle')
+  if (productModalHeaderTitle) {
+    productModalHeaderTitle.textContent = selectedProduct.name
+  }
+
   if (selectedProduct.image_url) {
     productModalImage.innerHTML = `<img src="${selectedProduct.image_url}" alt="${selectedProduct.name}">`
   } else {
@@ -770,6 +793,20 @@ async function openProductModal(productId) {
   renderProductOptions()
 
   productModal.style.display = 'flex'
+
+  // Setup scroll listener for header title
+  const productModalBody = document.querySelector('#productModal .product-modal-body')
+  const productModalHeader = document.querySelector('#productModal .product-modal-header')
+
+  if (productModalBody && productModalHeader) {
+    productModalBody.addEventListener('scroll', function () {
+      if (productModalBody.scrollTop > 50) {
+        productModalHeader.classList.add('scrolled')
+      } else {
+        productModalHeader.classList.remove('scrolled')
+      }
+    })
+  }
 }
 
 function renderProductOptions() {
