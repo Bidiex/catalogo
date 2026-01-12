@@ -100,9 +100,7 @@ const addPromotionToCartBtn = document.getElementById('addPromotionToCartBtn')
 // ============================================
 init()
 
-console.log('CATALOG JS LOADED - VERSION: MOBILE FIXES V6')
-// ALERT TEMPORAL PARA VERIFICACIÓN DE DESPLIEGUE MEJORA MÓVIL
-alert('🛠️ DEBUG MÓVIL V6\n\nAbra una promoción.\nVerificaremos si es un problema de permisos (ANON vs AUTH).')
+console.log('CATALOG JS LOADED')
 
 async function init() {
   try {
@@ -352,30 +350,9 @@ async function openPromotionModal(promo) {
     promo.quick_comments = quickComments
     promo.sides = sides
 
-    // Check Auth Session
-    const { data: { session } } = await supabase.auth.getSession()
-    const isAuth = !!session
-    const authStatus = isAuth ? 'AUTH' : 'ANON'
-
-    // DEBUG: Inject stats into description to verify data on mobile
-    const debugStats = `\n\n[DEBUG V6]\nPID: ${promo.id}\nQC: ${quickComments.length} Sides: ${sides.length}\nUser: ${authStatus}`
-    if (promotionModalDescription.textContent) {
-      promotionModalDescription.textContent += debugStats
-    } else {
-      promotionModalDescription.textContent = debugStats
-    }
-
     renderPromotionOptions(promo)
   } catch (error) {
     console.error('Error loading promotion options:', error)
-
-    // DEBUG: Show error in modal
-    const errorStats = `\n\n[DEBUG V5 ERROR]\n${error.message || error}`
-    if (promotionModalDescription.textContent) {
-      promotionModalDescription.textContent += errorStats
-    } else {
-      promotionModalDescription.textContent = errorStats
-    }
 
     // Fallback to JSON fields if they exist
     renderPromotionOptions(promo)
@@ -395,9 +372,7 @@ function renderPromotionOptions(promo) {
   console.log('Quick Comments Length:', quickComments.length)
 
   if (quickComments.length > 0) {
-    console.log('Showing quick comments section')
     promotionQuickCommentsSection.classList.remove('hidden')
-    promotionQuickCommentsSection.style.display = 'block' // Force visibility inline
     promotionQuickCommentsList.innerHTML = quickComments.map((comment, index) => `
           <div class="quick-comment-option">
             <input 
@@ -416,9 +391,7 @@ function renderPromotionOptions(promo) {
       })
     })
   } else {
-    console.log('Hiding quick comments section (no comments)')
     promotionQuickCommentsSection.classList.add('hidden')
-    promotionQuickCommentsSection.style.display = 'none'
   }
 
   // Sides
@@ -427,9 +400,7 @@ function renderPromotionOptions(promo) {
   console.log('Sides Length:', sides.length)
 
   if (sides.length > 0) {
-    console.log('Showing sides section')
     promotionSidesSection.classList.remove('hidden')
-    promotionSidesSection.style.display = 'block' // Force visibility inline
     promotionSidesList.innerHTML = sides.map((side, index) => `
           <div class="side-option">
             <div class="side-option-left">
@@ -461,9 +432,7 @@ function renderPromotionOptions(promo) {
       })
     })
   } else {
-    console.log('Hiding sides section (no sides)')
     promotionSidesSection.classList.add('hidden')
-    promotionSidesSection.style.display = 'none'
   }
 
   console.log('=== renderPromotionOptions COMPLETED ===')
