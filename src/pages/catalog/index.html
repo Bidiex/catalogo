@@ -11,9 +11,18 @@
 </head>
 
 <body>
-  <!-- Loading state -->
-  <div id="loadingState" class="loading-state">
-    <p>Cargando catálogo...</p>
+  <!-- Loading Modal -->
+  <div id="loadingState" class="loading-modal">
+    <div class="loading-modal-content">
+      <div class="loading-spinner-container">
+        <div class="loading-logo" id="loadingLogo">
+          <i class="ri-restaurant-line"></i>
+        </div>
+        <div class="loading-spinner-ring"></div>
+      </div>
+      <h2>Cargando catálogo</h2>
+      <p>Por favor espera un momento...</p>
+    </div>
   </div>
 
   <!-- Error state -->

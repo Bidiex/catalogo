@@ -583,10 +583,17 @@ function renderBusinessInfo() {
 
   // Render Logo and Favicon
   const headerLogo = document.getElementById('headerLogo')
+  const loadingLogo = document.getElementById('loadingLogo')
+
   if (headerLogo) {
     if (currentBusiness.logo_url) {
       headerLogo.style.display = 'block'
       headerLogo.innerHTML = `<img src="${currentBusiness.logo_url}" alt="${currentBusiness.name}" style="object-fit:cover; width:100%; height:100%;">`
+
+      // Update loading logo too
+      if (loadingLogo) {
+        loadingLogo.innerHTML = `<img src="${currentBusiness.logo_url}" alt="${currentBusiness.name}" style="object-fit:cover; width:100%; height:100%;">`
+      }
 
       // Update Favicon
       const favicon = document.getElementById('dynamicFavicon')
