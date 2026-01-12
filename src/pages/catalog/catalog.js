@@ -100,9 +100,9 @@ const addPromotionToCartBtn = document.getElementById('addPromotionToCartBtn')
 // ============================================
 init()
 
-console.log('CATALOG JS LOADED - VERSION: MOBILE FIXES V3')
+console.log('CATALOG JS LOADED - VERSION: MOBILE FIXES V4')
 // ALERT TEMPORAL PARA VERIFICACIÓN DE DESPLIEGUE MEJORA MÓVIL
-alert('🛠️ DEBUG MÓVIL V3\n\nEl código nuevo se ha cargado.\nRevise los estilos del modal.')
+alert('🛠️ DEBUG MÓVIL V4\n\nAbra una promoción.\nVerá texto de debug al final de la descripción (QC: X, Sides: X).')
 
 async function init() {
   try {
@@ -347,6 +347,14 @@ async function openPromotionModal(promo) {
     // Store in promo object for renderPromotionOptions
     promo.quick_comments = quickComments
     promo.sides = sides
+
+    // DEBUG: Inject stats into description to verify data on mobile
+    const debugStats = `\n\n[DEBUG V4]\nQC: ${quickComments.length}\nSides: ${sides.length}`
+    if (promotionModalDescription.textContent) {
+      promotionModalDescription.textContent += debugStats
+    } else {
+      promotionModalDescription.textContent = debugStats
+    }
 
     renderPromotionOptions(promo)
   } catch (error) {
