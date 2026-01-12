@@ -1028,6 +1028,29 @@
   .product-options-section {
     margin-top: 1rem;
     margin-bottom: 1rem;
+    display: block !important;
+    /* Force display block if hidden wasn't removed correctly or overridden */
+  }
+
+  /* Handle hidden class specifically */
+  .product-options-section.hidden {
+    display: none !important;
+  }
+
+  /* Specific fix for Promotion Modal Options to match Product Modal behavior */
+  #promotionModal .product-options-section h3 {
+    font-size: 1rem;
+    color: var(--color-text);
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+  }
+
+  #promotionModal .quick-comments-list,
+  #promotionModal .sides-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
   }
 
   /* Ensure quantity controls are visible */
