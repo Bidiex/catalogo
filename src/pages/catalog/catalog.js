@@ -367,6 +367,7 @@ function renderPromotionOptions(promo) {
   if (quickComments.length > 0) {
     console.log('Showing quick comments section')
     promotionQuickCommentsSection.classList.remove('hidden')
+    promotionQuickCommentsSection.style.display = 'block' // Force visibility inline
     promotionQuickCommentsList.innerHTML = quickComments.map((comment, index) => `
           <div class="quick-comment-option">
             <input 
@@ -387,6 +388,7 @@ function renderPromotionOptions(promo) {
   } else {
     console.log('Hiding quick comments section (no comments)')
     promotionQuickCommentsSection.classList.add('hidden')
+    promotionQuickCommentsSection.style.display = 'none'
   }
 
   // Sides
@@ -397,6 +399,7 @@ function renderPromotionOptions(promo) {
   if (sides.length > 0) {
     console.log('Showing sides section')
     promotionSidesSection.classList.remove('hidden')
+    promotionSidesSection.style.display = 'block' // Force visibility inline
     promotionSidesList.innerHTML = sides.map((side, index) => `
           <div class="side-option">
             <div class="side-option-left">
@@ -430,6 +433,7 @@ function renderPromotionOptions(promo) {
   } else {
     console.log('Hiding sides section (no sides)')
     promotionSidesSection.classList.add('hidden')
+    promotionSidesSection.style.display = 'none'
   }
 
   console.log('=== renderPromotionOptions COMPLETED ===')
