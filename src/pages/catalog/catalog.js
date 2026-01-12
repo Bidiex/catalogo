@@ -304,6 +304,10 @@ function startPromoAutoplay() {
 
 // Promotion Modal
 async function openPromotionModal(promo) {
+  console.log('=== openPromotionModal CALLED ===')
+  console.log('Promotion ID:', promo.id)
+  console.log('Promotion Title:', promo.title)
+
   if (currentBusiness) {
     // Track view if needed tracking for promos
   }
@@ -326,9 +330,15 @@ async function openPromotionModal(promo) {
 
   // Load and render options from database
   try {
+    console.log('Loading promotion options from database...')
     const options = await promotionOptionsService.getByPromotion(promo.id)
+    console.log('Loaded options:', options)
+
     const quickComments = options.filter(opt => opt.type === 'quick_comment')
     const sides = options.filter(opt => opt.type === 'side')
+
+    console.log('Filtered quick comments:', quickComments)
+    console.log('Filtered sides:', sides)
 
     // Store in promo object for renderPromotionOptions
     promo.quick_comments = quickComments
@@ -342,12 +352,20 @@ async function openPromotionModal(promo) {
   }
 
   promotionModal.style.display = 'flex'
+  console.log('=== openPromotionModal COMPLETED ===')
 }
 
 function renderPromotionOptions(promo) {
+  console.log('=== renderPromotionOptions CALLED ===')
+  console.log('Promotion:', promo)
+
   // Quick Comments
   const quickComments = promo.quick_comments || []
+  console.log('Quick Comments:', quickComments)
+  console.log('Quick Comments Length:', quickComments.length)
+
   if (quickComments.length > 0) {
+    console.log('Showing quick comments section')
     promotionQuickCommentsSection.style.display = 'block'
     promotionQuickCommentsList.innerHTML = quickComments.map((comment, index) => `
           <div class="quick-comment-option">
@@ -367,12 +385,17 @@ function renderPromotionOptions(promo) {
       })
     })
   } else {
+    console.log('Hiding quick comments section (no comments)')
     promotionQuickCommentsSection.style.display = 'none'
   }
 
   // Sides
   const sides = promo.sides || []
+  console.log('Sides:', sides)
+  console.log('Sides Length:', sides.length)
+
   if (sides.length > 0) {
+    console.log('Showing sides section')
     promotionSidesSection.style.display = 'block'
     promotionSidesList.innerHTML = sides.map((side, index) => `
           <div class="side-option">
@@ -405,8 +428,11 @@ function renderPromotionOptions(promo) {
       })
     })
   } else {
+    console.log('Hiding sides section (no sides)')
     promotionSidesSection.style.display = 'none'
   }
+
+  console.log('=== renderPromotionOptions COMPLETED ===')
 }
 
 function closePromotionModalFunc() {

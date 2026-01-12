@@ -1000,6 +1000,8 @@
   .product-modal-info {
     flex: 1;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    /* Enable smooth scrolling on iOS */
     /* Scroll ONLY the info part */
     max-height: none;
     /* Let flex handle height */
@@ -1007,6 +1009,13 @@
     /* Ensure scrollable content has enough space */
     min-height: 0;
     /* Critical for flex scrolling to work properly */
+  }
+
+  /* Ensure options sections are always visible when rendered */
+  .product-modal-info .product-options-section {
+    display: block;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
   }
 
   /* Force visibility of options if JS enables them */
