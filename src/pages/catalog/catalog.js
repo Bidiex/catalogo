@@ -100,9 +100,9 @@ const addPromotionToCartBtn = document.getElementById('addPromotionToCartBtn')
 // ============================================
 init()
 
-console.log('CATALOG JS LOADED - VERSION: MOBILE FIXES V5')
+console.log('CATALOG JS LOADED - VERSION: MOBILE FIXES V6')
 // ALERT TEMPORAL PARA VERIFICACIÓN DE DESPLIEGUE MEJORA MÓVIL
-alert('🛠️ DEBUG MÓVIL V5\n\nAbra una promoción.\nSi hubo ERROR de red/fetch, saldrá en la descripción.')
+alert('🛠️ DEBUG MÓVIL V6\n\nAbra una promoción.\nVerificaremos si es un problema de permisos (ANON vs AUTH).')
 
 async function init() {
   try {
@@ -348,8 +348,17 @@ async function openPromotionModal(promo) {
     promo.quick_comments = quickComments
     promo.sides = sides
 
+    // Store in promo object for renderPromotionOptions
+    promo.quick_comments = quickComments
+    promo.sides = sides
+
+    // Check Auth Session
+    const { data: { session } } = await supabase.auth.getSession()
+    const isAuth = !!session
+    const authStatus = isAuth ? 'AUTH' : 'ANON'
+
     // DEBUG: Inject stats into description to verify data on mobile
-    const debugStats = `\n\n[DEBUG V5]\nPID: ${promo.id}\nQC: ${quickComments.length}\nSides: ${sides.length}`
+    const debugStats = `\n\n[DEBUG V6]\nPID: ${promo.id}\nQC: ${quickComments.length} Sides: ${sides.length}\nUser: ${authStatus}`
     if (promotionModalDescription.textContent) {
       promotionModalDescription.textContent += debugStats
     } else {
