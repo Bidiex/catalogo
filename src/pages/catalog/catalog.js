@@ -367,6 +367,7 @@ function renderPromotionOptions(promo) {
   if (quickComments.length > 0) {
     console.log('Showing quick comments section')
     promotionQuickCommentsSection.style.display = 'block'
+    promotionQuickCommentsSection.classList.add('visible')
     promotionQuickCommentsList.innerHTML = quickComments.map((comment, index) => `
           <div class="quick-comment-option">
             <input 
@@ -387,6 +388,7 @@ function renderPromotionOptions(promo) {
   } else {
     console.log('Hiding quick comments section (no comments)')
     promotionQuickCommentsSection.style.display = 'none'
+    promotionQuickCommentsSection.classList.remove('visible')
   }
 
   // Sides
@@ -397,6 +399,7 @@ function renderPromotionOptions(promo) {
   if (sides.length > 0) {
     console.log('Showing sides section')
     promotionSidesSection.style.display = 'block'
+    promotionSidesSection.classList.add('visible')
     promotionSidesList.innerHTML = sides.map((side, index) => `
           <div class="side-option">
             <div class="side-option-left">
@@ -430,6 +433,7 @@ function renderPromotionOptions(promo) {
   } else {
     console.log('Hiding sides section (no sides)')
     promotionSidesSection.style.display = 'none'
+    promotionSidesSection.classList.remove('visible')
   }
 
   console.log('=== renderPromotionOptions COMPLETED ===')
@@ -773,6 +777,7 @@ function renderProductOptions() {
   // Renderizar comentarios rápidos
   if (quickComments.length > 0) {
     quickCommentsSection.style.display = 'block'
+    quickCommentsSection.classList.add('visible')
     quickCommentsList.innerHTML = quickComments.map((comment, index) => `
       <div class="quick-comment-option">
         <input 
@@ -799,11 +804,13 @@ function renderProductOptions() {
     })
   } else {
     quickCommentsSection.style.display = 'none'
+    quickCommentsSection.classList.remove('visible')
   }
 
   // Renderizar acompañantes
   if (sides.length > 0) {
     sidesSection.style.display = 'block'
+    sidesSection.classList.add('visible')
     sidesList.innerHTML = sides.map(side => `
       <div class="side-option" data-id="${side.id}">
         <div class="side-option-left">
@@ -840,6 +847,7 @@ function renderProductOptions() {
     })
   } else {
     sidesSection.style.display = 'none'
+    sidesSection.classList.remove('visible')
   }
 }
 
