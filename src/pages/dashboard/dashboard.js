@@ -990,6 +990,9 @@ async function openProductOptionsModal(productId) {
   currentProductForOptions = products.find(p => p.id === productId)
   if (!currentProductForOptions) return
 
+  // Fix: Clear promotion context to avoid mixing up options
+  currentPromotionForOptions = null
+
   // Resetear estado
   quickComments = []
   sides = []

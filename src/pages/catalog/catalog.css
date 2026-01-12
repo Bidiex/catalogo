@@ -976,6 +976,14 @@
   .product-card-price {
     font-size: 1rem;
   }
+
+  /* Mobile fix for Product/Promotion Modal Info */
+  .product-modal-info {
+    max-height: none;
+    overflow: visible;
+    padding-bottom: 4rem;
+    /* Ensure space for bottom actions */
+  }
 }
 
 /* Empty states */
@@ -1212,13 +1220,29 @@
 /* Responsive */
 @media (max-width: 640px) {
   .checkout-modal-content {
-    max-height: 95vh;
+    max-height: 85vh;
+    /* Reduced from 95vh to ensure buttons are visible */
     border-radius: 1rem 1rem 0 0;
     margin-top: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .checkout-form {
+    overflow-y: auto;
+    flex: 1;
+    padding-bottom: 2rem;
+    /* Add padding to bottom */
   }
 
   .checkout-actions {
     flex-direction: column-reverse;
+    padding: 1rem;
+    background: white;
+    border-top: 1px solid var(--color-border);
+    margin-top: 0;
+    flex-shrink: 0;
+    /* Prevent shrinking */
   }
 
   .checkout-actions button {
