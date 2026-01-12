@@ -100,6 +100,8 @@ const addPromotionToCartBtn = document.getElementById('addPromotionToCartBtn')
 // ============================================
 init()
 
+console.log('CATALOG JS LOADED - VERSION: MOBILE FIXES V2 (JS FORCED DISPLAY)')
+
 async function init() {
   try {
     // Obtener slug de la URL
