@@ -832,6 +832,7 @@
    ============================================ */
 
 .product-options-section {
+  display: block;
   margin-top: 1.5rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--color-border);
@@ -981,8 +982,8 @@
   .product-modal-content {
     display: flex;
     flex-direction: column;
-    max-height: 90vh;
-    /* Consistent height */
+    max-height: 95vh;
+    /* Increased height for options visibility */
   }
 
   .product-modal-image {
@@ -993,8 +994,8 @@
 
   /* Specific fix for promotion modal images (16:9 aspect ratio) */
   #promotionModal .product-modal-image {
-    max-height: 150px;
-    /* Reduce height for promotion images to leave more room for options */
+    max-height: 120px;
+    /* Smaller height for 16:9 images to maximize space for options */
   }
 
   .product-modal-info {
@@ -1010,11 +1011,6 @@
     min-height: 0;
     /* Critical for flex scrolling to work properly */
   }
-
-  /* Force visibility of options if JS enables them */
-  /* .hidden {
-    display: none !important;
-  } */
 }
 
 /* Empty states */
@@ -1574,11 +1570,16 @@
   }
 }
 
-/* Asegurar visibilidad de opciones en móvil */
-.product-options-section {
-  display: block;
+/* ============================================
+   CRITICAL: Visibility Control for Options
+   ============================================ */
+
+/* Ensure options sections are visible by default */
+.product-options-section:not(.hidden) {
+  display: block !important;
 }
 
+/* Hide only when explicitly marked */
 .product-options-section.hidden {
-  display: none;
+  display: none !important;
 }
