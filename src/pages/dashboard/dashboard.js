@@ -169,6 +169,9 @@ async function init() {
 
     // Inicializar navegación del sidebar
     initSidebarNavigation()
+    
+    // Inicializar soporte
+    initSupport()
 
     // Cargar negocio
     await loadBusiness()
@@ -381,7 +384,8 @@ function updatePageTitle(sectionName) {
     'business': 'Mi Negocio',
     'categories': 'Categorías',
     'products': 'Productos',
-    'whatsapp': 'Mensaje de WhatsApp'
+    'whatsapp': 'Mensaje de WhatsApp',
+    'support': 'Soporte y Ayuda'
   }
 
   pageTitle.textContent = titles[sectionName] || 'Dashboard'
@@ -786,6 +790,123 @@ document.getElementById('categoryForm').addEventListener('submit', async (e) => 
     }
   }, 'Guardando...')
 })
+
+
+// ============================================
+// SUPPORT FUNCTIONALITY
+// ============================================
+const supportModal = document.getElementById('supportModal')
+const createTicketBtn = document.getElementById('createTicketBtn')
+const supportTicketsList = document.getElementById('supportTicketsList')
+
+function initSupport() {
+  // Botones para abrir/cerrar modal
+  if (createTicketBtn) {
+    createTicketBtn.addEventListener('click', openSupportModal)
+  }
+
+  const closeBtn = document.getElementById('closeSupportModal')
+  const cancelBtn = document.getElementById('cancelSupportBtn')
+
+  if (closeBtn) closeBtn.addEventListener('click', closeSupportModal)
+  if (cancelBtn) cancelBtn.addEventListener('click', closeSupportModal)
+
+  // Form submit
+  const supportForm = document.getElementById('supportForm')
+  if (supportForm) {
+    supportForm.addEventListener('submit', handleSupportSubmit)
+  }
+
+  // Image Upload logic (Similar to other uploads but simplified)
+  const ticketImagePreview = document.getElementById('ticketImagePreview')
+  const ticketImageInput = document.getElementById('ticketImageInput')
+  const ticketImageActions = document.getElementById('ticketImageActions')
+  const removeTicketImageBtn = document.getElementById('removeTicketImageBtn')
+
+  if(ticketImagePreview) {
+      ticketImagePreview.addEventListener('click', () => ticketImageInput.click())
+  }
+  
+  if(ticketImageInput) {
+      ticketImageInput.addEventListener('change', (e) => {
+          const file = e.target.files[0]
+          if(file) {
+              // Mock preview
+              const reader = new FileReader()
+              reader.onload = (e) => {
+                   ticketImagePreview.innerHTML = `<img src="${e.target.result}" style="width:100%; height:100%; object-fit:cover;">`
+                   ticketImageActions.style.display = 'flex'
+              }
+              reader.readAsDataURL(file)
+          }
+      })
+  }
+
+  if(removeTicketImageBtn) {
+      removeTicketImageBtn.addEventListener('click', () => {
+          ticketImageInput.value = ''
+          ticketImagePreview.innerHTML = `<i class="ri-image-line"></i><p>Click para subir imagen</p>`
+          ticketImageActions.style.display = 'none'
+      })
+  }
+}
+
+function openSupportModal() {
+  // Pre-fill data
+  if (currentBusiness) {
+    document.getElementById('ticketContactPhone').value = currentBusiness.whatsapp_number || ''
+  }
+  if (currentUser) {
+    document.getElementById('ticketContactEmail').value = currentUser.email || ''
+  }
+
+  supportModal.style.display = 'flex'
+}
+
+function closeSupportModal() {
+  supportModal.style.display = 'none'
+  document.getElementById('supportForm').reset()
+  // Reset image
+   const ticketImagePreview = document.getElementById('ticketImagePreview')
+   if(ticketImagePreview) ticketImagePreview.innerHTML = `<i class="ri-image-line"></i><p>Click para subir imagen</p>`
+   document.getElementById('ticketImageActions').style.display = 'none'
+}
+
+async function handleSupportSubmit(e) {
+  e.preventDefault()
+  
+  const title = document.getElementById('ticketTitle').value
+  const description = document.getElementById('ticketDescription').value
+  const name = document.getElementById('ticketContactName').value
+  const phone = document.getElementById('ticketContactPhone').value
+  const email = document.getElementById('ticketContactEmail').value
+
+  const btn = document.getElementById('submitTicketBtn')
+  
+  await buttonLoader.execute(btn, async () => {
+       // Simulate API call
+       await new Promise(resolve => setTimeout(resolve, 1500))
+       console.log('Ticket submitted:', { title, description, name, phone, email })
+       
+       notify.success('Solicitud enviada correctamente')
+       closeSupportModal()
+       
+       // Render mock ticket
+       supportTicketsList.innerHTML += `
+        <tr>
+            <td>${title}</td>
+            <td>${new Date().toLocaleDateString()}</td>
+            <td><span class="status-badge pending">Pendiente</span></td>
+            <td>
+                <button class="btn-icon danger"><i class="ri-delete-bin-line"></i></button>
+            </td>
+        </tr>
+       `
+       document.getElementById('noTicketsMessage').style.display = 'none'
+
+  }, 'Enviando...')
+}
+
 
 async function deleteCategory(categoryId) {
   const result = await confirm.show({

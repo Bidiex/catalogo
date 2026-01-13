@@ -54,6 +54,10 @@
           <i class="ri-whatsapp-line"></i>
           <span>WhatsApp</span>
         </a>
+        <a href="#" class="nav-item" data-section="support">
+          <i class="ri-customer-service-2-line"></i>
+          <span>Soporte</span>
+        </a>
       </nav>
 
       <!-- User Section -->
@@ -619,6 +623,41 @@
             </section>
           </div>
 
+          <!-- Section: Soporte -->
+          <div id="section-support" class="dashboard-section" style="display: none;">
+            <section class="card">
+              <div class="card-header">
+                <h2><i class="ri-customer-service-2-line"></i> Historial de Soporte</h2>
+                <button id="createTicketBtn" class="btn-primary-small">
+                  <i class="ri-add-line"></i> Crear Solicitud
+                </button>
+              </div>
+              <div class="card-content">
+                <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 1.5rem;">
+                  Aquí puedes ver el estado de tus solicitudes de ayuda.
+                </p>
+                <!-- Tabla de historial -->
+                <div class="table-container">
+                  <table class="data-table" id="supportTicketsTable">
+                    <thead>
+                      <tr>
+                        <th>Asunto</th>
+                        <th>Fecha</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody id="supportTicketsList">
+                      <!-- Se llenará con JS -->
+                    </tbody>
+                  </table>
+                  <p id="noTicketsMessage" class="empty-message" style="display: none;">No tienes solicitudes de
+                    soporte.</p>
+                </div>
+              </div>
+            </section>
+          </div>
+
         </div>
 
       </main>
@@ -996,6 +1035,70 @@
         <div class="modal-actions">
           <button type="button" class="btn-secondary" id="cancelPromotionBtn">Cancelar</button>
           <button type="submit" class="btn-primary" id="savePromotionBtn">Guardar Promoción</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <!-- Modal para crear solicitud de soporte -->
+  <div id="supportModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Nueva Solicitud de Soporte</h3>
+        <button class="modal-close" id="closeSupportModal">&times;</button>
+      </div>
+      <form id="supportForm" class="modal-form">
+
+        <div class="form-group">
+          <label for="ticketTitle">Título de la solicitud *</label>
+          <input type="text" id="ticketTitle" required placeholder="Ej: Problema con un producto">
+        </div>
+
+        <div class="form-group">
+          <label for="ticketDescription">Descripción del problema *</label>
+          <textarea id="ticketDescription" rows="4" required
+            placeholder="Describe detalladamente el problema..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Imagen del problema</label>
+          <div class="image-upload-container">
+            <div class="image-preview" id="ticketImagePreview">
+              <i class="ri-image-line"></i>
+              <p>Click para subir imagen</p>
+            </div>
+            <input type="file" id="ticketImageInput" accept="image/*" style="display: none;">
+            <input type="hidden" id="ticketImageUrl">
+            <div class="image-upload-actions" id="ticketImageActions" style="display: none;">
+              <button type="button" class="btn-secondary-small danger" id="removeTicketImageBtn">
+                <i class="ri-delete-bin-line"></i> Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="ticketContactName">Nombre de contacto</label>
+            <input type="text" id="ticketContactName" placeholder="Tu nombre">
+          </div>
+          <div class="form-group">
+            <label for="ticketContactPhone">Teléfono *</label>
+            <input type="tel" id="ticketContactPhone" required readonly
+              style="background-color: #f3f4f6; cursor: not-allowed;">
+            <small>Tomado de tu negocio</small>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="ticketContactEmail">Correo electrónico *</label>
+          <input type="email" id="ticketContactEmail" required readonly
+            style="background-color: #f3f4f6; cursor: not-allowed;">
+          <small>Tomado de tu cuenta</small>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="cancelSupportBtn">Cancelar</button>
+          <button type="submit" class="btn-primary" id="submitTicketBtn">Enviar Solicitud</button>
         </div>
       </form>
     </div>
