@@ -12,6 +12,7 @@ import { productOptionsService } from '../../services/productOptions.js'
 import { promotionsService } from '../../services/promotions.js'
 import { promotionOptionsService } from '../../services/promotionOptions.js'
 import { imageService } from '../../services/images.js'
+import { supportService } from '../../services/support.js'
 
 // ============================================
 // ESTADO GLOBAL
@@ -169,7 +170,7 @@ async function init() {
 
     // Inicializar navegación del sidebar
     initSidebarNavigation()
-    
+
     // Inicializar soporte
     initSupport()
 
@@ -429,6 +430,7 @@ async function loadAllData() {
     renderProducts()
     renderPaymentMethods()
     renderBusinessHours()
+    loadSupportTickets() // Cargar tickets soporte
     updateDashboardStats()
   } catch (error) {
     console.error('Error loading data:', error)
@@ -817,37 +819,89 @@ function initSupport() {
     supportForm.addEventListener('submit', handleSupportSubmit)
   }
 
-  // Image Upload logic (Similar to other uploads but simplified)
+  // Image Upload logic
+  initTicketImageUpload()
+}
+
+function initTicketImageUpload() {
   const ticketImagePreview = document.getElementById('ticketImagePreview')
   const ticketImageInput = document.getElementById('ticketImageInput')
   const ticketImageActions = document.getElementById('ticketImageActions')
   const removeTicketImageBtn = document.getElementById('removeTicketImageBtn')
+  const ticketImageProgress = document.getElementById('ticketImageProgress')
+  const ticketImageUrlHidden = document.getElementById('ticketImageUrl')
 
-  if(ticketImagePreview) {
-      ticketImagePreview.addEventListener('click', () => ticketImageInput.click())
+  if (ticketImagePreview) {
+    ticketImagePreview.addEventListener('click', () => ticketImageInput.click())
   }
-  
-  if(ticketImageInput) {
-      ticketImageInput.addEventListener('change', (e) => {
-          const file = e.target.files[0]
-          if(file) {
-              // Mock preview
-              const reader = new FileReader()
-              reader.onload = (e) => {
-                   ticketImagePreview.innerHTML = `<img src="${e.target.result}" style="width:100%; height:100%; object-fit:cover;">`
-                   ticketImageActions.style.display = 'flex'
-              }
-              reader.readAsDataURL(file)
+
+  if (ticketImageInput) {
+    ticketImageInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0]
+      if (!file) return
+
+      // Validations
+      if (!file.type.match('image/(jpeg|jpg|png|webp)')) {
+        notify.error('Solo se permiten archivos JPG, PNG o WEBP')
+        return
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        notify.error('El archivo debe pesar menos de 5MB')
+        return
+      }
+
+      // UI Progress
+      if (ticketImageProgress) {
+        ticketImageProgress.style.display = 'block'
+        const bar = ticketImageProgress.querySelector('.progress-fill')
+        if (bar) bar.style.width = '0%'
+      }
+
+      try {
+        // Resize
+        const resizedFile = await imageService.resizeImage(file, 800, 800, 0.9)
+        if (ticketImageProgress) {
+          const bar = ticketImageProgress.querySelector('.progress-fill')
+          if (bar) bar.style.width = '40%'
+        }
+
+        // Upload
+        const result = await imageService.upload(resizedFile, 'support-tickets')
+
+        if (result.success) {
+          if (ticketImageProgress) {
+            const bar = ticketImageProgress.querySelector('.progress-fill')
+            if (bar) bar.style.width = '100%'
           }
-      })
+
+          // Success State
+          ticketImageUrlHidden.value = result.url
+          ticketImagePreview.innerHTML = `<img src="${result.url}" style="width:100%; height:100%; object-fit:cover; border-radius:8px;">`
+          ticketImagePreview.classList.add('has-image')
+          ticketImageActions.style.display = 'flex'
+
+          setTimeout(() => {
+            if (ticketImageProgress) ticketImageProgress.style.display = 'none'
+          }, 500)
+
+        }
+      } catch (error) {
+        console.error('Error uploading ticket image:', error)
+        notify.error('Error al subir la imagen')
+        if (ticketImageProgress) ticketImageProgress.style.display = 'none'
+      }
+    })
   }
 
-  if(removeTicketImageBtn) {
-      removeTicketImageBtn.addEventListener('click', () => {
-          ticketImageInput.value = ''
-          ticketImagePreview.innerHTML = `<i class="ri-image-line"></i><p>Click para subir imagen</p>`
-          ticketImageActions.style.display = 'none'
-      })
+  if (removeTicketImageBtn) {
+    removeTicketImageBtn.addEventListener('click', () => {
+      ticketImageInput.value = ''
+      ticketImageUrlHidden.value = ''
+      ticketImagePreview.innerHTML = `<i class="ri-image-line"></i><p>Click para subir imagen</p>`
+      ticketImagePreview.classList.remove('has-image')
+      ticketImageActions.style.display = 'none'
+    })
   }
 }
 
@@ -866,46 +920,158 @@ function openSupportModal() {
 function closeSupportModal() {
   supportModal.style.display = 'none'
   document.getElementById('supportForm').reset()
+
   // Reset image
-   const ticketImagePreview = document.getElementById('ticketImagePreview')
-   if(ticketImagePreview) ticketImagePreview.innerHTML = `<i class="ri-image-line"></i><p>Click para subir imagen</p>`
-   document.getElementById('ticketImageActions').style.display = 'none'
+  const ticketImagePreview = document.getElementById('ticketImagePreview')
+  const ticketImageUrlHidden = document.getElementById('ticketImageUrl')
+
+  if (ticketImagePreview) {
+    ticketImagePreview.innerHTML = `<i class="ri-image-line"></i><p>Click para subir imagen</p>`
+    ticketImagePreview.classList.remove('has-image')
+  }
+  if (ticketImageUrlHidden) ticketImageUrlHidden.value = ''
+
+  const ticketImageActions = document.getElementById('ticketImageActions')
+  if (ticketImageActions) ticketImageActions.style.display = 'none'
 }
 
 async function handleSupportSubmit(e) {
   e.preventDefault()
-  
+
+  // Get values
   const title = document.getElementById('ticketTitle').value
   const description = document.getElementById('ticketDescription').value
-  const name = document.getElementById('ticketContactName').value
-  const phone = document.getElementById('ticketContactPhone').value
-  const email = document.getElementById('ticketContactEmail').value
+  const contact_name = document.getElementById('ticketContactName').value
+  // Phone/Email are readonly but we can get them
+  const contact_phone = document.getElementById('ticketContactPhone').value
+  const contact_email = document.getElementById('ticketContactEmail').value
+  const image_url = document.getElementById('ticketImageUrl').value
 
   const btn = document.getElementById('submitTicketBtn')
-  
+
   await buttonLoader.execute(btn, async () => {
-       // Simulate API call
-       await new Promise(resolve => setTimeout(resolve, 1500))
-       console.log('Ticket submitted:', { title, description, name, phone, email })
-       
-       notify.success('Solicitud enviada correctamente')
-       closeSupportModal()
-       
-       // Render mock ticket
-       supportTicketsList.innerHTML += `
-        <tr>
-            <td>${title}</td>
-            <td>${new Date().toLocaleDateString()}</td>
-            <td><span class="status-badge pending">Pendiente</span></td>
-            <td>
-                <button class="btn-icon danger"><i class="ri-delete-bin-line"></i></button>
-            </td>
-        </tr>
-       `
-       document.getElementById('noTicketsMessage').style.display = 'none'
+    try {
+      const ticketData = {
+        business_id: currentBusiness.id,
+        user_id: currentUser.id,
+        title,
+        description,
+        contact_name,
+        contact_phone,
+        contact_email,
+        image_url: image_url || null
+      }
+
+      await supportService.create(ticketData)
+
+      notify.success('Solicitud enviada correctamente')
+      closeSupportModal()
+      await loadSupportTickets() // Refresh list
+
+    } catch (error) {
+      console.error('Error creating ticket:', error)
+      notify.error('Error al enviar la solicitud')
+    }
 
   }, 'Enviando...')
 }
+
+async function loadSupportTickets() {
+  if (!currentBusiness) return
+
+  try {
+    const tickets = await supportService.getByBusiness(currentBusiness.id)
+    renderSupportTickets(tickets)
+  } catch (error) {
+    console.error('Error loading tickets:', error)
+    notify.error('Error al cargar historial de soporte')
+  }
+}
+
+function renderSupportTickets(tickets) {
+  if (!tickets || tickets.length === 0) {
+    supportTicketsList.innerHTML = ''
+    document.getElementById('noTicketsMessage').style.display = 'block'
+    return
+  }
+
+  document.getElementById('noTicketsMessage').style.display = 'none'
+
+  supportTicketsList.innerHTML = tickets.map(ticket => `
+    <tr>
+        <td style="font-family:monospace; font-weight:600; color:var(--color-primary);">${ticket.ticket_code || '...'}</td>
+        <td>
+           <div style="font-weight:500;">${ticket.title}</div>
+        </td>
+        <td style="color:var(--text-muted); font-size:0.85rem;">
+          ${new Date(ticket.created_at).toLocaleDateString()}
+        </td>
+        <td>
+           <span class="status-badge ${getStatusClass(ticket.status)}">
+             ${getStatusLabel(ticket.status)}
+           </span>
+        </td>
+        <td>
+            ${ticket.status === 'pending' || ticket.status === 'resolved' || ticket.status === 'closed'
+      ? `<button class="btn-icon danger delete-ticket" data-id="${ticket.id}" title="Eliminar solicitud">
+                   <i class="ri-delete-bin-line"></i>
+                 </button>`
+      : ''
+    }
+        </td>
+    </tr>
+  `).join('')
+
+  // Add delete listeners
+  document.querySelectorAll('.delete-ticket').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const id = e.target.closest('.delete-ticket').dataset.id
+      await deleteTicket(id)
+    })
+  })
+}
+
+function getStatusClass(status) {
+  switch (status) {
+    case 'pending': return 'pending'
+    case 'in_progress': return 'pending' // Re-use pending style or add new one
+    case 'resolved': return 'resolved'
+    case 'closed': return 'resolved' // Re-use resolved style
+    default: return 'pending'
+  }
+}
+
+function getStatusLabel(status) {
+  const labels = {
+    'pending': 'Pendiente',
+    'in_progress': 'En Proceso',
+    'resolved': 'Resuelto',
+    'closed': 'Cerrado'
+  }
+  return labels[status] || status
+}
+
+async function deleteTicket(id) {
+  const confirmed = await confirm.show({
+    title: '¿Eliminar solicitud?',
+    message: 'Esta acción no se puede deshacer.',
+    confirmText: 'Eliminar',
+    cancelText: 'Cancelar',
+    type: 'danger'
+  })
+
+  if (!confirmed) return
+
+  try {
+    await supportService.delete(id)
+    notify.success('Solicitud eliminada')
+    await loadSupportTickets()
+  } catch (error) {
+    console.error('Error deleting ticket:', error)
+    notify.error('Error al eliminar la solicitud')
+  }
+}
+
 
 
 async function deleteCategory(categoryId) {
