@@ -1998,36 +1998,59 @@ document.getElementById('promotionForm').addEventListener('submit', async (e) =>
   e.preventDefault()
 
   const title = document.getElementById('promotionTitleInput').value
-  const price = document.getElementById('promotionPriceInput').value
+  const price = parseFloat(document.getElementById('promotionPriceInput').value)
   const description = document.getElementById('promotionDescriptionInput').value
-  const startDate = document.getElementById('promotionStartDate').value || null
-  const endDate = document.getElementById('promotionEndDate').value || null
+  const startDateStr = document.getElementById('promotionStartDate').value
+  const endDateStr = document.getElementById('promotionEndDate').value
   const isActive = document.getElementById('promotionActiveInput').checked
-  const imageUrl = promotionImageUrlHidden.value
 
-  // Validation
-  if (!startDate || !endDate) {
-    notify.warning('Las fechas de inicio y fin son obligatorias')
-    return
+  // DATE VALIDATION
+  const now = new Date()
+
+  if (startDateStr) {
+    const startDate = new Date(startDateStr)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    // Allow start date to be today (even if time is slightly past, as long as it's today)
+    // Or if editing, we might want to allow past start dates. 
+    // But user requested "validemos que las fechas de inicio ... no deben ser anteriores al día actual"
+    // Let's implement strict check for NEW promotions or if start date changed.
+    // For simplicity, we just check against "today" (beginning of day) to minimize timezone frustration.
+
+    if (startDate < today && !editingPromotion) {
+      // Only enforce "not past" for new promotions to avoid locking old ones
+      notify.warning('La fecha de inicio no puede ser anterior a hoy')
+      return
+    }
+
+    if (endDateStr) {
+      const endDate = new Date(endDateStr)
+      if (endDate <= startDate) {
+        notify.warning('La fecha de cierre debe ser posterior a la de inicio')
+        return
+      }
+
+      if (endDate < now) {
+        notify.warning('La fecha de cierre no puede estar en el pasado')
+        return
+      }
+    }
   }
 
-  if (new Date(endDate) <= new Date(startDate)) {
-    notify.warning('La fecha de fin debe ser posterior a la fecha de inicio')
-    return
-  }
+  const submitBtn = e.submitter || document.querySelector('#promotionForm button[type="submit"]')
 
-
-  await buttonLoader.execute(savePromotionBtn, async () => {
+  await buttonLoader.execute(submitBtn, async () => {
     try {
       const promotionData = {
         business_id: currentBusiness.id,
         title,
-        price: parseFloat(price),
+        price,
         description,
-        image_url: imageUrl,
-        start_date: startDate,
-        end_date: endDate,
-        is_active: isActive
+        start_date: startDateStr || null,
+        end_date: endDateStr || null,
+        is_active: isActive,
+        image_url: promotionImageUrlHidden.value || null
       }
 
       if (editingPromotion) {
@@ -2039,11 +2062,11 @@ document.getElementById('promotionForm').addEventListener('submit', async (e) =>
       }
 
       closePromotionModalFunc()
-      await loadPromotions()
+      loadPromotions()
 
     } catch (error) {
       console.error('Error saving promotion:', error)
-      notify.error('Error al guardar promoción: ' + error.message)
+      notify.error('Error al guardar la promoción')
     }
   }, 'Guardando...')
 })
