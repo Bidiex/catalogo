@@ -30,6 +30,7 @@ let editingPaymentMethod = null
 let promotions = []
 let editingPromotion = null
 let currentPromotionImage = null
+let supportTickets = [] // Global state for tickets
 
 // Wizard onboarding logo
 let wizardLogoUrl = null
@@ -827,6 +828,38 @@ function initSupport() {
 
   // Image Upload logic
   initTicketImageUpload()
+
+  // Search logic
+  initSupportSearch()
+}
+
+function initSupportSearch() {
+  const searchInput = document.getElementById('searchSupportInput')
+  const clearBtn = document.getElementById('clearSupportSearch')
+
+  if (!searchInput || !clearBtn) return
+
+  searchInput.addEventListener('input', (e) => {
+    const query = e.target.value.trim().toLowerCase()
+
+    if (query) {
+      clearBtn.style.display = 'flex'
+      const filtered = supportTickets.filter(ticket =>
+        ticket.title.toLowerCase().includes(query)
+      )
+      renderSupportTickets(filtered)
+    } else {
+      clearBtn.style.display = 'none'
+      renderSupportTickets(supportTickets)
+    }
+  })
+
+  clearBtn.addEventListener('click', () => {
+    searchInput.value = ''
+    clearBtn.style.display = 'none'
+    renderSupportTickets(supportTickets)
+    searchInput.focus()
+  })
 }
 
 function initTicketImageUpload() {
@@ -987,6 +1020,7 @@ async function loadSupportTickets() {
 
   try {
     const tickets = await supportService.getByBusiness(currentBusiness.id)
+    supportTickets = tickets // Save to global state
     renderSupportTickets(tickets)
   } catch (error) {
     console.error('Error loading tickets:', error)
