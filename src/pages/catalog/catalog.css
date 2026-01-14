@@ -1697,3 +1697,54 @@
 .product-options-section.hidden {
   display: none !important;
 }
+
+/* ============================================
+   SHARE MODAL
+   ============================================ */
+
+.share-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 5000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.share-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+}
+
+.share-modal-content {
+  position: relative;
+  background: white;
+  border-radius: 1rem;
+  padding: 2rem;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: modalZoom 0.3s ease-out;
+}
+
+.share-modal-content h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.3rem;
+  color: var(--color-text);
+}
+
+@media (max-width: 640px) {
+  .share-modal-content {
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+}

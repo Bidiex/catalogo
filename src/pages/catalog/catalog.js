@@ -1489,3 +1489,125 @@ function initHeaderScrollCompression() {
     }
   })
 }
+
+
+// ============================================
+// SHARE FUNCTIONALITY
+// ============================================
+
+// Share Product
+const productShareBtn = document.getElementById('productShareBtn')
+if (productShareBtn) {
+  productShareBtn.addEventListener('click', async () => {
+    if (!selectedProduct) return
+
+    const shareData = {
+      title: selectedProduct.name,
+      text: `${selectedProduct.name} - $${parseFloat(selectedProduct.price).toLocaleString()}${selectedProduct.description ? '\n' + selectedProduct.description : ''}`,
+      url: window.location.href
+    }
+
+    await shareContent(shareData)
+  })
+}
+
+// Share Promotion
+const promotionShareBtn = document.getElementById('promotionShareBtn')
+if (promotionShareBtn) {
+  promotionShareBtn.addEventListener('click', async () => {
+    if (!selectedPromotion) return
+
+    const shareData = {
+      title: selectedPromotion.title,
+      text: `${selectedPromotion.title} - $${parseFloat(selectedPromotion.price).toLocaleString()}${selectedPromotion.description ? '\n' + selectedPromotion.description : ''}`,
+      url: window.location.href
+    }
+
+    await shareContent(shareData)
+  })
+}
+
+// Generic Share Function
+async function shareContent(data) {
+  // Check if Web Share API is available
+  if (navigator.share) {
+    try {
+      await navigator.share(data)
+      notify.success('Contenido compartido', 2000)
+    } catch (error) {
+      // User cancelled or error occurred
+      if (error.name !== 'AbortError') {
+        console.error('Error sharing:', error)
+        fallbackShare(data)
+      }
+    }
+  } else {
+    // Fallback for browsers that don't support Web Share API
+    fallbackShare(data)
+  }
+}
+
+// Fallback: Copy link to clipboard
+function fallbackShare(data) {
+  const textToCopy = data.url
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(textToCopy)
+      .then(() => {
+        notify.success('Enlace copiado al portapapeles', 2000)
+      })
+      .catch(err => {
+        console.error('Error copying to clipboard:', err)
+        showShareModal(data)
+      })
+  } else {
+    // Ultimate fallback for older browsers
+    showShareModal(data)
+  }
+}
+
+// Manual Share Modal (for very old browsers)
+function showShareModal(data) {
+  const modal = document.createElement('div')
+  modal.className = 'share-modal'
+  modal.innerHTML = `
+    <div class="share-modal-overlay"></div>
+    <div class="share-modal-content">
+      <h3>Compartir</h3>
+      <p style="margin: 1rem 0; color: #666; font-size: 0.9rem;">Copia el enlace para compartir:</p>
+      <input 
+        type="text" 
+        value="${data.url}" 
+        readonly 
+        style="width: 100%; padding: 0.75rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; font-size: 0.9rem;"
+        id="shareUrlInput"
+      >
+      <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+        <button class="btn-secondary" id="closeShareModal" style="flex: 1;">Cerrar</button>
+        <button class="btn-primary" id="copyShareUrl" style="flex: 1;">
+          <i class="ri-file-copy-line"></i> Copiar
+        </button>
+      </div>
+    </div>
+  `
+
+  document.body.appendChild(modal)
+
+  const input = modal.querySelector('#shareUrlInput')
+  const closeBtn = modal.querySelector('#closeShareModal')
+  const copyBtn = modal.querySelector('#copyShareUrl')
+  const overlay = modal.querySelector('.share-modal-overlay')
+
+  // Auto-select text
+  input.select()
+
+  copyBtn.addEventListener('click', () => {
+    input.select()
+    document.execCommand('copy')
+    notify.success('Enlace copiado', 2000)
+    modal.remove()
+  })
+
+  closeBtn.addEventListener('click', () => modal.remove())
+  overlay.addEventListener('click', () => modal.remove())
+}
