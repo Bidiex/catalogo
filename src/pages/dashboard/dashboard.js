@@ -813,6 +813,12 @@ function initSupport() {
   if (closeBtn) closeBtn.addEventListener('click', closeSupportModal)
   if (cancelBtn) cancelBtn.addEventListener('click', closeSupportModal)
 
+  // Details Modal
+  const closeDetailsBtn = document.getElementById('closeTicketDetailsModal')
+  const closeDetailsActionBtn = document.getElementById('closeTicketDetailsBtn')
+  if (closeDetailsBtn) closeDetailsBtn.addEventListener('click', closeTicketDetailsModal)
+  if (closeDetailsActionBtn) closeDetailsActionBtn.addEventListener('click', closeTicketDetailsModal)
+
   // Form submit
   const supportForm = document.getElementById('supportForm')
   if (supportForm) {
@@ -998,7 +1004,7 @@ function renderSupportTickets(tickets) {
   document.getElementById('noTicketsMessage').style.display = 'none'
 
   supportTicketsList.innerHTML = tickets.map(ticket => `
-    <tr>
+    <tr class="ticket-row" data-id="${ticket.id}" style="cursor: pointer; transition: background 0.2s;">
         <td style="font-family:monospace; font-weight:600; color:var(--color-primary);">${ticket.ticket_code || '...'}</td>
         <td>
            <div style="font-weight:500;">${ticket.title}</div>
@@ -1011,24 +1017,60 @@ function renderSupportTickets(tickets) {
              ${getStatusLabel(ticket.status)}
            </span>
         </td>
-        <td>
-            ${ticket.status === 'pending' || ticket.status === 'resolved' || ticket.status === 'closed'
-      ? `<button class="btn-icon danger delete-ticket" data-id="${ticket.id}" title="Eliminar solicitud">
-                   <i class="ri-delete-bin-line"></i>
-                 </button>`
-      : ''
-    }
-        </td>
     </tr>
   `).join('')
 
-  // Add delete listeners
-  document.querySelectorAll('.delete-ticket').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      const id = e.target.closest('.delete-ticket').dataset.id
-      await deleteTicket(id)
+  // Add click listeners to rows
+  document.querySelectorAll('.ticket-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const id = row.dataset.id
+      const ticket = tickets.find(t => t.id === id)
+      if (ticket) {
+        openTicketDetailsModal(ticket)
+      }
     })
   })
+}
+
+// Modal Details Logic
+function openTicketDetailsModal(ticket) {
+  document.getElementById('detailTicketCode').textContent = ticket.ticket_code || 'N/A'
+  document.getElementById('detailTicketStatus').textContent = getStatusLabel(ticket.status)
+  document.getElementById('detailTicketStatus').className = `status-badge ${getStatusClass(ticket.status)}`
+
+  document.getElementById('detailTicketTitle').textContent = ticket.title
+  document.getElementById('detailTicketDate').textContent = new Date(ticket.created_at).toLocaleString()
+  document.getElementById('detailTicketDescription').textContent = ticket.description
+
+  // Image
+  const imgContainer = document.getElementById('detailTicketImageContainer')
+  const img = document.getElementById('detailTicketImage')
+
+  if (ticket.image_url) {
+    img.src = ticket.image_url
+    img.onclick = () => window.open(ticket.image_url, '_blank')
+    img.style.cursor = 'pointer'
+    imgContainer.style.display = 'block'
+  } else {
+    imgContainer.style.display = 'none'
+  }
+
+  // Response
+  const responseContainer = document.getElementById('detailTicketResponseContainer')
+  const responseText = document.getElementById('detailTicketResponse')
+
+  if (ticket.support_response) {
+    responseText.textContent = ticket.support_response
+    responseContainer.style.display = 'block'
+  } else {
+    responseContainer.style.display = 'none'
+  }
+
+  document.getElementById('ticketDetailsModal').style.display = 'flex'
+}
+
+function closeTicketDetailsModal() {
+  document.getElementById('ticketDetailsModal').style.display = 'none'
 }
 
 function getStatusClass(status) {
