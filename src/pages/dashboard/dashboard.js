@@ -172,6 +172,9 @@ async function init() {
     // Inicializar navegación del sidebar
     initSidebarNavigation()
 
+    // Inicializar menú móvil
+    initMobileMenu()
+
     // Inicializar soporte
     initSupport()
 
@@ -216,6 +219,57 @@ function initSidebarNavigation() {
 
   // Inicializar editor de WhatsApp
   initWhatsAppEditor()
+}
+
+// ============================================
+// MOBILE MENU NAVIGATION
+// ============================================
+function initMobileMenu() {
+  const mobileMenuBtn = document.getElementById('mobileMenuBtn')
+  const dashboardSidebar = document.querySelector('.dashboard-sidebar')
+  const dashboardOverlay = document.getElementById('dashboardOverlay')
+  const navItems = document.querySelectorAll('.nav-item')
+
+  function toggleMenu() {
+    dashboardSidebar.classList.toggle('active')
+    dashboardOverlay.classList.toggle('active')
+  }
+
+  function closeMenu() {
+    dashboardSidebar.classList.remove('active')
+    dashboardOverlay.classList.remove('active')
+  }
+
+  if (mobileMenuBtn) {
+    mobileMenuBtn.addEventListener('click', (e) => {
+      e.stopPropagation()
+      toggleMenu()
+    })
+  }
+
+  if (dashboardOverlay) {
+    dashboardOverlay.addEventListener('click', closeMenu)
+  }
+
+  // Close when clicking nav items on mobile
+  navItems.forEach(item => {
+    item.addEventListener('click', () => {
+      if (window.innerWidth <= 1024) {
+        closeMenu()
+      }
+    })
+  })
+
+  // Close when clicking outside (extra safety)
+  document.addEventListener('click', (e) => {
+    if (window.innerWidth <= 1024 &&
+      dashboardSidebar &&
+      dashboardSidebar.classList.contains('active') &&
+      !dashboardSidebar.contains(e.target) &&
+      !mobileMenuBtn.contains(e.target)) {
+      closeMenu()
+    }
+  })
 }
 
 // ============================================
@@ -1051,17 +1105,34 @@ function renderSupportTickets(tickets) {
              ${getStatusLabel(ticket.status)}
            </span>
         </td>
+        <td>
+           <button class="btn-icon danger delete-ticket" data-id="${ticket.id}" title="Eliminar solicitud">
+             <i class="ri-delete-bin-line"></i>
+           </button>
+        </td>
     </tr>
   `).join('')
 
   // Add click listeners to rows
   document.querySelectorAll('.ticket-row').forEach(row => {
-    row.addEventListener('click', () => {
+    row.addEventListener('click', (e) => {
+      // Prevent opening modal if clicking delete button
+      if (e.target.closest('.delete-ticket')) return
+
       const id = row.dataset.id
       const ticket = tickets.find(t => t.id === id)
       if (ticket) {
         openTicketDetailsModal(ticket)
       }
+    })
+  })
+
+  // Add click listeners for delete buttons
+  document.querySelectorAll('.delete-ticket').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation() // Prevent row click
+      const id = btn.dataset.id || btn.closest('.delete-ticket').dataset.id
+      deleteTicket(id)
     })
   })
 }

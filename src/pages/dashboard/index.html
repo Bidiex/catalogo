@@ -12,6 +12,9 @@
 <body>
   <!-- Dashboard Layout Container -->
   <div class="dashboard-container">
+    <!-- Mobile Overlay -->
+    <div id="dashboardOverlay" class="dashboard-overlay"></div>
+
     <!-- Sidebar -->
     <aside class="dashboard-sidebar">
       <!-- Logo Section -->
@@ -82,6 +85,9 @@
       <!-- Top Header Bar -->
       <header class="dashboard-header">
         <div class="header-content">
+          <button id="mobileMenuBtn" class="mobile-menu-btn">
+            <i class="ri-menu-line"></i>
+          </button>
           <h1 id="pageTitle">Dashboard</h1>
           <div class="header-actions">
             <button id="editBusinessBtn" class="btn-header-action" style="display: none;">
@@ -655,6 +661,7 @@
                         <th>Asunto</th>
                         <th>Fecha</th>
                         <th>Estado</th>
+                        <th></th>
                       </tr>
                     </thead>
                     <tbody id="supportTicketsList">
