@@ -135,6 +135,9 @@ async function init() {
     // Header scroll compression
     initHeaderScrollCompression()
 
+    // Check deep links
+    checkInitialUrl()
+
   } catch (error) {
     console.error('Error loading catalog:', error)
     showError()
@@ -315,6 +318,9 @@ async function openPromotionModal(promo) {
   if (currentBusiness) {
     // Track view if needed tracking for promos
   }
+
+  updateUrl('promotion', promo.id)
+
   selectedPromotion = promo
   currentQuantity = 1
   selectedPromoQuickComment = null
@@ -458,6 +464,7 @@ function renderPromotionOptions(promo) {
 }
 
 function closePromotionModalFunc() {
+  clearUrl()
   promotionModal.style.display = 'none'
   selectedPromotion = null
 
@@ -772,6 +779,9 @@ async function openProductModal(productId) {
   if (currentBusiness) {
     trackProductView(currentBusiness.id, productId)
   }
+
+  updateUrl('product', productId)
+
   selectedProduct = products.find(p => p.id === productId)
   if (!selectedProduct) return
 
@@ -897,6 +907,7 @@ function renderProductOptions() {
 }
 
 function closeProductModal() {
+  clearUrl()
   productModal.style.display = 'none'
   selectedProduct = null
   productOptions = []
@@ -1489,6 +1500,56 @@ function initHeaderScrollCompression() {
     }
   })
 }
+
+// ============================================
+// DEEP LINKING LOGIC
+// ============================================
+
+function updateUrl(type, id) {
+  const url = new URL(window.location.href)
+
+  // Limpiar parámetros previos
+  url.searchParams.delete('product')
+  url.searchParams.delete('promotion')
+
+  // Agregar nuevo parámetro
+  if (type === 'product') {
+    url.searchParams.set('product', id)
+  } else if (type === 'promotion') {
+    url.searchParams.set('promotion', id)
+  }
+
+  // Actualizar URL sin recargar
+  window.history.pushState({}, '', url)
+}
+
+function clearUrl() {
+  const url = new URL(window.location.href)
+  url.searchParams.delete('product')
+  url.searchParams.delete('promotion')
+  window.history.replaceState({}, '', url)
+}
+
+function checkInitialUrl() {
+  const urlParams = new URLSearchParams(window.location.search)
+  const productId = urlParams.get('product')
+  const promotionId = urlParams.get('promotion')
+
+  if (productId) {
+    // Buscar y abrir producto
+    const product = products.find(p => p.id === productId)
+    if (product) {
+      openProductModal(productId)
+    }
+  } else if (promotionId) {
+    // Buscar y abrir promoción
+    const promo = promotions.find(p => p.id === promotionId)
+    if (promo) {
+      openPromotionModal(promo)
+    }
+  }
+}
+
 
 
 // ============================================
