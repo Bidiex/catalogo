@@ -1771,6 +1771,17 @@ function renderPromotions() {
   })
 }
 
+// Helper to get local ISO string for datetime-local input
+function toLocalISOString(date) {
+  const pad = (num) => (num < 10 ? '0' : '') + num
+  const year = date.getFullYear()
+  const month = pad(date.getMonth() + 1)
+  const day = pad(date.getDate())
+  const hours = pad(date.getHours())
+  const minutes = pad(date.getMinutes())
+  return `${year}-${month}-${day}T${hours}:${minutes}`
+}
+
 function openPromotionModal(promotionId = null) {
   resetPromotionImageUpload()
 
@@ -1783,11 +1794,12 @@ function openPromotionModal(promotionId = null) {
     document.getElementById('promotionPriceInput').value = editingPromotion.price
     document.getElementById('promotionDescriptionInput').value = editingPromotion.description || ''
 
+    // Use local time for inputs
     if (editingPromotion.start_date) {
-      document.getElementById('promotionStartDate').value = new Date(editingPromotion.start_date).toISOString().slice(0, 16)
+      document.getElementById('promotionStartDate').value = toLocalISOString(new Date(editingPromotion.start_date))
     }
     if (editingPromotion.end_date) {
-      document.getElementById('promotionEndDate').value = new Date(editingPromotion.end_date).toISOString().slice(0, 16)
+      document.getElementById('promotionEndDate').value = toLocalISOString(new Date(editingPromotion.end_date))
     }
 
     document.getElementById('promotionActiveInput').checked = editingPromotion.is_active
@@ -1806,6 +1818,9 @@ function openPromotionModal(promotionId = null) {
     document.getElementById('promotionModalTitle').textContent = 'Nueva Promoción'
     document.getElementById('promotionForm').reset()
     document.getElementById('promotionActiveInput').checked = true
+
+    // Set default start/end dates for convenience (e.g. today now, end in 7 days)
+    // Optional but helpful
   }
 
   promotionModal.style.display = 'flex'
@@ -2042,13 +2057,17 @@ document.getElementById('promotionForm').addEventListener('submit', async (e) =>
 
   await buttonLoader.execute(submitBtn, async () => {
     try {
+      // Convert local inputs to UTC ISO strings for storage
+      const startDateISO = startDateStr ? new Date(startDateStr).toISOString() : null
+      const endDateISO = endDateStr ? new Date(endDateStr).toISOString() : null
+
       const promotionData = {
         business_id: currentBusiness.id,
         title,
         price,
         description,
-        start_date: startDateStr || null,
-        end_date: endDateStr || null,
+        start_date: startDateISO,
+        end_date: endDateISO,
         is_active: isActive,
         image_url: promotionImageUrlHidden.value || null
       }
