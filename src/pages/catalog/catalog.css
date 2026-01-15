@@ -1860,6 +1860,84 @@
 }
 
 /* ============================================
+   CATALOG FOOTER
+   ============================================ */
+
+.catalog-footer {
+  background: var(--surface-light);
+  border-top: 1px solid var(--color-border);
+  padding: 2rem 1rem;
+  margin-top: 3rem;
+}
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  align-items: center;
+  text-align: center;
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.footer-icon {
+  font-size: 1.5rem;
+  color: var(--color-primary);
+}
+
+.footer-brand-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.footer-copyright p {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.btn-footer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+.btn-footer-link:hover {
+  background: var(--bg-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.btn-footer-link i {
+  font-size: 1rem;
+}
+
+/* Responsive footer */
+@media (min-width: 768px) {
+  .footer-content {
+    flex-direction: row;
+    justify-content: space-between;
+    text-align: left;
+  }
+}
+
+/* ============================================
    CRITICAL: Visibility Control for Options
    ============================================ */
 
