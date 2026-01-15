@@ -135,6 +135,9 @@ async function init() {
     // Header scroll compression
     initHeaderScrollCompression()
 
+    // Initialize scroll animations
+    initScrollAnimations()
+
     // Check deep links
     checkInitialUrl()
 
@@ -1671,4 +1674,40 @@ function showShareModal(data) {
 
   closeBtn.addEventListener('click', () => modal.remove())
   overlay.addEventListener('click', () => modal.remove())
+}
+
+// ============================================
+// SCROLL ANIMATIONS
+// ============================================
+function initScrollAnimations() {
+  // Select all elements that should animate on scroll
+  const animatedElements = document.querySelectorAll('.product-card, .promo-slide')
+
+  // Add the initial animation class to all elements
+  animatedElements.forEach(el => {
+    el.classList.add('fade-in-up')
+  })
+
+  // Create Intersection Observer
+  const observerOptions = {
+    root: null, // viewport
+    rootMargin: '0px 0px -50px 0px', // Trigger slightly before element enters viewport
+    threshold: 0.1 // Trigger when 10% of element is visible
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        // Add animate-in class when element enters viewport
+        entry.target.classList.add('animate-in')
+        // Optional: Unobserve after animation to improve performance
+        observer.unobserve(entry.target)
+      }
+    })
+  }, observerOptions)
+
+  // Observe all animated elements
+  animatedElements.forEach(el => {
+    observer.observe(el)
+  })
 }
