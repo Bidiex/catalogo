@@ -484,6 +484,61 @@
   font-size: 1.2rem;
 }
 
+/* Favorite Button on Product Card */
+.favorite-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(255, 255, 255, 0.95);
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.favorite-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.favorite-btn i {
+  font-size: 1.3rem;
+  color: #9ca3af;
+  transition: color 0.2s ease;
+}
+
+.favorite-btn.active i {
+  color: #ec4899;
+}
+
+.favorite-btn:active {
+  transform: scale(0.95);
+}
+
+/* Like animation */
+@keyframes likeAnimation {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.3);
+  }
+}
+
+.favorite-btn.animating {
+  animation: likeAnimation 0.4s ease;
+}
+
 /* Scroll Animations */
 .fade-in-up {
   opacity: 0;

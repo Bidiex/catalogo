@@ -496,7 +496,7 @@ async function loadAllData() {
 // ============================================
 // DASHBOARD STATS
 // ============================================
-function updateDashboardStats() {
+async function updateDashboardStats() {
   // Total Categorías
   const statTotalCategories = document.getElementById('statTotalCategories')
   if (statTotalCategories) {
@@ -517,29 +517,72 @@ function updateDashboardStats() {
     statCatalogVisits.textContent = parseInt(visits).toLocaleString()
   }
 
-  // Producto Más Visto (desde localStorage o backend)
-  const statMostViewedProduct = document.getElementById('statMostViewedProduct')
-  if (statMostViewedProduct) {
-    const viewsKey = `product_views_${currentBusiness.id}`
-    const productViews = JSON.parse(localStorage.getItem(viewsKey) || '{}')
+  // Top 3 Productos Más Gustados (desde Supabase)
+  await updateTop3Products()
+}
 
-    let mostViewed = null
-    let maxViews = 0
+async function updateTop3Products() {
+  const statTop3 = document.getElementById('statTop3Products')
+  if (!statTop3) return
 
-    Object.keys(productViews).forEach(productId => {
-      if (productViews[productId] > maxViews) {
-        maxViews = productViews[productId]
-        mostViewed = products.find(p => p.id === productId)
+  try {
+    // Query para obtener productos con conteo de likes
+    const { data, error } = await supabase
+      .from('product_likes')
+      .select(`
+        product_id,
+        products (
+          id,
+          name
+        )
+      `)
+      .eq('business_id', currentBusiness.id)
+
+    if (error) throw error
+
+    if (!data || data.length === 0) {
+      statTop3.innerHTML = '<p style="color: #9ca3af; font-size: 0.85rem;">Sin datos aún</p>'
+      return
+    }
+
+    // Agrupar y contar likes por producto
+    const likesCount = {}
+    data.forEach(like => {
+      if (!like.products) return
+
+      const id = like.product_id
+      if (!likesCount[id]) {
+        likesCount[id] = {
+          name: like.products.name,
+          count: 0
+        }
       }
+      likesCount[id].count++
     })
 
-    if (mostViewed) {
-      statMostViewedProduct.textContent = mostViewed.name
-    } else if (products.length > 0) {
-      statMostViewedProduct.textContent = products[0].name
-    } else {
-      statMostViewedProduct.textContent = '-'
+    // Ordenar y tomar top 3
+    const top3 = Object.entries(likesCount)
+      .sort((a, b) => b[1].count - a[1].count)
+      .slice(0, 3)
+
+    if (top3.length === 0) {
+      statTop3.innerHTML = '<p style="color: #9ca3af; font-size: 0.85rem;">Sin favoritos aún</p>'
+      return
     }
+
+    // Renderizar con medallas
+    const medals = ['🥇', '🥈', '🥉']
+    statTop3.innerHTML = top3.map(([id, data], index) => `
+      <div class="top-3-item">
+        <span class="top-3-medal">${medals[index]}</span>
+        <span class="top-3-name">${data.name}</span>
+        <span class="top-3-likes">${data.count} ❤️</span>
+      </div>
+    `).join('')
+
+  } catch (error) {
+    console.error('Error loading top 3:', error)
+    statTop3.innerHTML = '<p style="color: #9ca3af; font-size: 0.85rem;">Error al cargar</p>'
   }
 }
 

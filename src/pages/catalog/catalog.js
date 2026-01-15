@@ -3,6 +3,8 @@ import { cart } from '../../utils/cart.js'
 import { notify } from '../../utils/notifications.js'
 import { promotionsService } from '../../services/promotions.js'
 import { promotionOptionsService } from '../../services/promotionOptions.js'
+import { favorites } from '../../utils/favorites.js'
+
 
 
 // ============================================
@@ -137,6 +139,9 @@ async function init() {
 
     // Initialize scroll animations
     initScrollAnimations()
+
+    // Initialize favorites system
+    initFavorites()
 
     // Check deep links
     checkInitialUrl()
@@ -724,6 +729,8 @@ function renderCategorySection(category, categoryProducts) {
 }
 
 function renderProductCard(product) {
+  const isFav = currentBusiness ? favorites.isFavorite(currentBusiness.id, product.id) : false
+
   return `
     <div class="product-card" data-id="${product.id}">
       <div class="product-card-image">
@@ -731,6 +738,10 @@ function renderProductCard(product) {
       ? `<img src="${product.image_url}" alt="${product.name}" loading="lazy">`
       : 'Sin imagen'
     }
+        <button class="favorite-btn ${isFav ? 'active' : ''}" 
+                data-product-id="${product.id}">
+          <i class="ri-heart-${isFav ? 'fill' : 'line'}"></i>
+        </button>
       </div>
       <div class="product-card-body">
         <div class="product-card-name">${product.name}</div>
@@ -1710,4 +1721,216 @@ function initScrollAnimations() {
   animatedElements.forEach(el => {
     observer.observe(el)
   })
+}
+
+// ============================================
+// FAVORITES SYSTEM
+// ============================================
+
+// State for favorites filter
+let showingFavorites = false
+let favoritesInitialized = false
+
+/**
+ * Initialize favorites system
+ */
+function initFavorites() {
+  // Add favorites button to categories navigation
+  addFavoritesButton()
+
+  // Add event delegation for favorite buttons on product cards (only once)
+  if (!favoritesInitialized) {
+    document.addEventListener('click', handleFavoriteClick)
+    favoritesInitialized = true
+  }
+}
+
+/**
+ * Add Favorites button to categories navigation
+ */
+function addFavoritesButton() {
+  const categoriesNav = document.getElementById('categoriesNav')
+  if (!categoriesNav) return
+
+  const track = categoriesNav.querySelector('.categories-nav-track')
+  if (!track) return
+
+  // Check if button already exists
+  if (track.querySelector('[data-category="favorites"]')) return
+
+  // Create favorites button
+  const favBtn = document.createElement('button')
+  favBtn.className = 'category-nav-btn'
+  favBtn.dataset.category = 'favorites'
+  favBtn.innerHTML = '<i class="ri-heart-line"></i> Favoritos'
+
+  // Insert after "Todos" button
+  const todosBtn = track.querySelector('[data-category="all"]')
+  if (todosBtn && todosBtn.nextSibling) {
+    track.insertBefore(favBtn, todosBtn.nextSibling)
+  } else {
+    track.appendChild(favBtn)
+  }
+
+  // Add click handler
+  favBtn.addEventListener('click', toggleFavoritesFilter)
+}
+
+/**
+ * Handle favorite button clicks (event delegation)
+ */
+async function handleFavoriteClick(e) {
+  const favoriteBtn = e.target.closest('.favorite-btn')
+  if (!favoriteBtn) return
+
+  e.preventDefault()
+  e.stopPropagation()
+
+  if (!currentBusiness) return
+
+  const productId = favoriteBtn.dataset.productId
+  if (!productId) return
+
+  // Toggle favorite
+  const isNowFavorite = await favorites.toggle(currentBusiness.id, productId)
+
+  // Update button appearance
+  updateFavoriteButton(favoriteBtn, isNowFavorite)
+
+  // Show feedback
+  const product = products.find(p => p.id === productId)
+  if (product) {
+    if (isNowFavorite) {
+      notify.success(`❤️ ${product.name} añadido a favoritos`, 2000)
+    } else {
+      notify.success(`${product.name} quitado de favoritos`, 2000)
+    }
+  }
+}
+
+/**
+ * Update favorite button appearance
+ */
+function updateFavoriteButton(btn, isFavorite) {
+  const icon = btn.querySelector('i')
+
+  if (isFavorite) {
+    btn.classList.add('active')
+    icon.className = 'ri-heart-fill'
+  } else {
+    btn.classList.remove('active')
+    icon.className = 'ri-heart-line'
+  }
+
+  // Add animation
+  btn.classList.add('animating')
+  setTimeout(() => btn.classList.remove('animating'), 400)
+}
+
+/**
+ * Enhance existing product cards with favorite buttons
+ */
+function enhanceProductsWithFavorites() {
+  const container = document.getElementById('productsContainer')
+  if (!container) return
+
+  const observer = new MutationObserver(() => {
+    addFavoriteButtonsToExistingCards()
+  })
+
+  observer.observe(container, { childList: true, subtree: true })
+
+  // Also add to existing cards immediately
+  addFavoriteButtonsToExistingCards()
+}
+
+/**
+ * Add favorite buttons to existing product cards
+ */
+function addFavoriteButtonsToExistingCards() {
+  if (!currentBusiness) return
+
+  const productCards = document.querySelectorAll('.product-card')
+
+  productCards.forEach(card => {
+    // Skip if already has favorite button
+    if (card.querySelector('.favorite-btn')) return
+
+    const productId = card.dataset.productId || card.getAttribute('onclick')?.match(/'([^']+)'/)?.[1]
+    if (!productId) return
+
+    const imageContainer = card.querySelector('.product-card-image')
+    if (!imageContainer) return
+
+    const isFav = favorites.isFavorite(currentBusiness.id, productId)
+
+    // Create button
+    const favBtn = document.createElement('button')
+    favBtn.className = `favorite-btn ${isFav ? 'active' : ''}`
+    favBtn.dataset.productId = productId
+    favBtn.innerHTML = `<i class="ri-heart-${isFav ? 'fill' : 'line'}"></i>`
+    favBtn.onclick = (e) => e.stopPropagation()
+
+    imageContainer.appendChild(favBtn)
+  })
+}
+
+/**
+ * Toggle favorites filter
+ */
+function toggleFavoritesFilter(e) {
+  e.preventDefault()
+
+  const favBtn = e.currentTarget
+  const allButtons = document.querySelectorAll('.category-nav-btn')
+
+  // Toggle all category buttons
+  allButtons.forEach(btn => btn.classList.remove('active'))
+  favBtn.classList.add('active')
+
+  // Get favorite product IDs
+  const favoriteIds = favorites.get(currentBusiness.id)
+
+  if (favoriteIds.length === 0) {
+    // Show empty state
+    const container = document.getElementById('productsContainer')
+    if (container) {
+      container.innerHTML = `
+        <div style="text-align: center; padding: 3rem; color: #9ca3af;">
+          <i class="ri-heart-line" style="font-size: 3rem; margin-bottom: 1rem; display: block;"></i>
+          <p style="font-size: 1.1rem; margin-bottom: 0.5rem;">No tienes favoritos aún</p>
+          <p style="font-size: 0.9rem;">Marca tus productos favoritos con el ❤️ para verlos aquí</p>
+        </div>
+      `
+    }
+    return
+  }
+
+  // Filter products that are in favorites
+  const favoriteProducts = products.filter(p => favoriteIds.includes(p.id))
+
+  // Render only favorite products
+  const container = document.getElementById('productsContainer')
+  if (container) {
+    const html = `
+      <div class="category-section">
+        <h2>❤️ Mis Favoritos</h2>
+        <div class="products-row">
+          ${favoriteProducts.map(renderProductCard).join('')}
+        </div>
+      </div>
+    `
+    container.innerHTML = html
+
+    // Re-attach click listeners to product cards
+    document.querySelectorAll('.product-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        const productId = e.currentTarget.dataset.id
+        openProductModal(productId)
+      })
+    })
+
+    // Re-apply scroll animations if needed
+    initScrollAnimations()
+  }
 }
