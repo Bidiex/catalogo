@@ -711,6 +711,11 @@ function renderProducts(filteredCategoryId = 'all', searchQuery = '') {
   // Event listeners para las cards
   document.querySelectorAll('.product-card').forEach(card => {
     card.addEventListener('click', (e) => {
+      // No abrir modal si se hizo click en el botón de favoritos o el botón de añadir
+      if (e.target.closest('.favorite-btn') || e.target.closest('.btn-add-to-modal')) {
+        return
+      }
+
       const productId = e.currentTarget.dataset.id
       openProductModal(productId)
     })
@@ -738,14 +743,19 @@ function renderProductCard(product) {
       ? `<img src="${product.image_url}" alt="${product.name}" loading="lazy">`
       : 'Sin imagen'
     }
-        <button class="favorite-btn ${isFav ? 'active' : ''}" 
+        <button class="favorite-btn ${isFav ? 'active' : ''}"
                 data-product-id="${product.id}">
           <i class="ri-heart-${isFav ? 'fill' : 'line'}"></i>
         </button>
       </div>
       <div class="product-card-body">
         <div class="product-card-name">${product.name}</div>
-        <div class="product-card-price">$${parseFloat(product.price).toLocaleString()}</div>
+        <div class="product-card-footer">
+          <div class="product-card-price">$${parseFloat(product.price).toLocaleString()}</div>
+          <button class="btn-add-to-modal" title="Ver detalles">
+            <i class="ri-add-line"></i>
+          </button>
+        </div>
       </div>
     </div>
   `
@@ -1925,6 +1935,11 @@ function toggleFavoritesFilter(e) {
     // Re-attach click listeners to product cards
     document.querySelectorAll('.product-card').forEach(card => {
       card.addEventListener('click', (e) => {
+        // No abrir modal si se hizo click en el botón de favoritos o el botón de añadir
+        if (e.target.closest('.favorite-btn') || e.target.closest('.btn-add-to-modal')) {
+          return
+        }
+
         const productId = e.currentTarget.dataset.id
         openProductModal(productId)
       })
