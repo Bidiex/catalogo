@@ -384,7 +384,7 @@ async function openPromotionModal(promo) {
 
   if (promotionModalBody && promotionModalHeader) {
     promotionModalBody.addEventListener('scroll', function () {
-      if (promotionModalBody.scrollTop > 50) {
+      if (promotionModalBody.scrollTop > 1) {
         promotionModalHeader.classList.add('scrolled')
       } else {
         promotionModalHeader.classList.remove('scrolled')
