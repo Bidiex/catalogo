@@ -36,36 +36,46 @@
   <!-- Main catalog -->
   <div id="catalogContent" style="display: none;">
 
-    <!-- Header -->
-    <header class="catalog-header" id="catalogHeader">
-      <div class="header-content">
-        <!-- Row 1: Logo + Name -->
-        <div class="header-top-row">
-          <div class="business-logo" id="headerLogo"
-            style="display: none; width: 60px; height: 60px; border-radius: 50%; overflow: hidden; flex-shrink: 0; background-color: white;">
+    <!-- ===== STICKY WRAPPER ===== -->
+    <div class="catalog-sticky-wrapper" id="stickyWrapper">
+      <!-- Header -->
+      <header class="catalog-header" id="catalogHeader">
+        <div class="header-content">
+          <!-- Row 1: Logo + Name -->
+          <div class="header-top-row">
+            <div class="business-logo" id="headerLogo"
+              style="display: none; width: 60px; height: 60px; border-radius: 50%; overflow: hidden; flex-shrink: 0; background-color: white;">
+            </div>
+            <h1 id="businessName">Cargando...</h1>
           </div>
-          <h1 id="businessName">Cargando...</h1>
-        </div>
 
-        <!-- Row 2: Description + Status -->
-        <div class="header-bottom-row">
-          <p id="businessDescription"></p>
+          <!-- Row 2: Description + Status -->
+          <div class="header-bottom-row">
+            <p id="businessDescription"></p>
+          </div>
+        </div>
+      </header>
+
+      <!-- Search Bar -->
+      <div class="catalog-search-container">
+        <div class="catalog-search-bar">
+          <i class="ri-search-line"></i>
+          <input type="text" id="catalogSearchInput" placeholder="Buscar productos..." />
+          <button id="clearCatalogSearch" class="catalog-search-clear" style="display: none;">
+            <i class="ri-close-line"></i>
+          </button>
         </div>
       </div>
-    </header>
 
-    <!-- Search Bar -->
-    <div class="catalog-search-container">
-      <div class="catalog-search-bar">
-        <i class="ri-search-line"></i>
-        <input type="text" id="catalogSearchInput" placeholder="Buscar productos..." />
-        <button id="clearCatalogSearch" class="catalog-search-clear" style="display: none;">
-          <i class="ri-close-line"></i>
-        </button>
-      </div>
+      <!-- Categories navigation -->
+      <nav class="categories-nav" id="categoriesNav">
+        <div class="categories-nav-track">
+          <button class="category-nav-btn active" data-category="all">Todos</button>
+        </div>
+      </nav>
     </div>
 
-    <!-- Promo Banner / Carousel -->
+    <!-- Promo Banner / Carousel (Moved below sticky wrapper) -->
     <div class="promo-banner-container" id="promoBannerContainer" style="display: none;">
       <div class="promo-carousel" id="promoCarousel">
         <div class="promo-slides-container" id="promoSlides">
@@ -82,13 +92,6 @@
         <!-- Optional Controls if needed, but we rely on autoplay/indicators -->
       </div>
     </div>
-
-    <!-- Categories navigation -->
-    <nav class="categories-nav" id="categoriesNav">
-      <div class="categories-nav-track">
-        <button class="category-nav-btn active" data-category="all">Todos</button>
-      </div>
-    </nav>
 
     <!-- Products by category -->
     <main class="catalog-main">

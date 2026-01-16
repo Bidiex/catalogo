@@ -1512,17 +1512,30 @@ function showRedirectModal(url) {
 // ============================================
 function initHeaderScrollCompression() {
   const catalogHeader = document.getElementById('catalogHeader')
+  const stickyWrapper = document.getElementById('stickyWrapper')
+
+  // Wrapper might not exist if HTML isn't updated, but we updated it.
+  // Safety check: if wrapper doesn't exist, maybe fallback to header?
+  // But strictly we expect wrapper.
   if (!catalogHeader) return
 
+  let isCompact = false
+
   window.addEventListener('scroll', function () {
-    if (window.scrollY > 0) {
-      // Any scroll - hide description and status
-      catalogHeader.classList.add('scrolled')
-    } else {
-      // At the very top - show everything
-      catalogHeader.classList.remove('scrolled')
+    const shouldCompact = window.scrollY > 0
+
+    if (shouldCompact !== isCompact) {
+      isCompact = shouldCompact
+
+      // Toggle class on Header for internal changes (logo size, etc)
+      catalogHeader.classList.toggle('is-compact', isCompact)
+
+      // Toggle class on Wrapper for shadow (if wrapper exists)
+      if (stickyWrapper) {
+        stickyWrapper.classList.toggle('is-stuck', isCompact)
+      }
     }
-  })
+  }, { passive: true })
 }
 
 // ============================================

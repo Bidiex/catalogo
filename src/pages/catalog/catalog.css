@@ -19,15 +19,28 @@
   color: #666;
 }
 
+/* STICKY WRAPPER */
+.catalog-sticky-wrapper {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: white;
+  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.catalog-sticky-wrapper.is-stuck {
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
 /* Header */
 .catalog-header {
   background: white;
   border-bottom: 1px solid var(--color-border);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  transition: padding 0.3s ease;
+  background: white;
+  overflow: hidden;
+  /* Ensure content clips */
+  /* Sticky handled by wrapper now */
+  transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .header-content {
@@ -41,17 +54,34 @@
   display: flex;
   align-items: center;
   gap: 1rem;
+  transition: gap 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.header-top-row .business-logo {
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), height 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-radius 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .header-top-row h1 {
   font-size: 1.8rem;
   color: var(--color-text);
   margin: 0;
+  transition: font-size 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Bottom row: Description + Status */
 .header-bottom-row {
   margin-top: 0.5rem;
+  max-height: 80px;
+  /* Estimate */
+  opacity: 1;
+  transition:
+    opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    margin-top 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .header-bottom-row p {
@@ -60,17 +90,36 @@
   margin: 0;
 }
 
-/* Scrolled state - hide bottom row instantly */
-.catalog-header.scrolled .header-bottom-row {
-  display: none;
+/* COMPACT SATES handled by .is-compact on wrapper or header */
+.catalog-header.is-compact .header-content {
+  padding: 0.5rem 1rem;
+  gap: 0;
 }
 
-.catalog-header.scrolled .header-content {
-  padding: 0.75rem 1rem;
-  padding-bottom: 0.75rem;
+.catalog-header.is-compact .header-top-row {
+  gap: 0.5rem;
 }
 
-.catalog-header.scrolled #businessStatusBadge {
+.catalog-header.is-compact .business-logo {
+  width: 32px !important;
+  /* Force override inline style if needed, or JS handles inline style removal? Better to let CSS handle it if possible, but JS might be setting inline styles. We'll strip inline styles in JS or assume CSS !important or sufficient specificity */
+  height: 32px !important;
+  border-radius: 8px !important;
+}
+
+.catalog-header.is-compact h1 {
+  font-size: 1.1rem;
+}
+
+.catalog-header.is-compact .header-bottom-row {
+  opacity: 0;
+  max-height: 0;
+  margin-top: 0;
+  transform: translateY(-5px);
+  pointer-events: none;
+}
+
+.catalog-header.is-compact #businessStatusBadge {
   display: none;
 }
 
@@ -124,10 +173,10 @@
 .catalog-search-container {
   background: white;
   border-bottom: 1px solid var(--color-border);
-  position: sticky;
-  top: 80px;
+  /* sticky removed */
   z-index: 95;
   padding: 1rem;
+  transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .catalog-search-bar {
@@ -197,9 +246,9 @@
 /* Categories navigation */
 .categories-nav {
   background: white;
+  background: white;
   border-bottom: 1px solid var(--color-border);
-  position: sticky;
-  top: 160px;
+  /* sticky removed */
   z-index: 90;
   overflow-x: auto;
   scrollbar-width: none;

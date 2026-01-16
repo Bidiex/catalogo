@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Header contraíble estable</title>
+
+<style>
+:root {
+  --bg: #020617;
+  --header-bg: #0f172a;
+  --text: #e5e7eb;
+  --accent: #38bdf8;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* HEADER */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--header-bg);
+  overflow: hidden;
+}
+
+.header__content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 16px;
+  transition:
+    padding 0.3s ease,
+    gap 0.3s ease;
+}
+
+/* Elementos */
+.header__top,
+.header__middle,
+.header__bottom {
+  overflow: hidden;
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease,
+    max-height 0.3s ease;
+}
+
+.header__top {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.header__middle {
+  font-size: 0.95rem;
+  max-height: 40px;
+}
+
+.header__bottom {
+  display: flex;
+  gap: 12px;
+  max-height: 48px;
+}
+
+.header__bottom button {
+  background: #020617;
+  border: 1px solid #334155;
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+/* ===== ESTADO COMPACTO ===== */
+.header--compact .header__content {
+  padding: 10px 16px;
+  gap: 0;
+}
+
+.header--compact .header__middle,
+.header--compact .header__bottom {
+  opacity: 0;
+  transform: translateY(-6px);
+  max-height: 0;
+  pointer-events: none;
+}
+
+/* CONTENIDO */
+main {
+  padding: 24px;
+}
+
+section {
+  height: 120vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  opacity: 0.6;
+}
+</style>
+</head>
+
+<body>
+
+<header class="header" id="header">
+  <div class="header__content">
+    <div class="header__top">Mi Marca</div>
+    <div class="header__middle">Descripción o subtítulo</div>
+    <div class="header__bottom">
+      <button>Inicio</button>
+      <button>Servicios</button>
+      <button>Contacto</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section>Scroll ↓</section>
+</main>
+
+<script>
+const header = document.getElementById('header');
+
+let isCompact = false;
+
+window.addEventListener('scroll', () => {
+  const shouldCompact = window.scrollY > 1;
+
+  if (shouldCompact !== isCompact) {
+    isCompact = shouldCompact;
+    header.classList.toggle('header--compact', isCompact);
+  }
+}, { passive: true });
+</script>
+
+</body>
+</html>

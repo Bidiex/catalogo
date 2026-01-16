@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Header compactable con search y categorías</title>
+
+<style>
+:root {
+  --bg: #f8fafc;
+  --header-bg: #ffffff;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --muted: #64748b;
+  --accent: #2563eb;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ================= WRAPPER STICKY ================= */
+.catalog-sticky-wrapper {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--border);
+}
+
+/* ================= HEADER ================= */
+.catalog-header {
+  overflow: hidden;
+}
+
+.header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 16px;
+  transition: padding 0.3s ease, gap 0.3s ease;
+}
+
+/* TOP ROW */
+.header-top-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: gap 0.3s ease;
+}
+
+.business-logo {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #2563eb, #38bdf8);
+  transition: width 0.3s ease, height 0.3s ease, border-radius 0.3s ease;
+}
+
+.business-name {
+  font-size: 1.4rem;
+  font-weight: 700;
+  transition: font-size 0.3s ease;
+}
+
+/* BOTTOM ROW */
+.header-bottom-row {
+  max-height: 80px;
+  overflow: hidden;
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease,
+    max-height 0.3s ease;
+}
+
+.header-bottom-row p {
+  font-size: 0.95rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+/* ================= COMPACT MODE ================= */
+.catalog-header.is-compact .header-content {
+  padding: 10px 16px;
+  gap: 6px;
+}
+
+.catalog-header.is-compact .business-logo {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+}
+
+.catalog-header.is-compact .business-name {
+  font-size: 1.05rem;
+}
+
+.catalog-header.is-compact .header-bottom-row {
+  opacity: 0;
+  transform: translateY(-6px);
+  max-height: 0;
+  pointer-events: none;
+}
+
+/* ================= SEARCH ================= */
+.catalog-search-container {
+  padding: 10px 16px;
+  background: var(--header-bg);
+}
+
+.catalog-search-container input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  font-size: 0.95rem;
+}
+
+/* ================= CATEGORIES ================= */
+.category-container {
+  display: flex;
+  gap: 10px;
+  padding: 10px 16px 14px;
+  overflow-x: auto;
+  background: var(--header-bg);
+}
+
+.category-container::-webkit-scrollbar {
+  display: none;
+}
+
+.category-container button {
+  white-space: nowrap;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #f1f5f9;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.category-container button.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+/* ================= CONTENT ================= */
+main {
+  padding: 24px 16px;
+}
+
+.product {
+  height: 120px;
+  border-radius: 14px;
+  background: white;
+  border: 1px solid var(--border);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: var(--muted);
+}
+</style>
+</head>
+
+<body>
+
+<div class="catalog-sticky-wrapper">
+
+  <header class="catalog-header" id="catalogHeader">
+    <div class="header-content">
+      <div class="header-top-row">
+        <div class="business-logo"></div>
+        <div class="business-name">La Hamburguesería</div>
+      </div>
+
+      <div class="header-bottom-row">
+        <p>Las mejores hamburguesas artesanales de la ciudad, hechas al momento.</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="catalog-search-container">
+    <input type="text" placeholder="Buscar productos..." />
+  </div>
+
+  <div class="category-container">
+    <button class="active">Todo</button>
+    <button>Hamburguesas</button>
+    <button>Combos</button>
+    <button>Bebidas</button>
+    <button>Postres</button>
+  </div>
+
+</div>
+
+<main>
+  <div class="product">Producto 1</div>
+  <div class="product">Producto 2</div>
+  <div class="product">Producto 3</div>
+  <div class="product">Producto 4</div>
+  <div class="product">Producto 5</div>
+  <div class="product">Producto 6</div>
+</main>
+
+<script>
+const header = document.getElementById('catalogHeader')
+
+let isCompact = false
+
+window.addEventListener(
+  'scroll',
+  () => {
+    const shouldCompact = window.scrollY > 1
+
+    if (shouldCompact !== isCompact) {
+      isCompact = shouldCompact
+      header.classList.toggle('is-compact', isCompact)
+    }
+  },
+  { passive: true }
+)
+</script>
+
+</body>
+</html>
