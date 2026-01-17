@@ -782,11 +782,11 @@ function renderProductCard(product) {
 
     priceHTML = `
       <div class="product-card-price-container">
+        <div class="discounted-price">$${discountedPrice.toLocaleString()}</div>
         <div class="price-discount-wrapper">
           <span class="discount-badge">${discountPercentage}%</span>
           <span class="original-price">$${originalPrice.toLocaleString()}</span>
         </div>
-        <div class="discounted-price">$${discountedPrice.toLocaleString()}</div>
       </div>
     `
   } else {
