@@ -711,8 +711,8 @@ function renderProducts(filteredCategoryId = 'all', searchQuery = '') {
   // Event listeners para las cards
   document.querySelectorAll('.product-card').forEach(card => {
     card.addEventListener('click', (e) => {
-      // No abrir modal si se hizo click en el botón de favoritos o el botón de añadir
-      if (e.target.closest('.favorite-btn') || e.target.closest('.btn-add-to-modal')) {
+      // No abrir modal si se hizo click en el botón de favoritos
+      if (e.target.closest('.favorite-btn')) {
         return
       }
 
