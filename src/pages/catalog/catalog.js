@@ -870,9 +870,29 @@ async function openProductModal(productId) {
   selectedQuickComment = null
   selectedSides = []
 
+  // Calculate final price (with discount if applicable)
+  let finalPrice = parseFloat(selectedProduct.price)
+  let priceHTML = ''
+
+  if (selectedProduct.discount) {
+    const discountPercentage = selectedProduct.discount.discount_percentage
+    finalPrice = finalPrice * (1 - discountPercentage / 100)
+
+    // Show discount badge + original price + discounted price
+    priceHTML = `
+      <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+        <span class="discount-badge" style="background: #fbbf24; color: #000; padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 700;">${discountPercentage}%</span>
+        <span style="color: #6b7280; text-decoration: line-through; font-size: 0.875rem;">$${parseFloat(selectedProduct.price).toLocaleString()}</span>
+        <span style="color: var(--color-primary); font-weight: 700; font-size: 1.25rem;">$${finalPrice.toLocaleString()}</span>
+      </div>
+    `
+  } else {
+    priceHTML = `$${finalPrice.toLocaleString()}`
+  }
+
   // Llenar modal
   productModalName.textContent = selectedProduct.name
-  productModalPrice.textContent = `$${parseFloat(selectedProduct.price).toLocaleString()}`
+  productModalPrice.innerHTML = priceHTML
   productModalDescription.textContent = selectedProduct.description || 'Sin descripción'
   quantityValue.textContent = currentQuantity
 
