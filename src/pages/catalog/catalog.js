@@ -1745,8 +1745,8 @@ function initScrollAnimations() {
   // Create Intersection Observer
   const observerOptions = {
     root: null, // viewport
-    rootMargin: '0px 0px -50px 0px', // Trigger slightly before element enters viewport
-    threshold: 0.1 // Trigger when 10% of element is visible
+    rootMargin: '0px', // Trigger exactly when entering viewport
+    threshold: 0 // Trigger as soon as 1px is visible
   }
 
   const observer = new IntersectionObserver((entries) => {
