@@ -146,6 +146,9 @@ async function init() {
     // Check deep links
     checkInitialUrl()
 
+    // Limpiar carritos antiguos
+    cleanOldCarts()
+
   } catch (error) {
     console.error('Error loading catalog:', error)
     showError()
@@ -521,7 +524,7 @@ if (addPromotionToCartBtn) {
     // Guardar el título ANTES de cerrar el modal
     const promoTitle = selectedPromotion.title
 
-    cart.add(promoItem, currentQuantity, options)
+    cart.add(currentBusiness.id, promoItem, currentQuantity, options)
     updateCartUI()
     closePromotionModalFunc()
     notify.success(`${promoTitle} agregado al carrito`, 2000)
@@ -970,7 +973,7 @@ addToCartBtn.addEventListener('click', () => {
   // Guardar el nombre ANTES de cerrar el modal
   const productName = selectedProduct.name
 
-  cart.add(selectedProduct, currentQuantity, options)
+  cart.add(currentBusiness.id, selectedProduct, currentQuantity, options)
   updateCartUI()
   closeProductModal()
 
@@ -982,7 +985,8 @@ addToCartBtn.addEventListener('click', () => {
 // CART UI
 // ============================================
 function updateCartUI() {
-  const cartItems = cart.get()
+  if (!currentBusiness) return
+  const cartItems = cart.get(currentBusiness.id)
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0)
 
   // Actualizar contador
@@ -1002,7 +1006,8 @@ function updateCartUI() {
 }
 
 function renderCartItems() {
-  const cartItems = cart.get()
+  if (!currentBusiness) return
+  const cartItems = cart.get(currentBusiness.id)
 
   if (cartItems.length === 0) {
     cartBody.innerHTML = '<p class="empty-cart-message">El carrito está vacío</p>'
@@ -1053,7 +1058,7 @@ function renderCartItems() {
   }).join('')
 
   // Total
-  const total = cart.getTotal()
+  const total = cart.getTotal(currentBusiness.id)
   cartTotalAmount.textContent = `$${total.toLocaleString()}`
   cartFooter.style.display = 'block'
 
@@ -1063,7 +1068,7 @@ function renderCartItems() {
       const itemKey = e.target.dataset.key
       const item = cartItems.find(i => i.itemKey === itemKey)
       if (item && item.quantity > 1) {
-        cart.updateQuantity(itemKey, item.quantity - 1)
+        cart.updateQuantity(currentBusiness.id, itemKey, item.quantity - 1)
         updateCartUI()
         renderCartItems()
       }
@@ -1075,7 +1080,7 @@ function renderCartItems() {
       const itemKey = e.target.dataset.key
       const item = cartItems.find(i => i.itemKey === itemKey)
       if (item) {
-        cart.updateQuantity(itemKey, item.quantity + 1)
+        cart.updateQuantity(currentBusiness.id, itemKey, item.quantity + 1)
         updateCartUI()
         renderCartItems()
       }
@@ -1085,7 +1090,7 @@ function renderCartItems() {
   document.querySelectorAll('.cart-item-remove').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const itemKey = e.target.dataset.key
-      cart.remove(itemKey)
+      cart.remove(currentBusiness.id, itemKey)
       updateCartUI()
       renderCartItems()
     })
@@ -1173,7 +1178,8 @@ checkoutForm.addEventListener('submit', async (e) => {
 })
 
 async function sendWhatsAppOrder(clientData) {
-  const cartItems = cart.get()
+  if (!currentBusiness) return
+  const cartItems = cart.get(currentBusiness.id)
   if (cartItems.length === 0) return
 
   try {
@@ -1232,7 +1238,7 @@ Método de pago: {metodo_pago}
     }).join('\n')
 
     // Calcular total
-    const total = cart.getTotal()
+    const total = cart.getTotal(currentBusiness.id)
 
     // Reemplazar tokens con datos reales
     let message = template
@@ -1414,7 +1420,8 @@ function renderBusinessStatus() {
 
 // Llamar al abrir el modal - ACTUALIZADO
 btnWhatsapp.addEventListener('click', () => {
-  const cartItems = cart.get()
+  if (!currentBusiness) return
+  const cartItems = cart.get(currentBusiness.id)
   if (cartItems.length === 0) {
     notify.warning('El carrito está vacío')
     return
@@ -1501,7 +1508,7 @@ function showRedirectModal(url) {
     setTimeout(() => {
       modal.remove()
       notify.success('¡Pedido enviado con éxito!')
-      cart.clear()
+      if (currentBusiness) cart.clear(currentBusiness.id)
       updateCartUI()
     }, 1000)
   }, 3000)
@@ -1980,5 +1987,43 @@ function toggleFavoritesFilter(e) {
 
     // Re-apply scroll animations if needed
     initScrollAnimations()
+  }
+}
+
+/**
+ * Limpiar carritos de negocios no visitados recientemente
+ * Ejecutar después de cargar el negocio actual
+ */
+function cleanOldCarts() {
+  if (!currentBusiness) return
+
+  const currentKey = `catalog_cart_${currentBusiness.id}`
+  const maxDaysInactive = 7
+
+  try {
+    // Iterar todas las claves de localStorage
+    Object.keys(localStorage).forEach(key => {
+      // Solo procesar claves de carritos
+      if (key.startsWith('catalog_cart_') && key !== currentKey) {
+        const lastAccessKey = `${key}_last_access`
+        const lastAccess = localStorage.getItem(lastAccessKey)
+
+        const daysSinceAccess = lastAccess
+          ? (Date.now() - parseInt(lastAccess)) / (1000 * 60 * 60 * 24)
+          : 999
+
+        // Eliminar si no se ha accedido en maxDaysInactive días
+        if (daysSinceAccess > maxDaysInactive) {
+          localStorage.removeItem(key)
+          localStorage.removeItem(lastAccessKey)
+          console.log(`Cleaned old cart: ${key}`)
+        }
+      }
+    })
+
+    // Registrar última visita al carrito actual
+    localStorage.setItem(`${currentKey}_last_access`, Date.now().toString())
+  } catch (error) {
+    console.error('Error cleaning old carts:', error)
   }
 }

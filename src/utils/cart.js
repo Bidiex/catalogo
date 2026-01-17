@@ -1,17 +1,28 @@
 /**
  * Utilidad para manejar el carrito de compras
  * Usa localStorage para persistencia entre sesiones
+ * Ahora aislado por businessId
  */
-
-const CART_KEY = 'catalog_cart'
 
 export const cart = {
   /**
+   * Generar clave de localStorage basada en businessId
+   */
+  getKey(businessId) {
+    if (!businessId) {
+      console.warn('Cart: No businessId provided, using temp cart')
+      return 'catalog_cart_temp'
+    }
+    return `catalog_cart_${businessId}`
+  },
+
+  /**
    * Obtener items del carrito
    */
-  get() {
+  get(businessId) {
     try {
-      const data = localStorage.getItem(CART_KEY)
+      const key = this.getKey(businessId)
+      const data = localStorage.getItem(key)
       return data ? JSON.parse(data) : []
     } catch (error) {
       console.error('Error getting cart:', error)
@@ -22,9 +33,10 @@ export const cart = {
   /**
    * Guardar carrito en localStorage
    */
-  save(items) {
+  save(businessId, items) {
     try {
-      localStorage.setItem(CART_KEY, JSON.stringify(items))
+      const key = this.getKey(businessId)
+      localStorage.setItem(key, JSON.stringify(items))
     } catch (error) {
       console.error('Error saving cart:', error)
     }
@@ -33,9 +45,9 @@ export const cart = {
   /**
    * Agregar producto al carrito con opciones
    */
-  add(product, quantity = 1, options = { quickComment: null, sides: [] }) {
-    const items = this.get()
-    
+  add(businessId, product, quantity = 1, options = { quickComment: null, sides: [] }) {
+    const items = this.get(businessId)
+
     // Generar ID único para el item (producto + opciones)
     const itemKey = this.generateItemKey(product.id, options)
     const existingIndex = items.findIndex(item => item.itemKey === itemKey)
@@ -56,12 +68,13 @@ export const cart = {
       })
     }
 
-    this.save(items)
+    this.save(businessId, items)
     return items
   },
 
   /**
    * Generar clave única para item (producto + opciones)
+   * NO requiere businessId ya que es interno del producto
    */
   generateItemKey(productId, options) {
     const quickComment = options.quickComment || ''
@@ -72,16 +85,16 @@ export const cart = {
   /**
    * Actualizar cantidad de un item
    */
-  updateQuantity(itemKey, newQuantity) {
-    const items = this.get()
+  updateQuantity(businessId, itemKey, newQuantity) {
+    const items = this.get(businessId)
     const item = items.find(i => i.itemKey === itemKey)
 
     if (item) {
       if (newQuantity <= 0) {
-        return this.remove(itemKey)
+        return this.remove(businessId, itemKey)
       }
       item.quantity = newQuantity
-      this.save(items)
+      this.save(businessId, items)
     }
 
     return items
@@ -90,34 +103,35 @@ export const cart = {
   /**
    * Eliminar item del carrito
    */
-  remove(itemKey) {
-    const items = this.get().filter(item => item.itemKey !== itemKey)
-    this.save(items)
+  remove(businessId, itemKey) {
+    const items = this.get(businessId).filter(item => item.itemKey !== itemKey)
+    this.save(businessId, items)
     return items
   },
 
   /**
    * Limpiar todo el carrito
    */
-  clear() {
-    localStorage.removeItem(CART_KEY)
+  clear(businessId) {
+    const key = this.getKey(businessId)
+    localStorage.removeItem(key)
     return []
   },
 
   /**
    * Obtener cantidad total de items
    */
-  getItemCount() {
-    return this.get().reduce((sum, item) => sum + item.quantity, 0)
+  getItemCount(businessId) {
+    return this.get(businessId).reduce((sum, item) => sum + item.quantity, 0)
   },
 
   /**
    * Calcular total del carrito incluyendo opciones
    */
-  getTotal() {
-    return this.get().reduce((sum, item) => {
+  getTotal(businessId) {
+    return this.get(businessId).reduce((sum, item) => {
       let itemTotal = parseFloat(item.price) * item.quantity
-      
+
       // Sumar precio de acompañantes
       if (item.options?.sides) {
         const sidesTotal = item.options.sides.reduce((sideSum, side) => {
@@ -125,7 +139,7 @@ export const cart = {
         }, 0)
         itemTotal += sidesTotal * item.quantity
       }
-      
+
       return sum + itemTotal
     }, 0)
   }
