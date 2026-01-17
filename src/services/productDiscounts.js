@@ -10,17 +10,18 @@ export const productDiscountsService = {
                 .from('product_discounts')
                 .select('*')
                 .eq('product_id', productId)
-                .single()
+                .maybeSingle() // Use maybeSingle instead of single to avoid error when no record
 
             if (error) {
-                // Si no existe descuento, retornar null en lugar de error
-                if (error.code === 'PGRST116') return null
-                throw error
+                // Log but don't throw - just return null for these cases
+                console.warn('Error fetching discount (returning null):', error.message)
+                return null
             }
             return data
         } catch (error) {
             console.error('Error getting product discount:', error)
-            throw error
+            // Return null instead of throwing to prevent breaking the UI
+            return null
         }
     },
 

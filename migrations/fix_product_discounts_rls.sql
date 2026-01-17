@@ -1,31 +1,14 @@
--- Create product_discounts table
-CREATE TABLE IF NOT EXISTS product_discounts (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  product_id UUID NOT NULL UNIQUE REFERENCES products(id) ON DELETE CASCADE,
-  discount_percentage NUMERIC NOT NULL CHECK (discount_percentage > 0 AND discount_percentage <= 100),
-  start_date DATE NOT NULL,
-  end_date DATE NOT NULL,
-  is_active BOOLEAN NOT NULL DEFAULT false,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  CONSTRAINT valid_date_range CHECK (end_date >= start_date)
-);
+-- Script to fix RLS policies for product_discounts table
+-- Run this in Supabase SQL Editor if you already created the table
 
--- Create index for faster queries
-CREATE INDEX idx_product_discounts_product_id ON product_discounts(product_id);
-CREATE INDEX idx_product_discounts_active ON product_discounts(is_active) WHERE is_active = true;
-
--- Enable RLS
-ALTER TABLE product_discounts ENABLE ROW LEVEL SECURITY;
-
--- Drop existing policies if any (in case of re-run)
+-- Drop existing conflicting policies
 DROP POLICY IF EXISTS "Users can view discounts from their business" ON product_discounts;
 DROP POLICY IF EXISTS "Anyone can view active discounts" ON product_discounts;
 DROP POLICY IF EXISTS "Users can create discounts for their products" ON product_discounts;
 DROP POLICY IF EXISTS "Users can update discounts for their products" ON product_discounts;
 DROP POLICY IF EXISTS "Users can delete discounts for their products" ON product_discounts;
 
--- Policy: Combined SELECT for both authenticated users (dashboard) and public (catalog)
+-- Create corrected SELECT policy that works for both authenticated and public
 CREATE POLICY "View discounts for business products or active public"
   ON product_discounts
   FOR SELECT
@@ -45,7 +28,7 @@ CREATE POLICY "View discounts for business products or active public"
     (is_active = true)
   );
 
--- Policy: Users can insert discounts for their products
+-- Recreate other policies
 CREATE POLICY "Users can create discounts for their products"
   ON product_discounts
   FOR INSERT
@@ -58,7 +41,6 @@ CREATE POLICY "Users can create discounts for their products"
     )
   );
 
--- Policy: Users can update discounts for their products
 CREATE POLICY "Users can update discounts for their products"
   ON product_discounts
   FOR UPDATE
@@ -71,7 +53,6 @@ CREATE POLICY "Users can update discounts for their products"
     )
   );
 
--- Policy: Users can delete discounts for their products
 CREATE POLICY "Users can delete discounts for their products"
   ON product_discounts
   FOR DELETE

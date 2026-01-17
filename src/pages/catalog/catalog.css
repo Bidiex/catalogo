@@ -501,6 +501,44 @@
   font-size: 1.2rem;
 }
 
+/* Discount pricing styles */
+.product-card-price-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.price-discount-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.discount-badge {
+  background: #fbbf24;
+  color: #000;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.original-price {
+  color: #6b7280;
+  text-decoration: line-through;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.discounted-price {
+  color: var(--color-primary, #2563eb);
+  font-weight: 700;
+  font-size: 1.125rem;
+}
+
+
 .btn-add-to-modal {
   background: var(--color-primary);
   color: white;

@@ -702,7 +702,7 @@ function renderProducts(productsToRender = null) {
     <button class="btn-manage-options manage-options" data-id="${product.id}">
     <i class="ri-settings-3-line"></i> Opciones
   </button>
-  <button class="btn-icon" onclick="openDiscountModal('PRODUCT_ID')">
+  <button class="btn-icon manage-discount" data-id="${product.id}">
     <i class="ri-price-tag-line"></i> Descuentos
  </button>
   <button class="btn-icon edit-product" data-id="${product.id}">
@@ -735,6 +735,13 @@ function renderProducts(productsToRender = null) {
     btn.addEventListener('click', (e) => {
       const id = e.target.dataset.id || e.target.closest('.delete-product').dataset.id
       deleteProduct(id)
+    })
+  })
+
+  document.querySelectorAll('.manage-discount').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = e.target.dataset.id || e.target.closest('.manage-discount').dataset.id
+      openDiscountModal(id)
     })
   })
 }
@@ -3339,7 +3346,7 @@ if (discountForm) {
   discountForm.addEventListener('submit', async (e) => {
     e.preventDefault()
 
-    await buttonLoader.run(saveDiscountBtn, async () => {
+    await buttonLoader.execute(saveDiscountBtn, async () => {
       try {
         const productId = discountProductId.value
         const percentage = parseFloat(discountPercentage.value)
@@ -3358,19 +3365,15 @@ if (discountForm) {
           return
         }
 
-        // Validate dates
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
+        // Validate dates using string comparison to avoid timezone issues
+        const todayStr = new Date().toISOString().split('T')[0] // Format: YYYY-MM-DD
 
-        const start = new Date(startDate)
-        const end = new Date(endDate)
-
-        if (start < today) {
+        if (startDate < todayStr) {
           notify.error('La fecha de inicio no puede ser anterior a hoy')
           return
         }
 
-        if (end < start) {
+        if (endDate < startDate) {
           notify.error('La fecha fin no puede ser anterior a la fecha inicio')
           return
         }
@@ -3409,7 +3412,7 @@ if (deleteDiscountBtn) {
     const confirmed = await confirm('¿Estás seguro de eliminar este descuento?')
     if (!confirmed) return
 
-    await buttonLoader.run(deleteDiscountBtn, async () => {
+    await buttonLoader.execute(deleteDiscountBtn, async () => {
       try {
         const productId = discountProductId.value
         await productDiscountsService.delete(productId)
