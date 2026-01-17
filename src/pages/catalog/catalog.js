@@ -1511,29 +1511,49 @@ function showRedirectModal(url) {
 // HEADER SCROLL COMPRESSION
 // ============================================
 function initHeaderScrollCompression() {
-  const catalogHeader = document.getElementById('catalogHeader')
-  const stickyWrapper = document.getElementById('stickyWrapper')
+  const header = document.getElementById('catalogHeader')
 
-  // Wrapper might not exist if HTML isn't updated, but we updated it.
-  // Safety check: if wrapper doesn't exist, maybe fallback to header?
-  // But strictly we expect wrapper.
-  if (!catalogHeader) return
+  if (!header) return
 
   let isCompact = false
+  let hasScrolled = false
+  let startY = 0
 
-  window.addEventListener('scroll', function () {
-    const shouldCompact = window.scrollY > 0
+  // 1️⃣ Detectar intención de scroll (Touch)
+  window.addEventListener('touchstart', (e) => {
+    startY = e.touches[0].clientY
+  }, { passive: true })
 
-    if (shouldCompact !== isCompact) {
-      isCompact = shouldCompact
+  window.addEventListener('touchmove', (e) => {
+    if (isCompact) return
 
-      // Toggle class on Header for internal changes (logo size, etc)
-      catalogHeader.classList.toggle('is-compact', isCompact)
+    const currentY = e.touches[0].clientY
+    const deltaY = startY - currentY
 
-      // Toggle class on Wrapper for shadow (if wrapper exists)
-      if (stickyWrapper) {
-        stickyWrapper.classList.toggle('is-stuck', isCompact)
-      }
+    if (deltaY > 6) {
+      isCompact = true
+      header.classList.add('is-compact')
+    }
+  }, { passive: true })
+
+  // 2️⃣ Confirmar scroll real y manejar Desktop
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 0) {
+      hasScrolled = true
+    }
+
+    // Safety fallback for Desktop (mouse scroll)
+    // If we scrolled down significantly but didn't trigger touch logic (because no touch), ensure we compact.
+    if (!isCompact && window.scrollY > 10) {
+      isCompact = true
+      header.classList.add('is-compact')
+    }
+
+    // 3️⃣ Expandir SOLO si ya hubo scroll real y volvimos a 0
+    if (isCompact && hasScrolled && window.scrollY === 0) {
+      isCompact = false
+      hasScrolled = false
+      header.classList.remove('is-compact')
     }
   }, { passive: true })
 }
