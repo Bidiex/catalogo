@@ -1947,15 +1947,24 @@ function addFavoritesButton() {
   // Check if button already exists
   if (track.querySelector('[data-category="favorites"]')) return
 
+  // Only show button if user has favorites for this business
+  if (!currentBusiness) return
+  const favoritesForBusiness = favorites.get(currentBusiness.id)
+  if (favoritesForBusiness.length === 0) return
+
   // Create favorites button
   const favBtn = document.createElement('button')
-  favBtn.className = 'category-nav-btn'
+  favBtn.className = 'category-nav-btn category-nav-favoritos'
   favBtn.dataset.category = 'favorites'
-  favBtn.innerHTML = '<i class="ri-heart-line"></i> Favoritos'
+  favBtn.innerHTML = '<i class="ri-heart-fill"></i> Favoritos'
 
-  // Insert after "Todos" button
+  // Insert after "Imperdibles" if it exists, otherwise after "Todos"
+  const imperdiblesBtn = track.querySelector('[data-category="imperdibles"]')
   const todosBtn = track.querySelector('[data-category="all"]')
-  if (todosBtn && todosBtn.nextSibling) {
+
+  if (imperdiblesBtn && imperdiblesBtn.nextSibling) {
+    track.insertBefore(favBtn, imperdiblesBtn.nextSibling)
+  } else if (todosBtn && todosBtn.nextSibling) {
     track.insertBefore(favBtn, todosBtn.nextSibling)
   } else {
     track.appendChild(favBtn)

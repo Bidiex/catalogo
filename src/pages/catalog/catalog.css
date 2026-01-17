@@ -237,6 +237,29 @@
   font-size: 1rem;
 }
 
+/* Favoritos button - Special styling */
+.category-nav-favoritos {
+  background: #ec4899;
+  color: white;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.category-nav-favoritos:hover {
+  background: #db2777;
+}
+
+.category-nav-favoritos.active {
+  background: #db2777;
+  color: white;
+}
+
+.category-nav-favoritos i {
+  font-size: 1rem;
+}
+
 /* Main content */
 .catalog-main {
   max-width: 1200px;
