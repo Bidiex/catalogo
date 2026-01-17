@@ -1652,6 +1652,26 @@ if (promotionShareBtn) {
   })
 }
 
+// Header Share Button
+const headerShareBtn = document.getElementById('headerShareBtn')
+if (headerShareBtn) {
+  headerShareBtn.addEventListener('click', async () => {
+    if (!currentBusiness) return
+
+    const cleanUrl = new URL(window.location.href)
+    cleanUrl.searchParams.delete('product')
+    cleanUrl.searchParams.delete('promotion')
+
+    const shareData = {
+      title: currentBusiness.name,
+      text: `Mira el catálogo de ${currentBusiness.name}`,
+      url: cleanUrl.toString()
+    }
+
+    await shareContent(shareData)
+  })
+}
+
 // Generic Share Function
 async function shareContent(data) {
   // Check if Web Share API is available
