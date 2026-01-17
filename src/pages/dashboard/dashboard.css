@@ -2464,13 +2464,13 @@ button i {
       width: 100%;
       gap: 0.5rem;
       margin-top: 0.5rem;
+      justify-content: right;
     }
 
     .category-item-actions button,
     .product-card-actions button,
     .promotion-actions button,
     .payment-method-actions button {
-      flex: 1;
       /* All buttons take equal width */
       width: auto !important;
       /* Override fixed pixel widths */
