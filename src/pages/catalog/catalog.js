@@ -1947,10 +1947,16 @@ function addFavoritesButton() {
   // Check if button already exists
   if (track.querySelector('[data-category="favorites"]')) return
 
-  // Only show button if user has favorites for this business
+  // Only show button if user has valid favorites for this business
   if (!currentBusiness) return
+
   const favoritesForBusiness = favorites.get(currentBusiness.id)
-  if (favoritesForBusiness.length === 0) return
+  // Filter only favorites that actually exist in current products
+  const validFavorites = favoritesForBusiness.filter(favId =>
+    products.some(p => p.id === favId)
+  )
+
+  if (validFavorites.length === 0) return
 
   // Create favorites button
   const favBtn = document.createElement('button')
