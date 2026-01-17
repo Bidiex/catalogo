@@ -1047,7 +1047,20 @@ addToCartBtn.addEventListener('click', () => {
   // Guardar el nombre ANTES de cerrar el modal
   const productName = selectedProduct.name
 
-  cart.add(currentBusiness.id, selectedProduct, currentQuantity, options)
+  // Calculate final price (with discount if applicable)
+  let finalPrice = parseFloat(selectedProduct.price)
+  if (selectedProduct.discount) {
+    const discountPercentage = selectedProduct.discount.discount_percentage
+    finalPrice = finalPrice * (1 - discountPercentage / 100)
+  }
+
+  // Create product object with discounted price
+  const productToAdd = {
+    ...selectedProduct,
+    price: finalPrice // Use discounted price
+  }
+
+  cart.add(currentBusiness.id, productToAdd, currentQuantity, options)
   updateCartUI()
   closeProductModal()
 
