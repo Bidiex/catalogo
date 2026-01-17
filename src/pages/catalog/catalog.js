@@ -1457,7 +1457,7 @@ function showClosedModal() {
       <div class="closed-modal-icon">
         <i class="ri-time-line"></i>
       </div>
-      <h2>Negocio Cerrado</h2>
+      <h2>Estamos Cerrados</h2>
       <p>Lo sentimos, actualmente no estamos recibiendo pedidos.</p>
       ${businessStatus.nextOpening ? `<p class="next-opening">Abrimos: <strong>${businessStatus.nextOpening}</strong></p>` : ''}
       <button class="btn-primary" id="closeClosedModal">

@@ -182,9 +182,7 @@
 /* Categories navigation */
 .categories-nav {
   background: white;
-  background: white;
   border-bottom: 1px solid var(--color-border);
-  /* sticky removed */
   z-index: 90;
   overflow-x: auto;
   scrollbar-width: none;
@@ -197,9 +195,14 @@
 .categories-nav-track {
   display: flex;
   gap: 0.5rem;
-  padding: 1rem;
+  padding: 1rem 1.5rem 1rem 1rem;
+  /* Extra padding on right */
   max-width: 1200px;
   margin: 0 auto;
+  width: max-content;
+  /* Ensure track takes full width of content for scrolling */
+  min-width: 100%;
+  /* Ensure it fills at least the screen */
 }
 
 .category-nav-btn {
@@ -1556,7 +1559,7 @@
   .checkout-modal-content {
     max-height: 85vh;
     /* Reduced from 95vh to ensure buttons are visible */
-    border-radius: 1rem 1rem 0 0;
+    border-radius: 1rem;
     margin-top: auto;
     display: flex;
     flex-direction: column;
@@ -1589,7 +1592,7 @@
    ============================================ */
 
 .business-status-badge {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
@@ -1597,6 +1600,7 @@
   font-size: 0.9rem;
   font-weight: 600;
   margin-top: 0.75rem;
+  width: fit-content;
 }
 
 .business-status-badge.open {
