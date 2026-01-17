@@ -214,6 +214,29 @@
   color: white;
 }
 
+/* Imperdibles button - Special styling */
+.category-nav-imperdibles {
+  background: #fbbf24;
+  color: #000;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.category-nav-imperdibles:hover {
+  background: #f59e0b;
+}
+
+.category-nav-imperdibles.active {
+  background: #f59e0b;
+  color: #000;
+}
+
+.category-nav-imperdibles i {
+  font-size: 1rem;
+}
+
 /* Main content */
 .catalog-main {
   max-width: 1200px;

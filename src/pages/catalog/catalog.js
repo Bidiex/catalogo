@@ -659,11 +659,18 @@ function renderBusinessInfo() {
   }
 }
 
+
 function renderCategoriesNav() {
   const navTrack = categoriesNav.querySelector('.categories-nav-track')
 
   // Botón "Todos"
   let html = '<button class="category-nav-btn active" data-category="all">Todos</button>'
+
+  // Botón "Imperdibles" - Solo si hay productos con descuento activo
+  const hasDiscountedProducts = products.some(p => p.discount)
+  if (hasDiscountedProducts) {
+    html += '<button class="category-nav-btn category-nav-imperdibles" data-category="imperdibles"><i class="ri-star-fill"></i> Imperdibles</button>'
+  }
 
   // Botones de categorías
   categories.forEach(category => {
@@ -704,8 +711,12 @@ function renderProducts(filteredCategoryId = 'all', searchQuery = '') {
     )
   }
 
-  // Filtrar por categoría
-  if (filteredCategoryId !== 'all') {
+  // Filtrar por categoría especial "Imperdibles" (productos con descuento)
+  if (filteredCategoryId === 'imperdibles') {
+    filteredProducts = filteredProducts.filter(p => p.discount)
+  }
+  // Filtrar por categoría normal
+  else if (filteredCategoryId !== 'all') {
     filteredProducts = filteredProducts.filter(p => p.category_id === filteredCategoryId)
   }
 
