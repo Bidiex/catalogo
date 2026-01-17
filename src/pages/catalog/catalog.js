@@ -199,6 +199,40 @@ async function loadCatalogData() {
     if (productsError) throw productsError
     products = productsData || []
 
+    // Cargar descuentos activos
+    try {
+      const { data: discountsData, error: discountsError } = await supabase
+        .from('product_discounts')
+        .select('*')
+        .in('product_id', products.map(p => p.id))
+        .eq('is_active', true)
+
+      if (discountsError) throw discountsError
+
+      // Attach discounts to products
+      const discounts = discountsData || []
+      products.forEach(product => {
+        const discount = discounts.find(d => d.product_id === product.id)
+        if (discount) {
+          // Validate date range
+          const today = new Date()
+          today.setHours(0, 0, 0, 0)
+          const startDate = new Date(discount.start_date)
+          startDate.setHours(0, 0, 0, 0)
+          const endDate = new Date(discount.end_date)
+          endDate.setHours(23, 59, 59, 999)
+
+          // Only attach if discount is within valid date range
+          if (today >= startDate && today <= endDate) {
+            product.discount = discount
+          }
+        }
+      })
+    } catch (error) {
+      console.error('Error loading discounts:', error)
+      // Continue without discounts if error
+    }
+
     // Cargar métodos de pago
     const { data: paymentMethodsData, error: paymentMethodsError } = await supabase
       .from('payment_methods')
@@ -739,6 +773,26 @@ function renderCategorySection(category, categoryProducts) {
 function renderProductCard(product) {
   const isFav = currentBusiness ? favorites.isFavorite(currentBusiness.id, product.id) : false
 
+  // Calculate pricing HTML based on discount
+  let priceHTML = ''
+  if (product.discount) {
+    const originalPrice = parseFloat(product.price)
+    const discountPercentage = product.discount.discount_percentage
+    const discountedPrice = originalPrice * (1 - discountPercentage / 100)
+
+    priceHTML = `
+      <div class="product-card-price-container">
+        <div class="price-discount-wrapper">
+          <span class="discount-badge">${discountPercentage}%</span>
+          <span class="original-price">$${originalPrice.toLocaleString()}</span>
+        </div>
+        <div class="discounted-price">$${discountedPrice.toLocaleString()}</div>
+      </div>
+    `
+  } else {
+    priceHTML = `<div class="product-card-price">$${parseFloat(product.price).toLocaleString()}</div>`
+  }
+
   return `
     <div class="product-card" data-id="${product.id}">
       <div class="product-card-image">
@@ -754,7 +808,7 @@ function renderProductCard(product) {
       <div class="product-card-body">
         <div class="product-card-name">${product.name}</div>
         <div class="product-card-footer">
-          <div class="product-card-price">$${parseFloat(product.price).toLocaleString()}</div>
+          ${priceHTML}
           <button class="btn-add-to-modal" title="Ver detalles">
             <i class="ri-add-line"></i>
           </button>

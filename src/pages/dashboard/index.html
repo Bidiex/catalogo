@@ -1184,6 +1184,66 @@
       </form>
     </div>
   </div>
+
+  <!-- Modal para gestionar descuento de producto -->
+  <div id="discountModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Gestionar Descuento - <span id="discountProductName"></span></h3>
+        <button class="modal-close" id="closeDiscountModal">&times;</button>
+      </div>
+      <form id="discountForm" class="modal-form">
+
+        <!-- Toggle Activo/Inactivo -->
+        <div class="form-group">
+          <label class="switch-container">
+            <input type="checkbox" id="discountActiveInput">
+            <span class="switch-slider"></span>
+            <span class="switch-label">Descuento activo</span>
+          </label>
+        </div>
+
+        <!-- Porcentaje de descuento -->
+        <div class="form-group">
+          <label for="discountPercentage">Porcentaje de descuento (%) *</label>
+          <input type="number" id="discountPercentage" min="1" max="99" step="1" placeholder="20" required>
+          <small>Ingresa un valor entre 1 y 99</small>
+        </div>
+
+        <!-- Precio calculado (solo lectura) -->
+        <div class="form-group">
+          <label for="discountedPrice">Precio con descuento</label>
+          <input type="text" id="discountedPrice" readonly
+            style="background-color: #f3f4f6; cursor: not-allowed; font-weight: 600; color: var(--color-primary);">
+          <small>Precio original: $<span id="originalPrice">0</span></small>
+        </div>
+
+        <!-- Fechas inicio y fin -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="discountStartDate">Fecha inicio *</label>
+            <input type="date" id="discountStartDate" required>
+          </div>
+          <div class="form-group">
+            <label for="discountEndDate">Fecha fin *</label>
+            <input type="date" id="discountEndDate" required>
+          </div>
+        </div>
+
+        <!-- Campo oculto para product_id -->
+        <input type="hidden" id="discountProductId">
+        <input type="hidden" id="discountOriginalPrice">
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="cancelDiscountBtn">Cancelar</button>
+          <button type="button" class="btn-danger" id="deleteDiscountBtn" style="display: none;">
+            <i class="ri-delete-bin-line"></i> Eliminar descuento
+          </button>
+          <button type="submit" class="btn-primary" id="saveDiscountBtn">Guardar descuento</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </body>
 
 </html>

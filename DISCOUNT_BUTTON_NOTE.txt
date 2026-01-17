@@ -1,0 +1,16 @@
+/**
+ * NOTA IMPORTANTE - BOTÓN DE DESCUENTOS EN DASHBOARD
+ * 
+ * El botón "Descuentos" debe agregarse en la sección de productos del dashboard,
+ * junto al botón "Opciones".
+ * 
+ * UBICACIÓN: Buscar en dashboard.js donde se renderizan los botones de acción de productos
+ * (probablemente en una función de renderizado de productos o en el HTML directamente)
+ * 
+ * BOTÓN A AGREGAR:
+ * <button class="btn-icon" onclick="openDiscountModal('PRODUCT_ID')">
+ *   <i class="ri-price-tag-line"></i> Descuentos
+ * </button>
+ * 
+ * El botón debe llamar a window.openDiscountModal(productId) que ya está implementada.
+ */

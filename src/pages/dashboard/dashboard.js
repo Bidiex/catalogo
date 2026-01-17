@@ -9,6 +9,7 @@ import { confirm } from '../../utils/notifications.js'
 import { buttonLoader } from '../../utils/buttonLoader.js'
 import { supabase } from '../../config/supabase.js'
 import { productOptionsService } from '../../services/productOptions.js'
+import { productDiscountsService } from '../../services/productDiscounts.js'
 import { promotionsService } from '../../services/promotions.js'
 import { promotionOptionsService } from '../../services/promotionOptions.js'
 import { imageService } from '../../services/images.js'
@@ -701,6 +702,9 @@ function renderProducts(productsToRender = null) {
     <button class="btn-manage-options manage-options" data-id="${product.id}">
     <i class="ri-settings-3-line"></i> Opciones
   </button>
+  <button class="btn-icon" onclick="openDiscountModal('PRODUCT_ID')">
+    <i class="ri-price-tag-line"></i> Descuentos
+ </button>
   <button class="btn-icon edit-product" data-id="${product.id}">
     <i class="ri-edit-line"></i>
   </button>
@@ -3222,5 +3226,200 @@ if (saveBusinessHoursBtn) {
         notify.error('Error al guardar los horarios')
       }
     }, 'Guardando...')
+  })
+}
+
+// ============================================
+// PRODUCT DISCOUNTS MANAGEMENT
+// ============================================
+
+// DOM Elements
+const discountModal = document.getElementById('discountModal')
+const closeDiscountModal = document.getElementById('closeDiscountModal')
+const cancelDiscountBtn = document.getElementById('cancelDiscountBtn')
+const discountForm = document.getElementById('discountForm')
+const saveDiscountBtn = document.getElementById('saveDiscountBtn')
+const deleteDiscountBtn = document.getElementById('deleteDiscountBtn')
+
+// Form fields
+const discountProductName = document.getElementById('discountProductName')
+const discountActiveInput = document.getElementById('discountActiveInput')
+const discountPercentage = document.getElementById('discountPercentage')
+const discountedPrice = document.getElementById('discountedPrice')
+const originalPrice = document.getElementById('originalPrice')
+const discountStartDate = document.getElementById('discountStartDate')
+const discountEndDate = document.getElementById('discountEndDate')
+const discountProductId = document.getElementById('discountProductId')
+const discountOriginalPrice = document.getElementById('discountOriginalPrice')
+
+// Global function to open discount modal (called from product actions)
+window.openDiscountModal = async function (productId) {
+  try {
+    const product = products.find(p => p.id === productId)
+    if (!product) {
+      notify.error('Producto no encontrado')
+      return
+    }
+
+    // Set product info
+    discountProductName.textContent = product.name
+    discountProductId.value = productId
+    discountOriginalPrice.value = product.price
+    originalPrice.textContent = parseFloat(product.price).toLocaleString()
+
+    // Load existing discount
+    const existingDiscount = await productDiscountsService.getByProduct(productId)
+
+    if (existingDiscount) {
+      // Populate form with existing data
+      discountActiveInput.checked = existingDiscount.is_active
+      discountPercentage.value = existingDiscount.discount_percentage
+      discountStartDate.value = existingDiscount.start_date
+      discountEndDate.value = existingDiscount.end_date
+
+      // Calculate and show discounted price
+      updateDiscountedPrice()
+
+      // Show delete button
+      deleteDiscountBtn.style.display = 'inline-flex'
+    } else {
+      // Clear form for new discount
+      discountActiveInput.checked = false
+      discountPercentage.value = ''
+      discountStartDate.value = ''
+      discountEndDate.value = ''
+      discountedPrice.value = ''
+
+      // Hide delete button
+      deleteDiscountBtn.style.display = 'none'
+    }
+
+    // Show modal
+    discountModal.style.display = 'flex'
+  } catch (error) {
+    console.error('Error opening discount modal:', error)
+    notify.error('Error al cargar los datos del descuento')
+  }
+}
+
+// Update discounted price calculation
+function updateDiscountedPrice() {
+  const percentage = parseFloat(discountPercentage.value)
+  const price = parseFloat(discountOriginalPrice.value)
+
+  if (!percentage || !price || percentage <= 0 || percentage >= 100) {
+    discountedPrice.value = ''
+    return
+  }
+
+  const calculated = productDiscountsService.calculateDiscountedPrice(price, percentage)
+  discountedPrice.value = `$${calculated.toLocaleString()}`
+}
+
+// Listen to percentage changes
+if (discountPercentage) {
+  discountPercentage.addEventListener('input', updateDiscountedPrice)
+}
+
+// Close modal handlers
+if (closeDiscountModal) {
+  closeDiscountModal.addEventListener('click', () => {
+    discountModal.style.display = 'none'
+  })
+}
+
+if (cancelDiscountBtn) {
+  cancelDiscountBtn.addEventListener('click', () => {
+    discountModal.style.display = 'none'
+  })
+}
+
+// Save discount
+if (discountForm) {
+  discountForm.addEventListener('submit', async (e) => {
+    e.preventDefault()
+
+    await buttonLoader.run(saveDiscountBtn, async () => {
+      try {
+        const productId = discountProductId.value
+        const percentage = parseFloat(discountPercentage.value)
+        const startDate = discountStartDate.value
+        const endDate = discountEndDate.value
+        const isActive = discountActiveInput.checked
+
+        // Validation
+        if (!percentage || percentage <= 0 || percentage >= 100) {
+          notify.error('El porcentaje debe estar entre 1 y 99')
+          return
+        }
+
+        if (!startDate || !endDate) {
+          notify.error('Debes ingresar ambas fechas (inicio y fin)')
+          return
+        }
+
+        // Validate dates
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+
+        const start = new Date(startDate)
+        const end = new Date(endDate)
+
+        if (start < today) {
+          notify.error('La fecha de inicio no puede ser anterior a hoy')
+          return
+        }
+
+        if (end < start) {
+          notify.error('La fecha fin no puede ser anterior a la fecha inicio')
+          return
+        }
+
+        const discountData = {
+          product_id: productId,
+          discount_percentage: percentage,
+          start_date: startDate,
+          end_date: endDate,
+          is_active: isActive
+        }
+
+        // Check if discount exists
+        const existingDiscount = await productDiscountsService.getByProduct(productId)
+
+        if (existingDiscount) {
+          await productDiscountsService.update(productId, discountData)
+          notify.success('Descuento actualizado correctamente')
+        } else {
+          await productDiscountsService.create(discountData)
+          notify.success('Descuento creado correctamente')
+        }
+
+        discountModal.style.display = 'none'
+      } catch (error) {
+        console.error('Error saving discount:', error)
+        notify.error('Error al guardar el descuento')
+      }
+    }, 'Guardando...')
+  })
+}
+
+// Delete discount
+if (deleteDiscountBtn) {
+  deleteDiscountBtn.addEventListener('click', async () => {
+    const confirmed = await confirm('¿Estás seguro de eliminar este descuento?')
+    if (!confirmed) return
+
+    await buttonLoader.run(deleteDiscountBtn, async () => {
+      try {
+        const productId = discountProductId.value
+        await productDiscountsService.delete(productId)
+
+        notify.success('Descuento eliminado correctamente')
+        discountModal.style.display = 'none'
+      } catch (error) {
+        console.error('Error deleting discount:', error)
+        notify.error('Error al eliminar el descuento')
+      }
+    }, 'Eliminando...')
   })
 }
