@@ -1,0 +1,211 @@
+
+    <!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Header tipo Rappi — definitivo</title>
+
+<style>
+:root {
+  --bg: #f8fafc;
+    --header-bg: #ffffff;
+      --border: #e5e7eb;
+        --text: #0f172a;
+          --muted: #64748b;
+          }
+
+          * {
+            margin: 0;
+              padding: 0;
+                box-sizing: border-box;
+                }
+
+                body {
+                  font-family: system-ui, -apple-system, sans-serif;
+                    background: var(--bg);
+                      color: var(--text);
+                      }
+
+                      /* ===== STICKY ===== */
+                      .catalog-sticky-wrapper {
+                        position: sticky;
+                          top: 0;
+                            z-index: 1000;
+                              background: var(--header-bg);
+                                border-bottom: 1px solid var(--border);
+                                }
+
+                                /* ===== HEADER ===== */
+                                .catalog-header {
+                                  overflow: hidden;
+                                  }
+
+                                  .header-content {
+                                    padding: 20px 16px;
+                                      display: flex;
+                                        flex-direction: column;
+                                          gap: 12px;
+                                            transition: padding 0.28s cubic-bezier(.4,0,.2,1), gap 0.28s cubic-bezier(.4,0,.2,1);
+                                            }
+
+                                            .header-top-row {
+                                              display: flex;
+                                                align-items: center;
+                                                  gap: 12px;
+                                                  }
+
+                                                  .business-logo {
+                                                    width: 60px;
+                                                      height: 60px;
+                                                        background: linear-gradient(135deg, #2563eb, #38bdf8);
+                                                          border-radius: 16px;
+                                                            transition: all 0.28s cubic-bezier(.4,0,.2,1);
+                                                            }
+
+                                                            .business-name {
+                                                              font-size: 1.4rem;
+                                                                font-weight: 700;
+                                                                  transition: font-size 0.28s cubic-bezier(.4,0,.2,1);
+                                                                  }
+
+                                                                  .header-bottom-row {
+                                                                    max-height: 80px;
+                                                                      overflow: hidden;
+                                                                        transition: opacity 0.2s ease, transform 0.2s ease, max-height 0.28s ease;
+                                                                        }
+
+                                                                        .header-bottom-row p {
+                                                                          color: var(--muted);
+                                                                          }
+
+                                                                          /* ===== COMPACT ===== */
+                                                                          .catalog-header.is-compact .header-content {
+                                                                            padding: 10px 16px;
+                                                                              gap: 6px;
+                                                                              }
+
+                                                                              .catalog-header.is-compact .business-logo {
+                                                                                width: 36px;
+                                                                                  height: 36px;
+                                                                                    border-radius: 10px;
+                                                                                    }
+
+                                                                                    .catalog-header.is-compact .business-name {
+                                                                                      font-size: 1.05rem;
+                                                                                      }
+
+                                                                                      .catalog-header.is-compact .header-bottom-row {
+                                                                                        opacity: 0;
+                                                                                          transform: translateY(-6px);
+                                                                                            max-height: 0;
+                                                                                              pointer-events: none;
+                                                                                              }
+
+                                                                                              /* ===== SEARCH ===== */
+                                                                                              .catalog-search-container {
+                                                                                                padding: 10px 16px;
+                                                                                                  background: white;
+                                                                                                  }
+
+                                                                                                  .catalog-search-bar {
+                                                                                                    display: flex;
+                                                                                                      align-items: center;
+                                                                                                        border: 1px solid var(--border);
+                                                                                                          border-radius: 12px;
+                                                                                                            padding: 8px 12px;
+                                                                                                            }
+
+                                                                                                            .catalog-search-bar input {
+                                                                                                              width: 100%;
+                                                                                                                border: none;
+                                                                                                                  outline: none;
+                                                                                                                    font-size: 0.95rem;
+                                                                                                                    }
+
+                                                                                                                    /* ===== CONTENT ===== */
+                                                                                                                    main {
+                                                                                                                      padding: 16px;
+                                                                                                                      }
+
+                                                                                                                      .block {
+                                                                                                                        height: 120px;
+                                                                                                                          background: white;
+                                                                                                                            border-radius: 14px;
+                                                                                                                              border: 1px solid var(--border);
+                                                                                                                                margin-bottom: 16px;
+                                                                                                                                }
+                                                                                                                                </style>
+                                                                                                                                </head>
+
+                                                                                                                                <body>
+
+                                                                                                                                <div class="catalog-sticky-wrapper">
+                                                                                                                                  <header class="catalog-header" id="catalogHeader">
+                                                                                                                                      <div class="header-content">
+                                                                                                                                            <div class="header-top-row">
+                                                                                                                                                    <div class="business-logo"></div>
+                                                                                                                                                            <div class="business-name">Mi Restaurante</div>
+                                                                                                                                                                  </div>
+                                                                                                                                                                        <div class="header-bottom-row">
+                                                                                                                                                                                <p>Las mejores hamburguesas artesanales</p>
+                                                                                                                                                                                      </div>
+                                                                                                                                                                                          </div>
+                                                                                                                                                                                            </header>
+
+                                                                                                                                                                                              <div class="catalog-search-container">
+                                                                                                                                                                                                  <div class="catalog-search-bar">
+                                                                                                                                                                                                        <input type="text" placeholder="Buscar productos..." />
+                                                                                                                                                                                                            </div>
+                                                                                                                                                                                                              </div>
+                                                                                                                                                                                                              </div>
+
+                                                                                                                                                                                                              <main>
+                                                                                                                                                                                                                <div class="block"></div>
+                                                                                                                                                                                                                  <div class="block"></div>
+                                                                                                                                                                                                                    <div class="block"></div>
+                                                                                                                                                                                                                      <div class="block"></div>
+                                                                                                                                                                                                                        <div class="block"></div>
+                                                                                                                                                                                                                        </main>
+
+                                                                                                                                                                                                                        <script>
+                                                                                                                                                                                                                        const header = document.getElementById('catalogHeader')
+
+                                                                                                                                                                                                                        let isCompact = false
+                                                                                                                                                                                                                        let hasScrolled = false
+                                                                                                                                                                                                                        let startY = 0
+
+                                                                                                                                                                                                                        // 1️⃣ Detectar intención de scroll
+                                                                                                                                                                                                                        window.addEventListener('touchstart', (e) => {
+                                                                                                                                                                                                                          startY = e.touches[0].clientY
+                                                                                                                                                                                                                          }, { passive: true })
+
+                                                                                                                                                                                                                          window.addEventListener('touchmove', (e) => {
+                                                                                                                                                                                                                            if (isCompact) return
+
+                                                                                                                                                                                                                              const currentY = e.touches[0].clientY
+                                                                                                                                                                                                                                const deltaY = startY - currentY
+
+                                                                                                                                                                                                                                  if (deltaY > 6) {
+                                                                                                                                                                                                                                      isCompact = true
+                                                                                                                                                                                                                                          header.classList.add('is-compact')
+                                                                                                                                                                                                                                            }
+                                                                                                                                                                                                                                            }, { passive: true })
+
+                                                                                                                                                                                                                                            // 2️⃣ Confirmar scroll real
+                                                                                                                                                                                                                                            window.addEventListener('scroll', () => {
+                                                                                                                                                                                                                                              if (window.scrollY > 0) {
+                                                                                                                                                                                                                                                  hasScrolled = true
+                                                                                                                                                                                                                                                    }
+
+                                                                                                                                                                                                                                                      // 3️⃣ Expandir SOLO si ya hubo scroll real
+                                                                                                                                                                                                                                                        if (isCompact && hasScrolled && window.scrollY === 0) {
+                                                                                                                                                                                                                                                            isCompact = false
+                                                                                                                                                                                                                                                                hasScrolled = false
+                                                                                                                                                                                                                                                                    header.classList.remove('is-compact')
+                                                                                                                                                                                                                                                                      }
+                                                                                                                                                                                                                                                                      }, { passive: true })
+                                                                                                                                                                                                                                                                      </script>
+
+                                                                                                                                                                                                                                                                      </body>
+                                                                                                                                                                                                                                                                      </html>

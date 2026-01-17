@@ -4,6 +4,7 @@ import { notify } from '../../utils/notifications.js'
 import { promotionsService } from '../../services/promotions.js'
 import { promotionOptionsService } from '../../services/promotionOptions.js'
 import { favorites } from '../../utils/favorites.js'
+import gsap from 'gsap'
 
 
 
@@ -1602,54 +1603,74 @@ function showRedirectModal(url) {
 }
 
 // ============================================
-// HEADER SCROLL COMPRESSION
+// HEADER SCROLL COMPRESSION (GSAP)
 // ============================================
 function initHeaderScrollCompression() {
-  const header = document.getElementById('catalogHeader')
+  const headerContent = document.querySelector('.header-content')
+  const logo = document.querySelector('.business-logo')
+  const name = document.getElementById('businessName')
+  const description = document.querySelector('.header-bottom-row')
+  const statusBadge = document.getElementById('businessStatusBadge')
 
-  if (!header) return
+  if (!headerContent || !logo || !name || !description) return
 
   let isCompact = false
-  let hasScrolled = false
-  let startY = 0
 
-  // 1️⃣ Detectar intención de scroll (Touch)
-  window.addEventListener('touchstart', (e) => {
-    startY = e.touches[0].clientY
-  }, { passive: true })
+  // 🔥 TIMELINE ÚNICO con GSAP
+  const tl = gsap.timeline({
+    paused: true,
+    defaults: { duration: 0.28, ease: "power2.out" }
+  })
 
-  window.addEventListener('touchmove', (e) => {
-    if (isCompact) return
+  // ESTADO COMPACTO
+  tl.to(headerContent, {
+    padding: "10px 16px",
+    gap: 6
+  }, 0)
 
-    const currentY = e.touches[0].clientY
-    const deltaY = startY - currentY
+    .to(logo, {
+      width: 36,
+      height: 36,
+      borderRadius: 10
+    }, 0)
 
-    if (deltaY > 6) {
-      isCompact = true
-      header.classList.add('is-compact')
-    }
-  }, { passive: true })
+    .to(name, {
+      fontSize: "1.05rem"
+    }, 0)
 
-  // 2️⃣ Confirmar scroll real y manejar Desktop
-  window.addEventListener('scroll', () => {
-    if (window.scrollY > 0) {
-      hasScrolled = true
-    }
+    .to(description, {
+      opacity: 0,
+      height: 0,
+      marginTop: 0
+    }, 0)
 
-    // Safety fallback for Desktop (mouse scroll)
-    // If we scrolled down significantly but didn't trigger touch logic (because no touch), ensure we compact.
-    if (!isCompact && window.scrollY > 10) {
-      isCompact = true
-      header.classList.add('is-compact')
-    }
+  // Animar el badge si existe
+  if (statusBadge) {
+    tl.to(statusBadge, {
+      autoAlpha: 0,
+      height: 0,
+      padding: 0,
+      margin: 0,
+      overflow: 'hidden'
+    }, 0)
+  }
 
-    // 3️⃣ Expandir SOLO si ya hubo scroll real y volvimos a 0
-    if (isCompact && hasScrolled && window.scrollY === 0) {
-      isCompact = false
-      hasScrolled = false
-      header.classList.remove('is-compact')
-    }
-  }, { passive: true })
+  // 👉 DISPARO ÚNICO AL PRIMER SCROLL
+  window.addEventListener(
+    'scroll',
+    () => {
+      if (!isCompact && window.scrollY > 0) {
+        isCompact = true
+        tl.play()
+      }
+
+      if (isCompact && window.scrollY === 0) {
+        isCompact = false
+        tl.reverse()
+      }
+    },
+    { passive: true }
+  )
 }
 
 // ============================================

@@ -45,7 +45,6 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  transition: padding 0.28s cubic-bezier(.4, 0, .2, 1), gap 0.28s cubic-bezier(.4, 0, .2, 1);
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -61,8 +60,6 @@
   height: 60px;
   background: linear-gradient(135deg, #2563eb, #38bdf8);
   border-radius: 16px !important;
-  transition: all 0.28s cubic-bezier(.4, 0, .2, 1);
-  /* Ensure these properties can be animated */
   flex-shrink: 0;
 }
 
@@ -77,7 +74,6 @@
   font-size: 1.4rem;
   font-weight: 700;
   color: var(--text, #0f172a);
-  transition: font-size 0.28s cubic-bezier(.4, 0, .2, 1);
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -88,7 +84,6 @@
 .header-top-row h1 {
   font-size: 1.4rem;
   font-weight: 700;
-  transition: font-size 0.28s cubic-bezier(.4, 0, .2, 1);
   margin: 0;
   flex: 1;
   min-width: 0;
@@ -118,41 +113,11 @@
 .header-bottom-row {
   max-height: 80px;
   overflow: hidden;
-  transition: opacity 0.2s ease, transform 0.2s ease, max-height 0.28s ease;
 }
 
 .header-bottom-row p {
   color: var(--muted, #64748b);
   margin: 0;
-}
-
-/* ===== COMPACT ===== */
-.catalog-header.is-compact .header-content {
-  padding: 10px 16px;
-  gap: 6px;
-}
-
-.catalog-header.is-compact .business-logo {
-  width: 36px !important;
-  height: 36px !important;
-  border-radius: 10px !important;
-}
-
-.catalog-header.is-compact .business-name,
-.catalog-header.is-compact h1 {
-  font-size: 1.05rem;
-}
-
-.catalog-header.is-compact .header-bottom-row {
-  opacity: 0;
-  transform: translateY(-6px);
-  max-height: 0;
-  pointer-events: none;
-}
-
-/* Hide status badge in compact mode if desired, consistent with previous behavior */
-.catalog-header.is-compact #businessStatusBadge {
-  display: none;
 }
 
 /* ===== SEARCH ===== */
@@ -254,7 +219,6 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem 1rem;
-  padding-bottom: 6rem;
 }
 
 /* Promo Banner */
@@ -1915,7 +1879,7 @@
   background: var(--surface-light);
   border-top: 1px solid var(--color-border);
   padding: 2rem 1rem;
-  margin-top: 3rem;
+  margin-top: 1rem;
 }
 
 .footer-content {
