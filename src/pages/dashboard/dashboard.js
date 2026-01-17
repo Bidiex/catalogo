@@ -700,16 +700,16 @@ function renderProducts(productsToRender = null) {
     }
   <div class="product-card-actions">
     <button class="btn-manage-options manage-options" data-id="${product.id}">
-    <i class="ri-settings-3-line"></i> Opciones
+    <i class="ri-settings-3-line"></i><span> Opciones</span>
   </button>
   <button class="btn-icon manage-discount" data-id="${product.id}">
-    <i class="ri-price-tag-line"></i> Descuentos
+    <i class="ri-price-tag-line"></i><span> Descuentos</span>
  </button>
   <button class="btn-icon edit-product" data-id="${product.id}">
-    <i class="ri-edit-line"></i>
+    <i class="ri-edit-line"></i><span> Editar</span>
   </button>
   <button class="btn-icon danger delete-product" data-id="${product.id}">
-    <i class="ri-delete-bin-line"></i>
+    <i class="ri-delete-bin-line"></i><span> Eliminar</span>
   </button>
 </div>
       </div>

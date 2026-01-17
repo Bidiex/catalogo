@@ -746,7 +746,8 @@
 }
 
 .product-card-actions {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
 }
 
@@ -2482,6 +2483,11 @@ button i {
       justify-content: center;
       align-items: center;
       display: flex;
+    }
+
+    /* Hide text on product action buttons - show only icons */
+    .product-card-actions button span {
+      display: none;
     }
 
     /* EXCEPTION: Category buttons should be small squares on mobile */
