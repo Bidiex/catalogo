@@ -480,9 +480,9 @@
   overflow: hidden;
 }
 
-/* Products with sizes get 4:3 aspect ratio */
+/* Products with sizes get 3:2 aspect ratio */
 .product-card.has-sizes .product-card-image {
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 3 / 2;
 }
 
 .product-card-image img {

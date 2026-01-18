@@ -812,12 +812,37 @@ function renderProductCard(product) {
   let priceHTML = ''
 
   if (hasSizes) {
-    // Show price range for products with sizes
-    const prices = product.sizes.map(s => parseFloat(s.price))
+    // Get prices from sizes
+    let prices = product.sizes.map(s => parseFloat(s.price))
+    let originalPrices = [...prices] // Keep copy of original prices
+
+    // Apply discount to all size prices if discount exists
+    if (product.discount) {
+      const discountPercentage = product.discount.discount_percentage
+      prices = prices.map(p => p * (1 - discountPercentage / 100))
+    }
+
     const minPrice = Math.min(...prices)
     const maxPrice = Math.max(...prices)
 
-    priceHTML = `<div class="product-card-price-range">$${minPrice.toLocaleString()} ... $${maxPrice.toLocaleString()}</div>`
+    // Show discount badge and crossed prices if has discount
+    if (product.discount) {
+      const originalMin = Math.min(...originalPrices)
+      const originalMax = Math.max(...originalPrices)
+      const discountPercentage = product.discount.discount_percentage
+
+      priceHTML = `
+        <div class="product-card-price-container">
+          <div class="discounted-price">$${minPrice.toLocaleString()} ... $${maxPrice.toLocaleString()}</div>
+          <div class="price-discount-wrapper">
+            <span class="discount-badge">${discountPercentage}%</span>
+            <span class="original-price">$${originalMin.toLocaleString()} ... $${originalMax.toLocaleString()}</span>
+          </div>
+        </div>
+      `
+    } else {
+      priceHTML = `<div class="product-card-price-range">$${minPrice.toLocaleString()} ... $${maxPrice.toLocaleString()}</div>`
+    }
   } else if (product.discount) {
     const originalPrice = parseFloat(product.price)
     const discountPercentage = product.discount.discount_percentage
@@ -923,15 +948,17 @@ async function openProductModal(productId) {
   let finalPrice = selectedSize ? parseFloat(selectedSize.price) : parseFloat(selectedProduct.price)
   let priceHTML = ''
 
-  if (selectedProduct.discount && !selectedSize) {
+  // ALWAYS apply discount if it exists (regardless of size)
+  if (selectedProduct.discount) {
     const discountPercentage = selectedProduct.discount.discount_percentage
+    const originalPrice = finalPrice
     finalPrice = finalPrice * (1 - discountPercentage / 100)
 
     // Show discount badge + original price + discounted price
     priceHTML = `
       <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
         <span class="discount-badge" style="background: #fbbf24; color: #000; padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 700;">${discountPercentage}%</span>
-        <span style="color: #6b7280; text-decoration: line-through; font-size: 0.875rem;">$${parseFloat(selectedProduct.price).toLocaleString()}</span>
+        <span style="color: #6b7280; text-decoration: line-through; font-size: 0.875rem;">$${originalPrice.toLocaleString()}</span>
         <span style="color: var(--color-primary); font-weight: 700; font-size: 1.25rem;">$${finalPrice.toLocaleString()}</span>
       </div>
     `
@@ -1026,7 +1053,12 @@ function renderSizeSelector() {
             >
             <label for="size-${size.id}" style="flex: 1; cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin: 0;">
               <span style="font-weight: 500;">${size.name}</span>
-              <span style="font-weight: 700; color: var(--color-primary);">$${parseFloat(size.price).toLocaleString()}</span>
+              ${selectedProduct.discount ? `
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span style="text-decoration: line-through; color: #6b7280; font-size: 0.85rem;">$${parseFloat(size.price).toLocaleString()}</span>
+                  <span style="font-weight: 700; color: var(--color-primary);">$${(parseFloat(size.price) * (1 - selectedProduct.discount.discount_percentage / 100)).toLocaleString()}</span>
+                </div>
+              ` : `<span style="font-weight: 700; color: var(--color-primary);">$${parseFloat(size.price).toLocaleString()}</span>`}
             </label>
           </div>
         `).join('')}
@@ -1041,9 +1073,24 @@ function renderSizeSelector() {
         const sizeId = e.target.value
         selectedSize = selectedProduct.sizes.find(s => s.id === sizeId)
 
-        // Update price
-        const newPrice = parseFloat(selectedSize.price)
-        productModalPrice.innerHTML = `$${newPrice.toLocaleString()}`
+        // Update price (ALWAYS apply discount if exists)
+        let newPrice = parseFloat(selectedSize.price)
+
+        if (selectedProduct.discount) {
+          const discountPercentage = selectedProduct.discount.discount_percentage
+          const originalPrice = newPrice
+          newPrice = newPrice * (1 - discountPercentage / 100)
+
+          productModalPrice.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+              <span class="discount-badge" style="background: #fbbf24; color: #000; padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 700;">${discountPercentage}%</span>
+              <span style="color: #6b7280; text-decoration: line-through; font-size: 0.875rem;">$${originalPrice.toLocaleString()}</span>
+              <span style="color: var(--color-primary); font-weight: 700; font-size: 1.25rem;">$${newPrice.toLocaleString()}</span>
+            </div>
+          `
+        } else {
+          productModalPrice.innerHTML = `$${newPrice.toLocaleString()}`
+        }
 
         // Re-render to update border colors
         renderSizeSelector()
@@ -1179,8 +1226,8 @@ addToCartBtn.addEventListener('click', () => {
     ? parseFloat(selectedSize.price)
     : parseFloat(selectedProduct.price)
 
-  // Only apply discount if no size is selected
-  if (selectedProduct.discount && !selectedSize) {
+  // ALWAYS apply discount if it exists
+  if (selectedProduct.discount) {
     const discountPercentage = selectedProduct.discount.discount_percentage
     finalPrice = finalPrice * (1 - discountPercentage / 100)
   }
@@ -1262,7 +1309,7 @@ function renderCartItems() {
       }
         </div>
         <div class="cart-item-info">
-          <div class="cart-item-name">${item.name}</div>
+          <div class="cart-item-name">${item.displayName || item.name}</div>
           ${optionsText}
           <div class="cart-item-price">$${itemPrice.toLocaleString()} c/u</div>
           <div class="cart-item-quantity">
@@ -1440,7 +1487,7 @@ Método de pago: {metodo_pago}
       const subtotal = itemPrice * item.quantity
 
       // Línea principal del producto
-      let line = `- ${item.quantity}x ${item.name} ($${subtotal.toLocaleString('es-CO')})`
+      let line = `- ${item.quantity}x ${item.displayName || item.name} ($${subtotal.toLocaleString('es-CO')})`
 
       // Comentario rápido
       if (item.options?.quickComment) {
