@@ -1324,7 +1324,39 @@ function renderCartItems() {
   }).join('')
 
   // Total
-  const total = cart.getTotal(currentBusiness.id)
+  // Total
+  let total = cart.getTotal(currentBusiness.id)
+
+  // Manejo del precio de domicilio
+  const deliveryPrice = parseFloat(currentBusiness.delivery_price) || 0
+
+  // Buscar o crear fila de domicilio
+  let deliveryRow = document.getElementById('cartDeliveryRow')
+
+  if (deliveryPrice > 0) {
+    if (!deliveryRow) {
+      deliveryRow = document.createElement('div')
+      deliveryRow.id = 'cartDeliveryRow'
+      deliveryRow.className = 'cart-delivery-row'
+      deliveryRow.style.cssText = 'display: flex; justify-content: space-between; padding: 0.5rem 0; font-size: 0.9rem; color: #666; border-bottom: 1px dashed #eee; margin-bottom: 0.5rem;'
+
+      const cartFooter = document.getElementById('cartFooter')
+      const cartTotal = cartFooter.querySelector('.cart-total')
+      cartFooter.insertBefore(deliveryRow, cartTotal)
+    }
+
+    deliveryRow.innerHTML = `
+      <span><i class="ri-e-bike-2-fill"></i> Domicilio:</span>
+      <span>$${deliveryPrice.toLocaleString()}</span>
+    `
+    deliveryRow.style.display = 'flex'
+
+    // Sumar domicilio al total
+    total += deliveryPrice
+  } else if (deliveryRow) {
+    deliveryRow.style.display = 'none'
+  }
+
   cartTotalAmount.textContent = `$${total.toLocaleString()}`
   cartFooter.style.display = 'block'
 
@@ -1501,19 +1533,37 @@ Método de pago: {metodo_pago}
       }
 
       return line
-    }).join('\n')
+    })
 
     // Calcular total
-    const total = cart.getTotal(currentBusiness.id)
+    const productsTotal = cartItems.reduce((sum, item) => {
+      let price = parseFloat(item.price)
+      // Add sides price
+      if (item.options?.sides) {
+        price += item.options.sides.reduce((s, side) => s + parseFloat(side.price), 0)
+      }
+      return sum + (price * item.quantity)
+    }, 0)
 
-    // Reemplazar tokens con datos reales
+    const deliveryPrice = parseFloat(currentBusiness.delivery_price) || 0
+    const total = productsTotal + deliveryPrice
+
+    const productsListStr = productsList.join('\n')
+
+    // Reemplazar variables en la plantilla
     let message = template
-      .replace(/{productos}/g, productsList)
-      .replace(/{total}/g, `$${total.toLocaleString('es-CO')}`)
-      .replace(/{nombre}/g, clientData.nombre)
-      .replace(/{telefono}/g, clientData.telefono)
-      .replace(/{metodo_pago}/g, clientData.metodo_pago)
-      .replace(/{barrio}/g, clientData.barrio) // Reemplazo directo si existe el token
+      .replace('{productos}', productsListStr)
+      .replace('{total}', `$${total.toLocaleString('es-CO')}`)
+      .replace('{nombre}', clientData.nombre)
+      .replace('{telefono}', clientData.telefono)
+      .replace('{direccion}', `${clientData.direccion}, ${clientData.barrio}`)
+      .replace('{metodo_pago}', clientData.metodo_pago)
+      .replace('{valor de domicilio}', `$${deliveryPrice.toLocaleString('es-CO')}`)
+
+    // Si la plantilla no tiene el token {valor de domicilio} y hay domicilio, lo agregamos al final de los productos
+    if (deliveryPrice > 0 && !template.includes('{valor de domicilio}')) {
+      message = message.replace(productsListStr, `${productsListStr}\n🚚 Domicilio: $${deliveryPrice.toLocaleString('es-CO')}`)
+    } // Reemplazo directo si existe el token
 
     // Lógica inteligente para dirección:
     // Si la plantilla YA incluía {barrio}, solo reemplazamos {direccion} tal cual.

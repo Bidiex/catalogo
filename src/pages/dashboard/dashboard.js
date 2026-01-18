@@ -610,6 +610,15 @@ function renderBusinessInfo() {
   businessName.textContent = currentBusiness.name
   businessWhatsapp.textContent = currentBusiness.whatsapp_number
 
+  // Update delivery price display
+  const deliveryPriceDisplay = document.getElementById('businessDeliveryPrice')
+  if (deliveryPriceDisplay) {
+    const price = parseFloat(currentBusiness.delivery_price) || 0
+    deliveryPriceDisplay.textContent = price > 0
+      ? `$${price.toLocaleString('es-CO')}`
+      : 'Gratis'
+  }
+
   // Update logo display
   const logoDisplay = document.getElementById('business-logo-display')
   if (logoDisplay) {
@@ -767,6 +776,7 @@ function openBusinessModal(isEdit = false) {
   const nameInput = document.getElementById('businessNameInput')
   const slugInput = document.getElementById('businessSlugInput')
   const whatsappInput = document.getElementById('businessWhatsappInput')
+  const deliveryPriceInput = document.getElementById('businessDeliveryPriceInput')
   const descriptionInput = document.getElementById('businessDescriptionInput')
 
   if (isEdit && currentBusiness) {
@@ -775,6 +785,7 @@ function openBusinessModal(isEdit = false) {
     slugInput.value = currentBusiness.slug
     slugInput.disabled = true // No permitir cambiar slug
     whatsappInput.value = currentBusiness.whatsapp_number
+    deliveryPriceInput.value = currentBusiness.delivery_price || 0
     descriptionInput.value = currentBusiness.description || ''
   } else {
     modalTitle.textContent = 'Crear Negocio'
@@ -782,6 +793,7 @@ function openBusinessModal(isEdit = false) {
     slugInput.value = ''
     slugInput.disabled = false
     whatsappInput.value = ''
+    deliveryPriceInput.value = 0
     descriptionInput.value = ''
   }
 
@@ -811,13 +823,20 @@ document.getElementById('businessForm').addEventListener('submit', async (e) => 
   const name = document.getElementById('businessNameInput').value
   const slug = document.getElementById('businessSlugInput').value
   const whatsapp = document.getElementById('businessWhatsappInput').value
+  const deliveryPrice = parseFloat(document.getElementById('businessDeliveryPriceInput').value) || 0
   const description = document.getElementById('businessDescriptionInput').value
 
   const saveBtn = document.getElementById('saveBusinessBtn')
 
   await buttonLoader.execute(saveBtn, async () => {
     try {
-      const businessData = { name, slug, whatsapp_number: whatsapp, description }
+      const businessData = {
+        name,
+        slug,
+        whatsapp_number: whatsapp,
+        delivery_price: deliveryPrice,
+        description
+      }
 
       if (currentBusiness) {
         // Actualizar
@@ -2966,6 +2985,13 @@ if (saveTemplateBtn) {
 
     if (!template) {
       notify.warning('La plantilla no puede estar vacía')
+      return
+    }
+
+    // Validar token de domicilio si hay precio configurado
+    // Se asume que si delivery_price > 0, es obligatorio mostrarlo
+    if (currentBusiness.delivery_price > 0 && !template.includes('{valor de domicilio}')) {
+      notify.warning('El token {valor de domicilio} es obligatorio porque tienes un precio de domicilio configurado.')
       return
     }
 

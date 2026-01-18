@@ -411,6 +411,10 @@
                     <span id="businessWhatsapp" class="value">-</span>
                   </div>
                   <div class="info-row">
+                    <span class="label"><i class="ri-e-bike-2-fill"></i> Precio domicilio:</span>
+                    <span id="businessDeliveryPrice" class="value">-</span>
+                  </div>
+                  <div class="info-row">
                     <span class="label"><i class="ri-link"></i> Enlace del catálogo:</span>
                     <div class="catalog-link">
                       <a id="catalogLink" href="#" target="_blank" class="link">-</a>
@@ -556,6 +560,9 @@
                     </button>
                     <button class="token-chip" data-token="{total}" title="Total del pedido">
                       <i class="ri-money-dollar-circle-line"></i> {total}
+                    </button>
+                    <button class="token-chip" data-token="{valor de domicilio}" title="Costo del domicilio">
+                      <i class="ri-truck-line"></i> {valor de domicilio}
                     </button>
                     <button class="token-chip" data-token="{nombre}" title="Nombre del cliente">
                       <i class="ri-user-line"></i> {nombre}
@@ -760,6 +767,11 @@
           <label for="businessWhatsappInput">Número de WhatsApp *</label>
           <input type="tel" id="businessWhatsappInput" placeholder="3001234567" required>
           <small>Sin +57, ej: 3001234567</small>
+        </div>
+        <div class="form-group">
+          <label for="businessDeliveryPriceInput">Precio de Domicilio</label>
+          <input type="number" id="businessDeliveryPriceInput" placeholder="0" min="0" step="0.01">
+          <small>Valor cobrado por el servicio de domicilio (0 = gratis)</small>
         </div>
         <div class="form-group">
           <label for="businessDescriptionInput">Descripción</label>
