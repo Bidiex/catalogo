@@ -2318,7 +2318,7 @@ function toggleFavoritesFilter(e) {
     const html = `
       <div class="category-section">
         <h2>❤️ Mis Favoritos</h2>
-        <div class="products-row">
+        <div class="products-grid">
           ${favoriteProducts.map(renderProductCard).join('')}
         </div>
       </div>
