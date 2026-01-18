@@ -1935,6 +1935,43 @@ function initFavorites() {
 }
 
 /**
+ * Check if favorites button should be shown
+ */
+function shouldShowFavoritesButton() {
+  if (!currentBusiness) return false
+
+  const favoritesForBusiness = favorites.get(currentBusiness.id)
+  // Filter only favorites that actually exist in current products
+  const validFavorites = favoritesForBusiness.filter(favId =>
+    products.some(p => p.id === favId)
+  )
+
+  return validFavorites.length > 0
+}
+
+/**
+ * Update favorites button visibility dynamically
+ */
+function updateFavoritesButtonVisibility() {
+  const categoriesNav = document.getElementById('categoriesNav')
+  if (!categoriesNav) return
+
+  const track = categoriesNav.querySelector('.categories-nav-track')
+  if (!track) return
+
+  const existingBtn = track.querySelector('[data-category="favorites"]')
+  const shouldShow = shouldShowFavoritesButton()
+
+  if (shouldShow && !existingBtn) {
+    // Create the button if it doesn't exist
+    addFavoritesButton()
+  } else if (!shouldShow && existingBtn) {
+    // Remove the button if it exists
+    existingBtn.remove()
+  }
+}
+
+/**
  * Add Favorites button to categories navigation
  */
 function addFavoritesButton() {
@@ -1948,15 +1985,7 @@ function addFavoritesButton() {
   if (track.querySelector('[data-category="favorites"]')) return
 
   // Only show button if user has valid favorites for this business
-  if (!currentBusiness) return
-
-  const favoritesForBusiness = favorites.get(currentBusiness.id)
-  // Filter only favorites that actually exist in current products
-  const validFavorites = favoritesForBusiness.filter(favId =>
-    products.some(p => p.id === favId)
-  )
-
-  if (validFavorites.length === 0) return
+  if (!shouldShowFavoritesButton()) return
 
   // Create favorites button
   const favBtn = document.createElement('button')
@@ -2000,6 +2029,9 @@ async function handleFavoriteClick(e) {
 
   // Update button appearance
   updateFavoriteButton(favoriteBtn, isNowFavorite)
+
+  // Update favorites category button visibility
+  updateFavoritesButtonVisibility()
 
   // Show feedback
   const product = products.find(p => p.id === productId)

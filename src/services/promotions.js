@@ -92,10 +92,12 @@ export const promotionsService = {
             .update(updates)
             .eq('id', id)
             .select()
-            .single()
 
+        // If no rows were updated (promotion doesn't exist), return null instead of throwing
         if (error) throw error
-        return data
+        if (!data || data.length === 0) return null
+
+        return data[0]
     },
 
     /**
