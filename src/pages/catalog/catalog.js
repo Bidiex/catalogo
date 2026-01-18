@@ -1309,7 +1309,7 @@ function renderCartItems() {
       }
         </div>
         <div class="cart-item-info">
-          <div class="cart-item-name">${item.displayName || item.name}</div>
+          <div class="cart-item-name">${item.options?.size ? `${item.name} - ${item.options.size.name}` : item.name}</div>
           ${optionsText}
           <div class="cart-item-price">$${itemPrice.toLocaleString()} c/u</div>
           <div class="cart-item-quantity">
@@ -1487,7 +1487,7 @@ Método de pago: {metodo_pago}
       const subtotal = itemPrice * item.quantity
 
       // Línea principal del producto
-      let line = `- ${item.quantity}x ${item.displayName || item.name} ($${subtotal.toLocaleString('es-CO')})`
+      let line = `- ${item.quantity}x ${item.options?.size ? `${item.name} - ${item.options.size.name}` : item.name} ($${subtotal.toLocaleString('es-CO')})`
 
       // Comentario rápido
       if (item.options?.quickComment) {
