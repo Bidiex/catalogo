@@ -3,6 +3,7 @@ import { cart } from '../../utils/cart.js'
 import { notify } from '../../utils/notifications.js'
 import { promotionsService } from '../../services/promotions.js'
 import { promotionOptionsService } from '../../services/promotionOptions.js'
+import { productSizesService } from '../../services/productSizes.js'
 import { favorites } from '../../utils/favorites.js'
 import gsap from 'gsap'
 
@@ -22,6 +23,7 @@ let productOptions = []
 let currentQuantity = 1
 let selectedQuickComment = null
 let selectedSides = []
+let selectedSize = null
 let currentSearchQuery = ''
 let currentCategoryFilter = 'all'
 
@@ -232,6 +234,26 @@ async function loadCatalogData() {
     } catch (error) {
       console.error('Error loading discounts:', error)
       // Continue without discounts if error
+    }
+
+    // Cargar tamaños de productos
+    try {
+      const { data: sizesData, error: sizesError } = await supabase
+        .from('product_sizes')
+        .select('*')
+        .in('product_id', products.map(p => p.id))
+        .order('price', { ascending: true })
+
+      if (sizesError) throw sizesError
+
+      // Attach sizes to products
+      const sizes = sizesData || []
+      products.forEach(product => {
+        product.sizes = sizes.filter(s => s.product_id === product.id)
+      })
+    } catch (error) {
+      console.error('Error loading sizes:', error)
+      // Continue without sizes if error
     }
 
     // Cargar métodos de pago
@@ -784,10 +806,19 @@ function renderCategorySection(category, categoryProducts) {
 
 function renderProductCard(product) {
   const isFav = currentBusiness ? favorites.isFavorite(currentBusiness.id, product.id) : false
+  const hasSizes = product.sizes && product.sizes.length > 0
 
-  // Calculate pricing HTML based on discount
+  // Calculate pricing HTML based on sizes or discount
   let priceHTML = ''
-  if (product.discount) {
+
+  if (hasSizes) {
+    // Show price range for products with sizes
+    const prices = product.sizes.map(s => parseFloat(s.price))
+    const minPrice = Math.min(...prices)
+    const maxPrice = Math.max(...prices)
+
+    priceHTML = `<div class="product-card-price-range">$${minPrice.toLocaleString()} ... $${maxPrice.toLocaleString()}</div>`
+  } else if (product.discount) {
     const originalPrice = parseFloat(product.price)
     const discountPercentage = product.discount.discount_percentage
     const discountedPrice = originalPrice * (1 - discountPercentage / 100)
@@ -806,7 +837,7 @@ function renderProductCard(product) {
   }
 
   return `
-    <div class="product-card" data-id="${product.id}">
+    <div class="product-card${hasSizes ? ' has-sizes' : ''}" data-id="${product.id}">
       <div class="product-card-image">
         ${product.image_url
       ? `<img src="${product.image_url}" alt="${product.name}" loading="lazy">`
@@ -881,12 +912,18 @@ async function openProductModal(productId) {
   currentQuantity = 1
   selectedQuickComment = null
   selectedSides = []
+  selectedSize = null
 
-  // Calculate final price (with discount if applicable)
-  let finalPrice = parseFloat(selectedProduct.price)
+  // If product has sizes, select the first one by default
+  if (selectedProduct.sizes && selectedProduct.sizes.length > 0) {
+    selectedSize = selectedProduct.sizes[0]
+  }
+
+  // Calculate final price (with discount if applicable or from selected size)
+  let finalPrice = selectedSize ? parseFloat(selectedSize.price) : parseFloat(selectedProduct.price)
   let priceHTML = ''
 
-  if (selectedProduct.discount) {
+  if (selectedProduct.discount && !selectedSize) {
     const discountPercentage = selectedProduct.discount.discount_percentage
     finalPrice = finalPrice * (1 - discountPercentage / 100)
 
@@ -920,6 +957,9 @@ async function openProductModal(productId) {
     productModalImage.innerHTML = 'Sin imagen'
   }
 
+  // Render size selector if product has sizes
+  renderSizeSelector()
+
   // Cargar opciones del producto
   productOptions = await loadProductOptions(productId)
   renderProductOptions()
@@ -939,6 +979,77 @@ async function openProductModal(productId) {
       }
     })
   }
+}
+
+/**
+ * Render size selector in product modal
+ */
+function renderSizeSelector() {
+  // Find or create size selector container
+  let sizeContainer = document.getElementById('sizeSelectorContainer')
+
+  if (!sizeContainer) {
+    // Create container and insert before options
+    sizeContainer = document.createElement('div')
+    sizeContainer.id = 'sizeSelectorContainer'
+    sizeContainer.style.marginBottom = '1.5rem'
+
+    // Insert before quick comments section
+    const quickCommentsSection = document.getElementById('quickCommentsSection')
+    if (quickCommentsSection && quickCommentsSection.parentNode) {
+      quickCommentsSection.parentNode.insertBefore(sizeContainer, quickCommentsSection)
+    }
+  }
+
+  // If no sizes, hide container
+  if (!selectedProduct.sizes || selectedProduct.sizes.length === 0) {
+    sizeContainer.innerHTML = ''
+    sizeContainer.style.display = 'none'
+    return
+  }
+
+  // Show container and render sizes
+  sizeContainer.style.display = 'block'
+  sizeContainer.innerHTML = `
+    <div style="margin-bottom: 0.75rem;">
+      <h4 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem;">Selecciona el tamaño:</h4>
+      <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+        ${selectedProduct.sizes.map(size => `
+          <div class="size-option" style="display: flex; align-items: center; padding: 0.75rem; border: 2px solid ${selectedSize && selectedSize.id === size.id ? 'var(--color-primary)' : '#e5e7eb'}; border-radius: 0.5rem; cursor: pointer; transition: all 0.2s;">
+            <input 
+              type="radio" 
+              id="size-${size.id}" 
+              name="productSize" 
+              value="${size.id}"
+              ${selectedSize && selectedSize.id === size.id ? 'checked' : ''}
+              style="margin-right: 0.75rem; cursor: pointer;"
+            >
+            <label for="size-${size.id}" style="flex: 1; cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin: 0;">
+              <span style="font-weight: 500;">${size.name}</span>
+              <span style="font-weight: 700; color: var(--color-primary);">$${parseFloat(size.price).toLocaleString()}</span>
+            </label>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `
+
+  // Add event listeners
+  sizeContainer.querySelectorAll('input[type="radio"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        const sizeId = e.target.value
+        selectedSize = selectedProduct.sizes.find(s => s.id === sizeId)
+
+        // Update price
+        const newPrice = parseFloat(selectedSize.price)
+        productModalPrice.innerHTML = `$${newPrice.toLocaleString()}`
+
+        // Re-render to update border colors
+        renderSizeSelector()
+      }
+    })
+  })
 }
 
 function renderProductOptions() {
@@ -1053,23 +1164,32 @@ addToCartBtn.addEventListener('click', () => {
 
   const options = {
     quickComment: selectedQuickComment,
-    sides: selectedSides
+    sides: selectedSides,
+    size: selectedSize // Add selected size to options
   }
 
   // Guardar el nombre ANTES de cerrar el modal
-  const productName = selectedProduct.name
+  let productName = selectedProduct.name
+  if (selectedSize) {
+    productName = `${selectedProduct.name} - ${selectedSize.name}`
+  }
 
-  // Calculate final price (with discount if applicable)
-  let finalPrice = parseFloat(selectedProduct.price)
-  if (selectedProduct.discount) {
+  // Calculate final price (from selected size, or with discount if applicable)
+  let finalPrice = selectedSize
+    ? parseFloat(selectedSize.price)
+    : parseFloat(selectedProduct.price)
+
+  // Only apply discount if no size is selected
+  if (selectedProduct.discount && !selectedSize) {
     const discountPercentage = selectedProduct.discount.discount_percentage
     finalPrice = finalPrice * (1 - discountPercentage / 100)
   }
 
-  // Create product object with discounted price
+  // Create product object with final price
   const productToAdd = {
     ...selectedProduct,
-    price: finalPrice // Use discounted price
+    price: finalPrice, // Use size price or discounted price
+    displayName: productName // Store full name with size for display
   }
 
   cart.add(currentBusiness.id, productToAdd, currentQuantity, options)

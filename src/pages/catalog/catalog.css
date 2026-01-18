@@ -480,6 +480,11 @@
   overflow: hidden;
 }
 
+/* Products with sizes get 4:3 aspect ratio */
+.product-card.has-sizes .product-card-image {
+  aspect-ratio: 4 / 3;
+}
+
 .product-card-image img {
   width: 100%;
   height: 100%;
@@ -509,6 +514,14 @@
   color: var(--color-primary);
   font-weight: 700;
   font-size: 1.2rem;
+}
+
+/* Price range for products with sizes */
+.product-card-price-range {
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: 1.05rem;
+  white-space: nowrap;
 }
 
 /* Discount pricing styles */

@@ -10,6 +10,7 @@ import { buttonLoader } from '../../utils/buttonLoader.js'
 import { supabase } from '../../config/supabase.js'
 import { productOptionsService } from '../../services/productOptions.js'
 import { productDiscountsService } from '../../services/productDiscounts.js'
+import { productSizesService } from '../../services/productSizes.js'
 import { promotionsService } from '../../services/promotions.js'
 import { promotionOptionsService } from '../../services/promotionOptions.js'
 import { imageService } from '../../services/images.js'
@@ -1490,6 +1491,10 @@ async function openProductOptionsModal(productId) {
   await loadProductOptions(productId)
   renderProductOptionsDashboard()
 
+  // Load and render product sizes
+  await loadProductSizes(productId)
+  renderProductSizesDashboard()
+
   productOptionsModal.style.display = 'flex'
 }
 
@@ -1712,6 +1717,182 @@ async function deleteOption(optionId) {
   } catch (error) {
     console.error('Error deleting option:', error)
     notify.updateLoading(loadingToast, 'Error al eliminar la opción', 'error')
+  }
+}
+
+
+// ============================================
+// PRODUCT SIZES MANAGEMENT
+// ============================================
+let currentProductSizes = []
+let editingSizeId = null
+
+const sizeModal = document.getElementById('sizeModal')
+const closeSizeModal = document.getElementById('closeSizeModal')
+const cancelSizeBtn = document.getElementById('cancelSizeBtn')
+const sizeForm = document.getElementById('sizeForm')
+const sizeNameInput = document.getElementById('sizeNameInput')
+const sizePriceInput = document.getElementById('sizePriceInput')
+const sizesListDashboard = document.getElementById('sizesListDashboard')
+const addSizeBtn = document.getElementById('addSizeBtn')
+
+// Initialize sizes listeners
+if (addSizeBtn) addSizeBtn.addEventListener('click', () => openSizeModal())
+if (closeSizeModal) closeSizeModal.addEventListener('click', closeSizeModalFunc)
+if (cancelSizeBtn) cancelSizeBtn.addEventListener('click', closeSizeModalFunc)
+if (sizeForm) sizeForm.addEventListener('submit', handleSizeFormSubmit)
+
+/**
+ * Load product sizes from database
+ */
+async function loadProductSizes(productId) {
+  try {
+    currentProductSizes = await productSizesService.getByProduct(productId)
+  } catch (error) {
+    console.error('Error loading product sizes:', error)
+    currentProductSizes = []
+  }
+}
+
+/**
+ * Render product sizes list in dashboard
+ */
+function renderProductSizesDashboard() {
+  if (!sizesListDashboard) return
+
+  if (currentProductSizes.length === 0) {
+    sizesListDashboard.innerHTML = `
+      <p class="empty-message" style="padding: 1rem; text-align: center; color: #9ca3af; font-size: 0.9rem;">
+        No hay tamaños configurados
+      </p>
+    `
+    return
+  }
+
+  const html = currentProductSizes.map(size => `
+    <div class="option-item" data-size-id="${size.id}">
+      <div class="option-item-info">
+        <span class="option-item-name">${size.name}</span>
+        <span class="option-item-price">$${Number(size.price).toLocaleString('es-CO')}</span>
+      </div>
+      <div class="option-item-actions">
+        <button class="btn-icon edit-size" data-size-id="${size.id}" title="Editar">
+          <i class="ri-edit-line"></i>
+        </button>
+        <button class="btn-icon danger delete-size" data-size-id="${size.id}" title="Eliminar">
+          <i class="ri-delete-bin-line"></i>
+        </button>
+      </div>
+    </div>
+  `).join('')
+
+  sizesListDashboard.innerHTML = html
+
+  // Attach event listeners
+  document.querySelectorAll('.edit-size').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const sizeId = e.currentTarget.dataset.sizeId
+      openSizeModal(sizeId)
+    })
+  })
+
+  document.querySelectorAll('.delete-size').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const sizeId = e.currentTarget.dataset.sizeId
+      deleteProductSize(sizeId)
+    })
+  })
+}
+
+/**
+ * Open size modal for create/edit
+ */
+function openSizeModal(sizeId = null) {
+  editingSizeId = sizeId
+
+  if (sizeId) {
+    const size = currentProductSizes.find(s => s.id === sizeId)
+    if (size) {
+      document.getElementById('sizeModalTitle').textContent = 'Editar Tamaño'
+      sizeNameInput.value = size.name
+      sizePriceInput.value = size.price
+    }
+  } else {
+    document.getElementById('sizeModalTitle').textContent = 'Nuevo Tamaño'
+    sizeForm.reset()
+  }
+
+  sizeModal.style.display = 'flex'
+}
+
+/**
+ * Close size modal
+ */
+function closeSizeModalFunc() {
+  sizeModal.style.display = 'none'
+  sizeForm.reset()
+  editingSizeId = null
+}
+
+/**
+ * Handle size form submit
+ */
+async function handleSizeFormSubmit(e) {
+  e.preventDefault()
+
+  if (!currentProductForOptions) return
+
+  const sizeData = {
+    product_id: currentProductForOptions.id,
+    name: sizeNameInput.value.trim(),
+    price: parseFloat(sizePriceInput.value),
+    display_order: currentProductSizes.length
+  }
+
+  const loadingToast = notify.loading(editingSizeId ? 'Actualizando tamaño...' : 'Creando tamaño...')
+
+  try {
+    if (editingSizeId) {
+      await productSizesService.update(editingSizeId, sizeData)
+      notify.updateLoading(loadingToast, 'Tamaño actualizado', 'success')
+    } else {
+      await productSizesService.create(sizeData)
+      notify.updateLoading(loadingToast, 'Tamaño creado', 'success')
+    }
+
+    closeSizeModalFunc()
+    await loadProductSizes(currentProductForOptions.id)
+    renderProductSizesDashboard()
+  } catch (error) {
+    console.error('Error saving size:', error)
+    notify.updateLoading(loadingToast, 'Error al guardar el tamaño', 'error')
+  }
+}
+
+/**
+ * Delete a product size
+ */
+async function deleteProductSize(sizeId) {
+  const result = await confirm({
+    title: '¿Eliminar tamaño?',
+    message: 'Esta acción no se puede deshacer.',
+    confirmText: 'Eliminar',
+    cancelText: 'Cancelar',
+    type: 'danger'
+  })
+
+  if (!result) return
+
+  const loadingToast = notify.loading('Eliminando tamaño...')
+
+  try {
+    await productSizesService.delete(sizeId)
+    notify.updateLoading(loadingToast, 'Tamaño eliminado', 'success')
+    await loadProductSizes(currentProductForOptions.id)
+    renderProductSizesDashboard()
+  } catch (error) {
+    console.error('Error deleting size:', error)
+    notify.updateLoading(loadingToast, 'Error al eliminar el tamaño', 'error')
   }
 }
 

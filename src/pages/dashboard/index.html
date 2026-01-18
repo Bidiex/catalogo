@@ -974,6 +974,23 @@
           </div>
         </div>
 
+        <!-- Sizes Section -->
+        <div class="options-section" style="margin-top: 2rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h4 style="font-size: 1rem; font-weight: 600;">Tamaños</h4>
+            <button class="btn-primary-small" id="addSizeBtn">+ Agregar</button>
+          </div>
+          <p style="color: #666; font-size: 0.85rem; margin-bottom: 1rem;">
+            Define diferentes tamaños con precios específicos. Si el producto tiene tamaños, se mostrará el rango de
+            precios en el catálogo.
+          </p>
+          <div id="sizesListDashboard" class="options-list">
+            <p class="empty-message" style="padding: 1rem; text-align: center; color: #9ca3af; font-size: 0.9rem;">
+              No hay tamaños configurados
+            </p>
+          </div>
+        </div>
+
       </div>
       <div style="padding: 1.5rem; border-top: 1px solid var(--color-border); display: flex; justify-content: center;">
         <button class="btn-primary" id="closeProductOptionsBtn"
@@ -1001,6 +1018,31 @@
         </div>
         <div class="modal-actions">
           <button type="button" class="btn-secondary" id="cancelOptionBtn">Cancelar</button>
+          <button type="submit" class="btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal para crear/editar tamaño -->
+  <div id="sizeModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="sizeModalTitle">Nuevo Tamaño</h3>
+        <button class="modal-close" id="closeSizeModal">&times;</button>
+      </div>
+      <form id="sizeForm" class="modal-form">
+        <div class="form-group">
+          <label for="sizeNameInput">Nombre del tamaño *</label>
+          <input type="text" id="sizeNameInput" placeholder="Ej: Personal, Small, Medium, Large" required>
+        </div>
+        <div class="form-group">
+          <label for="sizePriceInput">Precio *</label>
+          <input type="number" id="sizePriceInput" step="0.01" min="0" placeholder="0.00" required>
+          <small>Precio específico para este tamaño</small>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="cancelSizeBtn">Cancelar</button>
           <button type="submit" class="btn-primary">Guardar</button>
         </div>
       </form>
