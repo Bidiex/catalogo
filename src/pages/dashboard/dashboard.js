@@ -554,24 +554,38 @@ async function updatePlanUsageUI() {
   }
 
   // Usage Meter
+  // Usage Meter
   const { allowed, current, limit } = await businessService.canCreateProduct(currentBusiness.id, planType)
+
+  const permanentUpgradeContainer = document.getElementById('permanentUpgradeContainer')
 
   if (productUsageText && productUsageBar) {
     if (limit === Infinity) {
-      productUsageText.textContent = `${current} / Ilimitado`
+      // Requested change: "Ilimitados" simply
+      productUsageText.textContent = `Ilimitados`
       productUsageBar.style.width = '100%'
       productUsageBar.style.background = 'linear-gradient(135deg, #10b981, #34d399)' // Green for PRO
+
+      // Hide upgrade elements if PRO
+      if (upgradeMessage) upgradeMessage.style.display = 'none'
+      if (permanentUpgradeContainer) permanentUpgradeContainer.style.display = 'none'
+
     } else {
       productUsageText.textContent = `${current} / ${limit}`
       const percentage = Math.min((current / limit) * 100, 100)
       productUsageBar.style.width = `${percentage}%`
 
+      // Show warning color if near limit
       if (percentage >= 90) {
         productUsageBar.style.background = '#ef4444' // Red warning
         if (upgradeMessage) upgradeMessage.style.display = 'block'
       } else {
         productUsageBar.style.background = '#3b82f6'
+        if (upgradeMessage) upgradeMessage.style.display = 'none'
       }
+
+      // Always show permanent upgrade button for Plus users
+      if (permanentUpgradeContainer) permanentUpgradeContainer.style.display = 'block'
     }
   }
 }
@@ -583,11 +597,19 @@ const closeUpgradeModal = document.getElementById('closeUpgradeModal')
 const contactSupportUpgradeBtn = document.getElementById('contactSupportUpgradeBtn')
 const contactSupportRenewBtn = document.getElementById('contactSupportRenewBtn')
 const btnUpgradePlan = document.getElementById('btnUpgradePlan')
+const btnPermanentUpgrade = document.getElementById('btnPermanentUpgrade') // New button
 const logoutBlockedBtn = document.getElementById('logoutBlockedBtn')
 
-// Upgrade Button in Dashboard
+// Upgrade Button in Dashboard (Limit Warning)
 if (btnUpgradePlan) {
   btnUpgradePlan.addEventListener('click', () => {
+    upgradePlanModal.style.display = 'flex'
+  })
+}
+
+// Permanent Upgrade Button (Always visible for Plus)
+if (btnPermanentUpgrade) {
+  btnPermanentUpgrade.addEventListener('click', () => {
     upgradePlanModal.style.display = 'flex'
   })
 }

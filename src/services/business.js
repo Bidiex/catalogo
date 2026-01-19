@@ -163,11 +163,9 @@ export const businessService = {
    * Check if business can create more products
    */
   async canCreateProduct(businessId, planType) {
-    if (planType === 'pro') return { allowed: true }
-
     const limit = this.getProductLimit(planType)
 
-    // Count current products
+    // Always count current products to allow UI display
     const { count, error } = await supabase
       .from('products')
       .select('*', { count: 'exact', head: true })
@@ -175,7 +173,11 @@ export const businessService = {
 
     if (error) {
       console.error('Error counting products:', error)
-      return { allowed: false, error }
+      return { allowed: false, error, current: 0, limit }
+    }
+
+    if (planType === 'pro') {
+      return { allowed: true, current: count, limit: Infinity }
     }
 
     return {
