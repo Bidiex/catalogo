@@ -109,5 +109,79 @@ export const businessService = {
       console.error('Error checking slug:', error)
       return false
     }
+  },
+
+  /**
+   * Check if business is operational (active AND active plan)
+   * @param {Object} business 
+   * @returns {boolean}
+   */
+  isOperational(business) {
+    if (!business) return false
+
+    // 1. Check if manually active
+    if (business.is_active === false) return false
+
+    // 2. Check if plan is expired
+    const expiresAt = new Date(business.plan_expires_at)
+    const now = new Date()
+
+    if (now > expiresAt) return false
+
+    return true
+  },
+
+  /**
+   * Get formatting plan info
+   */
+  getPlanInfo(business) {
+    if (!business) return null
+
+    const now = new Date()
+    const expiresAt = new Date(business.plan_expires_at)
+    const daysRemaining = Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24))
+    const isExpired = daysRemaining < 0
+
+    return {
+      type: business.plan_type || 'plus',
+      expiresAt: expiresAt,
+      daysRemaining: daysRemaining,
+      isExpired: isExpired,
+      label: (business.plan_type || 'plus').toUpperCase()
+    }
+  },
+
+  /**
+   * Get product limit for plan
+   */
+  getProductLimit(planType) {
+    if (planType === 'pro') return Infinity
+    return 50 // Plus limit
+  },
+
+  /**
+   * Check if business can create more products
+   */
+  async canCreateProduct(businessId, planType) {
+    if (planType === 'pro') return { allowed: true }
+
+    const limit = this.getProductLimit(planType)
+
+    // Count current products
+    const { count, error } = await supabase
+      .from('products')
+      .select('*', { count: 'exact', head: true })
+      .eq('business_id', businessId)
+
+    if (error) {
+      console.error('Error counting products:', error)
+      return { allowed: false, error }
+    }
+
+    return {
+      allowed: count < limit,
+      current: count,
+      limit: limit
+    }
   }
 }

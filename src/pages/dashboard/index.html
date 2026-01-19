@@ -402,6 +402,53 @@
                     </div>
                   </div>
 
+                  <!-- Plan Status Section -->
+                  <div class="plan-status-section"
+                    style="background: #f8fafc; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid #e2e8f0;">
+                    <div
+                      style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                      <div>
+                        <span class="label"
+                          style="display: block; font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Tu Plan
+                          Actual</span>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                          <span id="planBadge" class="badge"
+                            style="background: var(--primary-color); color: white; padding: 0.25rem 0.75rem; border-radius: 99px; font-weight: 600; font-size: 0.9rem;">LOADING...</span>
+                          <span id="planStatusTag"
+                            style="font-size: 0.8rem; padding: 2px 6px; border-radius: 4px; background: #dcfce7; color: #166534;">Activo</span>
+                        </div>
+                      </div>
+                      <div style="text-align: right;">
+                        <span class="label"
+                          style="display: block; font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Vence
+                          en</span>
+                        <span id="planDaysRemaining" style="font-weight: 600; font-size: 1.1rem; color: #334155;">-
+                          días</span>
+                        <div id="planExpiryDate" style="font-size: 0.75rem; color: #94a3b8;">-</div>
+                      </div>
+                    </div>
+
+                    <!-- Usage Meter -->
+                    <div class="usage-meter" style="margin-top: 1rem;">
+                      <div
+                        style="display: flex; justify-content: space-between; margin-bottom: 0.25rem; font-size: 0.85rem;">
+                        <span style="color: #64748b;">Productos usados</span>
+                        <span id="productUsageText" style="font-weight: 600;">0 / 50</span>
+                      </div>
+                      <div style="height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden;">
+                        <div id="productUsageBar"
+                          style="height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s ease;">
+                        </div>
+                      </div>
+                      <div id="upgradeMessage" style="display: none; margin-top: 0.5rem;">
+                        <button id="btnUpgradePlan" class="btn-primary-small"
+                          style="width: 100%; justify-content: center; background: linear-gradient(135deg, #6366f1, #8b5cf6);">
+                          <i class="ri-rocket-line"></i> Mejorar a PRO
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
                   <div class="info-row">
                     <span class="label"><i class="ri-store-line"></i> Nombre:</span>
                     <span id="businessName" class="value">-</span>
@@ -1298,6 +1345,82 @@
       </form>
     </div>
   </div>
+  <!-- Modal Upgrade Plan -->
+  <div id="upgradePlanModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 500px; text-align: center;">
+      <div class="modal-header" style="justify-content: center; border: none;">
+        <button class="modal-close" id="closeUpgradeModal"
+          style="position: absolute; right: 1rem; top: 1rem;">&times;</button>
+      </div>
+      <div style="padding: 0 1rem 2rem 1rem;">
+        <div
+          style="background: #e0e7ff; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto;">
+          <i class="ri-rocket-fill" style="font-size: 3rem; color: #4338ca;"></i>
+        </div>
+        <h2 style="margin-bottom: 0.5rem; font-size: 1.75rem;">¡Mejora tu Plan a PRO!</h2>
+        <p style="color: #64748b; margin-bottom: 2rem;">
+          Has alcanzado el límite de tu plan actual o quieres acceder a funcionalidades ilimitadas.
+          Pásate a PRO y lleva tu negocio al siguiente nivel.
+        </p>
+
+        <div style="background: #f8fafc; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; text-align: left;">
+          <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.75rem;">
+            <li style="display: flex; align-items: center; gap: 0.5rem;">
+              <i class="ri-checkbox-circle-fill" style="color: #10b981;"></i> Productos Ilimitados
+            </li>
+            <li style="display: flex; align-items: center; gap: 0.5rem;">
+              <i class="ri-checkbox-circle-fill" style="color: #10b981;"></i> Soporte Prioritario
+            </li>
+            <li style="display: flex; align-items: center; gap: 0.5rem;">
+              <i class="ri-checkbox-circle-fill" style="color: #10b981;"></i> Sin interrupciones
+            </li>
+          </ul>
+        </div>
+
+        <button id="contactSupportUpgradeBtn" class="btn-primary"
+          style="width: 100%; justify-content: center; padding: 1rem;">
+          <i class="ri-whatsapp-line"></i> Contactar para Upgrade
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Plan Bloqueado (Vencido) -->
+  <div id="blockedPlanModal" class="modal" style="display: none; background: rgba(0,0,0,0.9); z-index: 9999;">
+    <div class="modal-content" style="max-width: 500px; text-align: center;">
+      <!-- No close button - Blocking modal -->
+      <div style="padding: 2rem 1rem;">
+        <div
+          style="background: #fee2e2; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto;">
+          <i class="ri-lock-2-fill" style="font-size: 3rem; color: #dc2626;"></i>
+        </div>
+        <h2 style="margin-bottom: 0.5rem; font-size: 1.75rem; color: #dc2626;">Tu Plan ha Vencido</h2>
+        <p style="color: #64748b; margin-bottom: 2rem;">
+          Tu periodo de suscripción ha finalizado. Tu catálogo está actualmente en modo mantenimiento y no puedes
+          recibir nuevos pedidos.
+        </p>
+
+        <div
+          style="background: #fff1f2; border: 1px solid #fecaca; padding: 1rem; border-radius: 8px; margin-bottom: 2rem;">
+          <p style="color: #991b1b; font-size: 0.9rem;">
+            <strong>Estado:</strong> Inactivo<br>
+            Renueva tu plan para reactivar tu negocio inmediatamente.
+          </p>
+        </div>
+
+        <button id="contactSupportRenewBtn" class="btn-primary"
+          style="width: 100%; justify-content: center; padding: 1rem;">
+          <i class="ri-whatsapp-line"></i> Contactar para Renovar
+        </button>
+
+        <button id="logoutBlockedBtn" class="btn-secondary"
+          style="width: 100%; justify-content: center; margin-top: 1rem;">
+          Cerrar Sesión
+        </button>
+      </div>
+    </div>
+  </div>
+
 </body>
 
 </html>

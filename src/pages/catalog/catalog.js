@@ -171,11 +171,55 @@ async function loadBusiness(slug) {
 
     currentBusiness = data
 
+    // Verificar estado operativo
+    const isOperational = checkSubscriptionStatus(currentBusiness)
+    if (!isOperational) {
+      showMaintenanceState()
+      throw new Error('Business not operational') // Stop loading
+    }
+
     // Trackear visita al catálogo
     trackCatalogVisit(currentBusiness.id)
   } catch (error) {
+    if (error.message === 'Business not operational') {
+      // Handled by showMaintenanceState, just rethrow or ignore to stop flow
+      throw error
+    }
     console.error('Error loading business:', error)
     throw error
+  }
+}
+
+// Helper: Check operational status
+function checkSubscriptionStatus(business) {
+  if (!business) return false
+
+  // 1. Check manual status
+  if (business.is_active === false) return false
+
+  // 2. Check expiration
+  if (business.plan_expires_at) {
+    const expiresAt = new Date(business.plan_expires_at)
+    const now = new Date()
+    if (now > expiresAt) return false
+  }
+
+  return true
+}
+
+function showMaintenanceState() {
+  document.getElementById('loadingState').style.display = 'none'
+  document.getElementById('catalogContent').style.display = 'none'
+  document.getElementById('maintenanceState').style.display = 'flex'
+
+  if (currentBusiness?.whatsapp_number) {
+    const btn = document.getElementById('maintenanceWhatsAppBtn')
+    if (btn) {
+      btn.style.display = 'flex'
+      btn.onclick = () => {
+        window.open(`https://wa.me/${currentBusiness.whatsapp_number}`, '_blank')
+      }
+    }
   }
 }
 

@@ -462,9 +462,26 @@ async function loadBusiness() {
     if (!currentBusiness) {
       showNoBusinessState()
     } else {
-      await loadAllData()
-      await loadWhatsAppTemplate() // ← AGREGAR ESTA LÍNEA
-      showBusinessState()
+      // Check if business is operational
+      const isOperational = businessService.isOperational(currentBusiness)
+
+      if (!isOperational) {
+        // Show Blocked State but load basic data? 
+        // Or just block completely?
+        // User requested: "solo revisar cosas" -> Read Only. But modal says "Inactivo"
+        // Let's load data but show the modal overlay
+        await loadAllData()
+
+        // Disable actions?
+        const blockedModal = document.getElementById('blockedPlanModal')
+        if (blockedModal) blockedModal.style.display = 'flex'
+
+        showBusinessState() // Show dashboard
+      } else {
+        await loadAllData()
+        await loadWhatsAppTemplate()
+        showBusinessState()
+      }
     }
   } catch (error) {
     console.error('Error loading business:', error)
@@ -489,12 +506,121 @@ async function loadAllData() {
     renderBusinessHours()
     loadSupportTickets() // Cargar tickets soporte
     updateDashboardStats()
+
+    // Check product limit for UI usage bar
+    updatePlanUsageUI()
+
   } catch (error) {
     console.error('Error loading data:', error)
     notify.error('Error al cargar los datos')
   }
 }
 
+// ============================================
+// SUBSCRIPTION LOGIC
+// ============================================
+async function updatePlanUsageUI() {
+  if (!currentBusiness) return
+
+  const planInfo = businessService.getPlanInfo(currentBusiness)
+  const planType = planInfo.type
+
+  // Update Plan UI Elements
+  const planBadge = document.getElementById('planBadge')
+  const planStatusTag = document.getElementById('planStatusTag')
+  const planDaysRemaining = document.getElementById('planDaysRemaining')
+  const planExpiryDate = document.getElementById('planExpiryDate')
+  const productUsageText = document.getElementById('productUsageText')
+  const productUsageBar = document.getElementById('productUsageBar')
+  const upgradeMessage = document.getElementById('upgradeMessage')
+
+  if (planBadge) {
+    planBadge.textContent = planInfo.label
+    planBadge.className = `badge badge-${planType}` // CSS class needed or inline style adjustment
+    planBadge.style.background = planType === 'pro' ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : '#3b82f6'
+  }
+
+  if (planDaysRemaining) {
+    if (planInfo.daysRemaining <= 5 && planInfo.daysRemaining > 0) {
+      planDaysRemaining.style.color = '#f59e0b' // Warning
+    } else {
+      planDaysRemaining.style.color = '#334155'
+    }
+    planDaysRemaining.textContent = planInfo.daysRemaining > 0 ? `${planInfo.daysRemaining} días` : 'Vencido'
+  }
+
+  if (planExpiryDate) {
+    planExpiryDate.textContent = `Vence: ${planInfo.expiresAt.toLocaleDateString()}`
+  }
+
+  // Usage Meter
+  const { allowed, current, limit } = await businessService.canCreateProduct(currentBusiness.id, planType)
+
+  if (productUsageText && productUsageBar) {
+    if (limit === Infinity) {
+      productUsageText.textContent = `${current} / Ilimitado`
+      productUsageBar.style.width = '100%'
+      productUsageBar.style.background = 'linear-gradient(135deg, #10b981, #34d399)' // Green for PRO
+    } else {
+      productUsageText.textContent = `${current} / ${limit}`
+      const percentage = Math.min((current / limit) * 100, 100)
+      productUsageBar.style.width = `${percentage}%`
+
+      if (percentage >= 90) {
+        productUsageBar.style.background = '#ef4444' // Red warning
+        if (upgradeMessage) upgradeMessage.style.display = 'block'
+      } else {
+        productUsageBar.style.background = '#3b82f6'
+      }
+    }
+  }
+}
+
+// Modal Elements & Listeners
+const upgradePlanModal = document.getElementById('upgradePlanModal')
+const blockedPlanModal = document.getElementById('blockedPlanModal')
+const closeUpgradeModal = document.getElementById('closeUpgradeModal')
+const contactSupportUpgradeBtn = document.getElementById('contactSupportUpgradeBtn')
+const contactSupportRenewBtn = document.getElementById('contactSupportRenewBtn')
+const btnUpgradePlan = document.getElementById('btnUpgradePlan')
+const logoutBlockedBtn = document.getElementById('logoutBlockedBtn')
+
+// Upgrade Button in Dashboard
+if (btnUpgradePlan) {
+  btnUpgradePlan.addEventListener('click', () => {
+    upgradePlanModal.style.display = 'flex'
+  })
+}
+
+if (closeUpgradeModal) {
+  closeUpgradeModal.addEventListener('click', () => {
+    upgradePlanModal.style.display = 'none'
+  })
+}
+
+// Contact Actions
+const CONTACT_PHONE = '573000000000' // Replace with actual admin number
+
+if (contactSupportUpgradeBtn) {
+  contactSupportUpgradeBtn.addEventListener('click', () => {
+    const text = `Hola, quiero mejorar mi plan a PRO para el negocio: ${currentBusiness.name}`
+    window.open(`https://wa.me/${CONTACT_PHONE}?text=${encodeURIComponent(text)}`, '_blank')
+  })
+}
+
+if (contactSupportRenewBtn) {
+  contactSupportRenewBtn.addEventListener('click', () => {
+    const text = `Hola, mi plan ha vencido. Quiero renovar la suscripción para el negocio: ${currentBusiness.name}`
+    window.open(`https://wa.me/${CONTACT_PHONE}?text=${encodeURIComponent(text)}`, '_blank')
+  })
+}
+
+if (logoutBlockedBtn) {
+  logoutBlockedBtn.addEventListener('click', async () => {
+    await authService.signOut()
+    window.location.href = '/src/pages/login/index.html'
+  })
+}
 // ============================================
 // DASHBOARD STATS
 // ============================================
@@ -1321,7 +1447,25 @@ async function deleteCategory(categoryId) {
 // ============================================
 // PRODUCT MODAL
 // ============================================
-addProductBtn.addEventListener('click', () => openProductModal())
+addProductBtn.addEventListener('click', async () => {
+  // Check limits before opening
+  if (!currentBusiness) return
+
+  const planInfo = businessService.getPlanInfo(currentBusiness)
+
+  // Use button loader to prevent double clicks and show feedback
+  await buttonLoader.execute(addProductBtn, async () => {
+    const { allowed } = await businessService.canCreateProduct(currentBusiness.id, planInfo.type)
+
+    if (!allowed && planInfo.type !== 'pro') {
+      // Show Upgrade Modal
+      const upgradeModal = document.getElementById('upgradePlanModal')
+      if (upgradeModal) upgradeModal.style.display = 'flex'
+    } else {
+      openProductModal()
+    }
+  })
+})
 
 document.getElementById('closeProductModal').addEventListener('click', closeProductModal)
 document.getElementById('cancelProductBtn').addEventListener('click', closeProductModal)
