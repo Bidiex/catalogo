@@ -659,12 +659,33 @@ async function updateDashboardStats() {
     statTotalProducts.textContent = products.length
   }
 
-  // Visitas al Catálogo (desde localStorage o backend)
+  // Visitas al Catálogo (Global Real)
   const statCatalogVisits = document.getElementById('statCatalogVisits')
   if (statCatalogVisits) {
-    const visitsKey = `catalog_visits_${currentBusiness.id}`
-    const visits = localStorage.getItem(visitsKey) || '0'
-    statCatalogVisits.textContent = parseInt(visits).toLocaleString()
+    try {
+      const { data, error } = await supabase
+        .from('business_stats')
+        .select('views_count.sum()') // Aggregate function usually requires RPC or manual sum
+        .eq('business_id', currentBusiness.id)
+
+      // Since standard SELECT doesn't support .sum() directly like that in client without special setup usually,
+      // let's just select views_count and sum in JS for now or use specific aggregate
+      // Simpler approach: Select all rows for business and reduce
+
+      const { data: stats, error: statsError } = await supabase
+        .from('business_stats')
+        .select('views_count')
+        .eq('business_id', currentBusiness.id)
+
+      if (statsError) throw statsError
+
+      const totalVisits = stats ? stats.reduce((sum, row) => sum + (row.views_count || 0), 0) : 0
+      statCatalogVisits.textContent = totalVisits.toLocaleString()
+
+    } catch (err) {
+      console.error('Error fetching stats:', err)
+      statCatalogVisits.textContent = '-'
+    }
   }
 
   // Top 3 Productos Más Gustados (desde Supabase)

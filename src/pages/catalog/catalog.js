@@ -635,11 +635,22 @@ if (addPromotionToCartBtn) {
 // ============================================
 // TRACKING FUNCTIONS
 // ============================================
-function trackCatalogVisit(businessId) {
+async function trackCatalogVisit(businessId) {
   try {
-    const visitsKey = `catalog_visits_${businessId}`
-    const currentVisits = parseInt(localStorage.getItem(visitsKey) || '0')
-    localStorage.setItem(visitsKey, (currentVisits + 1).toString())
+    // Basic session debounce to avoid spamming the DB on reload
+    const sessionKey = `visited_${businessId}`
+    if (sessionStorage.getItem(sessionKey)) return
+
+    // Call secure DB function
+    const { error } = await supabase.rpc('increment_visit_count', {
+      p_business_id: businessId
+    })
+
+    if (error) throw error
+
+    // Mark as visited for this session
+    sessionStorage.setItem(sessionKey, 'true')
+
   } catch (error) {
     console.error('Error tracking catalog visit:', error)
   }
