@@ -183,6 +183,18 @@ async function init() {
     // Cargar negocio
     await loadBusiness()
 
+    // Show Reminder Modal
+    const reminderModal = document.getElementById('whatsappReminderModal')
+    const closeReminderBtn = document.getElementById('closeReminderModalBtn')
+
+    if (reminderModal && closeReminderBtn) {
+      reminderModal.style.display = 'flex'
+
+      closeReminderBtn.addEventListener('click', () => {
+        reminderModal.style.display = 'none'
+      })
+    }
+
   } catch (error) {
     console.error('Error initializing dashboard:', error)
     notify.error('Error al cargar el dashboard')
