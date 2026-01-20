@@ -393,6 +393,11 @@
                     <button type="button" id="changeBusinessLogoBtn" class="btn-secondary-small">
                       <i class="ri-image-edit-line"></i> Cambiar Logo
                     </button>
+
+                    <button type="button" id="openColorModalBtn" class="btn-secondary-small"
+                      style="margin-top: 0.5rem; background: white; border: 1px solid #e2e8f0;">
+                      <i class="ri-palette-line"></i> Personalizar Color
+                    </button>
                     <div id="logo-upload-progress" style="display: none; width: 150px; margin-top: 0.5rem;">
                       <div class="progress-bar"
                         style="height: 4px; background: #eee; border-radius: 2px; overflow: hidden;">
@@ -742,6 +747,81 @@
         </div>
 
       </main>
+    </div>
+  </div>
+
+  <!-- Color Customization Modal -->
+  <div id="customizeColorModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3>Personalizar Color del Catálogo</h3>
+        <button class="modal-close" id="closeColorModalBtn">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1.5rem;">
+        <p style="color: #6b7280; font-size: 0.95rem; margin-bottom: 1.5rem;">
+          Selecciona un color primario para tu catálogo. Este color se aplicará a botones, enlaces y elementos
+          destacados.
+        </p>
+
+        <div id="colorGrid" class="color-grid"
+          style="display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+          <!-- Predefined colors -->
+          <button type="button" class="color-option active" data-color="#4ced17"
+            style="background-color: #4ced17; width: 48px; height: 48px; border-radius: 50%; border: 2px solid #e5e7eb; cursor: pointer; transition: transform 0.2s;"
+            title="Verde (Por defecto)"></button>
+
+          <button type="button" class="color-option" data-color="#3b82f6"
+            style="background-color: #3b82f6; width: 48px; height: 48px; border-radius: 50%; border: 2px solid #e5e7eb; cursor: pointer; transition: transform 0.2s;"
+            title="Azul"></button>
+
+          <button type="button" class="color-option" data-color="#6366f1"
+            style="background-color: #6366f1; width: 48px; height: 48px; border-radius: 50%; border: 2px solid #e5e7eb; cursor: pointer; transition: transform 0.2s;"
+            title="Indigo"></button>
+
+          <button type="button" class="color-option" data-color="#8b5cf6"
+            style="background-color: #8b5cf6; width: 48px; height: 48px; border-radius: 50%; border: 2px solid #e5e7eb; cursor: pointer; transition: transform 0.2s;"
+            title="Violeta"></button>
+
+          <button type="button" class="color-option" data-color="#ec4899"
+            style="background-color: #ec4899; width: 48px; height: 48px; border-radius: 50%; border: 2px solid #e5e7eb; cursor: pointer; transition: transform 0.2s;"
+            title="Rosa"></button>
+
+          <button type="button" class="color-option" data-color="#ef4444"
+            style="background-color: #ef4444; width: 48px; height: 48px; border-radius: 50%; border: 2px solid #e5e7eb; cursor: pointer; transition: transform 0.2s;"
+            title="Rojo"></button>
+
+          <button type="button" class="color-option" data-color="#f59e0b"
+            style="background-color: #f59e0b; width: 48px; height: 48px; border-radius: 50%; border: 2px solid #e5e7eb; cursor: pointer; transition: transform 0.2s;"
+            title="Naranja"></button>
+
+          <button type="button" class="color-option" data-color="#10b981"
+            style="background-color: #10b981; width: 48px; height: 48px; border-radius: 50%; border: 2px solid #e5e7eb; cursor: pointer; transition: transform 0.2s;"
+            title="Esmeralda"></button>
+
+          <button type="button" class="color-option" data-color="#0ea5e9"
+            style="background-color: #0ea5e9; width: 48px; height: 48px; border-radius: 50%; border: 2px solid #e5e7eb; cursor: pointer; transition: transform 0.2s;"
+            title="Cielo"></button>
+
+          <button type="button" class="color-option" data-color="#0f172a"
+            style="background-color: #0f172a; width: 48px; height: 48px; border-radius: 50%; border: 2px solid #e5e7eb; cursor: pointer; transition: transform 0.2s;"
+            title="Oscuro"></button>
+        </div>
+
+        <div style="background: #f9fafb; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+          <span style="font-size: 0.9rem; font-weight: 600; color: #374151;">Color seleccionado:</span>
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+            <div id="previewColorCircle"
+              style="width: 24px; height: 24px; border-radius: 50%; background: #4ced17; border: 1px solid #d1d5db;">
+            </div>
+            <span id="previewColorCode" style="font-family: monospace; color: #6b7280;">#4ced17</span>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="cancelColorBtn">Cancelar</button>
+          <button type="button" class="btn-primary" id="saveColorBtn">Guardar cambios</button>
+        </div>
+      </div>
     </div>
   </div>
 

@@ -5,6 +5,7 @@ import { promotionsService } from '../../services/promotions.js'
 import { promotionOptionsService } from '../../services/promotionOptions.js'
 import { productSizesService } from '../../services/productSizes.js'
 import { favorites } from '../../utils/favorites.js'
+import { colorUtils } from '../../utils/colorUtils.js'
 import gsap from 'gsap'
 
 
@@ -733,6 +734,15 @@ function renderBusinessInfo() {
     } else {
       headerLogo.style.display = 'none'
     }
+  }
+
+  // Apply Custom Color
+  if (currentBusiness.primary_color) {
+    const primaryColor = currentBusiness.primary_color
+    const primaryHover = colorUtils.darken(primaryColor, 10) // Darken by 10%
+
+    document.documentElement.style.setProperty('--color-primary', primaryColor)
+    document.documentElement.style.setProperty('--primary-hover', primaryHover)
   }
 }
 

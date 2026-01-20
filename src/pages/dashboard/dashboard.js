@@ -233,6 +233,9 @@ function initSidebarNavigation() {
 
   // Inicializar editor de WhatsApp
   initWhatsAppEditor()
+
+  // Inicializar personalización de color
+  initColorCustomization()
 }
 
 // ============================================
@@ -424,6 +427,81 @@ function initBusinessLogoUpload() {
       }
     })
   }
+}
+
+function initColorCustomization() {
+  const openColorModalBtn = document.getElementById('openColorModalBtn')
+  const customizeColorModal = document.getElementById('customizeColorModal')
+  const closeColorModalBtn = document.getElementById('closeColorModalBtn')
+  const cancelColorBtn = document.getElementById('cancelColorBtn')
+  const saveColorBtn = document.getElementById('saveColorBtn')
+  const colorOptions = document.querySelectorAll('.color-option')
+  const previewColorCircle = document.getElementById('previewColorCircle')
+  const previewColorCode = document.getElementById('previewColorCode')
+
+  let selectedColor = '#4ced17' // Default
+
+  function openModal() {
+    selectedColor = currentBusiness.primary_color || '#4ced17'
+    updateSelectionUI()
+    customizeColorModal.style.display = 'flex'
+  }
+
+  function closeModal() {
+    customizeColorModal.style.display = 'none'
+  }
+
+  function updateSelectionUI() {
+    // Update Grid
+    colorOptions.forEach(btn => {
+      const color = btn.dataset.color
+      if (color === selectedColor) {
+        btn.classList.add('active')
+        btn.style.transform = 'scale(1.15)'
+        btn.style.borderColor = '#374151'
+      } else {
+        btn.classList.remove('active')
+        btn.style.transform = 'scale(1)'
+        btn.style.borderColor = '#e5e7eb'
+      }
+    })
+
+    // Update Preview
+    if (previewColorCircle) previewColorCircle.style.backgroundColor = selectedColor
+    if (previewColorCode) previewColorCode.textContent = selectedColor
+  }
+
+  if (openColorModalBtn) {
+    console.log('Attaching click listener to openColorModalBtn')
+    openColorModalBtn.addEventListener('click', openModal)
+  }
+
+  if (closeColorModalBtn) closeColorModalBtn.addEventListener('click', closeModal)
+  if (cancelColorBtn) cancelColorBtn.addEventListener('click', closeModal)
+
+  if (saveColorBtn) {
+    saveColorBtn.addEventListener('click', async () => {
+      try {
+        await buttonLoader.execute(saveColorBtn, async () => {
+          await businessService.updateBusiness(currentBusiness.id, { primary_color: selectedColor })
+          currentBusiness.primary_color = selectedColor
+          notify.success('Color actualizado correctamente')
+          closeModal()
+        }, 'Guardando...')
+      } catch (error) {
+        console.error('Error saving color:', error)
+        notify.error('Error al guardar el color')
+      }
+    })
+  }
+
+  // Grid Listeners
+  colorOptions.forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedColor = btn.dataset.color
+      updateSelectionUI()
+    })
+  })
 }
 
 function switchSection(sectionName) {
