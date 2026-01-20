@@ -663,10 +663,9 @@ async function updateDashboardStats() {
   const statCatalogVisits = document.getElementById('statCatalogVisits')
   if (statCatalogVisits) {
     try {
-      const { data, error } = await supabase
-        .from('business_stats')
-        .select('views_count.sum()') // Aggregate function usually requires RPC or manual sum
-        .eq('business_id', currentBusiness.id)
+      // Since standard SELECT doesn't support .sum() directly like that in client without special setup usually,
+      // let's just select views_count and sum in JS for now or use specific aggregate
+      // Simpler approach: Select all rows for business and reduce
 
       // Since standard SELECT doesn't support .sum() directly like that in client without special setup usually,
       // let's just select views_count and sum in JS for now or use specific aggregate
