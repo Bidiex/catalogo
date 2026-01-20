@@ -452,18 +452,26 @@ body {
 }
 
 .features-grid {
-    display: grid;
+    scrollbar-width: none;
+    height: 320px;
+    display: flex;
+    overflow-x: scroll;
     gap: 1.5rem;
 }
 
 @media (min-width: 768px) {
     .features-grid {
+        height: auto;
+        display: grid;
+        gap: 1.5rem;
         grid-template-columns: repeat(2, 1fr);
     }
 }
 
 @media (min-width: 1024px) {
     .features-grid {
+        display: grid;
+        gap: 1.5rem;
         grid-template-columns: repeat(3, 1fr);
     }
 }
@@ -474,6 +482,8 @@ body {
     border-radius: var(--radius-xl);
     border: 1px solid var(--border-slate-100);
     transition: all 0.2s;
+    max-height: 250px;
+    min-width: 250px;
 }
 
 .feature-card:hover {
