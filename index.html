@@ -1,21 +1,19 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="light">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SaaS Catálogo - Tu Negocio en WhatsApp</title>
+  <title>SaaS Catálogo - Tu Tienda en WhatsApp</title>
   <meta name="description"
     content="Crea tu catálogo digital en segundos y recibe pedidos directamente en WhatsApp. Sin comisiones, rápido y fácil.">
 
   <!-- Fonts & Icons -->
-  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-  <!-- SEO -->
-  <meta property="og:title" content="SaaS Catálogo - Tu Negocio en WhatsApp">
-  <meta property="og:description" content="Gestiona tu catálogo y pedidos por WhatsApp en segundos.">
-  <meta property="og:type" content="website">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+    rel="stylesheet" />
 
   <!-- Styles -->
   <link rel="stylesheet" href="/src/pages/landing/landing.css">
@@ -23,199 +21,283 @@
 
 <body>
 
-  <!-- Header -->
-  <header class="header">
+  <!-- Navigation -->
+  <nav class="nav">
     <div class="container">
-      <a href="#" class="logo">
-        <i class="ri-store-2-fill"></i>
-        <span>SaaS Catálogo</span>
-      </a>
+      <div class="nav-content">
+        <div class="logo-container">
+          <div class="logo-icon-bg">
+            <span class="material-symbols-rounded" style="color: white;">storefront</span>
+          </div>
+          <span class="logo-text">SaaS Catálogo</span>
+        </div>
 
-      <nav class="nav-links">
-        <a href="#beneficios" class="nav-link">Beneficios</a>
-        <a href="#planes" class="nav-link">Planes</a>
-        <a href="#faq" class="nav-link">Preguntas</a>
-      </nav>
+        <div class="menu-links">
+          <a class="menu-link" href="#features">Beneficios</a>
+          <a class="menu-link" href="#pricing">Planes</a>
+          <a class="menu-link" href="#faq">Preguntas</a>
+        </div>
 
-      <div class="header-actions">
-        <a href="/src/pages/login/index.html" class="btn btn-outline" style="margin-right: 0.5rem;">Iniciar Sesión</a>
-        <a href="/src/pages/login/index.html?mode=register" class="btn btn-primary">Crear Cuenta</a>
+        <div class="nav-actions">
+          <!-- Theme toggle removed as requested -->
+          <a class="btn-login" href="/src/pages/login/index.html">Iniciar Sesión</a>
+          <a class="btn-signup" href="/src/pages/login/index.html?mode=register">Crear Cuenta</a>
+        </div>
       </div>
     </div>
-  </header>
+  </nav>
 
   <!-- Hero Section -->
   <section class="hero">
     <div class="container">
-      <span class="hero-badge">🚀 Potencia tu negocio hoy</span>
-      <h1>Vende más con tu propio<br><span>Catálogo Digital en WhatsApp</span></h1>
-      <p>Crea tu tienda online en segundos. Tus clientes eligen, el pedido llega a tu WhatsApp listo para procesar. Sin
-        intermediarios, sin comisiones.</p>
-
-      <div class="hero-actions">
-        <a href="/src/pages/login/index.html?mode=register" class="btn btn-primary btn-large">Comenzar Gratis</a>
-        <a href="#beneficios" class="btn btn-outline btn-large">Saber más</a>
+      <div class="hero-badge">
+        <span>🚀 Potencia tu negocio hoy</span>
       </div>
 
-      <div class="hero-mockup">
-        <!-- Placeholder for a nice dashboard/catalog screenshot -->
-        <div
-          style="aspect-ratio: 16/9; background: #f3f4f6; display: flex; align-items: center; justify-content: center; color: #9ca3af;">
-          <i class="ri-macbook-line" style="font-size: 5rem;"></i>
-          <!-- En un caso real, aquí iría una imagen <img> -->
+      <h1 class="hero-title">
+        Vende más con tu propio<br />
+        <span class="text-primary">Catálogo Digital en WhatsApp</span>
+      </h1>
+
+      <p class="hero-desc">
+        Crea tu tienda online en segundos. Tus clientes eligen, el pedido llega a tu WhatsApp listo para procesar. Sin
+        intermediarios, sin comisiones.
+      </p>
+
+      <div class="hero-buttons">
+        <a class="btn-hero-primary" href="/src/pages/login/index.html?mode=register">Comenzar Gratis</a>
+        <a class="btn-hero-secondary" href="#features">Saber más</a>
+      </div>
+
+      <!-- Hero Preview -->
+      <div class="hero-preview">
+        <div class="hero-glow"></div>
+        <div class="hero-frame">
+          <div class="hero-canvas">
+            <!-- You can replace this image later with a real screenshot of the dashboard -->
+            <img alt="Dashboard preview"
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHtaxQV-9-rhkOe7ur599wWmC9hh8kbVr-5XNBB3j6O5L1Ix-MeVnH72J7HR6gNcSE2MskyMXTI_h6DaEUYKwabsw6zTonVxyHdkwzCAiqNzKw1Z1cOV9utQgJYgI4ePe4kSSqOGB4qVTK_y67Y3UswRhpHrBPbVnkZObr6K73jCD3Uw65SpYU9HmIRVtfGwHiAx9oKW18ezJhC6CzDDFa2gKgNJX4otjZK6Unu-Ka8wJR0evNCPuWHaV1V9Pu9w8zOR5-yB7hkxQ" />
+            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;">
+              <div class="play-button">
+                <span class="material-symbols-rounded" style="color: white; font-size: 2.5rem;">play_arrow</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Benefits Section -->
-  <section id="beneficios" class="features">
+  <!-- Features Section -->
+  <section class="features-section" id="features">
     <div class="container">
-      <div class="section-title">
-        <h2>Todo lo que necesitas para crecer</h2>
-        <p>Herramientas simples pero poderosas diseñadas para dueños de negocios.</p>
+      <div class="section-header">
+        <h2 class="section-title">Todo lo que necesitas para crecer</h2>
+        <p class="section-subtitle">Herramientas simples pero poderosas diseñadas para dueños de negocios.</p>
       </div>
 
       <div class="features-grid">
+        <!-- Feature 1 -->
         <div class="feature-card">
-          <div class="feature-icon"><i class="ri-whatsapp-line"></i></div>
-          <h3>Pedidos a WhatsApp</h3>
-          <p>Los clientes arman su pedido y te envían un mensaje pre-formateado con el total y detalles. Cero errores.
-          </p>
+          <div class="feature-icon-box">
+            <span class="material-symbols-rounded">chat</span>
+          </div>
+          <h3 class="feature-title">Pedidos a WhatsApp</h3>
+          <p class="feature-desc">Los clientes arman su pedido y te envían un mensaje pre-formateado con el total y
+            detalles. Cero errores.</p>
         </div>
 
+        <!-- Feature 2 -->
         <div class="feature-card">
-          <div class="feature-icon"><i class="ri-qr-code-line"></i></div>
-          <h3>Código QR Instantáneo</h3>
-          <p>Genera y descarga el QR de tu negocio para ponerlo en mesas, mostradores o redes sociales.</p>
+          <div class="feature-icon-box">
+            <span class="material-symbols-rounded">qr_code_2</span>
+          </div>
+          <h3 class="feature-title">Código QR Instantáneo</h3>
+          <p class="feature-desc">Genera y descarga el QR de tu negocio para ponerlo en mesas, mostradores o redes
+            sociales.</p>
         </div>
 
+        <!-- Feature 3 -->
         <div class="feature-card">
-          <div class="feature-icon"><i class="ri-palette-line"></i></div>
-          <h3>Personalizable</h3>
-          <p>Adapta los colores, logo e información de tu catálogo para que refleje la identidad de tu marca.</p>
+          <div class="feature-icon-box">
+            <span class="material-symbols-rounded">palette</span>
+          </div>
+          <h3 class="feature-title">Personalizable</h3>
+          <p class="feature-desc">Adapta los colores, logo e información de tu catálogo para que refleje la identidad de
+            tu marca.</p>
         </div>
 
+        <!-- Feature 4 -->
         <div class="feature-card">
-          <div class="feature-icon"><i class="ri-speed-up-line"></i></div>
-          <h3>Carga Ultra Rápida</h3>
-          <p>Tus clientes no esperan. Nuestro catálogo está optimizado para cargar al instante en cualquier móvil.</p>
+          <div class="feature-icon-box">
+            <span class="material-symbols-rounded">bolt</span>
+          </div>
+          <h3 class="feature-title">Carga Ultra Rápida</h3>
+          <p class="feature-desc">Tus clientes no esperan. Nuestro catálogo está optimizado para cargar al instante en
+            cualquier móvil.</p>
         </div>
 
+        <!-- Feature 5 -->
         <div class="feature-card">
-          <div class="feature-icon"><i class="ri-money-dollar-circle-line"></i></div>
-          <h3>Sin Comisiones</h3>
-          <p>No cobramos comisión por venta. Tus ganancias son 100% tuyas. Solo pagas una suscripción fija.</p>
+          <div class="feature-icon-box">
+            <span class="material-symbols-rounded">payments</span>
+          </div>
+          <h3 class="feature-title">Sin Comisiones</h3>
+          <p class="feature-desc">No cobramos comisión por venta. Tus ganancias son 100% tuyas. Solo pagas una
+            suscripción fija.</p>
         </div>
 
+        <!-- Feature 6 -->
         <div class="feature-card">
-          <div class="feature-icon"><i class="ri-customer-service-2-line"></i></div>
-          <h3>Soporte Dedicado</h3>
-          <p>¿Tienes dudas? Nuestro equipo de soporte está listo para ayudarte a configurar tu tienda.</p>
+          <div class="feature-icon-box">
+            <span class="material-symbols-rounded">support_agent</span>
+          </div>
+          <h3 class="feature-title">Soporte Dedicado</h3>
+          <p class="feature-desc">¿Tienes dudas? Nuestro equipo de soporte está listo para ayudarte a configurar tu
+            tienda.</p>
         </div>
       </div>
     </div>
   </section>
 
   <!-- Pricing Section -->
-  <section id="planes" class="pricing">
+  <section class="pricing-section" id="pricing">
     <div class="container">
-      <div class="section-title">
-        <h2>Planes simples y transparentes</h2>
-        <p>Elige el plan que mejor se adapte al tamaño de tu negocio.</p>
+      <div class="section-header">
+        <h2 class="section-title">Planes simples y transparentes</h2>
+        <p class="section-subtitle">Elige el plan que mejor se adapte al tamaño de tu negocio.</p>
       </div>
 
       <div class="pricing-grid">
         <!-- Plan Plus -->
         <div class="pricing-card">
-          <h3>Plan Plus</h3>
-          <p style="color: #64748b;">Para negocios que están empezando.</p>
-          <div class="price">$15 <span>/mes</span></div>
-
+          <div class="mb-8">
+            <h3 class="plan-name">Plan Plus</h3>
+            <p class="plan-desc">Para negocios que están empezando.</p>
+          </div>
+          <div class="mb-8">
+            <span class="plan-price">$15</span>
+            <span class="plan-period">/mes</span>
+          </div>
           <ul class="pricing-features">
-            <li><i class="ri-check-line"></i> Hasta 50 Productos</li>
-            <li><i class="ri-check-line"></i> Catálogo Digital</li>
-            <li><i class="ri-check-line"></i> Pedidos por WhatsApp</li>
-            <li><i class="ri-check-line"></i> Código QR</li>
-            <li><i class="ri-check-line"></i> Soporte Básico</li>
+            <li class="feature-item">
+              <span class="material-symbols-rounded text-primary">check_circle</span>
+              <span>Hasta 50 Productos</span>
+            </li>
+            <li class="feature-item">
+              <span class="material-symbols-rounded text-primary">check_circle</span>
+              <span>Catálogo Digital</span>
+            </li>
+            <li class="feature-item">
+              <span class="material-symbols-rounded text-primary">check_circle</span>
+              <span>Pedidos por WhatsApp</span>
+            </li>
+            <li class="feature-item">
+              <span class="material-symbols-rounded text-primary">check_circle</span>
+              <span>Código QR</span>
+            </li>
+            <li class="feature-item">
+              <span class="material-symbols-rounded text-primary">check_circle</span>
+              <span>Soporte Básico</span>
+            </li>
           </ul>
-
-          <a href="/src/pages/login/index.html?mode=register" class="btn btn-outline" style="width: 100%;">Elegir
-            Plus</a>
+          <a class="btn-pricing" href="/src/pages/login/index.html?mode=register">Elegir Plus</a>
         </div>
 
         <!-- Plan Pro -->
         <div class="pricing-card featured">
-          <div class="popular-badge">Más Popular</div>
-          <h3>Plan Pro</h3>
-          <p style="color: #64748b;">Para negocios en crecimiento.</p>
-          <div class="price">$29 <span>/mes</span></div>
-
+          <span class="popular-tag">Más Popular</span>
+          <div class="mb-8">
+            <h3 class="plan-name">Plan Pro</h3>
+            <p class="plan-desc">Para negocios en crecimiento.</p>
+          </div>
+          <div class="mb-8">
+            <span class="plan-price">$29</span>
+            <span class="plan-period">/mes</span>
+          </div>
           <ul class="pricing-features">
-            <li><i class="ri-check-double-line"></i> <strong>Productos Ilimitados</strong></li>
-            <li><i class="ri-check-double-line"></i> Personalización de Marca</li>
-            <li><i class="ri-check-double-line"></i> Análisis de Visitas</li>
-            <li><i class="ri-check-double-line"></i> Promociones y Combos</li>
-            <li><i class="ri-check-double-line"></i> Soporte Prioritario</li>
+            <li class="feature-item">
+              <span class="material-symbols-rounded text-primary">check_circle</span>
+              <strong>Productos Ilimitados</strong>
+            </li>
+            <li class="feature-item">
+              <span class="material-symbols-rounded text-primary">check_circle</span>
+              <span>Personalización de Marca</span>
+            </li>
+            <li class="feature-item">
+              <span class="material-symbols-rounded text-primary">check_circle</span>
+              <span>Análisis de Visitas</span>
+            </li>
+            <li class="feature-item">
+              <span class="material-symbols-rounded text-primary">check_circle</span>
+              <span>Promociones y Combos</span>
+            </li>
+            <li class="feature-item">
+              <span class="material-symbols-rounded text-primary">check_circle</span>
+              <span>Soporte Prioritario</span>
+            </li>
           </ul>
-
-          <a href="/src/pages/login/index.html?mode=register" class="btn btn-primary" style="width: 100%;">Elegir
-            Pro</a>
+          <a class="btn-pricing primary" href="/src/pages/login/index.html?mode=register">Elegir Pro</a>
         </div>
       </div>
     </div>
   </section>
 
   <!-- FAQ Section -->
-  <section id="faq" class="faq">
+  <section class="faq-section" id="faq">
     <div class="container">
-      <div class="section-title">
-        <h2>Preguntas Frecuentes</h2>
+      <div class="section-header">
+        <h2 class="section-title">Preguntas Frecuentes</h2>
       </div>
 
-      <div class="faq-container">
-        <div class="faq-item">
-          <div class="faq-question">
+      <div class="faq-wrapper">
+        <details class="faq-item" open>
+          <summary class="faq-summary">
             ¿Necesito tarjeta de crédito para empezar?
-            <i class="ri-arrow-down-s-line faq-icon"></i>
+            <span class="material-symbols-rounded faq-icon-rotate">expand_more</span>
+          </summary>
+          <div class="faq-content">
+            No, puedes empezar tu prueba gratuita hoy mismo sin necesidad de ingresar una tarjeta de crédito. Solo
+            regístrate y comienza a crear tu catálogo.
           </div>
-          <div class="faq-answer">
-            No. Puedes crear tu cuenta y explorar el dashboard gratuitamente. Solo necesitas suscribirte para activar tu
-            catálogo público.
-          </div>
-        </div>
+        </details>
 
-        <div class="faq-item">
-          <div class="faq-question">
+        <details class="faq-item">
+          <summary class="faq-summary">
             ¿Cobran comisiones por venta?
-            <i class="ri-arrow-down-s-line faq-icon"></i>
+            <span class="material-symbols-rounded faq-icon-rotate">expand_more</span>
+          </summary>
+          <div class="faq-content">
+            Absolutamente no. Creemos que tus ganancias deben ser tuyas. Solo pagas la suscripción mensual de tu plan
+            elegido.
           </div>
-          <div class="faq-answer">
-            Absolutamente no. A diferencia de otras plataformas, no tocamos tus ventas. El dinero lo gestionas tú
-            directamente con tu cliente vía WhatsApp.
-          </div>
-        </div>
+        </details>
 
-        <div class="faq-item">
-          <div class="faq-question">
+        <details class="faq-item">
+          <summary class="faq-summary">
             ¿Puedo usar mi propio dominio?
-            <i class="ri-arrow-down-s-line faq-icon"></i>
+            <span class="material-symbols-rounded faq-icon-rotate">expand_more</span>
+          </summary>
+          <div class="faq-content">
+            Sí, en el Plan Pro puedes vincular tu propio dominio personalizado para darle una imagen aún más profesional
+            a
+            tu negocio.
           </div>
-          <div class="faq-answer">
-            Por el momento te ofrecemos una URL amigable (ej. tucatalogo.com/mitienda), pero estamos trabajando en la
-            funcionalidad de dominio personalizado para el plan Pro.
-          </div>
-        </div>
+        </details>
       </div>
     </div>
   </section>
 
-  <!-- CTA Final -->
+  <!-- CTA Section -->
   <section class="cta-section">
     <div class="container">
-      <h2>¿Listo para digitalizar tu negocio?</h2>
-      <p>Únete a cientos de negocios que ya están vendiendo más de forma fácil y rápida.</p>
-      <a href="/src/pages/login/index.html?mode=register" class="btn btn-primary btn-large">Crear mi Catálogo Ahora</a>
+      <div class="cta-card">
+        <div class="cta-overlay"></div>
+        <div class="cta-content">
+          <h2 class="cta-title">Únete a cientos de negocios que ya están vendiendo más de forma fácil y rápida.</h2>
+          <a class="btn-cta-large" href="/src/pages/login/index.html?mode=register">Crear mi Catálogo Ahora</a>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -223,36 +305,37 @@
   <footer class="footer">
     <div class="container">
       <div class="footer-grid">
-        <div class="footer-col">
-          <a href="#" class="logo" style="margin-bottom: 1rem;">
-            <i class="ri-store-2-fill"></i>
-            <span>SaaS Catálogo</span>
-          </a>
-          <p style="color: var(--landing-text-light);">
-            La plataforma más sencilla para gestionar tu catálogo digital y recibir pedidos sin intermediarios.
-          </p>
+        <div class="footer-col-brand">
+          <div class="logo-container" style="margin-bottom: 1.5rem;">
+            <div class="logo-icon-bg">
+              <span class="material-symbols-rounded" style="color: white;">storefront</span>
+            </div>
+            <span class="logo-text">SaaS Catálogo</span>
+          </div>
+          <p class="footer-desc">La plataforma más sencilla para gestionar tu catálogo digital y recibir pedidos sin
+            intermediarios.</p>
         </div>
 
-        <div class="footer-col">
-          <h4>Plataforma</h4>
+        <div>
+          <h4 class="footer-heading">Plataforma</h4>
           <ul class="footer-links">
-            <li><a href="#beneficios">Beneficios</a></li>
-            <li><a href="#planes">Precios</a></li>
-            <li><a href="/src/pages/login/index.html">Iniciar Sesión</a></li>
-            <li><a href="/src/pages/login/index.html?mode=register">Registrarse</a></li>
+            <li><a class="footer-link" href="#features">Beneficios</a></li>
+            <li><a class="footer-link" href="#pricing">Precios</a></li>
+            <li><a class="footer-link" href="/src/pages/login/index.html">Iniciar Sesión</a></li>
+            <li><a class="footer-link" href="/src/pages/login/index.html?mode=register">Registrarse</a></li>
           </ul>
         </div>
 
-        <div class="footer-col">
-          <h4>Legal</h4>
+        <div>
+          <h4 class="footer-heading">Legal</h4>
           <ul class="footer-links">
-            <li><a href="#">Términos y Condiciones</a></li>
-            <li><a href="#">Política de Privacidad</a></li>
+            <li><a class="footer-link" href="#">Términos y Condiciones</a></li>
+            <li><a class="footer-link" href="#">Política de Privacidad</a></li>
           </ul>
         </div>
       </div>
 
-      <div class="copyright">
+      <div class="copy">
         © 2024 SaaS Catálogo. Todos los derechos reservados.
       </div>
     </div>

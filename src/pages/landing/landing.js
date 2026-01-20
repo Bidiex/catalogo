@@ -1,9 +1,6 @@
 // Landing Page Logic
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Mobile Menu
-    // (We can add a simple mobile menu toggle if we add a hamburger icon in HTML)
-
     // Smooth Scroll
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
@@ -17,34 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // FAQ Accordion
-    const faqItems = document.querySelectorAll('.faq-item');
-    faqItems.forEach(item => {
-        const question = item.querySelector('.faq-question');
-        question.addEventListener('click', () => {
-            const isActive = item.classList.contains('active');
-
-            // Close all others
-            faqItems.forEach(other => other.classList.remove('active'));
-
-            // Toggle current
-            if (!isActive) {
-                item.classList.add('active');
-            }
-        });
-    });
-
-    // Header Scroll Effect
-    const header = document.querySelector('.header');
-    window.addEventListener('scroll', () => {
-        if (window.scrollY > 50) {
-            header.classList.add('scrolled');
-        } else {
-            header.classList.remove('scrolled');
-        }
-    });
-
-    // Intersection Observer for Animations (Optional but nice)
+    // Animation on scroll
     const observerOptions = {
         threshold: 0.1
     };
@@ -52,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
-                entry.target.classList.add('animate-in');
+                entry.target.classList.add('appear');
                 observer.unobserve(entry.target);
             }
         });
@@ -65,13 +35,13 @@ document.addEventListener('DOMContentLoaded', () => {
         observer.observe(el);
     });
 
-    // Custom animation class logic
-    const animateInClass = document.createElement('style');
-    animateInClass.innerHTML = `
-    .animate-in {
-      opacity: 1 !important;
-      transform: translateY(0) !important;
-    }
+    // Create animation styles
+    const style = document.createElement('style');
+    style.innerHTML = `
+      .appear {
+          opacity: 1 !important;
+          transform: translateY(0) !important;
+      }
   `;
-    document.head.appendChild(animateInClass);
+    document.head.appendChild(style);
 });
