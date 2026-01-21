@@ -15,6 +15,7 @@ import { promotionsService } from '../../services/promotions.js'
 import { promotionOptionsService } from '../../services/promotionOptions.js'
 import { imageService } from '../../services/images.js'
 import { supportService } from '../../services/support.js'
+import { ordersService } from '../../services/orders.js'
 
 // ============================================
 // ESTADO GLOBAL
@@ -33,6 +34,10 @@ let promotions = []
 let editingPromotion = null
 let currentPromotionImage = null
 let supportTickets = [] // Global state for tickets
+// Orders State
+let orders = []
+let currentOrderFilter = 'pending'
+let currentOrdersView = 'table' // 'table' or 'mosaic'
 
 // Wizard onboarding logo
 let wizardLogoUrl = null
@@ -168,6 +173,11 @@ async function init() {
       return
     }
 
+    // Clean URL hash to prevent "session stale" warnings on reload
+    if (window.location.hash && window.location.hash.includes('access_token')) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+
     currentUser = await authService.getCurrentUser()
     userEmailSpan.textContent = currentUser.email
 
@@ -179,6 +189,9 @@ async function init() {
 
     // Inicializar soporte
     initSupport()
+
+    // Inicializar pedidos
+    initOrders()
 
     // Cargar negocio
     await loadBusiness()
@@ -3909,3 +3922,354 @@ if (deleteDiscountBtn) {
     }, 'Eliminando...')
   })
 }
+
+// ============================================
+// ORDERS MANAGEMENT
+// ============================================
+
+function initOrders() {
+  const searchInput = document.getElementById('searchOrdersInput')
+  const statusFilter = document.getElementById('filterOrdersStatus')
+  const clearSearchBtn = document.getElementById('clearOrdersSearch')
+  const viewToggles = document.querySelectorAll('.view-toggle-btn')
+  const orderDetailsModal = document.getElementById('orderDetailsModal')
+  const closeDetailsBtn = document.getElementById('closeOrderDetailsBtn')
+  const closeDetailsFooter = document.getElementById('closeOrderDetailsFooterBtn')
+  const verifyBtn = document.getElementById('verifyOrderBtn')
+
+  // Search
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      const term = e.target.value.trim().toLowerCase()
+      if (term) clearSearchBtn.style.display = 'block'
+      else clearSearchBtn.style.display = 'none'
+      renderOrders()
+    })
+  }
+
+  if (clearSearchBtn) {
+    clearSearchBtn.addEventListener('click', () => {
+      searchInput.value = ''
+      renderOrders()
+      clearSearchBtn.style.display = 'none'
+    })
+  }
+
+  // Filter Status
+  if (statusFilter) {
+    statusFilter.addEventListener('change', (e) => {
+      renderOrders()
+    })
+  }
+
+  // View Toggles
+  viewToggles.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const view = e.currentTarget.dataset.view
+      currentOrdersView = view
+
+      // Update active state
+      viewToggles.forEach(b => b.classList.remove('active'))
+      e.currentTarget.classList.add('active')
+      // Update style based on active class (CSS handles this usually, but enforcing JS style if needed)
+      // Assuming CSS handles .active class
+
+      renderOrders()
+    })
+  })
+
+  // Modal Closers
+  const closeFunc = () => {
+    if (orderDetailsModal) orderDetailsModal.style.display = 'none'
+  }
+  if (closeDetailsBtn) closeDetailsBtn.addEventListener('click', closeFunc)
+  if (closeDetailsFooter) closeDetailsFooter.addEventListener('click', closeFunc)
+
+  // Verify Action
+  if (verifyBtn) {
+    verifyBtn.addEventListener('click', async () => {
+      const orderId = verifyBtn.dataset.orderId
+      if (orderId) {
+        await verifyOrder(orderId)
+        closeFunc()
+      }
+    })
+  }
+}
+
+async function loadOrders() {
+  if (!currentBusiness) return
+
+  const listContainer = document.getElementById('ordersListContainer')
+  // Show loading state
+
+  try {
+    const { data, count } = await ordersService.getByBusiness(currentBusiness.id, { limit: 100 })
+    orders = data || []
+    renderOrders()
+  } catch (error) {
+    console.error('Error loading orders:', error)
+    notify.error('Error al cargar pedidos')
+  }
+}
+
+function renderOrders() {
+  const container = document.getElementById('ordersListContainer')
+  const tableBody = document.getElementById('ordersTableBody')
+  const mosaicGrid = document.getElementById('ordersMosaicGrid')
+  const noOrdersMsg = document.getElementById('noOrdersMessage')
+  const searchInput = document.getElementById('searchOrdersInput')
+  const statusFilter = document.getElementById('filterOrdersStatus')
+
+  if (!container) return
+
+  const searchTerm = searchInput?.value.trim().toLowerCase() || ''
+  const statusTerm = statusFilter?.value || 'all'
+
+  // Filter
+  const filtered = orders.filter(order => {
+    const matchesSearch =
+      (order.customer_name?.toLowerCase().includes(searchTerm)) ||
+      (order.customer_phone?.includes(searchTerm)) ||
+      (order.id.slice(0, 8).includes(searchTerm))
+
+    const matchesStatus = statusTerm === 'all' || order.status === statusTerm
+
+    return matchesSearch && matchesStatus
+  })
+
+  if (filtered.length === 0) {
+    container.style.display = 'none'
+    if (noOrdersMsg) noOrdersMsg.style.display = 'block'
+    return
+  }
+
+  container.style.display = 'block'
+  if (noOrdersMsg) noOrdersMsg.style.display = 'none'
+
+  // Sort by date desc
+  filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+
+  if (currentOrdersView === 'table') {
+    // Table View
+    const tableResp = document.querySelector('.table-responsive')
+    if (tableResp) tableResp.style.display = 'block'
+    if (mosaicGrid) mosaicGrid.style.display = 'none'
+
+    if (tableBody) {
+      tableBody.innerHTML = filtered.map(order => `
+        <tr>
+          <td>
+            <div style="font-weight: 600; font-family: monospace;">#${order.id.slice(0, 8)}</div>
+            <div style="font-size: 0.8rem; color: #6b7280;">${new Date(order.created_at).toLocaleDateString()} ${new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+          </td>
+          <td>
+            <div style="font-weight: 500;">${order.customer_name}</div>
+            <div style="font-size: 0.8rem; color: #6b7280;">${order.customer_phone}</div>
+          </td>
+          <td>
+            <div style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${order.customer_address}">
+              ${order.customer_address}
+            </div>
+             <div style="font-size: 0.8rem; color: #6b7280;">${order.customer_neighborhood || ''}</div>
+          </td>
+          <td style="font-weight: 600;">$${parseFloat(order.total_amount).toLocaleString()}</td>
+          <td>${getOrderStatusBadge(order.status)}</td>
+          <td style="text-align: right;">
+            <button class="btn-icon" onclick="window.viewOrderDetails('${order.id}')" title="Ver detalles">
+              <i class="ri-eye-line"></i>
+            </button>
+            ${order.status === 'pending' ?
+          `<button class="btn-icon success" onclick="window.verifyOrder('${order.id}')" title="Verificar">
+                <i class="ri-check-line"></i>
+              </button>` : ''
+        }
+            <button class="btn-icon danger" onclick="window.deleteOrder('${order.id}')" title="Eliminar">
+              <i class="ri-delete-bin-line"></i>
+            </button>
+          </td>
+        </tr>
+      `).join('')
+    }
+
+  } else {
+    // Mosaic View
+    const tableResp = document.querySelector('.table-responsive')
+    if (tableResp) tableResp.style.display = 'none'
+    if (mosaicGrid) {
+      mosaicGrid.style.display = 'grid'
+      mosaicGrid.innerHTML = filtered.map(order => `
+        <div class="card" style="padding: 1rem; border: 1px solid #e5e7eb; box-shadow: none;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+             <span style="font-weight: 600; font-family: monospace;">#${order.id.slice(0, 8)}</span>
+             ${getOrderStatusBadge(order.status)}
+          </div>
+          <h4 style="margin: 0 0 0.25rem 0;">${order.customer_name}</h4>
+          <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 0.5rem;"><i class="ri-phone-line"></i> ${order.customer_phone}</p>
+          <div style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; color: var(--color-primary);">$${parseFloat(order.total_amount).toLocaleString()}</div>
+          
+          <div style="display: flex; gap: 0.5rem; border-top: 1px solid #f3f4f6; padding-top: 0.75rem;">
+            <button class="btn-secondary-small" style="flex: 1;" onclick="window.viewOrderDetails('${order.id}')">Ver Detalle</button>
+            ${order.status === 'pending' ?
+          `<button class="btn-primary-small" style="flex: 1;" onclick="window.verifyOrder('${order.id}')">Verificar</button>` : ''
+        }
+          </div>
+        </div>
+      `).join('')
+    }
+  }
+}
+
+function getOrderStatusBadge(status) {
+  const styles = {
+    pending: { bg: '#fff7ed', color: '#c2410c', text: 'Pendiente', icon: 'ri-time-line' },
+    verified: { bg: '#f0fdf4', color: '#15803d', text: 'Verificado', icon: 'ri-check-double-line' },
+    completed: { bg: '#eff6ff', color: '#1d4ed8', text: 'Completado', icon: 'ri-flag-line' },
+    cancelled: { bg: '#fef2f2', color: '#b91c1c', text: 'Cancelado', icon: 'ri-close-circle-line' }
+  }
+  const s = styles[status] || styles.pending
+  return `<span style="background: ${s.bg}; color: ${s.color}; padding: 2px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+    <i class="${s.icon}"></i> ${s.text}
+  </span>`
+}
+
+// Global actions for onclick
+window.viewOrderDetails = async (orderId) => {
+  try {
+    const modal = document.getElementById('orderDetailsModal')
+    const content = document.getElementById('orderDetailsContent')
+    const verifyBtn = document.getElementById('verifyOrderBtn')
+
+    if (!modal || !content) return
+
+    content.innerHTML = '<div style="text-align:center; padding: 2rem;"><div class="loading-spinner-ring" style="width: 40px; height: 40px; margin: 0 auto; border-width: 4px;"></div></div>'
+    modal.style.display = 'flex'
+
+    const orderData = await ordersService.getOrderDetails(orderId)
+
+    // Render Modal Content
+    const itemsHtml = orderData.items.map(item => `
+      <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #eee; padding: 0.5rem 0;">
+        <div>
+          <div style="font-weight: 500;">${item.quantity}x ${item.product_name}</div>
+          ${item.options?.size ? `<div style="font-size: 0.8rem; color: #6b7280;">Tamaño: ${item.options.size.name}</div>` : ''}
+          ${item.options?.quickComment ? `<div style="font-size: 0.8rem; color: #6b7280;">Nota: ${item.options.quickComment.name}</div>` : ''}
+          ${item.options?.sides?.length ? `<div style="font-size: 0.8rem; color: #6b7280;">+ ${item.options.sides.map(s => s.name).join(', ')}</div>` : ''}
+        </div>
+        <div style="font-weight: 600;">$${parseFloat(item.total_price).toLocaleString()}</div>
+      </div>
+    `).join('')
+
+    content.innerHTML = `
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+         <div>
+            <label style="font-size: 0.8rem; color: #6b7280; display: block;">Cliente</label>
+            <div style="font-weight: 600;">${orderData.customer_name}</div>
+            <div>${orderData.customer_phone}</div>
+         </div>
+         <div>
+            <label style="font-size: 0.8rem; color: #6b7280; display: block;">Estado</label>
+            <div>${getOrderStatusBadge(orderData.status)}</div>
+         </div>
+         <div style="grid-column: 1 / -1;">
+            <label style="font-size: 0.8rem; color: #6b7280; display: block;">Dirección de Entrega</label>
+            <div>${orderData.customer_address}</div>
+            <div style="font-size: 0.9rem; color: #6b7280;">${orderData.customer_neighborhood || ''}</div>
+         </div>
+         ${orderData.order_notes ? `
+         <div style="grid-column: 1 / -1; background: #fffbeb; padding: 0.75rem; border-radius: 6px;">
+            <label style="font-size: 0.8rem; color: #92400e; display: block; font-weight: 600;">Observaciones:</label>
+            <div style="color: #92400e;">${orderData.order_notes}</div>
+         </div>` : ''}
+      </div>
+
+      <h4 style="border-bottom: 2px solid #f3f4f6; padding-bottom: 0.5rem; margin-bottom: 1rem;">Productos</h4>
+      <div style="margin-bottom: 1.5rem;">
+        ${itemsHtml}
+      </div>
+      
+      <div style="background: #f8fafc; padding: 1rem; border-radius: 8px;">
+         <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+            <span>Subtotal</span>
+            <span>$${(parseFloat(orderData.total_amount) - parseFloat(orderData.delivery_price)).toLocaleString()}</span>
+         </div>
+         <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+            <span>Domicilio</span>
+            <span>$${parseFloat(orderData.delivery_price).toLocaleString()}</span>
+         </div>
+         <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 1.1rem; border-top: 1px dashed #cbd5e1; padding-top: 0.5rem;">
+            <span>Total</span>
+            <span style="color: var(--color-primary);">$${parseFloat(orderData.total_amount).toLocaleString()}</span>
+         </div>
+         <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #6b7280; text-align: right;">
+            Método de Pago: <strong>${orderData.payment_method}</strong>
+         </div>
+      </div>
+    `
+
+    // Setup action actions
+    if (orderData.status === 'pending') {
+      if (verifyBtn) {
+        verifyBtn.style.display = 'flex'
+        verifyBtn.dataset.orderId = orderData.id // Store ID on button
+      }
+    } else {
+      if (verifyBtn) verifyBtn.style.display = 'none'
+    }
+
+  } catch (error) {
+    console.error('Error details:', error)
+    notify.error('Error al cargar detalles')
+    if (modal) modal.style.display = 'none'
+  }
+}
+
+window.verifyOrder = async (orderId) => {
+  const verifyBtn = document.getElementById('verifyOrderBtn')
+  try {
+    if (verifyBtn) buttonLoader.start(verifyBtn, 'Verificando...')
+
+    await ordersService.updateStatus(orderId, 'verified')
+    notify.success('Pedido marcado como verificado')
+
+    // Update local state
+    const order = orders.find(o => o.id === orderId)
+    if (order) order.status = 'verified'
+    renderOrders()
+
+    // Manual hide button logic if modal open:
+    if (verifyBtn) verifyBtn.style.display = 'none'
+
+    // Refresh modal content to show new badge
+    const modal = document.getElementById('orderDetailsModal')
+    if (modal && modal.style.display === 'flex') {
+      window.viewOrderDetails(orderId) // Reload details
+    }
+
+  } catch (error) {
+    console.error(error)
+    notify.error('Error al actualizar estado')
+  } finally {
+    if (verifyBtn) buttonLoader.stop(verifyBtn)
+  }
+}
+
+window.deleteOrder = async (orderId) => {
+  if (!window.confirm('¿Estás seguro de eliminar este pedido?')) return
+  try {
+    await ordersService.deleteOrder(orderId)
+    notify.success('Pedido eliminado')
+    orders = orders.filter(o => o.id !== orderId)
+    renderOrders()
+  } catch (error) {
+    console.error(error)
+    notify.error('Error al eliminar pedido')
+  }
+}
+
+// Hook into sidebar nav to load orders
+document.querySelectorAll('.nav-item[data-section="orders"]').forEach(link => {
+  link.addEventListener('click', () => {
+    loadOrders()
+  })
+})

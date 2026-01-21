@@ -6,6 +6,7 @@ import { promotionOptionsService } from '../../services/promotionOptions.js'
 import { productSizesService } from '../../services/productSizes.js'
 import { favorites } from '../../utils/favorites.js'
 import { colorUtils } from '../../utils/colorUtils.js'
+import { ordersService } from '../../services/orders.js'
 import gsap from 'gsap'
 
 
@@ -1537,6 +1538,69 @@ checkoutForm.addEventListener('submit', async (e) => {
   }
 
   saveClientData(clientData) // Guardar para próximos pedidos
+
+  // --- GUARDAR PEDIDO EN AL BASE DE DATOS ---
+  try {
+    if (currentBusiness) {
+      const cartItems = cart.get(currentBusiness.id)
+
+      if (cartItems.length > 0) {
+        // Calcular totales
+        const deliveryPrice = parseFloat(currentBusiness.delivery_price) || 0
+        const productsTotal = cartItems.reduce((sum, item) => {
+          let price = parseFloat(item.price)
+          if (item.options?.sides) {
+            price += item.options.sides.reduce((s, side) => s + parseFloat(side.price), 0)
+          }
+          return sum + (price * item.quantity)
+        }, 0)
+        const totalAmount = productsTotal + deliveryPrice
+
+        // Preparar datos de la orden
+        const orderData = {
+          business_id: currentBusiness.id,
+          customer_name: clientData.nombre,
+          customer_phone: clientData.telefono,
+          customer_address: clientData.direccion,
+          customer_neighborhood: clientData.barrio,
+          order_notes: clientData.observaciones,
+          delivery_price: deliveryPrice,
+          total_amount: totalAmount,
+          payment_method: clientData.metodo_pago,
+          channel: 'whatsapp'
+        }
+
+        // Preparar items
+        const orderItems = cartItems.map(item => {
+          let unitPrice = parseFloat(item.price)
+          // Incluir precio de acompañantes en el precio unitario del item
+          if (item.options?.sides) {
+            unitPrice += item.options.sides.reduce((s, side) => s + parseFloat(side.price), 0)
+          }
+
+          return {
+            product_id: item.id || null, // Puede ser null si es una promo genérica sin ID de producto real (aunque suelen tener)
+            product_name: item.options?.size ? `${item.name} - ${item.options.size.name}` : item.name,
+            quantity: item.quantity,
+            unit_price: unitPrice,
+            total_price: unitPrice * item.quantity,
+            options: item.options,
+            is_promotion: item.is_promotion || false
+          }
+        })
+
+        // Crear orden en BD
+        notify.info('Registrando pedido...', 1000)
+        await ordersService.createOrder(orderData, orderItems)
+      }
+    }
+  } catch (error) {
+    console.error('Error saving order to DB:', error)
+    // No bloqueamos el flujo de WhatsApp si falla la base de datos, 
+    // pero notificamos discretamente o solo logueamos.
+  }
+  // ------------------------------------------
+
   await sendWhatsAppOrder(clientData)
 })
 
@@ -1648,18 +1712,30 @@ Método de pago: {metodo_pago}
     const encodedMessage = encodeURIComponent(message)
     const whatsappUrl = `https://wa.me/${currentBusiness.whatsapp_number}?text=${encodedMessage}`
 
-    // Cerrar modal de checkout
+    // Cerrar modal de checkout inmediatamente
     closeCheckoutModal()
-
     // Cerrar panel del carrito
     cartPanel.style.display = 'none'
 
     // Opcional: Feedback visual de redirección
-    showRedirectModal(whatsappUrl)
+    const redirectModal = showRedirectModal()
 
-    // Opcional: Limpiar carrito después de enviar
-    // cart.clear()
-    // updateCartUI()
+    // Redirigir casi inmediatamente para evitar bloqueo de popups, 
+    // pero dando un pequeño momento para que el usuario vea que algo pasa.
+    // Usamos location.href que es más seguro para móviles/apps.
+    setTimeout(() => {
+      // Limpiar carrito antes de irnos si se desea, o dejarlo.
+      // Si limpiamos aquí, cuando vuelvan estará vacío.
+      if (currentBusiness) cart.clear(currentBusiness.id)
+      updateCartUI()
+
+      window.location.href = whatsappUrl
+
+      // Remover modal despues de redirigir (aunque la página cambiará)
+      setTimeout(() => {
+        if (redirectModal) redirectModal.remove()
+      }, 1000)
+    }, 1500) // 1.5s delay max
 
   } catch (error) {
     console.error('Error sending WhatsApp order:', error)
@@ -1669,10 +1745,11 @@ Método de pago: {metodo_pago}
 
 // Validación de teléfono
 const phoneInput = document.getElementById('clientPhone')
-phoneInput.addEventListener('input', (e) => {
+phoneInput?.addEventListener('input', (e) => {
   // Permitir solo números
   e.target.value = e.target.value.replace(/[^0-9]/g, '')
 })
+
 
 // Guardar datos del cliente para próximos pedidos
 function saveClientData(clientData) {
@@ -1702,6 +1779,25 @@ function loadSavedClientData() {
   }
 }
 
+// ============================================
+// MODAL DE REDIRECCIÓN (Simplificado)
+// ============================================
+function showRedirectModal() {
+  const modal = document.createElement('div')
+  modal.className = 'redirect-modal'
+  modal.innerHTML = `
+    <div class="redirect-modal-content">
+      <div class="redirect-icon">
+        <i class="ri-whatsapp-line"></i>
+      </div>
+      <h2>Enviando a WhatsApp...</h2>
+      <p>Por favor envía el mensaje pre-cargado para confirmar tu pedido.</p>
+      <div class="redirect-spinner"></div>
+    </div>
+  `
+  document.body.appendChild(modal)
+  return modal
+}
 // ============================================
 // BUSINESS HOURS CHECKING
 // ============================================
@@ -1864,36 +1960,7 @@ function showClosedModal() {
   overlay.addEventListener('click', () => modal.remove())
 }
 
-// ============================================
-// REDIRECT MODAL
-// ============================================
-function showRedirectModal(url) {
-  const modal = document.createElement('div')
-  modal.className = 'redirect-modal'
-  modal.innerHTML = `
-    <div class="redirect-modal-content">
-      <div class="redirect-icon">
-        <i class="ri-whatsapp-line"></i>
-      </div>
-      <h2>Enviando pedido a WhatsApp</h2>
-      <p>Serás redirigido en unos segundos...</p>
-      <div class="redirect-spinner"></div>
-    </div>
-  `
-  document.body.appendChild(modal)
 
-  // Redirigir después de 3 segundos
-  setTimeout(() => {
-    window.open(url, '_blank')
-    // Remover modal y mostrar éxito
-    setTimeout(() => {
-      modal.remove()
-      notify.success('¡Pedido enviado con éxito!')
-      if (currentBusiness) cart.clear(currentBusiness.id)
-      updateCartUI()
-    }, 1000)
-  }, 3000)
-}
 
 // ============================================
 // HEADER SCROLL COMPRESSION (GSAP)
