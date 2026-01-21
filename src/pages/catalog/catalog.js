@@ -1602,8 +1602,10 @@ checkoutForm.addEventListener('submit', async (e) => {
     }
   } catch (error) {
     console.error('Error saving order to DB:', error)
-    // No bloqueamos el flujo de WhatsApp si falla la base de datos, 
-    // pero notificamos discretamente o solo logueamos.
+    // Mostrar error VISIBLE para poder depurar en móvil
+    notify.error(`Error al registrar pedido: ${error.message || error.details || 'Error desconocido'}`)
+    // OPCIONAL: Detener el flujo si queremos que NO vaya a WhatsApp si falla la BD
+    // return 
   }
   // ------------------------------------------
 
