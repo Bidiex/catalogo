@@ -493,22 +493,24 @@ body {
 }
 
 .feature-icon-box {
-    width: 3rem;
-    height: 3rem;
-    background-color: rgba(76, 237, 23, 0.1);
-    color: #166534;
-    /* Darker green for icon */
-    border-radius: 0.75rem;
+    width: 5rem;
+    height: 5rem;
     display: flex;
     align-items: center;
     justify-content: center;
     margin-bottom: 1rem;
-    transition: all 0.2s;
+    transition: transform 0.2s;
+}
+
+.feature-icon-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
 }
 
 .feature-card:hover .feature-icon-box {
-    background-color: var(--primary);
-    color: #000;
+    transform: scale(1.1);
 }
 
 .feature-title {
