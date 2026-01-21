@@ -10,21 +10,23 @@ export const ordersService = {
      */
     async createOrder(orderData, items) {
         try {
+            // Generate ID client-side to avoid RLS Select restriction on "anon" users
+            const orderId = crypto.randomUUID()
+
             // 1. Create the Order
-            const { data: order, error: orderError } = await supabase
+            const { error: orderError } = await supabase
                 .from('orders')
-                .insert([orderData])
-                .select()
-                .single()
+                .insert([{ ...orderData, id: orderId }])
 
             if (orderError) throw orderError
 
-            if (!order) throw new Error('Failed to create order record')
+            // Mock the order object since we can't select it
+            const order = { ...orderData, id: orderId }
 
             // 2. Prepare Items with the new Order ID
             const orderItems = items.map(item => ({
                 ...item,
-                order_id: order.id
+                order_id: orderId
             }))
 
             // 3. Insert Items
@@ -33,9 +35,8 @@ export const ordersService = {
                 .insert(orderItems)
 
             if (itemsError) {
-                // Rollback: try to delete the order if items failed (Manual Transaction)
-                console.error('Error creating items, rolling back order...', itemsError)
-                await supabase.from('orders').delete().eq('id', order.id)
+                console.error('Error creating items:', itemsError)
+                // Note: Anonymous users cannot delete/rollback due to RLS, so we just log and throw
                 throw itemsError
             }
 
