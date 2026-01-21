@@ -1578,13 +1578,19 @@ checkoutForm.addEventListener('submit', async (e) => {
             unitPrice += item.options.sides.reduce((s, side) => s + parseFloat(side.price), 0)
           }
 
+          // Build options object properly
+          const options = { ...(item.options || {}) }
+          if (item.is_promotion) {
+            options.promotion_id = item.id
+          }
+
           return {
-            product_id: item.id || null, // Puede ser null si es una promo genérica sin ID de producto real (aunque suelen tener)
+            product_id: item.is_promotion ? null : (item.id || null),
             product_name: item.options?.size ? `${item.name} - ${item.options.size.name}` : item.name,
             quantity: item.quantity,
             unit_price: unitPrice,
             total_price: unitPrice * item.quantity,
-            options: item.options,
+            options: options,
             is_promotion: item.is_promotion || false
           }
         })

@@ -63,6 +63,7 @@ export const cart = {
         name: product.name,
         price: product.price,
         image_url: product.image_url,
+        is_promotion: product.is_promotion || false,
         quantity: quantity,
         options: options
       })

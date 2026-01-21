@@ -3995,6 +3995,88 @@ function initOrders() {
       }
     })
   }
+
+  // Initial Badge Count
+  updateOrdersBadgeCount()
+
+  // Realtime Subscription
+  initRealtimeOrders()
+}
+
+// Global Order Badge State
+async function updateOrdersBadgeCount() {
+  if (!currentBusiness) return
+  try {
+    const { count, error } = await supabase
+      .from('orders')
+      .select('id', { count: 'exact', head: true })
+      .eq('business_id', currentBusiness.id)
+      .eq('status', 'pending')
+
+    if (error) throw error
+
+    // Find Sidebar Item
+    const orderLink = document.querySelector('.nav-item[data-section="orders"]')
+    if (orderLink) {
+      // Check if badge exists
+      let badge = orderLink.querySelector('.badge-count')
+      // If it doesn't exist, create it
+      if (!badge) {
+        badge = document.createElement('span')
+        badge.className = 'badge-count'
+        // Styling matches a notification badge
+        badge.style.cssText = 'background: #ef4444; color: white; padding: 2px 6px; border-radius: 99px; font-size: 0.75rem; margin-left: auto; font-weight: 600; min-width: 18px; text-align: center;'
+        orderLink.appendChild(badge)
+      }
+
+      if (count && count > 0) {
+        badge.style.display = 'inline-block'
+        badge.textContent = count > 99 ? '99+' : count
+      } else {
+        badge.style.display = 'none'
+      }
+    }
+  } catch (error) {
+    console.error('Error updating orders badge:', error)
+  }
+}
+
+function initRealtimeOrders() {
+  if (!currentBusiness) return
+
+  // Remove existing channel if any (optional cleanup, though Supabase handles it mostly)
+  supabase.removeAllChannels()
+
+  const channel = supabase.channel('orders-realtime')
+    .on(
+      'postgres_changes',
+      {
+        event: '*', // Listen to INSERT and UPDATE
+        schema: 'public',
+        table: 'orders',
+        filter: `business_id=eq.${currentBusiness.id}`
+      },
+      (payload) => {
+        console.log('Realtime payload:', payload) // Debug
+
+        // Handle INSERT (New Order)
+        if (payload.eventType === 'INSERT') {
+          notify.info('🔔 Nuevo pedido recibido')
+        }
+
+        // Always update badge on any change (Insert or Update status)
+        updateOrdersBadgeCount()
+
+        // If currently on orders section, refresh list
+        const ordersSection = document.getElementById('section-orders')
+        if (ordersSection && ordersSection.style.display !== 'none') {
+          loadOrders()
+        }
+      }
+    )
+    .subscribe((status) => {
+      console.log('Realtime status:', status)
+    })
 }
 
 async function loadOrders() {
@@ -4007,6 +4089,8 @@ async function loadOrders() {
     const { data, count } = await ordersService.getByBusiness(currentBusiness.id, { limit: 100 })
     orders = data || []
     renderOrders()
+    // Update badge on manual load
+    updateOrdersBadgeCount()
   } catch (error) {
     console.error('Error loading orders:', error)
     notify.error('Error al cargar pedidos')
@@ -4245,6 +4329,10 @@ window.verifyOrder = async (orderId) => {
     if (modal && modal.style.display === 'flex') {
       window.viewOrderDetails(orderId) // Reload details
     }
+
+    // Refresh Badge Count Immediately
+    updateOrdersBadgeCount()
+    console.log('Order verified and badge updated')
 
   } catch (error) {
     console.error(error)

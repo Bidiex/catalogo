@@ -100,3 +100,8 @@ USING (
 CREATE INDEX IF NOT EXISTS idx_orders_business_id ON orders(business_id);
 CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
+
+-- 5. Enable Realtime
+-- IMPORTANT: You must run this to enable realtime listener for new orders
+-- Run this in Supabase SQL Editor:
+-- alter publication supabase_realtime add table orders;
