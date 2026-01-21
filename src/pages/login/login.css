@@ -130,6 +130,7 @@
 
 /* Botón de Google */
 .btn-google {
+  width: 100%;
   background: white;
   color: #3c4043;
   padding: 0.75rem;
