@@ -2181,7 +2181,7 @@ async function handleSizeFormSubmit(e) {
  * Delete a product size
  */
 async function deleteProductSize(sizeId) {
-  const result = await confirm({
+  const result = await confirm.show({
     title: '¿Eliminar tamaño?',
     message: 'Esta acción no se puede deshacer.',
     confirmText: 'Eliminar',
@@ -2729,14 +2729,6 @@ async function deletePromotion(id) {
 // Since we can't easily inject inside the function without replacing it,
 // we will assume switchSection calls are event driven. 
 // We just need to make sure when 'promotions' section is active, we load data.
-
-// Instead of modifying switchSection, we can observe the change or just hook into the click event 
-// found in initSidebarNavigation.
-
-// Since we can't modify initSidebarNavigation easily without replacing huge chunk,
-// Let's rely on the fact that existing logic handles `switchSection(section)`.
-// We just need to ensure `loadPromotions` is called when that section is shown.
-// We can modify `updatePageTitle` or similar hook if available, OR just add a dedicated listener.
 
 // Better approach: redefine switchSection? No, too risky.
 // Let's modify the navItem click listener? No.
@@ -4166,9 +4158,20 @@ function renderOrders() {
             ${order.status === 'pending' ?
           `<button class="btn-icon success" onclick="window.verifyOrder('${order.id}')" title="Verificar">
                 <i class="ri-check-line"></i>
+              </button>
+              <button class="btn-icon danger" onclick="window.cancelOrder('${order.id}')" title="Cancelar Pedido">
+                <i class="ri-close-line"></i>
               </button>` : ''
         }
-            <button class="btn-icon danger" onclick="window.deleteOrder('${order.id}')" title="Eliminar">
+            ${order.status === 'verified' ?
+          `<button class="btn-icon" style="color: #2563eb;" onclick="window.completeOrder('${order.id}')" title="Completar Pedido">
+                <i class="ri-flag-line"></i>
+              </button>
+              <button class="btn-icon danger" onclick="window.cancelOrder('${order.id}')" title="Cancelar Pedido">
+                <i class="ri-close-line"></i>
+              </button>` : ''
+        }
+            <button class="btn-icon danger" onclick="window.deleteOrder('${order.id}')" title="Eliminar del historial">
               <i class="ri-delete-bin-line"></i>
             </button>
           </td>
@@ -4200,7 +4203,16 @@ function renderOrders() {
           <div style="display: flex; gap: 0.5rem; border-top: 1px solid #f3f4f6; padding-top: 0.75rem;">
             <button class="btn-secondary-small" style="flex: 1; justify-content: center; align-items: center;" onclick="window.viewOrderDetails('${order.id}')">Ver Detalle</button>
             ${order.status === 'pending' ?
-          `<button class="btn-primary-small" style="flex: 1; justify-content: center; align-items: center;" onclick="window.verifyOrder('${order.id}')">Verificar</button>` : ''
+          `<button class="btn-primary-small" style="flex: 1; justify-content: center; align-items: center;" onclick="window.verifyOrder('${order.id}')">Verificar</button>
+             <button class="btn-secondary-small danger" style="flex: 0 0 36px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="window.cancelOrder('${order.id}')" title="Cancelar">
+                <i class="ri-close-line"></i>
+             </button>` : ''
+        }
+            ${order.status === 'verified' ?
+          `<button class="btn-primary-small" style="flex: 1; background: #2563eb; justify-content: center; align-items: center;" onclick="window.completeOrder('${order.id}')">Completar</button>
+             <button class="btn-secondary-small danger" style="flex: 0 0 36px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="window.cancelOrder('${order.id}')" title="Cancelar">
+                <i class="ri-close-line"></i>
+             </button>` : ''
         }
           </div>
         </div>
@@ -4298,12 +4310,21 @@ window.viewOrderDetails = async (orderId) => {
 
     // Setup action actions
     if (orderData.status === 'pending') {
-      if (verifyBtn) {
-        verifyBtn.style.display = 'flex'
-        verifyBtn.dataset.orderId = orderData.id // Store ID on button
-      }
-    } else {
-      if (verifyBtn) verifyBtn.style.display = 'none'
+      content.innerHTML += `
+        <div style="display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
+          <button class="btn-secondary danger" style="flex: 1;" onclick="window.cancelOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">Cancelar Pedido</button>
+          <button id="verifyOrderBtn" class="btn-primary" style="flex: 1;" onclick="window.verifyOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">Verificar Pedido</button>
+        </div>
+      `
+    } else if (orderData.status === 'verified') {
+      content.innerHTML += `
+         <div style="display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
+            <button class="btn-secondary danger" style="flex: 1;" onclick="window.cancelOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">Cancelar Pedido</button>
+            <button class="btn-primary" style="flex: 1; background: #2563eb;" onclick="window.completeOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">
+              <i class="ri-flag-line"></i> Marcar como Completado
+            </button>
+         </div>
+      `
     }
 
   } catch (error) {
@@ -4314,36 +4335,72 @@ window.viewOrderDetails = async (orderId) => {
 }
 
 window.verifyOrder = async (orderId) => {
-  const verifyBtn = document.getElementById('verifyOrderBtn')
+  const confirmed = await confirm.show({
+    title: '¿Verificar pedido?',
+    message: 'El pedido pasará a estado verificado y se notificará al cliente.',
+    type: 'success',
+    confirmText: 'Verificar'
+  })
+  if (!confirmed) return
+
+  const loadingToast = notify.loading('Verificando pedido...')
   try {
-    if (verifyBtn) buttonLoader.start(verifyBtn, 'Verificando...')
+    const { error } = await ordersService.updateStatus(orderId, 'verified')
+    if (error) throw error
 
-    await ordersService.updateStatus(orderId, 'verified')
-    notify.success('Pedido marcado como verificado')
-
-    // Update local state
-    const order = orders.find(o => o.id === orderId)
-    if (order) order.status = 'verified'
-    renderOrders()
-
-    // Manual hide button logic if modal open:
-    if (verifyBtn) verifyBtn.style.display = 'none'
-
-    // Refresh modal content to show new badge
-    const modal = document.getElementById('orderDetailsModal')
-    if (modal && modal.style.display === 'flex') {
-      window.viewOrderDetails(orderId) // Reload details
-    }
-
-    // Refresh Badge Count Immediately
+    notify.dismiss(loadingToast)
+    notify.success('Pedido verificado correctamente')
     updateOrdersBadgeCount()
-    console.log('Order verified and badge updated')
-
+    loadOrders()
   } catch (error) {
-    console.error(error)
-    notify.error('Error al actualizar estado')
-  } finally {
-    if (verifyBtn) buttonLoader.stop(verifyBtn)
+    console.error('Error verifying order:', error)
+    notify.dismiss(loadingToast)
+    notify.error('Error al verificar el pedido')
+  }
+}
+
+
+window.completeOrder = async (orderId) => {
+  const confirmed = await confirm.show({
+    title: '¿Completar pedido?',
+    message: 'El pedido se marcará como entregado y finalizado.',
+    type: 'info',
+    confirmText: 'Completar'
+  })
+  if (!confirmed) return
+
+  const loadingToast = notify.loading('Completando pedido...')
+  try {
+    const { error } = await ordersService.updateStatus(orderId, 'completed')
+    if (error) throw error
+
+    notify.updateLoading(loadingToast, 'Pedido completado exitosamente', 'success')
+    loadOrders()
+  } catch (error) {
+    console.error('Error completing order:', error)
+    notify.updateLoading(loadingToast, 'Error al completar el pedido', 'error')
+  }
+}
+
+window.cancelOrder = async (orderId) => {
+  const confirmed = await confirm.show({
+    title: '¿Cancelar pedido?',
+    message: 'El pedido será cancelado. Esta acción no se puede deshacer.',
+    type: 'danger',
+    confirmText: 'Cancelar'
+  })
+  if (!confirmed) return
+
+  const loadingToast = notify.loading('Cancelando pedido...')
+  try {
+    const { error } = await ordersService.updateStatus(orderId, 'cancelled')
+    if (error) throw error
+
+    notify.updateLoading(loadingToast, 'Pedido cancelado', 'success')
+    loadOrders()
+  } catch (error) {
+    console.error('Error cancelling order:', error)
+    notify.updateLoading(loadingToast, 'Error al cancelar el pedido', 'error')
   }
 }
 
