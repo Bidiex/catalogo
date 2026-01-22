@@ -4034,15 +4034,9 @@ async function updateOrdersBadgeCount() {
 }
 
 function initRealtimeOrders() {
-  console.log('[REALTIME] Attempting to initialize realtime subscription...')
-  console.log('[REALTIME] Current business:', currentBusiness)
-
   if (!currentBusiness) {
-    console.warn('[REALTIME] Cannot initialize: currentBusiness is null')
     return
   }
-
-  console.log('[REALTIME] Creating channel for business ID:', currentBusiness.id)
 
   // Create realtime subscription for orders
   const channel = supabase.channel('orders-realtime')
@@ -4055,36 +4049,22 @@ function initRealtimeOrders() {
         filter: `business_id=eq.${currentBusiness.id}`
       },
       (payload) => {
-        console.log('[REALTIME] 🔔 Received realtime event!', payload)
-
         // Handle INSERT (New Order)
         if (payload.eventType === 'INSERT') {
-          console.log('[REALTIME] New order detected, showing notification')
           notify.info('<i class="ri-notification-2-line"></i> Nuevo pedido recibido')
         }
 
         // Always update badge on any change (Insert or Update status)
-        console.log('[REALTIME] Updating badge count...')
         updateOrdersBadgeCount()
 
         // If currently on orders section, refresh list
         const ordersSection = document.getElementById('section-orders')
         if (ordersSection && ordersSection.style.display !== 'none') {
-          console.log('[REALTIME] Refreshing orders list')
           loadOrders()
         }
       }
     )
-    .subscribe((status) => {
-      console.log('[REALTIME] Subscription status:', status)
-      if (status === 'SUBSCRIBED') {
-        console.log('[REALTIME] ✅ Successfully subscribed to orders realtime')
-      } else if (status === 'CHANNEL_ERROR') {
-        console.error('[REALTIME] ❌ Channel error - check Supabase Realtime settings')
-      } else if (status === 'TIMED_OUT') {
-        console.error('[REALTIME] ❌ Subscription timed out')
-      }
-    })
+    .subscribe()
 }
 
 async function loadOrders() {
@@ -4447,15 +4427,10 @@ document.querySelectorAll('.nav-item[data-section="orders"]').forEach(link => {
 // This ensures notifications work even when not on orders section
 
 function tryInitRealtime() {
-  console.log('[REALTIME INIT] Checking if ready to initialize...')
-  console.log('[REALTIME INIT] currentBusiness exists:', !!currentBusiness)
-
   if (currentBusiness) {
-    console.log('[REALTIME INIT] Initializing realtime and badge...')
     initRealtimeOrders()
     updateOrdersBadgeCount()
   } else {
-    console.warn('[REALTIME INIT] Business not loaded yet, will retry...')
     setTimeout(tryInitRealtime, 500)
   }
 }
