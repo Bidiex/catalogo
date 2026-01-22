@@ -3991,8 +3991,8 @@ function initOrders() {
   // Initial Badge Count
   updateOrdersBadgeCount()
 
-  // Realtime Subscription
-  initRealtimeOrders()
+  // Note: Realtime subscription is initialized globally at dashboard load
+  // No need to reinitialize here to avoid WebSocket conflicts
 }
 
 // Global Order Badge State
@@ -4034,11 +4034,17 @@ async function updateOrdersBadgeCount() {
 }
 
 function initRealtimeOrders() {
-  if (!currentBusiness) return
+  console.log('[REALTIME] Attempting to initialize realtime subscription...')
+  console.log('[REALTIME] Current business:', currentBusiness)
 
-  // Remove existing channel if any (optional cleanup, though Supabase handles it mostly)
-  supabase.removeAllChannels()
+  if (!currentBusiness) {
+    console.warn('[REALTIME] Cannot initialize: currentBusiness is null')
+    return
+  }
 
+  console.log('[REALTIME] Creating channel for business ID:', currentBusiness.id)
+
+  // Create realtime subscription for orders
   const channel = supabase.channel('orders-realtime')
     .on(
       'postgres_changes',
@@ -4049,25 +4055,35 @@ function initRealtimeOrders() {
         filter: `business_id=eq.${currentBusiness.id}`
       },
       (payload) => {
-        console.log('Realtime payload:', payload) // Debug
+        console.log('[REALTIME] 🔔 Received realtime event!', payload)
 
         // Handle INSERT (New Order)
         if (payload.eventType === 'INSERT') {
-          notify.info('🔔 Nuevo pedido recibido')
+          console.log('[REALTIME] New order detected, showing notification')
+          notify.info('<i class="ri-notification-2-line"></i> Nuevo pedido recibido')
         }
 
         // Always update badge on any change (Insert or Update status)
+        console.log('[REALTIME] Updating badge count...')
         updateOrdersBadgeCount()
 
         // If currently on orders section, refresh list
         const ordersSection = document.getElementById('section-orders')
         if (ordersSection && ordersSection.style.display !== 'none') {
+          console.log('[REALTIME] Refreshing orders list')
           loadOrders()
         }
       }
     )
     .subscribe((status) => {
-      console.log('Realtime status:', status)
+      console.log('[REALTIME] Subscription status:', status)
+      if (status === 'SUBSCRIBED') {
+        console.log('[REALTIME] ✅ Successfully subscribed to orders realtime')
+      } else if (status === 'CHANNEL_ERROR') {
+        console.error('[REALTIME] ❌ Channel error - check Supabase Realtime settings')
+      } else if (status === 'TIMED_OUT') {
+        console.error('[REALTIME] ❌ Subscription timed out')
+      }
     })
 }
 
@@ -4423,3 +4439,26 @@ document.querySelectorAll('.nav-item[data-section="orders"]').forEach(link => {
     loadOrders()
   })
 })
+
+// ============================================
+// GLOBAL REALTIME INITIALIZATION
+// ============================================
+// Initialize realtime subscriptions as soon as dashboard loads with business data
+// This ensures notifications work even when not on orders section
+
+function tryInitRealtime() {
+  console.log('[REALTIME INIT] Checking if ready to initialize...')
+  console.log('[REALTIME INIT] currentBusiness exists:', !!currentBusiness)
+
+  if (currentBusiness) {
+    console.log('[REALTIME INIT] Initializing realtime and badge...')
+    initRealtimeOrders()
+    updateOrdersBadgeCount()
+  } else {
+    console.warn('[REALTIME INIT] Business not loaded yet, will retry...')
+    setTimeout(tryInitRealtime, 500)
+  }
+}
+
+// Start trying to initialize after a short delay
+setTimeout(tryInitRealtime, 1000)
