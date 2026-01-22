@@ -536,14 +536,9 @@
               <div class="card-header">
                 <h2><i class="ri-file-list-3-line"></i> Gestión de Pedidos</h2>
                 <div class="header-controls" style="display: flex; gap: 0.5rem;">
-                  <div class="view-toggles"
-                    style="display: flex; background: #f3f4f6; padding: 2px; border-radius: 6px;">
-                    <button class="view-toggle-btn active" data-view="table"
-                      style="padding: 4px 8px; border: none; background: white; border-radius: 4px; cursor: pointer; color: var(--color-primary); box-shadow: 0 1px 2px rgba(0,0,0,0.1);"><i
-                        class="ri-table-line"></i></button>
-                    <button class="view-toggle-btn" data-view="mosaic"
-                      style="padding: 4px 8px; border: none; background: transparent; border-radius: 4px; cursor: pointer; color: #6b7280;"><i
-                        class="ri-grid-fill"></i></button>
+                  <div class="view-toggles">
+                    <button class="view-toggle-btn active" data-view="table"><i class="ri-table-line"></i></button>
+                    <button class="view-toggle-btn" data-view="mosaic"><i class="ri-grid-fill"></i></button>
                   </div>
                 </div>
               </div>
@@ -569,7 +564,7 @@
 
                 <!-- Orders List -->
                 <div id="ordersListContainer" class="orders-list-container table-view">
-                  <div class="table-responsive">
+                  <div class="table-responsive table-container">
                     <table class="data-table" id="ordersTable" style="width: 100%;">
                       <thead>
                         <tr>

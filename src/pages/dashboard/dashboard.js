@@ -4186,16 +4186,21 @@ function renderOrders() {
         <div class="card" style="padding: 1rem; border: 1px solid #e5e7eb; box-shadow: none;">
           <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
              <span style="font-weight: 600; font-family: monospace;">#${order.id.slice(0, 8)}</span>
-             ${getOrderStatusBadge(order.status)}
+             <div style="display: flex; gap: 0.5rem; align-items: center;">
+                ${getOrderStatusBadge(order.status)}
+                <button class="btn-icon danger" onclick="window.deleteOrder('${order.id}')" title="Eliminar" style="padding: 0.25rem 0.5rem; min-width: auto;">
+                  <i class="ri-delete-bin-line"></i>
+                </button>
+             </div>
           </div>
           <h4 style="margin: 0 0 0.25rem 0;">${order.customer_name}</h4>
           <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 0.5rem;"><i class="ri-phone-line"></i> ${order.customer_phone}</p>
           <div style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; color: var(--color-primary);">$${parseFloat(order.total_amount).toLocaleString()}</div>
           
           <div style="display: flex; gap: 0.5rem; border-top: 1px solid #f3f4f6; padding-top: 0.75rem;">
-            <button class="btn-secondary-small" style="flex: 1;" onclick="window.viewOrderDetails('${order.id}')">Ver Detalle</button>
+            <button class="btn-secondary-small" style="flex: 1; justify-content: center; align-items: center;" onclick="window.viewOrderDetails('${order.id}')">Ver Detalle</button>
             ${order.status === 'pending' ?
-          `<button class="btn-primary-small" style="flex: 1;" onclick="window.verifyOrder('${order.id}')">Verificar</button>` : ''
+          `<button class="btn-primary-small" style="flex: 1; justify-content: center; align-items: center;" onclick="window.verifyOrder('${order.id}')">Verificar</button>` : ''
         }
           </div>
         </div>
@@ -4226,7 +4231,7 @@ window.viewOrderDetails = async (orderId) => {
 
     if (!modal || !content) return
 
-    content.innerHTML = '<div style="text-align:center; padding: 2rem;"><div class="loading-spinner-ring" style="width: 40px; height: 40px; margin: 0 auto; border-width: 4px;"></div></div>'
+    content.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; min-height: 200px;"><div class="loading-spinner-ring" style="position: relative !important; top: auto !important; left: auto !important; margin: 0 auto; width: 40px; height: 40px; border-width: 4px;"></div></div>'
     modal.style.display = 'flex'
 
     const orderData = await ordersService.getOrderDetails(orderId)
