@@ -1693,7 +1693,6 @@ Método de pago: {metodo_pago}
       .replace('{total}', `$${total.toLocaleString('es-CO')}`)
       .replace('{nombre}', clientData.nombre)
       .replace('{telefono}', clientData.telefono)
-      .replace('{direccion}', `${clientData.direccion}, ${clientData.barrio}`)
       .replace('{metodo_pago}', clientData.metodo_pago)
       .replace('{valor de domicilio}', `$${deliveryPrice.toLocaleString('es-CO')}`)
 
@@ -1702,13 +1701,14 @@ Método de pago: {metodo_pago}
       message = message.replace(productsListStr, `${productsListStr}\n🚚 Domicilio: $${deliveryPrice.toLocaleString('es-CO')}`)
     } // Reemplazo directo si existe el token
 
-    // Lógica inteligente para dirección:
-    // Si la plantilla YA incluía {barrio}, solo reemplazamos {direccion} tal cual.
+    // Lógica inteligente para dirección y barrio:
+    // Si la plantilla YA incluía {barrio}, reemplazamos ambos tokens por separado
     // Si la plantilla NO incluía {barrio}, lo agregamos a la dirección para mantener compatibilidad.
     if (template.includes('{barrio}')) {
       message = message.replace(/{direccion}/g, clientData.direccion)
+      message = message.replace(/{barrio}/g, clientData.barrio)
     } else {
-      message = message.replace(/{direccion}/g, `${clientData.direccion} - ${clientData.barrio}`)
+      message = message.replace(/{direccion}/g, `${clientData.direccion}, ${clientData.barrio}`)
     }
 
     // Agregar observaciones si existen
