@@ -1088,12 +1088,15 @@
         </div>
 
         <div class="form-group">
-          <label style="display: block; margin-bottom: 0.5rem;">Estado del producto</label>
-          <label class="toggle-switch">
-            <input type="checkbox" id="productActiveInput" class="toggle-input" checked>
-            <div class="toggle-slider"></div>
-            <span class="toggle-label" id="productActiveLabel">Activo</span>
-          </label>
+          <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.9rem;">Estado del
+            producto</label>
+          <div class="switch-container">
+            <label class="switch">
+              <input type="checkbox" id="productActiveInput" checked>
+              <span class="slider"></span>
+            </label>
+            <span id="productActiveLabel" class="switch-label">Activo</span>
+          </div>
         </div>
 
         <!-- Campo oculto para guardar la URL de la imagen -->

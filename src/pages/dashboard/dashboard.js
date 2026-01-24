@@ -1075,8 +1075,12 @@ function renderProducts(productsToRender = null) {
     <!-- Status Badge -->
     <div style="margin-top: 0.5rem; margin-bottom: 0.5rem;">
          ${product.is_active !== false
-      ? '<span class="status-badge active"><i class="ri-checkbox-circle-line"></i> Activo</span>'
-      : '<span class="status-badge inactive"><i class="ri-close-circle-line"></i> Inactivo</span>'
+      ? `<span style="background: #f0fdf4; color: #15803d; padding: 2px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+           <i class="ri-checkbox-circle-line"></i> Activo
+         </span>`
+      : `<span style="background: #f3f4f6; color: #6b7280; padding: 2px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+           <i class="ri-eye-off-line"></i> Inactivo
+         </span>`
     }
     </div>
 
