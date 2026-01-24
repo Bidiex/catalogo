@@ -26,7 +26,7 @@ class NotificationManager {
   show(message, type = 'info', duration = 4000) {
     const toast = document.createElement('div')
     toast.className = `toast toast-${type}`
-    
+
     // Icono según el tipo
     const icons = {
       success: 'ri-checkbox-circle-line',
@@ -77,7 +77,7 @@ class NotificationManager {
   remove(toast) {
     toast.classList.remove('toast-show')
     toast.classList.add('toast-hide')
-    
+
     setTimeout(() => {
       if (toast.parentElement) {
         toast.parentElement.removeChild(toast)
@@ -110,11 +110,11 @@ class NotificationManager {
   loading(message) {
     const toast = this.show(message, 'info', 0)
     toast.classList.add('toast-loading')
-    
+
     // Agregar spinner
     const icon = toast.querySelector('.toast-icon i')
     icon.className = 'ri-loader-4-line toast-spinner'
-    
+
     return toast
   }
 
@@ -124,17 +124,17 @@ class NotificationManager {
   updateLoading(toast, message, type = 'success') {
     const icon = toast.querySelector('.toast-icon i')
     const messageEl = toast.querySelector('.toast-message')
-    
+
     toast.className = `toast toast-${type} toast-show`
     messageEl.textContent = message
-    
+
     const icons = {
       success: 'ri-checkbox-circle-line',
       error: 'ri-error-warning-line'
     }
-    
+
     icon.className = icons[type]
-    
+
     // Auto-cerrar después de 3 segundos
     setTimeout(() => {
       this.remove(toast)
@@ -190,7 +190,8 @@ class ConfirmDialog {
     const icons = {
       danger: 'ri-error-warning-line',
       warning: 'ri-alert-line',
-      info: 'ri-information-line'
+      info: 'ri-information-line',
+      success: 'ri-checkbox-circle-line'
     }
 
     const colors = {
@@ -242,7 +243,7 @@ class ConfirmDialog {
 
   close(result) {
     this.modal.classList.remove('confirm-show')
-    
+
     setTimeout(() => {
       this.modal.style.display = 'none'
       if (this.resolvePromise) {

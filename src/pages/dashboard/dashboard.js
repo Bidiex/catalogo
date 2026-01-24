@@ -550,8 +550,10 @@ function updatePageTitle(sectionName) {
   const titles = {
     'dashboard': 'Dashboard',
     'business': 'Mi Negocio',
+    'orders': 'Pedidos',
     'categories': 'Categorías',
     'products': 'Productos',
+    'promotions': 'Promociones',
     'whatsapp': 'Mensaje de WhatsApp',
     'support': 'Soporte y Ayuda'
   }
@@ -3907,7 +3909,13 @@ if (discountForm) {
 // Delete discount
 if (deleteDiscountBtn) {
   deleteDiscountBtn.addEventListener('click', async () => {
-    const confirmed = await confirm('¿Estás seguro de eliminar este descuento?')
+    const confirmed = await confirm.show({
+      title: '¿Eliminar descuento?',
+      message: 'El descuento del producto será eliminado permanentemente.',
+      type: 'danger',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar'
+    })
     if (!confirmed) return
 
     await buttonLoader.execute(deleteDiscountBtn, async () => {
@@ -4354,14 +4362,12 @@ window.verifyOrder = async (orderId) => {
     const { error } = await ordersService.updateStatus(orderId, 'verified')
     if (error) throw error
 
-    notify.dismiss(loadingToast)
-    notify.success('Pedido verificado correctamente')
+    notify.updateLoading(loadingToast, 'Pedido verificado correctamente', 'success')
     updateOrdersBadgeCount()
     loadOrders()
   } catch (error) {
     console.error('Error verifying order:', error)
-    notify.dismiss(loadingToast)
-    notify.error('Error al verificar el pedido')
+    notify.updateLoading(loadingToast, 'Error al verificar el pedido', 'error')
   }
 }
 

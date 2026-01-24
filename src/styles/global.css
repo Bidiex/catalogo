@@ -354,6 +354,11 @@ a {
   color: #3b82f6;
 }
 
+.confirm-icon-success {
+  background: #d1fae5;
+  color: #10b981;
+}
+
 .confirm-title {
   font-size: 1.5rem;
   color: var(--color-text);
@@ -421,6 +426,14 @@ a {
   background: #2563eb;
 }
 
+.btn-confirm-success {
+  background: #10b981;
+}
+
+.btn-confirm-success:hover {
+  background: #059669;
+}
+
 /* Responsive */
 @media (max-width: 640px) {
   .confirm-content {
@@ -470,6 +483,7 @@ button[type="submit"]:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
 /* ============================================
    LOADING MODAL
    ============================================ */
@@ -563,6 +577,7 @@ button[type="submit"]:disabled {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -573,6 +588,7 @@ button[type="submit"]:disabled {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
