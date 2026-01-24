@@ -196,6 +196,11 @@
                 </div>
 
                 <div class="form-group">
+                  <label for="wiz-address">Dirección del negocio (opcional)</label>
+                  <input type="text" id="wiz-address" placeholder="Ej: Calle 123 # 45-67">
+                </div>
+
+                <div class="form-group">
                   <label for="wiz-description">Descripción</label>
                   <textarea id="wiz-description" rows="2" placeholder="Describe tu negocio..."></textarea>
                 </div>
@@ -473,6 +478,10 @@
                   <div class="info-row">
                     <span class="label"><i class="ri-whatsapp-line"></i> WhatsApp:</span>
                     <span id="businessWhatsapp" class="value">-</span>
+                  </div>
+                  <div class="info-row">
+                    <span class="label"><i class="ri-map-pin-line"></i> Dirección:</span>
+                    <span id="businessAddress" class="value">-</span>
                   </div>
                   <div class="info-row">
                     <span class="label"><i class="ri-e-bike-2-fill"></i> Precio domicilio:</span>
@@ -1010,6 +1019,10 @@
           <label for="businessWhatsappInput">Número de WhatsApp *</label>
           <input type="tel" id="businessWhatsappInput" placeholder="3001234567" required>
           <small>Sin +57, ej: 3001234567</small>
+        </div>
+        <div class="form-group">
+          <label for="businessAddressInput">Dirección del negocio (opcional)</label>
+          <input type="text" id="businessAddressInput" placeholder="Ej: Calle 123 # 45-67">
         </div>
         <div class="form-group">
           <label for="businessDeliveryPriceInput">Precio de Domicilio</label>

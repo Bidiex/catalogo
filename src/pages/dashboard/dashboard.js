@@ -973,6 +973,12 @@ function renderBusinessInfo() {
   businessName.textContent = currentBusiness.name
   businessWhatsapp.textContent = currentBusiness.whatsapp_number
 
+  // Update address
+  const addressDisplay = document.getElementById('businessAddress')
+  if (addressDisplay) {
+    addressDisplay.textContent = currentBusiness.address || 'No registrada'
+  }
+
   // Update delivery price display
   const deliveryPriceDisplay = document.getElementById('businessDeliveryPrice')
   if (deliveryPriceDisplay) {
@@ -1152,6 +1158,7 @@ function openBusinessModal(isEdit = false) {
   const nameInput = document.getElementById('businessNameInput')
   const slugInput = document.getElementById('businessSlugInput')
   const whatsappInput = document.getElementById('businessWhatsappInput')
+  const addressInput = document.getElementById('businessAddressInput')
   const deliveryPriceInput = document.getElementById('businessDeliveryPriceInput')
   const descriptionInput = document.getElementById('businessDescriptionInput')
 
@@ -1161,6 +1168,7 @@ function openBusinessModal(isEdit = false) {
     slugInput.value = currentBusiness.slug
     slugInput.disabled = true // No permitir cambiar slug
     whatsappInput.value = currentBusiness.whatsapp_number
+    if (addressInput) addressInput.value = currentBusiness.address || ''
     deliveryPriceInput.value = currentBusiness.delivery_price || 0
     descriptionInput.value = currentBusiness.description || ''
   } else {
@@ -1169,6 +1177,7 @@ function openBusinessModal(isEdit = false) {
     slugInput.value = ''
     slugInput.disabled = false
     whatsappInput.value = ''
+    if (addressInput) addressInput.value = ''
     deliveryPriceInput.value = 0
     descriptionInput.value = ''
   }
@@ -1199,6 +1208,7 @@ document.getElementById('businessForm').addEventListener('submit', async (e) => 
   const name = document.getElementById('businessNameInput').value
   const slug = document.getElementById('businessSlugInput').value
   const whatsapp = document.getElementById('businessWhatsappInput').value
+  const address = document.getElementById('businessAddressInput').value
   const deliveryPrice = parseFloat(document.getElementById('businessDeliveryPriceInput').value) || 0
   const description = document.getElementById('businessDescriptionInput').value
 
@@ -1210,6 +1220,7 @@ document.getElementById('businessForm').addEventListener('submit', async (e) => 
         name,
         slug,
         whatsapp_number: whatsapp,
+        address: address || null,
         delivery_price: deliveryPrice,
         description
       }
@@ -3069,6 +3080,7 @@ if (wizardBusinessForm) {
 
     const name = document.getElementById('wiz-business-name').value.trim()
     const whatsapp = document.getElementById('wiz-whatsapp').value.trim()
+    const address = document.getElementById('wiz-address').value.trim()
     const description = document.getElementById('wiz-description').value.trim()
 
     const submitBtn = e.submitter
@@ -3080,6 +3092,7 @@ if (wizardBusinessForm) {
           name,
           slug,
           whatsapp_number: whatsapp,
+          address: address || null,
           description,
           logo_url: wizardLogoUrl || null
         }
