@@ -739,6 +739,28 @@ function renderBusinessInfo() {
     }
   }
 
+  // Render Address
+  const addressEl = document.getElementById('businessAddress')
+  if (addressEl) {
+    if (currentBusiness.address) {
+      addressEl.style.display = 'flex'
+      addressEl.querySelector('.text').textContent = currentBusiness.address
+    } else {
+      addressEl.style.display = 'none'
+    }
+  }
+
+  // Render Phone (WhatsApp)
+  const phoneEl = document.getElementById('businessPhone')
+  if (phoneEl) {
+    if (currentBusiness.whatsapp_number) {
+      phoneEl.style.display = 'flex'
+      phoneEl.querySelector('.text').textContent = currentBusiness.whatsapp_number
+    } else {
+      phoneEl.style.display = 'none'
+    }
+  }
+
   // Apply Custom Color
   if (currentBusiness.primary_color) {
     const primaryColor = currentBusiness.primary_color

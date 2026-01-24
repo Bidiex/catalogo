@@ -111,13 +111,33 @@
 }
 
 .header-bottom-row {
-  max-height: 80px;
+  /* removed max-height to allow address/phone to flow */
   overflow: hidden;
 }
 
 .header-bottom-row p {
   color: var(--muted, #64748b);
   margin: 0;
+}
+
+.business-contact-info {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted, #64748b);
+  font-size: 0.9rem;
+}
+
+.contact-item i {
+  color: var(--color-primary);
+  font-size: 1rem;
 }
 
 /* ===== SEARCH ===== */
