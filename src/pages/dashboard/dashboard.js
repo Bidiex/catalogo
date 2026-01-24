@@ -816,7 +816,7 @@ if (closeUpgradeModal) {
 }
 
 // Contact Actions
-const CONTACT_PHONE = '573000000000' // Replace with actual admin number
+const CONTACT_PHONE = '573156290330' // Replace with actual admin number
 
 if (contactSupportUpgradeBtn) {
   contactSupportUpgradeBtn.addEventListener('click', () => {
@@ -4725,7 +4725,7 @@ function showOwnerOrdersLimitModal() {
       upgradePlanModal.style.display = 'flex'
     } else {
       // Fallback: Contact via WhatsApp
-      const CONTACT_PHONE = '573000000000' // Replace with actual admin number
+      const CONTACT_PHONE = '573156290330' // Replace with actual admin number
       const text = `Hola, quiero mejorar mi plan a PRO para el negocio: ${currentBusiness.name}`
       window.open(`https://wa.me/${CONTACT_PHONE}?text=${encodeURIComponent(text)}`, '_blank')
     }
