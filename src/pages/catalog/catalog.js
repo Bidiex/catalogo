@@ -7,6 +7,7 @@ import { productSizesService } from '../../services/productSizes.js'
 import { favorites } from '../../utils/favorites.js'
 import { colorUtils } from '../../utils/colorUtils.js'
 import { ordersService } from '../../services/orders.js'
+import { businessService } from '../../services/business.js'
 import gsap from 'gsap'
 
 
@@ -1904,7 +1905,7 @@ function renderBusinessStatus() {
 }
 
 // Llamar al abrir el modal - ACTUALIZADO
-btnWhatsapp.addEventListener('click', () => {
+btnWhatsapp.addEventListener('click', async () => {
   if (!currentBusiness) return
   const cartItems = cart.get(currentBusiness.id)
   if (cartItems.length === 0) {
@@ -1916,6 +1917,19 @@ btnWhatsapp.addEventListener('click', () => {
   if (!businessStatus.isOpen) {
     showClosedModal()
     return
+  }
+
+  // NUEVO: Verificar límite de órdenes mensuales
+  try {
+    const limitCheck = await businessService.canCreateOrder(currentBusiness.id)
+    if (!limitCheck.allowed) {
+      showOrdersLimitModal(limitCheck)
+      return
+    }
+  } catch (error) {
+    console.error('Error checking orders limit:', error)
+    // Si hay error verificando el límite, permitir continuar
+    // (mejor fallar abierto que cerrado para el cliente)
   }
 
   // Poblar métodos de pago dinámicamente
@@ -1962,6 +1976,40 @@ function showClosedModal() {
 
   // Event listeners
   const closeBtn = modal.querySelector('#closeClosedModal')
+  const overlay = modal.querySelector('.closed-modal-overlay')
+
+  closeBtn.addEventListener('click', () => modal.remove())
+  overlay.addEventListener('click', () => modal.remove())
+}
+
+// Modal de límite de pedidos alcanzado
+function showOrdersLimitModal(limitInfo) {
+  const existingModal = document.getElementById('ordersLimitModal')
+  if (existingModal) {
+    existingModal.remove()
+  }
+
+  const modal = document.createElement('div')
+  modal.id = 'ordersLimitModal'
+  modal.className = 'closed-modal'
+  modal.innerHTML = `
+    <div class="closed-modal-overlay"></div>
+    <div class="closed-modal-content">
+      <div class="closed-modal-icon" style="background: #fef3c7;">
+        <i class="ri-information-line" style="color: #f59e0b;"></i>
+      </div>
+      <h2>Pedido No Disponible</h2>
+      <p>Lo sentimos, en este momento no podemos recibir nuevos pedidos.</p>
+      <p style="margin-top: 0.5rem; color: #666;">Por favor, contacta directamente con el negocio para más información.</p>
+      <button class="btn-primary" id="closeOrdersLimitModal">
+        Entendido
+      </button>
+    </div>
+  `
+
+  document.body.appendChild(modal)
+
+  const closeBtn = modal.querySelector('#closeOrdersLimitModal')
   const overlay = modal.querySelector('.closed-modal-overlay')
 
   closeBtn.addEventListener('click', () => modal.remove())

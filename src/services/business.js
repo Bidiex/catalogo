@@ -185,5 +185,149 @@ export const businessService = {
       current: count,
       limit: limit
     }
+  },
+
+  /**
+   * Check if business can create more orders (monthly limit for Plus plan)
+   */
+  async canCreateOrder(businessId) {
+    try {
+      const { data: business, error } = await supabase
+        .from('businesses')
+        .select('plan_type, monthly_orders_count, plan_renewed_at, plan_expires_at')
+        .eq('id', businessId)
+        .single()
+
+      if (error) throw error
+
+      // Check if plan expired
+      const planExpired = this.isPlanExpired(business.plan_expires_at)
+
+      if (planExpired) {
+        return {
+          allowed: false,
+          reason: 'plan_expired',
+          message: 'El plan ha expirado. Renueva para continuar recibiendo pedidos.'
+        }
+      }
+
+      // Initialize plan_renewed_at for existing businesses
+      if (!business.plan_renewed_at) {
+        await this.initializePlanRenewal(businessId, business.plan_expires_at)
+        // Calculate renewed date for immediate use
+        const expiresDate = new Date(business.plan_expires_at)
+        const renewedDate = new Date(expiresDate)
+        renewedDate.setDate(renewedDate.getDate() - 30)
+        business.plan_renewed_at = renewedDate.toISOString()
+        business.monthly_orders_count = 0
+      }
+
+      // Check limit based on plan
+      const plan = business.plan_type
+
+      if (plan === 'pro') {
+        return { allowed: true, unlimited: true }
+      }
+
+      if (plan === 'plus') {
+        const current = business.monthly_orders_count || 0
+        const limit = 300
+
+        return {
+          allowed: current < limit,
+          current,
+          limit,
+          remaining: limit - current,
+          cycleStart: business.plan_renewed_at,
+          cycleEnd: business.plan_expires_at
+        }
+      }
+
+      return { allowed: false }
+    } catch (error) {
+      console.error('Error checking order limit:', error)
+      return { allowed: false, error: error.message }
+    }
+  },
+
+  /**
+   * Check if plan is expired
+   */
+  isPlanExpired(planExpiresAt) {
+    if (!planExpiresAt) return true
+    const now = new Date()
+    const expires = new Date(planExpiresAt)
+    return now > expires
+  },
+
+  /**
+   * Initialize plan_renewed_at for existing businesses
+   */
+  async initializePlanRenewal(businessId, planExpiresAt) {
+    try {
+      // Calculate plan_renewed_at as plan_expires_at - 30 days
+      const expiresDate = new Date(planExpiresAt)
+      const renewedDate = new Date(expiresDate)
+      renewedDate.setDate(renewedDate.getDate() - 30)
+
+      const { error } = await supabase
+        .from('businesses')
+        .update({
+          plan_renewed_at: renewedDate.toISOString(),
+          monthly_orders_count: 0
+        })
+        .eq('id', businessId)
+
+      if (error) throw error
+    } catch (error) {
+      console.error('Error initializing plan renewal:', error)
+      throw error
+    }
+  },
+
+  /**
+   * Renew plan (resets counter and updates dates)
+   */
+  async renewPlan(businessId, newPlanType = 'plus') {
+    try {
+      const now = new Date()
+      const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) // +30 days
+
+      const { data, error } = await supabase
+        .from('businesses')
+        .update({
+          plan_type: newPlanType,
+          plan_renewed_at: now.toISOString(),
+          plan_expires_at: expiresAt.toISOString(),
+          monthly_orders_count: 0,
+          is_active: true
+        })
+        .eq('id', businessId)
+        .select()
+        .single()
+
+      if (error) throw error
+      return data
+    } catch (error) {
+      console.error('Error renewing plan:', error)
+      throw error
+    }
+  },
+
+  /**
+   * Increment monthly orders counter
+   */
+  async incrementMonthlyOrders(businessId) {
+    try {
+      const { data, error } = await supabase.rpc('increment_monthly_orders', {
+        business_id: businessId
+      })
+
+      if (error) throw error
+      return data
+    } catch (error) {
+      console.error('Error incrementing monthly orders:', error)
+      throw error
+    }
   }
 }

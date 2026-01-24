@@ -10,6 +10,22 @@ export const ordersService = {
      */
     async createOrder(orderData, items) {
         try {
+            // IMPORTANT: Import businessService at the top of the file if not already
+            // Validate monthly orders limit BEFORE creating order
+            const { businessService } = await import('./business.js')
+            const limitCheck = await businessService.canCreateOrder(orderData.business_id)
+
+            if (!limitCheck.allowed) {
+                const error = new Error(
+                    limitCheck.reason === 'plan_expired'
+                        ? limitCheck.message
+                        : `Has alcanzado el límite de ${limitCheck.limit} pedidos mensuales del plan Plus`
+                )
+                error.code = 'MONTHLY_LIMIT_REACHED'
+                error.details = limitCheck
+                throw error
+            }
+
             // Generate ID client-side to avoid RLS Select restriction on "anon" users
             const orderId = crypto.randomUUID()
 
@@ -38,6 +54,17 @@ export const ordersService = {
                 console.error('Error creating items:', itemsError)
                 // Note: Anonymous users cannot delete/rollback due to RLS, so we just log and throw
                 throw itemsError
+            }
+
+            // 4. Increment monthly orders counter (AFTER successful order creation)
+            // Only increment for Plus plan (Pro is unlimited, no need to count)
+            if (limitCheck.limit && limitCheck.limit !== Infinity) {
+                try {
+                    await businessService.incrementMonthlyOrders(orderData.business_id)
+                } catch (incrementError) {
+                    console.error('Error incrementing monthly orders counter:', incrementError)
+                    // Don't throw - order was created successfully, just log the counter error
+                }
             }
 
             return order

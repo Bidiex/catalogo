@@ -215,6 +215,12 @@ async function init() {
       })
     }
 
+    // Check orders limit - Only on fresh login
+    const justLoggedIn = sessionStorage.getItem('justLoggedIn')
+    if (justLoggedIn && currentBusiness) {
+      await checkAndShowOrdersLimitWarning()
+    }
+
   } catch (error) {
     console.error('Error initializing dashboard:', error)
     notify.error('Error al cargar el dashboard')
@@ -236,6 +242,11 @@ function initSidebarNavigation() {
       navItems.forEach(nav => nav.classList.remove('active'))
       // Agregar active al item clickeado
       item.classList.add('active')
+
+      // Verificar límite de pedidos al hacer clic en "Pedidos"
+      if (section === 'orders' && currentBusiness) {
+        checkAndShowOrdersLimitWarning()
+      }
 
       // Cambiar sección
       switchSection(section)
@@ -4444,6 +4455,95 @@ document.querySelectorAll('.nav-item[data-section="orders"]').forEach(link => {
     loadOrders()
   })
 })
+
+// ============================================
+// ORDERS LIMIT WARNING FOR BUSINESS OWNER
+// ============================================
+async function checkAndShowOrdersLimitWarning() {
+  if (!currentBusiness) return
+
+  try {
+    const limitCheck = await businessService.canCreateOrder(currentBusiness.id)
+
+    // Only show warning if limit is reached (not allowed) and it's a Plus plan
+    if (!limitCheck.allowed && limitCheck.limit && limitCheck.limit !== Infinity) {
+      showOwnerOrdersLimitModal()
+    }
+  } catch (error) {
+    console.error('Error checking orders limit:', error)
+  }
+}
+
+function showOwnerOrdersLimitModal() {
+  // Check if modal already exists
+  const existingModal = document.getElementById('ownerOrdersLimitModal')
+  if (existingModal) {
+    existingModal.remove()
+  }
+
+  const modal = document.createElement('div')
+  modal.id = 'ownerOrdersLimitModal'
+  modal.className = 'confirm-modal'
+  modal.innerHTML = `
+    <div class="confirm-overlay"></div>
+    <div class="confirm-content">
+      <div class="confirm-icon confirm-icon-warning">
+        <i class="ri-error-warning-line"></i>
+      </div>
+      <h3 class="confirm-title">Límite de Pedidos Alcanzado</h3>
+      <p class="confirm-message">
+        Has alcanzado el límite de <strong>300 pedidos mensuales</strong> de tu plan Plus.
+        <br><br>
+        No podrás recibir más pedidos hasta que actualices a <strong>Plan Pro</strong> con pedidos ilimitados.
+      </p>
+      <div class="confirm-actions">
+        <button class="btn-confirm-cancel" id="dismissOwnerLimit">
+          Entendido
+        </button>
+        <button class="btn-confirm-ok btn-confirm-warning" id="upgradeToProBtn">
+          <i class="ri-vip-crown-line"></i> Actualizar a PRO
+        </button>
+      </div>
+    </div>
+  `
+
+  document.body.appendChild(modal)
+  modal.style.display = 'flex'
+
+  // Animar entrada
+  setTimeout(() => {
+    modal.classList.add('confirm-show')
+  }, 10)
+
+  // Event listeners
+  const dismissBtn = modal.querySelector('#dismissOwnerLimit')
+  const upgradeBtn = modal.querySelector('#upgradeToProBtn')
+  const overlay = modal.querySelector('.confirm-overlay')
+
+  const closeModal = () => {
+    modal.classList.remove('confirm-show')
+    setTimeout(() => {
+      modal.remove()
+    }, 200)
+  }
+
+  dismissBtn.addEventListener('click', closeModal)
+  overlay.addEventListener('click', closeModal)
+
+  upgradeBtn.addEventListener('click', () => {
+    closeModal()
+    // Open upgrade modal or contact WhatsApp
+    const upgradePlanModal = document.getElementById('upgradePlanModal')
+    if (upgradePlanModal) {
+      upgradePlanModal.style.display = 'flex'
+    } else {
+      // Fallback: Contact via WhatsApp
+      const CONTACT_PHONE = '573000000000' // Replace with actual admin number
+      const text = `Hola, quiero mejorar mi plan a PRO para el negocio: ${currentBusiness.name}`
+      window.open(`https://wa.me/${CONTACT_PHONE}?text=${encodeURIComponent(text)}`, '_blank')
+    }
+  })
+}
 
 // ============================================
 // GLOBAL REALTIME INITIALIZATION
