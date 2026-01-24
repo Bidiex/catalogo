@@ -112,14 +112,37 @@ console.log('CATALOG JS LOADED')
 
 async function init() {
   try {
-    // Obtener slug de la URL
+    // 1. Obtener slug de la URL (Estrategia: Path > Query Params)
+    let slug = null
+
+    // Intentar obtener desde ruta limpia: /c/{slug}
+    const pathMatch = window.location.pathname.match(/\/c\/([^/]+)/)
+    if (pathMatch) {
+      slug = pathMatch[1]
+    }
+
+    // Fallback: Intentar query param (legacy)
     const urlParams = new URLSearchParams(window.location.search)
-    const slug = urlParams.get('slug')
+    const querySlug = urlParams.get('slug')
+
+    // Si tenemos query param pero no path slug, redirigir a URL limpia
+    if (querySlug && !slug) {
+      // Remover slug de los params y mantener otros (ej. ?product=123)
+      urlParams.delete('slug')
+      const newSearch = urlParams.toString()
+      const newUrl = `/c/${querySlug}${newSearch ? `?${newSearch}` : ''}`
+
+      // Redirección reemplazando historia para evitar bucles
+      window.location.replace(newUrl)
+      return // Detener ejecución
+    }
 
     if (!slug) {
       showError()
       return
     }
+
+    // Si llegamos aquí, tenemos slug (ya sea del path o teníamos conflicto que se resolvió)
 
     // Cargar negocio por slug
     await loadBusiness(slug)

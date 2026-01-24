@@ -12,5 +12,19 @@ export default defineConfig({
         product: resolve(__dirname, 'src/pages/product/index.html'),
       }
     }
-  }
+  },
+  plugins: [
+    {
+      name: 'rewrite-middleware',
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          // Solo reescribir si NO tiene extensión (parece una ruta) y empieza con /c/
+          if (req.url.startsWith('/c/') && !req.url.includes('.')) {
+            req.url = '/src/pages/catalog/index.html'
+          }
+          next()
+        })
+      }
+    }
+  ]
 })

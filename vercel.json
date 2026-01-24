@@ -1,0 +1,8 @@
+{
+    "rewrites": [
+        {
+            "source": "/c/:slug",
+            "destination": "/src/pages/catalog/index.html"
+        }
+    ]
+}
