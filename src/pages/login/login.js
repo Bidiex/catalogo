@@ -54,6 +54,8 @@ loginForm.addEventListener('submit', async (e) => {
     const result = await authService.signIn(email, password)
 
     if (result.success) {
+      // Mark that user just logged in
+      sessionStorage.setItem('justLoggedIn', 'true')
       window.location.href = '/src/pages/dashboard/index.html'
     } else {
       errorMessage.textContent = result.error
@@ -65,9 +67,14 @@ loginForm.addEventListener('submit', async (e) => {
 // Manejo del login con Google
 googleLoginBtn.addEventListener('click', async () => {
   await buttonLoader.execute(googleLoginBtn, async () => {
+    // Mark that user is attempting Google login
+    sessionStorage.setItem('justLoggedIn', 'true')
+
     const result = await authService.signInWithGoogle()
-    
+
     if (!result.success) {
+      // Remove marker if login failed
+      sessionStorage.removeItem('justLoggedIn')
       errorMessage.textContent = result.error || 'Error al iniciar sesión con Google'
       errorMessage.style.display = 'block'
     }
@@ -103,7 +110,7 @@ registerForm.addEventListener('submit', async (e) => {
       registerErrorMessage.textContent = '¡Cuenta creada! Ya puedes iniciar sesión.'
 
       registerForm.reset()
-      
+
       // Volver al formulario de login después de 2 segundos
       setTimeout(() => {
         backToLoginBtn.click()

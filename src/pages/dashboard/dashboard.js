@@ -196,12 +196,19 @@ async function init() {
     // Cargar negocio
     await loadBusiness()
 
-    // Show Reminder Modal
+    // Show Reminder Modal - Only on fresh login, not on page refresh
     const reminderModal = document.getElementById('whatsappReminderModal')
     const closeReminderBtn = document.getElementById('closeReminderModalBtn')
 
     if (reminderModal && closeReminderBtn) {
-      reminderModal.style.display = 'flex'
+      // Check if user just logged in
+      const justLoggedIn = sessionStorage.getItem('justLoggedIn')
+
+      if (justLoggedIn) {
+        reminderModal.style.display = 'flex'
+        // Immediately remove the flag so it won't show on refresh
+        sessionStorage.removeItem('justLoggedIn')
+      }
 
       closeReminderBtn.addEventListener('click', () => {
         reminderModal.style.display = 'none'
@@ -1749,6 +1756,9 @@ logoutBtn.addEventListener('click', async () => {
   })
 
   if (!result) return
+
+  // Clean up session storage
+  sessionStorage.clear()
 
   await authService.signOut()
   window.location.href = '/src/pages/login/index.html'
