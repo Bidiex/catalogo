@@ -1071,6 +1071,15 @@ function renderProducts(productsToRender = null) {
       ? `<div class="product-card-category">${product.categories.name}</div>`
       : ''
     }
+    
+    <!-- Status Badge -->
+    <div style="margin-top: 0.5rem; margin-bottom: 0.5rem;">
+         ${product.is_active !== false
+      ? '<span class="status-badge active"><i class="ri-checkbox-circle-line"></i> Activo</span>'
+      : '<span class="status-badge inactive"><i class="ri-close-circle-line"></i> Inactivo</span>'
+    }
+    </div>
+
   <div class="product-card-actions">
     <button class="btn-manage-options manage-options" data-id="${product.id}">
     <i class="ri-settings-3-line"></i><span> Opciones</span>
@@ -1711,8 +1720,23 @@ function openProductModal() {
   editingProduct = null
   document.getElementById('productModalTitle').textContent = 'Nuevo Producto'
   document.getElementById('productForm').reset()
+
+  // Default Active
+  const activeInput = document.getElementById('productActiveInput')
+  const activeLabel = document.getElementById('productActiveLabel')
+
+  if (activeInput) {
+    activeInput.checked = true
+    if (activeLabel) activeLabel.textContent = 'Activo'
+
+    // Dynamic Label Listener
+    activeInput.onchange = () => {
+      if (activeLabel) activeLabel.textContent = activeInput.checked ? 'Activo' : 'Inactivo'
+    }
+  }
+
   populateCategorySelect()
-  resetProductImageUpload() // ← AGREGAR ESTA LÍNEA
+  resetProductImageUpload()
   productModal.style.display = 'flex'
 }
 
@@ -1727,6 +1751,20 @@ function openEditProductModal(productId) {
 
   populateCategorySelect()
   document.getElementById('productCategoryInput').value = editingProduct.category_id || ''
+
+  // Is Active Toggle
+  const activeInput = document.getElementById('productActiveInput')
+  const activeLabel = document.getElementById('productActiveLabel')
+  if (activeInput) {
+    const isActive = editingProduct.is_active !== false
+    activeInput.checked = isActive
+    if (activeLabel) activeLabel.textContent = isActive ? 'Activo' : 'Inactivo'
+
+    // Dynamic Label Listener
+    activeInput.onchange = () => {
+      if (activeLabel) activeLabel.textContent = activeInput.checked ? 'Activo' : 'Inactivo'
+    }
+  }
 
   // Cargar imagen si existe
   if (editingProduct.image_url) {
@@ -1770,6 +1808,10 @@ document.getElementById('productForm').addEventListener('submit', async (e) => {
   const description = document.getElementById('productDescriptionInput').value
   const imageUrl = productImageUrlHidden.value || currentProductImage || ''
 
+  // Get Active Status
+  const activeInput = document.getElementById('productActiveInput')
+  const isActive = activeInput ? activeInput.checked : true
+
   const saveBtn = document.getElementById('saveProductBtn')
 
   await buttonLoader.execute(saveBtn, async () => {
@@ -1781,6 +1823,7 @@ document.getElementById('productForm').addEventListener('submit', async (e) => {
         category_id: categoryId,
         description,
         image_url: imageUrl,
+        is_active: isActive,
         display_order: products.length
       }
 

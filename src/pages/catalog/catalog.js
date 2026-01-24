@@ -244,6 +244,7 @@ async function loadCatalogData() {
       .select('*')
       .eq('business_id', currentBusiness.id)
       .eq('is_available', true)
+      .eq('is_active', true) // Only show active products
       .order('display_order', { ascending: true })
 
     if (productsError) throw productsError
