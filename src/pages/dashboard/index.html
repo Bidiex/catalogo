@@ -590,6 +590,27 @@
                 <p id="noOrdersMessage" class="empty-message"
                   style="display:none; text-align: center; padding: 2rem; color: #6b7280;">No hay pedidos registrados.
                 </p>
+
+                <!-- Pagination Controls -->
+                <div id="ordersPagination" class="pagination-controls"
+                  style="display: none; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                  <div style="font-size: 0.9rem; color: #6b7280;">
+                    Mostrando <span id="ordersStartCount">0</span> - <span id="ordersEndCount">0</span> de <span
+                      id="ordersTotalCount">0</span> pedidos
+                  </div>
+                  <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <button id="prevOrdersPageBtn" class="btn-secondary-small" disabled>
+                      <i class="ri-arrow-left-s-line"></i> Anterior
+                    </button>
+                    <span id="ordersPageIndicator"
+                      style="display: flex; align-items: center; padding: 0 0.5rem; font-weight: 500; font-size: 0.9rem;">
+                      Página 1
+                    </span>
+                    <button id="nextOrdersPageBtn" class="btn-secondary-small" disabled>
+                      Siguiente <i class="ri-arrow-right-s-line"></i>
+                    </button>
+                  </div>
+                </div>
               </div>
             </section>
           </div>

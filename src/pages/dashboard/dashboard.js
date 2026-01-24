@@ -36,6 +36,9 @@ let currentPromotionImage = null
 let supportTickets = [] // Global state for tickets
 // Orders State
 let orders = []
+let ordersCurrentPage = 1
+let ordersItemsPerPage = 20
+let ordersTotalCount = 0
 let currentOrderFilter = 'pending'
 let currentOrdersView = 'table' // 'table' or 'mosaic'
 
@@ -246,6 +249,7 @@ function initSidebarNavigation() {
       // Verificar límite de pedidos al hacer clic en "Pedidos"
       if (section === 'orders' && currentBusiness) {
         checkAndShowOrdersLimitWarning()
+        loadOrders()
       }
 
       // Cambiar sección
@@ -379,6 +383,61 @@ function initSearchFunctionality() {
       clearProductsSearch.style.display = 'none'
       renderProducts()
       searchProductsInput.focus()
+    })
+  }
+
+  // ============================================
+  // Búsqueda y Paginación de Pedidos
+  // ============================================
+  const searchOrdersInput = document.getElementById('searchOrdersInput')
+  const clearOrdersSearch = document.getElementById('clearOrdersSearch')
+  const filterOrdersStatus = document.getElementById('filterOrdersStatus')
+  const prevOrdersBtn = document.getElementById('prevOrdersPageBtn')
+  const nextOrdersBtn = document.getElementById('nextOrdersPageBtn')
+
+  let ordersDebounceTimer
+
+  if (searchOrdersInput && clearOrdersSearch) {
+    searchOrdersInput.addEventListener('input', (e) => {
+      if (e.target.value.trim()) {
+        clearOrdersSearch.style.display = 'flex'
+      } else {
+        clearOrdersSearch.style.display = 'none'
+      }
+
+      clearTimeout(ordersDebounceTimer)
+      ordersDebounceTimer = setTimeout(() => {
+        loadOrders(1) // Reset to page 1
+      }, 500)
+    })
+
+    clearOrdersSearch.addEventListener('click', () => {
+      searchOrdersInput.value = ''
+      clearOrdersSearch.style.display = 'none'
+      loadOrders(1)
+    })
+  }
+
+  if (filterOrdersStatus) {
+    filterOrdersStatus.addEventListener('change', () => {
+      loadOrders(1)
+    })
+  }
+
+  if (prevOrdersBtn) {
+    prevOrdersBtn.addEventListener('click', () => {
+      if (ordersCurrentPage > 1) {
+        loadOrders(ordersCurrentPage - 1)
+      }
+    })
+  }
+
+  if (nextOrdersBtn) {
+    nextOrdersBtn.addEventListener('click', () => {
+      const maxPages = Math.ceil(ordersTotalCount / ordersItemsPerPage)
+      if (ordersCurrentPage < maxPages) {
+        loadOrders(ordersCurrentPage + 1)
+      }
     })
   }
 }
@@ -4096,22 +4155,78 @@ function initRealtimeOrders() {
     .subscribe()
 }
 
-async function loadOrders() {
+// Load Orders (Paginated)
+async function loadOrders(page = 1) {
   if (!currentBusiness) return
 
   const listContainer = document.getElementById('ordersListContainer')
-  // Show loading state
+  const paginationContainer = document.getElementById('ordersPagination')
+
+  // Show loading state if needed (optional)
 
   try {
-    const { data, count } = await ordersService.getByBusiness(currentBusiness.id, { limit: 100 })
+    ordersCurrentPage = page
+
+    // Get Search Term
+    const searchInput = document.getElementById('searchOrdersInput')
+    const searchTerm = searchInput?.value.trim() || ''
+
+    // Get Status Filter
+    const statusFilter = document.getElementById('filterOrdersStatus')
+    const status = statusFilter?.value || 'all'
+
+    const { data, count } = await ordersService.getByBusiness(currentBusiness.id, {
+      page: ordersCurrentPage,
+      limit: ordersItemsPerPage,
+      status: status,
+      search: searchTerm
+    })
+
     orders = data || []
+    ordersTotalCount = count || 0
+
     renderOrders()
+    renderOrdersPagination()
+
     // Update badge on manual load
     updateOrdersBadgeCount()
   } catch (error) {
     console.error('Error loading orders:', error)
     notify.error('Error al cargar pedidos')
   }
+}
+
+function renderOrdersPagination() {
+  const paginationContainer = document.getElementById('ordersPagination')
+  const startCountEl = document.getElementById('ordersStartCount')
+  const endCountEl = document.getElementById('ordersEndCount')
+  const totalCountEl = document.getElementById('ordersTotalCount')
+  const prevBtn = document.getElementById('prevOrdersPageBtn')
+  const nextBtn = document.getElementById('nextOrdersPageBtn')
+  const pageIndicator = document.getElementById('ordersPageIndicator')
+
+  if (!paginationContainer || ordersTotalCount === 0) {
+    if (paginationContainer) paginationContainer.style.display = 'none'
+    return
+  }
+
+  paginationContainer.style.display = 'flex'
+
+  const start = (ordersCurrentPage - 1) * ordersItemsPerPage + 1
+  const end = Math.min(start + orders.length - 1, ordersTotalCount)
+
+  startCountEl.textContent = start
+  endCountEl.textContent = end
+  totalCountEl.textContent = ordersTotalCount
+  pageIndicator.textContent = `Página ${ordersCurrentPage}`
+
+  prevBtn.disabled = ordersCurrentPage === 1
+  nextBtn.disabled = end >= ordersTotalCount
+
+  // Clean old listeners to avoid duplicates if re-rendering (though usually safe if elements are static)
+  // Better to attach listeners once in init, but here we update state.
+  // We will handle click events in initOrders or add them here if not present.
+  // Actually, we should add listeners in initOrders to avoid duplicate bindings.
 }
 
 function renderOrders() {
