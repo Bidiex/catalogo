@@ -1004,7 +1004,7 @@ function renderBusinessInfo() {
     businessBranchName.textContent = currentBusiness.name
   }
 
-  const catalogUrl = `${window.location.origin}/src/pages/catalog/index.html?slug=${currentBusiness.slug}`
+  const catalogUrl = `${window.location.origin}/c/${currentBusiness.slug}`
   catalogLink.href = catalogUrl
   catalogLink.textContent = catalogUrl
 }
