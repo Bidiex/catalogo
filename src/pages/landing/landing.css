@@ -141,9 +141,9 @@ body {
 }
 
 .logo-icon-bg {
-    background-color: var(--primary);
-    padding: 0.25rem;
-    border-radius: 0.5rem;
+    /* background-color: var(--primary); REMOVED */
+    /* padding: 0.25rem; REMOVED */
+    /* border-radius: 0.5rem; */
     display: flex;
 }
 
