@@ -4411,15 +4411,24 @@ window.cancelOrder = async (orderId) => {
 }
 
 window.deleteOrder = async (orderId) => {
-  if (!window.confirm('¿Estás seguro de eliminar este pedido?')) return
+  const confirmed = await confirm.show({
+    title: '¿Eliminar pedido?',
+    message: 'Este pedido será eliminado permanentemente. Esta acción no se puede deshacer.',
+    type: 'danger',
+    confirmText: 'Eliminar',
+    cancelText: 'Cancelar'
+  })
+  if (!confirmed) return
+
+  const loadingToast = notify.loading('Eliminando pedido...')
   try {
     await ordersService.deleteOrder(orderId)
-    notify.success('Pedido eliminado')
+    notify.updateLoading(loadingToast, 'Pedido eliminado', 'success')
     orders = orders.filter(o => o.id !== orderId)
     renderOrders()
   } catch (error) {
     console.error(error)
-    notify.error('Error al eliminar pedido')
+    notify.updateLoading(loadingToast, 'Error al eliminar pedido', 'error')
   }
 }
 
