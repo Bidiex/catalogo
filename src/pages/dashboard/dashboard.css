@@ -2872,3 +2872,50 @@ button i {
     }
   }
 }
+
+/* Filter Pills (Orders) */
+.filter-pills {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  flex-wrap: nowrap;
+}
+
+.filter-pill {
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  color: #6b7280;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.filter-pill:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.filter-pill.active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+/* Scrollbar for pills container on mobile */
+.filter-pills::-webkit-scrollbar {
+  height: 4px;
+}
+
+.filter-pills::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.filter-pills::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 10px;
+}

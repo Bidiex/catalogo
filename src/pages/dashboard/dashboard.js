@@ -418,9 +418,22 @@ function initSearchFunctionality() {
     })
   }
 
-  if (filterOrdersStatus) {
-    filterOrdersStatus.addEventListener('change', () => {
-      loadOrders(1)
+  // Filter Pills
+  const filterPills = document.querySelectorAll('.filter-pill')
+  if (filterPills.length > 0) {
+    filterPills.forEach(pill => {
+      pill.addEventListener('click', (e) => {
+        // Remove active class from all
+        filterPills.forEach(p => p.classList.remove('active'))
+        // Add active to clicked
+        e.currentTarget.classList.add('active')
+
+        // Update state
+        currentOrderFilter = e.currentTarget.dataset.status
+
+        // Load orders
+        loadOrders(1)
+      })
     })
   }
 
@@ -4172,8 +4185,7 @@ async function loadOrders(page = 1) {
     const searchTerm = searchInput?.value.trim() || ''
 
     // Get Status Filter
-    const statusFilter = document.getElementById('filterOrdersStatus')
-    const status = statusFilter?.value || 'all'
+    const status = currentOrderFilter
 
     const { data, count } = await ordersService.getByBusiness(currentBusiness.id, {
       page: ordersCurrentPage,
