@@ -847,16 +847,23 @@ details[open] .faq-icon-rotate {
 }
 
 /* Hero Image Replacement */
+/* Hero Image Replacement */
 .hero-image {
     position: relative;
     width: 100%;
     height: auto;
-    border-radius: 1.5rem;
     box-sizing: border-box;
-    border: 0.75rem solid #0f172a;
+    /* Fix alignment issue */
+    border-radius: 1rem;
+    padding: 0.75rem;
+    background-color: #0f172a;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow:
-        0 0 0 1px rgba(255, 255, 255, 0.1),
-        0 25px 50px -12px rgba(0, 0, 0, 0.25),
-        0 0 100px -20px rgba(76, 237, 23, 0.5);
+        0 0 0 1px rgba(0, 0, 0, 0.2),
+        0 20px 40px -12px rgba(0, 0, 0, 0.5),
+        0 0 120px -20px rgba(76, 237, 23, 0.4);
+    /* backdrop-filter removed as we have opaque background */
+    -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
     z-index: 10;
 }
