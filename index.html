@@ -73,7 +73,10 @@
       <!-- Hero Preview -->
       <div class="hero-preview">
         <div class="hero-glow"></div>
-        <img src="/src/assets/hero_img.webp" alt="Dashboard Preview" class="hero-image" />
+        <picture>
+          <source media="(max-width: 768px)" srcset="/src/assets/hero_img_phone.png">
+          <img src="/src/assets/hero_img.webp" alt="Dashboard Preview" class="hero-image" />
+        </picture>
       </div>
     </div>
   </section>
