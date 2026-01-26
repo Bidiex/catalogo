@@ -1,0 +1,70 @@
+NOMBRE DEL PROYECTO: TraeGo (SaaS de Catálogos Digitales)
+
+DESCRIPCIÓN GENERAL:
+TraeGo es una plataforma Software as a Service (SaaS) diseñada para permitir a pequeños y medianos comercios crear su propio catálogo digital en cuestión de segundos. Su objetivo principal es eliminar la fricción en la toma de pedidos, permitiendo que los clientes seleccionen sus productos y envíen el pedido completamente detallado directamente al WhatsApp del negocio, listo para ser procesado.
+
+VIRTUDES PRINCIPALES:
+1. Sin Intermediarios ni Comisiones: El modelo de negocio se basa en suscripción (SaaS), no en comisiones por venta. El 100% de las ganancias son para el comercio.
+2. Pedidos a WhatsApp: Automatiza la creación del pedido. El cliente no necesita registrarse ni descargar apps; solo elige y envía.
+3. Velocidad y Facilidad: Un comercio puede estar vendiendo en minutos gracias a un "Onboarding Wizard" intuitivo.
+4. Personalización Total: Los comercios pueden adaptar la identidad visual (logos, colores) para que el catálogo respete su marca.
+5. Diseño Mobile-First: Tanto el catálogo como el panel de administración están optimizados para funcionar perfectamente en dispositivos móviles.
+
+FUNCIONALIDADES DEL SISTEMA:
+
+A. PARA EL COMERCIO (DASHBOARD ADMINISTRATIVO):
+1. Gestión de Negocio:
+   - Configuración de perfil (Logo, nombre, descripción).
+   - Personalización de colores de marca.
+   - Definición de horarios de atención (Apertura/Cierre por día).
+   - Configuración de métodos de pago aceptados (Nequi, Efectivo, Tarjeta, etc.).
+   - Configuración de costos de domicilio.
+   - Generación de enlace único del catálogo (traego.com/c/tu-negocio).
+
+2. Gestión de Catálogo:
+   - Categorías: Creación y organización de productos por categorías.
+   - Productos: ABM completo (Alta, Baja, Modificación) de productos con precio, nombre, descripción e imágenes.
+   - Opciones Avanzadas: Gestión de "Comentarios Rápidos" (ej: Sin cebolla, Salsa aparte) y "Acompañantes/Sides".
+   - Promociones: Creación de banners promocionales y combos destacados.
+
+3. Gestión de Pedidos:
+   - Recepción de pedidos en tiempo real.
+   - Visualización dual: Vista de Tabla para gestión masiva y Vista Mosaico (Kanban) para flujo visual.
+   - Filtrado por estado: Pendientes, Verificados, Completados, Cancelados.
+   - Buscador de pedidos por nombre o teléfono.
+
+4. Herramientas de Marketing y Ventas:
+   - Editor de Plantillas de WhatsApp: Constructor visual para definir cómo llega el mensaje del pedido al WhatsApp (usando tokens dinámicos como {total}, {nombre}, {productos}).
+   - Estadísticas: Panel con métricas clave como visitas al catálogo, total de productos y Top 3 productos con más "Me gusta".
+
+5. Soporte y Ayuda:
+   - Sistema de tickets integrado para contactar soporte técnico.
+   - Onboarding guiado paso a paso para nuevos usuarios.
+
+B. PARA EL CLIENTE FINAL (CATÁLOGO PÚBLICO):
+1. Experiencia de Usuario (UX):
+   - Interfaz limpia y rápida, similar a una app nativa.
+   - Header "Sticky" inteligente que se compacta al hacer scroll para maximizar el espacio de visualización.
+   - Buscador instantáneo de productos.
+
+2. Navegación y Compra:
+   - Navegación fluida por categorías.
+   - Modal de detalle de producto con imágenes en alta calidad.
+   - Sistema de "Favoritos" (Likes) en productos.
+   - Personalización del pedido (selección de acompañantes, notas especiales).
+
+3. Carrito y Checkout:
+   - Carrito de compras flotante siempre visible.
+   - Resumen de pedido antes de confirmar.
+   - Formulario de checkout simplificado (Datos básicos + Método de pago + Dirección).
+   - Integración directa con API de WhatsApp para envío del pedido.
+
+4. Estados Especiales:
+   - Pantalla de "Mantenimiento" o "Negocio Cerrado" cuando aplica.
+   - Carga progresiva (Lazy loading) y esqueletos de carga (Skeletons) para sensación de velocidad.
+
+C. LANDING PAGE (SITO INFORMATIVO):
+- Presentación clara de beneficios y propuesta de valor.
+- Tabla de precios comparativa (Plan Plus vs Plan Pro).
+- Sección de Preguntas Frecuentes (FAQ) interactiva.
+- Llamadas a la acción (CTA) optimizadas para registro y conversión.
