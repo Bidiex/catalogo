@@ -189,6 +189,10 @@
   background: transparent;
 }
 
+#toggleRegister {
+  width: 100%;
+}
+
 .btn-text {
   background: none;
   border: none;
