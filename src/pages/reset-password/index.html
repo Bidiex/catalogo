@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recuperar Contraseña - TraeGo</title>
+    <link rel="icon" type="image/svg+xml" href="/src/assets/icon_traego.svg" />
+    <link rel="stylesheet" href="/src/styles/global.css">
+    <link rel="stylesheet" href="../login/login.css">
+</head>
+
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <img src="/src/assets/icon_traego.svg" alt="TraeGo"
+                    style="width: 60px; height: 60px; object-fit: contain;">
+                <h1>Recuperar Contraseña</h1>
+                <p>Ingresa tu correo para recibir las instrucciones</p>
+            </div>
+
+            <form id="resetForm" class="login-form">
+                <div class="form-group">
+                    <label for="email">Correo electrónico</label>
+                    <input type="email" id="email" name="email" placeholder="tu@email.com" required
+                        autocomplete="email">
+                </div>
+
+                <div id="message" class="error-message" style="display: none;"></div>
+
+                <button type="submit" class="btn-primary" id="resetBtn">
+                    Enviar instrucciones
+                </button>
+
+                <button type="button" class="btn-text" id="backToLogin">
+                    ← Volver al inicio de sesión
+                </button>
+            </form>
+        </div>
+    </div>
+    <script type="module" src="./reset.js"></script>
+</body>
+
+</html>

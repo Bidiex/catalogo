@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Actualizar Contraseña - TraeGo</title>
+    <link rel="icon" type="image/svg+xml" href="/src/assets/icon_traego.svg" />
+    <link rel="stylesheet" href="/src/styles/global.css">
+    <link rel="stylesheet" href="../login/login.css">
+</head>
+
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <img src="/src/assets/icon_traego.svg" alt="TraeGo"
+                    style="width: 60px; height: 60px; object-fit: contain;">
+                <h1>Nueva Contraseña</h1>
+                <p>Ingresa tu nueva contraseña para acceder</p>
+            </div>
+
+            <form id="updateForm" class="login-form">
+                <div class="form-group">
+                    <label for="password">Nueva contraseña</label>
+                    <input type="password" id="password" name="password" placeholder="Mínimo 6 caracteres" required
+                        minlength="6" autocomplete="new-password">
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">Confirmar contraseña</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword"
+                        placeholder="Repite la contraseña" required minlength="6" autocomplete="new-password">
+                </div>
+
+                <div id="message" class="error-message" style="display: none;"></div>
+
+                <button type="submit" class="btn-primary" id="updateBtn">
+                    Actualizar contraseña
+                </button>
+            </form>
+        </div>
+    </div>
+    <script type="module" src="./update.js"></script>
+</body>
+
+</html>

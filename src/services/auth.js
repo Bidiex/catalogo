@@ -129,5 +129,33 @@ export const authService = {
       console.error('Error getting user metadata:', error)
       return null
     }
+  },
+
+  /**
+   * Enviar correo de recuperación de contraseña
+   */
+  async resetPasswordForEmail(email) {
+    try {
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/src/pages/update-password/index.html`,
+      })
+      if (error) throw error
+      return { success: true, data }
+    } catch (error) {
+      return { success: false, error: error.message }
+    }
+  },
+
+  /**
+   * Actualizar usuario (para cambio de contraseña)
+   */
+  async updateUser(attributes) {
+    try {
+      const { data, error } = await supabase.auth.updateUser(attributes)
+      if (error) throw error
+      return { success: true, data }
+    } catch (error) {
+      return { success: false, error: error.message }
+    }
   }
 }
