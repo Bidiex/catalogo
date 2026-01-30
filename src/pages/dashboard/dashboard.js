@@ -40,7 +40,7 @@ let orders = []
 let ordersCurrentPage = 1
 let ordersItemsPerPage = 20
 let ordersTotalCount = 0
-let currentOrderFilter = 'pending'
+let currentOrderFilter = 'all'
 let currentOrdersView = 'table' // 'table' or 'mosaic'
 
 // Wizard onboarding logo
