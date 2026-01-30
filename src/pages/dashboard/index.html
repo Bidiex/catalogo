@@ -8,6 +8,7 @@
   <link rel="icon" type="image/svg+xml" href="/src/assets/icon_traego.svg" />
   <link rel="stylesheet" href="/src/styles/global.css">
   <link rel="stylesheet" href="./dashboard.css">
+  <link rel="stylesheet" href="./css/business-layout.css">
 </head>
 
 <body>
@@ -547,154 +548,175 @@
               </div>
               <div class="card-content">
                 <div class="business-info">
-                  <!-- Logo Section -->
-                  <div class="logo-display-container"
-                    style="display: flex; flex-direction: column; align-items: center; margin-bottom: 2rem;">
-                    <div class="image-preview" id="business-logo-display"
-                      style="width: 150px; height: 150px; margin-bottom: 1rem; border-radius: 50%; overflow: hidden; background: #f3f4f6; display: flex; align-items: center; justify-content: center; border: 2px solid #e5e7eb; cursor: pointer;">
-                      <i class="ri-store-2-line" style="font-size: 3rem; color: #9ca3af;"></i>
-                    </div>
-                    <input type="file" id="business-logo-input" accept="image/jpeg,image/jpg,image/png,image/webp"
-                      style="display: none;">
-                    <button type="button" id="changeBusinessLogoBtn" class="btn-secondary-small">
-                      <i class="ri-image-edit-line"></i> Cambiar Logo
-                    </button>
 
-                    <button type="button" id="openColorModalBtn" class="btn-secondary-small"
-                      style="margin-top: 0.5rem; background: white; border: 1px solid #e2e8f0;">
-                      <i class="ri-palette-line"></i> Personalizar Color
-                    </button>
-                    <div id="logo-upload-progress" style="display: none; width: 150px; margin-top: 0.5rem;">
-                      <div class="progress-bar"
-                        style="height: 4px; background: #eee; border-radius: 2px; overflow: hidden;">
-                        <div class="progress-fill" style="height: 100%; background: var(--primary-color); width: 0%;">
+                  <div class="business-profile-container" style="display: flex; flex-direction: column; gap: 1.5rem;">
+
+                    <!-- Top: Identity (Logo + Info) + Plan -->
+                    <!-- We will use a grid/flex wrapper via CSS class 'business-top-grid' -->
+                    <div class="business-top-grid">
+
+                      <!-- Identity Side -->
+                      <div class="logo-display-container" style="display: flex; flex-direction: column; gap: 1rem;">
+                        <!-- Logo & Buttons -->
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                          <div class="image-preview" id="business-logo-display"
+                            style="width: 150px; height: 150px; margin-bottom: 1rem; border-radius: 50%; overflow: hidden; background: #f3f4f6; display: flex; align-items: center; justify-content: center; border: 2px solid #e5e7eb; cursor: pointer;">
+                            <i class="ri-store-2-line" style="font-size: 3rem; color: #9ca3af;"></i>
+                          </div>
+                          <input type="file" id="business-logo-input" accept="image/jpeg,image/jpg,image/png,image/webp"
+                            style="display: none;">
+                          <button type="button" id="changeBusinessLogoBtn" class="btn-secondary-small">
+                            <i class="ri-image-edit-line"></i> Cambiar Logo
+                          </button>
+
+                          <button type="button" id="openColorModalBtn" class="btn-secondary-small"
+                            style="margin-top: 0.5rem; background: white; border: 1px solid #e2e8f0;">
+                            <i class="ri-palette-line"></i> Personalizar Color
+                          </button>
+                          <div id="logo-upload-progress" style="display: none; width: 150px; margin-top: 0.5rem;">
+                            <div class="progress-bar"
+                              style="height: 4px; background: #eee; border-radius: 2px; overflow: hidden;">
+                              <div class="progress-fill"
+                                style="height: 100%; background: var(--primary-color); width: 0%;">
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Info Rows (Moved Here) -->
+                        <div class="business-details-list" style="margin-top: 1rem;">
+                          <div class="info-row">
+                            <span class="label"><i class="ri-store-line"></i> Nombre:</span>
+                            <span id="businessName" class="value">-</span>
+                          </div>
+                          <div class="info-row">
+                            <span class="label"><i class="ri-whatsapp-line"></i> WhatsApp:</span>
+                            <span id="businessWhatsapp" class="value">-</span>
+                          </div>
+                          <div class="info-row">
+                            <span class="label"><i class="ri-map-pin-line"></i> Dirección:</span>
+                            <span id="businessAddress" class="value">-</span>
+                          </div>
+                          <div class="info-row">
+                            <span class="label"><i class="ri-e-bike-2-fill"></i> Precio domicilio:</span>
+                            <span id="businessDeliveryPrice" class="value">-</span>
+                          </div>
+                          <div class="info-row">
+                            <span class="label"><i class="ri-link"></i> Enlace del catálogo:</span>
+                            <div class="catalog-link">
+                              <a id="catalogLink" href="#" target="_blank" class="link">-</a>
+                              <button id="copyLinkBtn" class="btn-copy">
+                                <i class="ri-file-copy-line"></i> Copiar
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
 
-                  <!-- Plan Status Section -->
-                  <div class="plan-status-section"
-                    style="background: #f8fafc; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid #e2e8f0;">
-                    <div
-                      style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-                      <div>
-                        <span class="label"
-                          style="display: block; font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Tu Plan
-                          Actual</span>
-                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                          <span id="planBadge" class="badge"
-                            style="background: var(--primary-color); color: white; padding: 0.25rem 0.75rem; border-radius: 99px; font-weight: 600; font-size: 0.9rem;">LOADING...</span>
-                          <span id="planStatusTag"
-                            style="font-size: 0.8rem; padding: 2px 6px; border-radius: 4px; background: #dcfce7; color: #166534;">Activo</span>
+                      <!-- Plan Status Side -->
+                      <div class="plan-status-section"
+                        style="background: #f8fafc; padding: 1.5rem; border-radius: 8px; border: 1px solid #e2e8f0; height: fit-content;">
+                        <div
+                          style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                          <div>
+                            <span class="label"
+                              style="display: block; font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Tu Plan
+                              Actual</span>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                              <span id="planBadge" class="badge"
+                                style="background: var(--primary-color); color: white; padding: 0.25rem 0.75rem; border-radius: 99px; font-weight: 600; font-size: 0.9rem;">LOADING...</span>
+                              <span id="planStatusTag"
+                                style="font-size: 0.8rem; padding: 2px 6px; border-radius: 4px; background: #dcfce7; color: #166534;">Activo</span>
+                            </div>
+                          </div>
+                          <div style="text-align: right;">
+                            <span class="label"
+                              style="display: block; font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Vence
+                              en</span>
+                            <span id="planDaysRemaining" style="font-weight: 600; font-size: 1.1rem; color: #334155;">-
+                              días</span>
+                            <div id="planExpiryDate" style="font-size: 0.75rem; color: #94a3b8;">-</div>
+                          </div>
+                        </div>
+
+                        <!-- Usage Meter -->
+                        <div class="usage-meter" style="margin-top: 1rem;">
+                          <div
+                            style="display: flex; justify-content: space-between; margin-bottom: 0.25rem; font-size: 0.85rem;">
+                            <span style="color: #64748b;">Productos usados</span>
+                            <span id="productUsageText" style="font-weight: 600;">0 / 50</span>
+                          </div>
+                          <div style="height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden;">
+                            <div id="productUsageBar"
+                              style="height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s ease;">
+                            </div>
+                          </div>
+                          <div id="upgradeMessage" style="display: none; margin-top: 0.5rem;">
+                            <button id="btnUpgradePlan" class="btn-primary-small"
+                              style="width: 100%; justify-content: center; background: linear-gradient(135deg, #6366f1, #8b5cf6);">
+                              <i class="ri-rocket-line"></i> Mejorar a PRO
+                            </button>
+                          </div>
+                          <!-- Botón Permanente de Upgrade -->
+                          <div id="permanentUpgradeContainer"
+                            style="display: none; margin-top: 1rem; border-top: 1px dashed #e2e8f0; padding-top: 0.75rem;">
+                            <button id="btnPermanentUpgrade" class="btn-secondary-small"
+                              style="width: 100%; justify-content: center; color: #4338ca; border-color: #c7d2fe; background: #e0e7ff; cursor: pointer;">
+                              <i class="ri-rocket-line"></i> Mejorar mi Plan a PRO
+                            </button>
+                          </div>
                         </div>
                       </div>
-                      <div style="text-align: right;">
-                        <span class="label"
-                          style="display: block; font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Vence
-                          en</span>
-                        <span id="planDaysRemaining" style="font-weight: 600; font-size: 1.1rem; color: #334155;">-
-                          días</span>
-                        <div id="planExpiryDate" style="font-size: 0.75rem; color: #94a3b8;">-</div>
-                      </div>
-                    </div>
 
-                    <!-- Usage Meter -->
-                    <div class="usage-meter" style="margin-top: 1rem;">
-                      <div
-                        style="display: flex; justify-content: space-between; margin-bottom: 0.25rem; font-size: 0.85rem;">
-                        <span style="color: #64748b;">Productos usados</span>
-                        <span id="productUsageText" style="font-weight: 600;">0 / 50</span>
-                      </div>
-                      <div style="height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden;">
-                        <div id="productUsageBar"
-                          style="height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s ease;">
-                        </div>
-                      </div>
-                      <div id="upgradeMessage" style="display: none; margin-top: 0.5rem;">
-                        <button id="btnUpgradePlan" class="btn-primary-small"
-                          style="width: 100%; justify-content: center; background: linear-gradient(135deg, #6366f1, #8b5cf6);">
-                          <i class="ri-rocket-line"></i> Mejorar a PRO
-                        </button>
-                      </div>
-                      <!-- Botón Permanente de Upgrade -->
-                      <div id="permanentUpgradeContainer"
-                        style="display: none; margin-top: 1rem; border-top: 1px dashed #e2e8f0; padding-top: 0.75rem;">
-                        <button id="btnPermanentUpgrade" class="btn-secondary-small"
-                          style="width: 100%; justify-content: center; color: #4338ca; border-color: #c7d2fe; background: #e0e7ff; cursor: pointer;">
-                          <i class="ri-rocket-line"></i> Mejorar mi Plan a PRO
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="info-row">
-                    <span class="label"><i class="ri-store-line"></i> Nombre:</span>
-                    <span id="businessName" class="value">-</span>
-                  </div>
-                  <div class="info-row">
-                    <span class="label"><i class="ri-whatsapp-line"></i> WhatsApp:</span>
-                    <span id="businessWhatsapp" class="value">-</span>
-                  </div>
-                  <div class="info-row">
-                    <span class="label"><i class="ri-map-pin-line"></i> Dirección:</span>
-                    <span id="businessAddress" class="value">-</span>
-                  </div>
-                  <div class="info-row">
-                    <span class="label"><i class="ri-e-bike-2-fill"></i> Precio domicilio:</span>
-                    <span id="businessDeliveryPrice" class="value">-</span>
-                  </div>
-                  <div class="info-row">
-                    <span class="label"><i class="ri-link"></i> Enlace del catálogo:</span>
-                    <div class="catalog-link">
-                      <a id="catalogLink" href="#" target="_blank" class="link">-</a>
-                      <button id="copyLinkBtn" class="btn-copy">
-                        <i class="ri-file-copy-line"></i> Copiar
-                      </button>
                     </div>
                   </div>
                 </div>
               </div>
             </section>
 
-            <!-- Payment Methods Section -->
-            <section class="card" style="margin-top: 1.5rem;">
-              <div class="card-header">
-                <h2><i class="ri-bank-card-line"></i> Métodos de Pago</h2>
-                <button id="addPaymentMethodBtn" class="btn-primary-small">
-                  <i class="ri-add-line"></i> Agregar
-                </button>
-              </div>
-              <div class="card-content">
-                <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 1rem;">
-                  Configura los métodos de pago que tus clientes podrán seleccionar al hacer un pedido.
-                </p>
-                <div id="paymentMethodsList" class="payment-methods-list">
-                  <p class="empty-message">No hay métodos de pago configurados</p>
-                </div>
-              </div>
+            <!-- Grid Container for Payment & Hours -->
+            <div class="business-settings-grid"
+              style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; align-items: start;">
 
-            </section>
-
-            <!-- Business Hours Section -->
-            <section class="card" style="margin-top: 1.5rem;">
-              <div class="card-header">
-                <h2><i class="ri-time-line"></i> Horarios de Servicio</h2>
-                <button id="saveBusinessHoursBtn" class="btn-primary-small">
-                  <i class="ri-save-line"></i> Guardar Horarios
-                </button>
-              </div>
-              <div class="card-content">
-                <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 1.5rem;">
-                  Configura los horarios en que tu negocio está abierto. Los clientes solo podrán hacer pedidos
-                  durante
-                  estos horarios.
-                </p>
-                <div id="businessHoursGrid" class="business-hours-grid">
-                  <!-- Se llenará dinámicamente con JavaScript -->
+              <!-- Payment Methods Section -->
+              <section class="card" style="height: 100%;">
+                <div class="card-header">
+                  <h2><i class="ri-bank-card-line"></i> Métodos de Pago</h2>
+                  <button id="addPaymentMethodBtn" class="btn-primary-small">
+                    <i class="ri-add-line"></i> Agregar
+                  </button>
                 </div>
-              </div>
-            </section>
+                <div class="card-content">
+                  <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 1rem;">
+                    Configura los métodos de pago que tus clientes podrán seleccionar al hacer un pedido.
+                  </p>
+                  <div id="paymentMethodsList" class="payment-methods-list">
+                    <p class="empty-message">No hay métodos de pago configurados</p>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Business Hours Section -->
+              <section class="card" style="height: 100%;">
+                <div class="card-header">
+                  <h2><i class="ri-time-line"></i> Horarios de Servicio</h2>
+                  <button id="saveBusinessHoursBtn" class="btn-primary-small">
+                    <i class="ri-save-line"></i> Guardar Horarios
+                  </button>
+                </div>
+                <div class="card-content">
+                  <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 1.5rem;">
+                    Configura los horarios en que tu negocio está abierto. Los clientes solo podrán hacer pedidos
+                    durante
+                    estos horarios.
+                  </p>
+                  <div id="businessHoursGrid" class="business-hours-grid">
+                    <!-- Se llenará dinámicamente con JavaScript -->
+                  </div>
+                </div>
+              </section>
+
+            </div>
           </div>
 
           <!-- Section: Pedidos (Gestion de Ordenes) -->

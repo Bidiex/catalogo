@@ -1,0 +1,79 @@
+/* ============================================
+   BUSINESS SECTION LAYOUT
+   ============================================ */
+
+/* Mobile First: Stacked */
+.business-top-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.logo-display-container {
+    width: 100%;
+}
+
+.business-details-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+/* Info Rows Styling */
+.info-row {
+    display: flex;
+    align-items: center;
+    /* Align label and value vertically */
+    gap: 0.5rem;
+    font-size: 0.95rem;
+    color: var(--color-text);
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-row .label {
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 140px;
+    /* Fixed width for labels */
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.info-row .value {
+    color: var(--color-text);
+    word-break: break-all;
+    /* Prevent overflow */
+}
+
+/* Desktop: Side-by-Side */
+@media (min-width: 1024px) {
+    .business-top-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        /* Equal width columns */
+        align-items: start;
+        /* Align tops */
+        gap: 2rem;
+    }
+
+    /* Specifically styles for Profile Container if needed */
+    .business-profile-container {
+        max-width: none;
+        /* Let grid control width */
+    }
+
+    .logo-display-container {
+        /* On desktop, maybe row layout for logo vs info? 
+           User said: "en desktop vamos a hacerlos flex row" referring to [Logo+Info] vs [Plan] 
+           OR referring to [Logo] vs [Info].
+           Let's stick to the interpretation: Top Grid is Row.
+           Inside "Logo Display Container": keep column for now as it looks like a profile card.
+        */
+    }
+}

@@ -2985,3 +2985,15 @@ input:checked+.slider:before {
   font-weight: 500;
   color: #374151;
 }
+
+/* ============================================
+   CATEGORIES LAYOUT (DESKTOP)
+   ============================================ */
+@media (min-width: 1024px) {
+  .categories-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    /* Responsive Grid */
+    gap: 1.5rem;
+  }
+}
