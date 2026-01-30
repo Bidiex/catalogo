@@ -545,7 +545,11 @@
             <section class="card">
               <div class="card-header">
                 <h2><i class="ri-file-list-3-line"></i> Gestión de Pedidos</h2>
-                <div class="header-controls" style="display: flex; gap: 0.5rem;">
+                <div class="header-controls" style="display: flex; gap: 0.5rem; align-items: center;">
+                  <button id="openExportModalBtn" class="btn-secondary-small" title="Descargar Reporte"
+                    style="height: 36px;">
+                    <i class="ri-download-2-line"></i> <span class="hide-mobile" style="display: none;">Exportar</span>
+                  </button>
                   <div class="view-toggles">
                     <button class="view-toggle-btn active" data-view="table"><i class="ri-table-line"></i></button>
                     <button class="view-toggle-btn" data-view="mosaic"><i class="ri-grid-fill"></i></button>
@@ -1350,6 +1354,48 @@
     </div>
   </div>
 
+
+
+  <!-- Export Orders Modal -->
+  <div id="exportOrdersModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h2><i class="ri-file-excel-2-line"></i> Exportar Pedidos</h2>
+        <button class="modal-close" id="closeExportModalBtn">&times;</button>
+      </div>
+      <form id="exportOrdersForm" class="modal-form">
+        <p class="modal-description" style="color: #4b5563; margin-bottom: 0.5rem;">
+          Selecciona el rango de fechas y el estado de los pedidos que deseas exportar a Excel.
+        </p>
+        <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+          <div class="form-group">
+            <label for="exportStartDate">Fecha Inicial</label>
+            <input type="date" id="exportStartDate" required class="form-input">
+          </div>
+          <div class="form-group">
+            <label for="exportEndDate">Fecha Final</label>
+            <input type="date" id="exportEndDate" required class="form-input">
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+          <label for="exportStatus">Estado</label>
+          <select id="exportStatus" class="form-select">
+            <option value="all">Todos los estados</option>
+            <option value="pending">Pendientes</option>
+            <option value="verified">Verificados</option>
+            <option value="completed">Completados</option>
+            <option value="cancelled">Cancelados</option>
+          </select>
+        </div>
+        <div class="modal-actions" style="display: flex; gap: 1rem; justify-content: flex-end;">
+          <button type="button" class="btn-secondary" id="cancelExportBtn">Cancelar</button>
+          <button type="submit" class="btn-primary" id="confirmExportBtn">
+            <i class="ri-download-2-line"></i> Descargar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 
 
   <script type="module" src="./dashboard.js"></script>

@@ -16,7 +16,7 @@ import { promotionOptionsService } from '../../services/promotionOptions.js'
 import { imageService } from '../../services/images.js'
 import { supportService } from '../../services/support.js'
 import { ordersService } from '../../services/orders.js'
-
+import * as XLSX from 'xlsx'
 // ============================================
 // ESTADO GLOBAL
 // ============================================
@@ -194,7 +194,9 @@ async function init() {
     initSupport()
 
     // Inicializar pedidos
+    // Inicializar pedidos
     initOrders()
+    initOrderExport()
 
     // Cargar negocio
     await loadBusiness()
@@ -709,6 +711,166 @@ async function loadAllData() {
     console.error('Error loading data:', error)
     notify.error('Error al cargar los datos')
   }
+}
+
+// ============================================
+// EXPORT ORDERS LOGIC
+// ============================================
+function initOrderExport() {
+  const openExportBtn = document.getElementById('openExportModalBtn')
+  const exportModal = document.getElementById('exportOrdersModal')
+  const closeExportBtn = document.getElementById('closeExportModalBtn')
+  const cancelExportBtn = document.getElementById('cancelExportBtn')
+  const exportForm = document.getElementById('exportOrdersForm')
+  const confirmExportBtn = document.getElementById('confirmExportBtn')
+
+  if (!openExportBtn) return
+
+  // Open Modal
+  openExportBtn.addEventListener('click', () => {
+    // Set default dates (current month)
+    const now = new Date()
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
+
+    // Format to YYYY-MM-DD
+    const formatDate = (date) => {
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    }
+
+    document.getElementById('exportStartDate').value = formatDate(firstDay)
+    document.getElementById('exportEndDate').value = formatDate(now)
+
+    exportModal.style.display = 'flex'
+  })
+
+  // Close Modal Actions
+  const closeModal = () => {
+    exportModal.style.display = 'none'
+  }
+
+  if (closeExportBtn) closeExportBtn.addEventListener('click', closeModal)
+  if (cancelExportBtn) cancelExportBtn.addEventListener('click', closeModal)
+
+  // Close on outside click
+  exportModal.addEventListener('click', (e) => {
+    if (e.target === exportModal) closeModal()
+  })
+
+  // Handle Export Submit
+  if (exportForm) {
+    exportForm.addEventListener('submit', async (e) => {
+      e.preventDefault()
+
+      const startDate = document.getElementById('exportStartDate').value
+      const endDate = document.getElementById('exportEndDate').value
+      const status = document.getElementById('exportStatus').value
+
+      if (!startDate || !endDate) {
+        notify.error('Por favor selecciona las fechas')
+        return
+      }
+
+      if (new Date(startDate) > new Date(endDate)) {
+        notify.error('La fecha inicial no puede ser mayor a la fecha final')
+        return
+      }
+
+      try {
+        await buttonLoader.execute(confirmExportBtn, async () => {
+          // 1. Fetch Data
+          const orders = await ordersService.getOrdersForExport(currentBusiness.id, {
+            startDate,
+            endDate,
+            status
+          })
+
+          // 2. Validate existence
+          if (!orders || orders.length === 0) {
+            notify.info('No se encontraron pedidos en el rango seleccionado')
+            return
+          }
+
+          // 3. Format Data for Excel
+          const exportData = orders.map(order => {
+            // Format items list with sides
+            const itemsList = order.order_items
+              ? order.order_items.map(item => {
+                let start = `${item.quantity}x ${item.product_name}`
+                // Add sides if any
+                if (item.options?.sides?.length > 0) {
+                  const sides = item.options.sides.map(s => s.name).join(', ')
+                  start += ` (Acomp: ${sides})`
+                }
+                return start
+              }).join('; ')
+              : ''
+
+            // Extract just sides for separate column
+            const allSides = order.order_items
+              ? order.order_items.flatMap(item =>
+                item.options?.sides?.map(s => `${item.quantity}x ${s.name}`) || []
+              ).join(', ')
+              : ''
+
+            return {
+              'Fecha': new Date(order.created_at).toLocaleString(),
+              'Cliente': order.customer_name,
+              'Teléfono': order.customer_phone,
+              'Dirección': order.customer_address,
+              'Barrio': order.customer_neighborhood || '',
+              'Estado': getOrderStatusLabel(order.status),
+              'Total': order.total_amount ? `$${parseFloat(order.total_amount).toLocaleString()}` : '$0',
+              'Método Pago': order.payment_method,
+              'Productos': itemsList,
+              'Acompañantes': allSides,
+              'Notas': order.order_notes || ''
+            }
+          })
+
+          // 4. Generate Excel
+          const ws = XLSX.utils.json_to_sheet(exportData)
+
+          // Auto-width columns (simple heuristic)
+          const wscols = Object.keys(exportData[0]).map(key => ({ wch: 20 }))
+          ws['!cols'] = wscols
+
+          const wb = XLSX.utils.book_new()
+          XLSX.utils.book_append_sheet(wb, ws, "Pedidos")
+
+          // 5. Generate Filename
+          const businessNameSafe = (currentBusiness.name || 'negocio')
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, '_')
+            .replace(/_+/g, '_')
+
+          const filename = `${businessNameSafe}_reporte_de_pedidos.xlsx`
+
+          // 6. Download
+          XLSX.writeFile(wb, filename)
+
+          notify.success(`Reporte descargado: ${orders.length} pedidos`)
+          closeModal()
+        }, 'Generando...')
+      } catch (error) {
+        console.error('Error exporting orders:', error)
+        notify.error('Error al generar el reporte')
+      }
+    })
+  }
+}
+
+// Helper to reuse status labels
+function getOrderStatusLabel(status) {
+  const labels = {
+    'pending': 'Pendiente',
+    'verified': 'Verificado',
+    'completed': 'Completado',
+    'cancelled': 'Cancelado'
+  }
+  return labels[status] || status
 }
 
 // ============================================

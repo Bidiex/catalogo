@@ -165,6 +165,48 @@ export const ordersService = {
     },
 
     /**
+     * Get all orders for export within a date range
+     * @param {string} businessId
+     * @param {Object} options - { startDate, endDate, status }
+     */
+    async getOrdersForExport(businessId, { startDate, endDate, status = 'all' }) {
+        try {
+            // Append time to ensure full day coverage
+            const startDateTime = `${startDate}T00:00:00`
+            const endDateTime = `${endDate}T23:59:59`
+
+            let query = supabase
+                .from('orders')
+                .select(`
+                    *,
+                    order_items (
+                        quantity,
+                        unit_price,
+                        product_name,
+                        options
+                    )
+                `)
+                .eq('business_id', businessId)
+                .gte('created_at', startDateTime)
+                .lte('created_at', endDateTime)
+                .order('created_at', { ascending: false })
+
+            // Filter by status
+            if (status && status !== 'all') {
+                query = query.eq('status', status)
+            }
+
+            const { data, error } = await query
+
+            if (error) throw error
+            return data
+        } catch (error) {
+            console.error('ordersService.getOrdersForExport error:', error)
+            throw error
+        }
+    },
+
+    /**
      * Delete an order
      * @param {string} orderId 
      */
