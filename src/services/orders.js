@@ -183,6 +183,7 @@ export const ordersService = {
                         quantity,
                         unit_price,
                         product_name,
+                        product_id,
                         options
                     )
                 `)

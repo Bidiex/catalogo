@@ -16,6 +16,7 @@ import { promotionOptionsService } from '../../services/promotionOptions.js'
 import { imageService } from '../../services/images.js'
 import { supportService } from '../../services/support.js'
 import { ordersService } from '../../services/orders.js'
+import { initAnalytics, updateAnalytics } from './analytics.js'
 import * as XLSX from 'xlsx'
 // ============================================
 // ESTADO GLOBAL
@@ -696,6 +697,9 @@ async function loadAllData() {
       businessHoursService.getByBusiness(currentBusiness.id)
     ])
 
+    // Load Analytics
+    loadAnalyticsData()
+
     renderBusinessInfo()
     renderCategories()
     renderProducts()
@@ -710,6 +714,25 @@ async function loadAllData() {
   } catch (error) {
     console.error('Error loading data:', error)
     notify.error('Error al cargar los datos')
+  }
+}
+
+async function loadAnalyticsData() {
+  if (!currentBusiness) return
+
+  try {
+    const startDate = '2024-01-01'
+    const endDate = new Date().toISOString().split('T')[0]
+
+    const ordersForAnalytics = await ordersService.getOrdersForExport(currentBusiness.id, {
+      startDate: startDate,
+      endDate: endDate,
+      status: 'all'
+    })
+
+    initAnalytics(ordersForAnalytics || [], products || [], categories || [])
+  } catch (error) {
+    console.error('Error loading analytics data:', error)
   }
 }
 
@@ -2630,6 +2653,8 @@ function resetPromotionImageUpload() {
   promotionImagePreview.classList.remove('has-image')
   promotionImageActions.style.display = 'none'
 }
+
+
 
 async function loadPromotions() {
   try {

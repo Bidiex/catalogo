@@ -381,6 +381,162 @@
                 </div>
               </div>
             </div>
+
+            <!-- Analytics Section -->
+            <div id="analytics-container" style="margin-top: 2rem; border-top: 1px solid #e2e8f0; padding-top: 2rem;">
+              <h2 style="font-size: 1.25rem; color: #1e293b; margin-bottom: 1rem; font-weight: 600;">Estadísticas del
+                Negocio</h2>
+
+              <!-- BI Filters -->
+              <div class="analytics-filters card" style="padding: 1.5rem; margin-bottom: 1.5rem;">
+                <h3 style="font-size: 0.9rem; color: #64748b; margin-bottom: 1rem; font-weight: 600;">Filtrar
+                  Estadísticas</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+
+                  <!-- Year -->
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label for="bi-filter-year" style="font-size: 0.85rem; font-weight: 500;">Año</label>
+                    <div class="select-wrapper" style="position: relative;">
+                      <select id="bi-filter-year" class="form-input"
+                        style="width: 100%; cursor: pointer; padding-left: 2.5rem; padding-right: 1rem;">
+                        <option value="all">Todo el tiempo</option>
+                      </select>
+                      <i class="ri-calendar-line"
+                        style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #9ca3af;"></i>
+                    </div>
+                  </div>
+
+                  <!-- Month -->
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label for="bi-filter-month" style="font-size: 0.85rem; font-weight: 500;">Mes</label>
+                    <div class="select-wrapper" style="position: relative;">
+                      <select id="bi-filter-month" class="form-input"
+                        style="width: 100%; cursor: pointer; padding-left: 2.5rem; padding-right: 1rem;">
+                        <option value="all">Todos los meses</option>
+                        <option value="1">Enero</option>
+                        <option value="2">Febrero</option>
+                        <option value="3">Marzo</option>
+                        <option value="4">Abril</option>
+                        <option value="5">Mayo</option>
+                        <option value="6">Junio</option>
+                        <option value="7">Julio</option>
+                        <option value="8">Agosto</option>
+                        <option value="9">Septiembre</option>
+                        <option value="10">Octubre</option>
+                        <option value="11">Noviembre</option>
+                        <option value="12">Diciembre</option>
+                      </select>
+                      <i class="ri-calendar-event-line"
+                        style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #9ca3af;"></i>
+                    </div>
+                  </div>
+
+                  <!-- Day of Week -->
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label for="bi-filter-day" style="font-size: 0.85rem; font-weight: 500;">Día</label>
+                    <div class="select-wrapper" style="position: relative;">
+                      <select id="bi-filter-day" class="form-input"
+                        style="width: 100%; cursor: pointer; padding-left: 2.5rem; padding-right: 1rem;">
+                        <option value="all">Todos los días</option>
+                        <option value="1">Lunes</option>
+                        <option value="2">Martes</option>
+                        <option value="3">Miércoles</option>
+                        <option value="4">Jueves</option>
+                        <option value="5">Viernes</option>
+                        <option value="6">Sábado</option>
+                        <option value="0">Domingo</option>
+                      </select>
+                      <i class="ri-calendar-check-line"
+                        style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #9ca3af;"></i>
+                    </div>
+                  </div>
+
+                  <!-- Category -->
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label for="bi-filter-category" style="font-size: 0.85rem; font-weight: 500;">Categoría</label>
+                    <div class="select-wrapper" style="position: relative;">
+                      <select id="bi-filter-category" class="form-input"
+                        style="width: 100%; cursor: pointer; padding-left: 2.5rem; padding-right: 1rem;">
+                        <option value="all">Todas las categorías</option>
+                      </select>
+                      <i class="ri-folder-line"
+                        style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #9ca3af;"></i>
+                    </div>
+                  </div>
+
+                  <!-- Status -->
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label for="bi-filter-status" style="font-size: 0.85rem; font-weight: 500;">Estado</label>
+                    <div class="select-wrapper" style="position: relative;">
+                      <select id="bi-filter-status" class="form-input"
+                        style="width: 100%; cursor: pointer; padding-left: 2.5rem; padding-right: 1rem;">
+                        <option value="all">Todos los estados</option>
+                        <option value="completed">Completados</option>
+                        <option value="verified">Verificados</option>
+                        <option value="pending">Pendientes</option>
+                        <option value="cancelled">Cancelados</option>
+                      </select>
+                      <i class="ri-checkbox-circle-line"
+                        style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #9ca3af;"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- BI Cards -->
+              <div class="analytics-stats-grid"
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                <!-- Card: Orders -->
+                <div class="stat-card">
+                  <div class="stat-icon" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;">
+                    <i class="ri-file-list-3-line"></i>
+                  </div>
+                  <div class="stat-content">
+                    <div class="stat-label">Pedidos</div>
+                    <div class="stat-value" id="bi-total-orders">-</div>
+                  </div>
+                </div>
+                <!-- Card: Sales -->
+                <div class="stat-card">
+                  <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
+                    <i class="ri-money-dollar-circle-line"></i>
+                  </div>
+                  <div class="stat-content">
+                    <div class="stat-label">Ventas</div>
+                    <div class="stat-value" id="bi-total-sales">-</div>
+                  </div>
+                </div>
+                <!-- Card: Avg Ticket -->
+                <div class="stat-card">
+                  <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+                    <i class="ri-price-tag-3-line"></i>
+                  </div>
+                  <div class="stat-content">
+                    <div class="stat-label">Ticket Promedio</div>
+                    <div class="stat-value" id="bi-avg-ticket">-</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- BI Charts -->
+              <div class="analytics-charts-grid" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <!-- Row 1 -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem;">
+                  <div class="card" style="padding: 1.5rem; height: 400px;">
+                    <div id="bi-chart-orders" style="width: 100%; height: 100%;"></div>
+                  </div>
+                  <div class="card" style="padding: 1.5rem; height: 400px;">
+                    <div id="bi-chart-sales" style="width: 100%; height: 100%;"></div>
+                  </div>
+                </div>
+                <!-- Row 2 -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem;">
+                  <div class="card" style="padding: 1.5rem; height: 400px;">
+                    <div id="bi-chart-category" style="width: 100%; height: 100%;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Section: Mi Negocio -->
@@ -530,7 +686,8 @@
               </div>
               <div class="card-content">
                 <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 1.5rem;">
-                  Configura los horarios en que tu negocio está abierto. Los clientes solo podrán hacer pedidos durante
+                  Configura los horarios en que tu negocio está abierto. Los clientes solo podrán hacer pedidos
+                  durante
                   estos horarios.
                 </p>
                 <div id="businessHoursGrid" class="business-hours-grid">
