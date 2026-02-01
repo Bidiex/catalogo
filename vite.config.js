@@ -10,6 +10,9 @@ export default defineConfig({
         dashboard: resolve(__dirname, 'src/pages/dashboard/index.html'),
         catalog: resolve(__dirname, 'src/pages/catalog/index.html'),
         product: resolve(__dirname, 'src/pages/product/index.html'),
+        reset_password: resolve(__dirname, 'src/pages/reset-password/index.html'),
+        update_password: resolve(__dirname, 'src/pages/update-password/index.html'),
+        not_found: resolve(__dirname, 'src/pages/404/index.html'),
       }
     }
   },

@@ -3,6 +3,26 @@
         {
             "source": "/c/:slug",
             "destination": "/src/pages/catalog/index.html"
+        },
+        {
+            "source": "/login",
+            "destination": "/src/pages/login/index.html"
+        },
+        {
+            "source": "/dashboard",
+            "destination": "/src/pages/dashboard/index.html"
+        },
+        {
+            "source": "/reset-password",
+            "destination": "/src/pages/reset-password/index.html"
+        },
+        {
+            "source": "/update-password",
+            "destination": "/src/pages/update-password/index.html"
+        },
+        {
+            "source": "/(.*)",
+            "destination": "/src/pages/404/index.html"
         }
     ]
 }
