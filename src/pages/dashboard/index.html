@@ -537,518 +537,529 @@
                     <div class="stat-value-small" id="bi-most-sold-product">-</div>
                   </div>
                 </div>
-              </div>
 
-              <!-- BI Charts -->
-              <div class="analytics-charts-grid" style="display: flex; flex-direction: column; gap: 1.5rem;">
-                <!-- Row 1 -->
-                <div class="charts-row">
-                  <div class="card" style="padding: 1.5rem; height: 400px;">
-                    <div id="bi-chart-orders" style="width: 100%; height: 100%;"></div>
+                <!-- Card: Payment Method -->
+                <div class="stat-card">
+                  <div class="stat-icon" style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9;">
+                    <i class="ri-bank-card-line"></i>
                   </div>
-                  <div class="card" style="padding: 1.5rem; height: 400px;">
-                    <div id="bi-chart-sales" style="width: 100%; height: 100%;"></div>
-                  </div>
-                </div>
-                <!-- Row 2 -->
-                <div class="charts-row">
-                  <div class="card" style="padding: 1.5rem; height: 400px;">
-                    <div id="bi-chart-category" style="width: 100%; height: 100%;"></div>
+                  <div class="stat-content">
+                    <div class="stat-label">Método de pago más usado</div>
+                    <div class="stat-value-small" id="bi-payment-method">-</div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- Section: Mi Negocio -->
-          <div id="section-business" class="dashboard-section" style="display: none;">
-            <section class="card">
-              <div class="card-header">
-                <h2><i class="ri-building-line"></i> Mi Negocio</h2>
-              </div>
-              <div class="card-content">
-                <div class="business-info">
-
-                  <div class="business-profile-container" style="display: flex; flex-direction: column; gap: 1.5rem;">
-
-                    <!-- Top: Identity (Logo + Info) + Plan -->
-                    <!-- We will use a grid/flex wrapper via CSS class 'business-top-grid' -->
-                    <div class="business-top-grid">
-
-                      <!-- Identity Side -->
-                      <div class="logo-display-container" style="display: flex; flex-direction: column; gap: 1rem;">
-                        <!-- Logo & Buttons -->
-                        <div style="display: flex; flex-direction: column; align-items: center;">
-                          <div class="image-preview" id="business-logo-display"
-                            style="width: 150px; height: 150px; margin-bottom: 1rem; border-radius: 50%; overflow: hidden; background: #f3f4f6; display: flex; align-items: center; justify-content: center; border: 2px solid #e5e7eb; cursor: pointer;">
-                            <i class="ri-store-2-line" style="font-size: 3rem; color: #9ca3af;"></i>
-                          </div>
-                          <input type="file" id="business-logo-input" accept="image/jpeg,image/jpg,image/png,image/webp"
-                            style="display: none;">
-                          <button type="button" id="changeBusinessLogoBtn" class="btn-secondary-small">
-                            <i class="ri-image-edit-line"></i> Cambiar Logo
-                          </button>
-
-                          <button type="button" id="openColorModalBtn" class="btn-secondary-small"
-                            style="margin-top: 0.5rem; background: white; border: 1px solid #e2e8f0;">
-                            <i class="ri-palette-line"></i> Personalizar Color
-                          </button>
-                          <div id="logo-upload-progress" style="display: none; width: 150px; margin-top: 0.5rem;">
-                            <div class="progress-bar"
-                              style="height: 4px; background: #eee; border-radius: 2px; overflow: hidden;">
-                              <div class="progress-fill"
-                                style="height: 100%; background: var(--primary-color); width: 0%;">
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <!-- Info Rows (Moved Here) -->
-                        <div class="business-details-list" style="margin-top: 1rem;">
-                          <div class="info-row">
-                            <span class="label"><i class="ri-store-line"></i> Nombre:</span>
-                            <span id="businessName" class="value">-</span>
-                          </div>
-                          <div class="info-row">
-                            <span class="label"><i class="ri-whatsapp-line"></i> WhatsApp:</span>
-                            <span id="businessWhatsapp" class="value">-</span>
-                          </div>
-                          <div class="info-row">
-                            <span class="label"><i class="ri-map-pin-line"></i> Dirección:</span>
-                            <span id="businessAddress" class="value">-</span>
-                          </div>
-                          <div class="info-row">
-                            <span class="label"><i class="ri-e-bike-2-fill"></i> Precio domicilio:</span>
-                            <span id="businessDeliveryPrice" class="value">-</span>
-                          </div>
-                          <div class="info-row">
-                            <span class="label"><i class="ri-link"></i> Enlace del catálogo:</span>
-                            <div class="catalog-link">
-                              <a id="catalogLink" href="#" target="_blank" class="link">-</a>
-                              <button id="copyLinkBtn" class="btn-copy">
-                                <i class="ri-file-copy-line"></i> Copiar
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <!-- Plan Status Side -->
-                      <div class="plan-status-section"
-                        style="background: #f8fafc; padding: 1.5rem; border-radius: 8px; border: 1px solid #e2e8f0; height: fit-content;">
-                        <div
-                          style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-                          <div>
-                            <span class="label"
-                              style="display: block; font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Tu Plan
-                              Actual</span>
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                              <span id="planBadge" class="badge"
-                                style="background: var(--primary-color); color: white; padding: 0.25rem 0.75rem; border-radius: 99px; font-weight: 600; font-size: 0.9rem;">LOADING...</span>
-                              <span id="planStatusTag"
-                                style="font-size: 0.8rem; padding: 2px 6px; border-radius: 4px; background: #dcfce7; color: #166534;">Activo</span>
-                            </div>
-                          </div>
-                          <div style="text-align: right;">
-                            <span class="label"
-                              style="display: block; font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Vence
-                              en</span>
-                            <span id="planDaysRemaining" style="font-weight: 600; font-size: 1.1rem; color: #334155;">-
-                              días</span>
-                            <div id="planExpiryDate" style="font-size: 0.75rem; color: #94a3b8;">-</div>
-                          </div>
-                        </div>
-
-                        <!-- Usage Meter -->
-                        <div class="usage-meter" style="margin-top: 1rem;">
-                          <div
-                            style="display: flex; justify-content: space-between; margin-bottom: 0.25rem; font-size: 0.85rem;">
-                            <span style="color: #64748b;">Productos usados</span>
-                            <span id="productUsageText" style="font-weight: 600;">0 / 50</span>
-                          </div>
-                          <div style="height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden;">
-                            <div id="productUsageBar"
-                              style="height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s ease;">
-                            </div>
-                          </div>
-                          <div id="upgradeMessage" style="display: none; margin-top: 0.5rem;">
-                            <button id="btnUpgradePlan" class="btn-primary-small"
-                              style="width: 100%; justify-content: center; background: linear-gradient(135deg, #6366f1, #8b5cf6);">
-                              <i class="ri-rocket-line"></i> Mejorar a PRO
-                            </button>
-                          </div>
-                          <!-- Botón Permanente de Upgrade -->
-                          <div id="permanentUpgradeContainer"
-                            style="display: none; margin-top: 1rem; border-top: 1px dashed #e2e8f0; padding-top: 0.75rem;">
-                            <button id="btnPermanentUpgrade" class="btn-secondary-small"
-                              style="width: 100%; justify-content: center; color: #4338ca; border-color: #c7d2fe; background: #e0e7ff; cursor: pointer;">
-                              <i class="ri-rocket-line"></i> Mejorar mi Plan a PRO
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                    </div>
-                  </div>
+            <!-- BI Charts -->
+            <div class="analytics-charts-grid" style="display: flex; flex-direction: column; gap: 1.5rem;">
+              <!-- Row 1 -->
+              <div class="charts-row">
+                <div class="card" style="padding: 1.5rem; height: 400px;">
+                  <div id="bi-chart-orders" style="width: 100%; height: 100%;"></div>
+                </div>
+                <div class="card" style="padding: 1.5rem; height: 400px;">
+                  <div id="bi-chart-sales" style="width: 100%; height: 100%;"></div>
                 </div>
               </div>
-            </section>
-
-            <!-- Grid Container for Payment & Hours -->
-            <div class="business-settings-grid"
-              style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; align-items: start;">
-
-              <!-- Payment Methods Section -->
-              <section class="card" style="height: 100%;">
-                <div class="card-header">
-                  <h2><i class="ri-bank-card-line"></i> Métodos de Pago</h2>
-                  <button id="addPaymentMethodBtn" class="btn-primary-small">
-                    <i class="ri-add-line"></i> Agregar
-                  </button>
+              <!-- Row 2 -->
+              <div class="charts-row">
+                <div class="card" style="padding: 1.5rem; height: 400px;">
+                  <div id="bi-chart-category" style="width: 100%; height: 100%;"></div>
                 </div>
-                <div class="card-content">
-                  <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 1rem;">
-                    Configura los métodos de pago que tus clientes podrán seleccionar al hacer un pedido.
-                  </p>
-                  <div id="paymentMethodsList" class="payment-methods-list">
-                    <p class="empty-message">No hay métodos de pago configurados</p>
-                  </div>
-                </div>
-              </section>
-
-              <!-- Business Hours Section -->
-              <section class="card" style="height: 100%;">
-                <div class="card-header">
-                  <h2><i class="ri-time-line"></i> Horarios de Servicio</h2>
-                  <button id="saveBusinessHoursBtn" class="btn-primary-small">
-                    <i class="ri-save-line"></i> Guardar Horarios
-                  </button>
-                </div>
-                <div class="card-content">
-                  <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 1.5rem;">
-                    Configura los horarios en que tu negocio está abierto. Los clientes solo podrán hacer pedidos
-                    durante
-                    estos horarios.
-                  </p>
-                  <div id="businessHoursGrid" class="business-hours-grid">
-                    <!-- Se llenará dinámicamente con JavaScript -->
-                  </div>
-                </div>
-              </section>
-
+              </div>
             </div>
           </div>
-
-          <!-- Section: Pedidos (Gestion de Ordenes) -->
-          <div id="section-orders" class="dashboard-section" style="display: none;">
-            <section class="card">
-              <div class="card-header">
-                <h2><i class="ri-file-list-3-line"></i> Gestión de Pedidos</h2>
-                <div class="header-controls" style="display: flex; gap: 0.5rem; align-items: center;">
-                  <button id="openExportModalBtn" class="btn-secondary-small" title="Descargar Reporte"
-                    style="height: 36px;">
-                    <i class="ri-download-2-line"></i> <span class="hide-mobile" style="display: none;">Exportar</span>
-                  </button>
-                  <div class="view-toggles">
-                    <button class="view-toggle-btn active" data-view="table"><i class="ri-table-line"></i></button>
-                    <button class="view-toggle-btn" data-view="mosaic"><i class="ri-grid-fill"></i></button>
-                  </div>
-                </div>
-              </div>
-              <div class="card-content">
-                <!-- Search & Filter -->
-                <div class="search-bar-container"
-                  style="display:flex; gap: 1rem; flex-wrap:wrap; margin-bottom: 1.5rem;">
-                  <div class="search-bar" style="flex:1;">
-                    <i class="ri-search-line"></i>
-                    <input type="text" id="searchOrdersInput" placeholder="Buscar por nombre, teléfono..." />
-                    <button id="clearOrdersSearch" class="search-clear" style="display: none;"><i
-                        class="ri-close-line"></i></button>
-                  </div>
-                  <div id="filterOrdersPills" class="filter-pills">
-                    <button class="filter-pill active" data-status="all">Todos</button>
-                    <button class="filter-pill" data-status="pending">Pendientes</button>
-                    <button class="filter-pill" data-status="verified">Verificados</button>
-                    <button class="filter-pill" data-status="completed">Completados</button>
-                    <button class="filter-pill" data-status="cancelled">Cancelados</button>
-                  </div>
-                </div>
-
-                <!-- Orders List -->
-                <div id="ordersListContainer" class="orders-list-container table-view">
-                  <div class="table-responsive table-container">
-                    <table class="data-table" id="ordersTable" style="width: 100%;">
-                      <thead>
-                        <tr>
-                          <th>Fecha</th>
-                          <th>Cliente</th>
-                          <th>Dirección</th>
-                          <th>Total</th>
-                          <th>Estado</th>
-                          <th style="text-align: right;">Acciones</th>
-                        </tr>
-                      </thead>
-                      <tbody id="ordersTableBody">
-                        <!-- Filled by JS -->
-                      </tbody>
-                    </table>
-                  </div>
-                  <div id="ordersMosaicGrid" class="orders-mosaic-grid"
-                    style="display:none; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
-                    <!-- Filled by JS -->
-                  </div>
-                </div>
-
-                <p id="noOrdersMessage" class="empty-message"
-                  style="display:none; text-align: center; padding: 2rem; color: #6b7280;">No hay pedidos registrados.
-                </p>
-
-                <!-- Pagination Controls -->
-                <div id="ordersPagination" class="pagination-controls"
-                  style="display: none; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
-                  <div style="font-size: 0.9rem; color: #6b7280;">
-                    Mostrando <span id="ordersStartCount">0</span> - <span id="ordersEndCount">0</span> de <span
-                      id="ordersTotalCount">0</span> pedidos
-                  </div>
-                  <div style="display: flex; gap: 0.5rem; align-items: center;">
-                    <button id="prevOrdersPageBtn" class="btn-secondary-small" disabled>
-                      <i class="ri-arrow-left-s-line"></i> Anterior
-                    </button>
-                    <span id="ordersPageIndicator"
-                      style="display: flex; align-items: center; padding: 0 0.5rem; font-weight: 500; font-size: 0.9rem;">
-                      Página 1
-                    </span>
-                    <button id="nextOrdersPageBtn" class="btn-secondary-small" disabled>
-                      Siguiente <i class="ri-arrow-right-s-line"></i>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </section>
-          </div>
-
-          <!-- Section: Categorías -->
-          <div id="section-categories" class="dashboard-section" style="display: none;">
-            <section class="card">
-              <div class="card-header">
-                <h2><i class="ri-folder-line"></i> Categorías</h2>
-                <button id="addCategoryBtn" class="btn-primary-small">
-                  <i class="ri-add-line"></i> Agregar
-                </button>
-              </div>
-              <div class="card-content">
-                <!-- Search Bar -->
-                <div class="search-bar-container">
-                  <div class="search-bar">
-                    <i class="ri-search-line"></i>
-                    <input type="text" id="searchCategoriesInput" placeholder="Buscar categorías..." />
-                    <button id="clearCategoriesSearch" class="search-clear" style="display: none;">
-                      <i class="ri-close-line"></i>
-                    </button>
-                  </div>
-                </div>
-                <div id="categoriesList" class="categories-list">
-                  <p class="empty-message">No hay categorías aún</p>
-                </div>
-              </div>
-            </section>
-          </div>
-
-          <!-- Section: Productos -->
-          <div id="section-products" class="dashboard-section" style="display: none;">
-            <section class="card">
-              <div class="card-header">
-                <h2><i class="ri-shopping-bag-line"></i> Productos</h2>
-                <button id="addProductBtn" class="btn-primary-small">
-                  <i class="ri-add-line"></i> Agregar
-                </button>
-              </div>
-              <div class="card-content">
-                <!-- Search Bar -->
-                <div class="search-bar-container">
-                  <div class="search-bar">
-                    <i class="ri-search-line"></i>
-                    <input type="text" id="searchProductsInput" placeholder="Buscar productos..." />
-                    <button id="clearProductsSearch" class="search-clear" style="display: none;">
-                      <i class="ri-close-line"></i>
-                    </button>
-                  </div>
-                </div>
-                <div id="productsList" class="products-list">
-                  <p class="empty-message">No hay productos aún</p>
-                </div>
-              </div>
-            </section>
-          </div>
-
-          <!-- Section: Promociones -->
-          <div id="section-promotions" class="dashboard-section" style="display: none;">
-            <section class="card">
-              <div class="card-header">
-                <h2><i class="ri-price-tag-3-line"></i> Promociones y Combos</h2>
-                <button id="addPromotionBtn" class="btn-primary-small">
-                  <i class="ri-add-line"></i> Agregar
-                </button>
-              </div>
-              <div class="card-content">
-                <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 1.5rem;">
-                  Crea banners promocionales que aparecerán en la parte superior de tu catálogo.
-                </p>
-                <div id="promotionsList" class="promotions-list">
-                  <p class="empty-message">No hay promociones activas</p>
-                </div>
-              </div>
-            </section>
-          </div>
-
-
-          <!-- Section: WhatsApp -->
-          <div id="section-whatsapp" class="dashboard-section" style="display: none;">
-            <section class="card">
-              <div class="card-header">
-                <h2><i class="ri-whatsapp-line"></i> Mensaje de WhatsApp</h2>
-              </div>
-              <div class="card-content">
-                <div class="whatsapp-template-editor">
-                  <div class="template-help">
-                    <p><strong>Personaliza el mensaje que se enviará por WhatsApp</strong></p>
-                    <p class="help-text">Usa los tokens para insertar información dinámica del pedido:</p>
-                  </div>
-
-                  <div class="tokens-grid">
-                    <button class="token-chip" data-token="{productos}" title="Lista de productos del pedido">
-                      <i class="ri-shopping-basket-line"></i> {productos}
-                    </button>
-                    <button class="token-chip" data-token="{total}" title="Total del pedido">
-                      <i class="ri-money-dollar-circle-line"></i> {total}
-                    </button>
-                    <button class="token-chip" data-token="{valor de domicilio}" title="Costo del domicilio">
-                      <i class="ri-truck-line"></i> {valor de domicilio}
-                    </button>
-                    <button class="token-chip" data-token="{nombre}" title="Nombre del cliente">
-                      <i class="ri-user-line"></i> {nombre}
-                    </button>
-                    <button class="token-chip" data-token="{direccion}" title="Dirección de entrega">
-                      <i class="ri-map-pin-line"></i> {direccion}
-                    </button>
-                    <button class="token-chip" data-token="{telefono}" title="Teléfono del cliente">
-                      <i class="ri-phone-line"></i> {telefono}
-                    </button>
-                    <button class="token-chip" data-token="{barrio}" title="Barrio">
-                      <i class="ri-map-pin-2-line"></i> {barrio}
-                    </button>
-                    <button class="token-chip" data-token="{metodo_pago}" title="Método de pago">
-                      <i class="ri-bank-card-line"></i> {metodo_pago}
-                    </button>
-                  </div>
-
-                  <div class="form-group" style="margin-top: 1.5rem;">
-                    <label for="whatsappTemplateInput">
-                      <i class="ri-message-3-line"></i> Plantilla del mensaje
-                    </label>
-
-                    <!-- Editor Toolbar -->
-                    <div class="editor-toolbar">
-                      <div class="toolbar-group">
-                        <button type="button" class="toolbar-btn" data-format="bold" title="Negrita (*texto*)"><i
-                            class="ri-bold"></i></button>
-                        <button type="button" class="toolbar-btn" data-format="italic" title="Cursiva (_texto_)"><i
-                            class="ri-italic"></i></button>
-                        <button type="button" class="toolbar-btn" data-format="monospace"
-                          title="Monoespacio (```texto```)"><i class="ri-code-view"></i></button>
-                      </div>
-                      <div class="toolbar-group">
-                        <div class="emoji-dropdown">
-                          <button type="button" class="toolbar-btn" id="toggleEmojiBtn" title="Insertar Emoji"><i
-                              class="ri-emotion-line"></i></button>
-                          <div id="emojiPicker" class="emoji-picker" style="display:none;">
-                            <div class="emoji-tabs">
-                              <button type="button" class="emoji-tab active" data-category="faces">😊</button>
-                              <button type="button" class="emoji-tab" data-category="food">🍔</button>
-                              <button type="button" class="emoji-tab" data-category="objects">💡</button>
-                              <button type="button" class="emoji-tab" data-category="symbols">✅</button>
-                            </div>
-                            <div class="emoji-grid" id="emojiGrid">
-                              <!-- Filled by JS -->
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <textarea id="whatsappTemplateInput" class="whatsapp-template-textarea" rows="10"
-                      placeholder="Escribe tu mensaje aquí y haz clic en los tokens para insertarlos..."></textarea>
-                    <small>Haz clic en los tokens de arriba para insertarlos en la plantilla</small>
-                  </div>
-
-                  <div class="template-actions">
-                    <button id="previewTemplateBtn" class="btn-secondary">
-                      <i class="ri-eye-line"></i> Vista previa
-                    </button>
-                    <button id="saveTemplateBtn" class="btn-primary">
-                      <i class="ri-save-line"></i> Guardar plantilla
-                    </button>
-                  </div>
-
-                  <div id="templatePreview" class="template-preview" style="display: none;">
-                    <h4><i class="ri-file-text-line"></i> Vista previa con datos de ejemplo:</h4>
-                    <div class="preview-box"></div>
-                  </div>
-                </div>
-              </div>
-            </section>
-          </div>
-
-          <!-- Section: Soporte -->
-          <div id="section-support" class="dashboard-section" style="display: none;">
-            <section class="card">
-              <div class="card-header">
-                <h2><i class="ri-customer-service-2-line"></i> Historial de Soporte</h2>
-                <button id="createTicketBtn" class="btn-primary-small">
-                  <i class="ri-add-line"></i> Crear Solicitud
-                </button>
-              </div>
-              <div class="card-content">
-                <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 1.5rem;">
-                  Aquí puedes ver el estado de tus solicitudes de ayuda.
-                </p>
-                <!-- Search Bar -->
-                <div class="search-bar-container">
-                  <div class="search-bar">
-                    <i class="ri-search-line"></i>
-                    <input type="text" id="searchSupportInput" placeholder="Buscar por asunto..." />
-                    <button id="clearSupportSearch" class="search-clear" style="display: none;">
-                      <i class="ri-close-line"></i>
-                    </button>
-                  </div>
-                </div>
-                <!-- Tabla de historial -->
-                <div class="table-container">
-                  <table class="data-table" id="supportTicketsTable">
-                    <thead>
-                      <tr>
-                        <th>Tickets</th>
-                        <th>Asunto</th>
-                        <th>Fecha</th>
-                        <th>Estado</th>
-                        <th></th>
-                      </tr>
-                    </thead>
-                    <tbody id="supportTicketsList">
-                      <!-- Se llenará con JS -->
-                    </tbody>
-                  </table>
-                  <p id="noTicketsMessage" class="empty-message" style="display: none;">No tienes solicitudes de
-                    soporte.</p>
-                </div>
-              </div>
-            </section>
-          </div>
-
         </div>
 
-      </main>
+        <!-- Section: Mi Negocio -->
+        <div id="section-business" class="dashboard-section" style="display: none;">
+          <section class="card">
+            <div class="card-header">
+              <h2><i class="ri-building-line"></i> Mi Negocio</h2>
+            </div>
+            <div class="card-content">
+              <div class="business-info">
+
+                <div class="business-profile-container" style="display: flex; flex-direction: column; gap: 1.5rem;">
+
+                  <!-- Top: Identity (Logo + Info) + Plan -->
+                  <!-- We will use a grid/flex wrapper via CSS class 'business-top-grid' -->
+                  <div class="business-top-grid">
+
+                    <!-- Identity Side -->
+                    <div class="logo-display-container" style="display: flex; flex-direction: column; gap: 1rem;">
+                      <!-- Logo & Buttons -->
+                      <div style="display: flex; flex-direction: column; align-items: center;">
+                        <div class="image-preview" id="business-logo-display"
+                          style="width: 150px; height: 150px; margin-bottom: 1rem; border-radius: 50%; overflow: hidden; background: #f3f4f6; display: flex; align-items: center; justify-content: center; border: 2px solid #e5e7eb; cursor: pointer;">
+                          <i class="ri-store-2-line" style="font-size: 3rem; color: #9ca3af;"></i>
+                        </div>
+                        <input type="file" id="business-logo-input" accept="image/jpeg,image/jpg,image/png,image/webp"
+                          style="display: none;">
+                        <button type="button" id="changeBusinessLogoBtn" class="btn-secondary-small">
+                          <i class="ri-image-edit-line"></i> Cambiar Logo
+                        </button>
+
+                        <button type="button" id="openColorModalBtn" class="btn-secondary-small"
+                          style="margin-top: 0.5rem; background: white; border: 1px solid #e2e8f0;">
+                          <i class="ri-palette-line"></i> Personalizar Color
+                        </button>
+                        <div id="logo-upload-progress" style="display: none; width: 150px; margin-top: 0.5rem;">
+                          <div class="progress-bar"
+                            style="height: 4px; background: #eee; border-radius: 2px; overflow: hidden;">
+                            <div class="progress-fill"
+                              style="height: 100%; background: var(--primary-color); width: 0%;">
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Info Rows (Moved Here) -->
+                      <div class="business-details-list" style="margin-top: 1rem;">
+                        <div class="info-row">
+                          <span class="label"><i class="ri-store-line"></i> Nombre:</span>
+                          <span id="businessName" class="value">-</span>
+                        </div>
+                        <div class="info-row">
+                          <span class="label"><i class="ri-whatsapp-line"></i> WhatsApp:</span>
+                          <span id="businessWhatsapp" class="value">-</span>
+                        </div>
+                        <div class="info-row">
+                          <span class="label"><i class="ri-map-pin-line"></i> Dirección:</span>
+                          <span id="businessAddress" class="value">-</span>
+                        </div>
+                        <div class="info-row">
+                          <span class="label"><i class="ri-e-bike-2-fill"></i> Precio domicilio:</span>
+                          <span id="businessDeliveryPrice" class="value">-</span>
+                        </div>
+                        <div class="info-row">
+                          <span class="label"><i class="ri-link"></i> Enlace del catálogo:</span>
+                          <div class="catalog-link">
+                            <a id="catalogLink" href="#" target="_blank" class="link">-</a>
+                            <button id="copyLinkBtn" class="btn-copy">
+                              <i class="ri-file-copy-line"></i> Copiar
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Plan Status Side -->
+                    <div class="plan-status-section"
+                      style="background: #f8fafc; padding: 1.5rem; border-radius: 8px; border: 1px solid #e2e8f0; height: fit-content;">
+                      <div
+                        style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                        <div>
+                          <span class="label"
+                            style="display: block; font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Tu Plan
+                            Actual</span>
+                          <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span id="planBadge" class="badge"
+                              style="background: var(--primary-color); color: white; padding: 0.25rem 0.75rem; border-radius: 99px; font-weight: 600; font-size: 0.9rem;">LOADING...</span>
+                            <span id="planStatusTag"
+                              style="font-size: 0.8rem; padding: 2px 6px; border-radius: 4px; background: #dcfce7; color: #166534;">Activo</span>
+                          </div>
+                        </div>
+                        <div style="text-align: right;">
+                          <span class="label"
+                            style="display: block; font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Vence
+                            en</span>
+                          <span id="planDaysRemaining" style="font-weight: 600; font-size: 1.1rem; color: #334155;">-
+                            días</span>
+                          <div id="planExpiryDate" style="font-size: 0.75rem; color: #94a3b8;">-</div>
+                        </div>
+                      </div>
+
+                      <!-- Usage Meter -->
+                      <div class="usage-meter" style="margin-top: 1rem;">
+                        <div
+                          style="display: flex; justify-content: space-between; margin-bottom: 0.25rem; font-size: 0.85rem;">
+                          <span style="color: #64748b;">Productos usados</span>
+                          <span id="productUsageText" style="font-weight: 600;">0 / 50</span>
+                        </div>
+                        <div style="height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden;">
+                          <div id="productUsageBar"
+                            style="height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s ease;">
+                          </div>
+                        </div>
+                        <div id="upgradeMessage" style="display: none; margin-top: 0.5rem;">
+                          <button id="btnUpgradePlan" class="btn-primary-small"
+                            style="width: 100%; justify-content: center; background: linear-gradient(135deg, #6366f1, #8b5cf6);">
+                            <i class="ri-rocket-line"></i> Mejorar a PRO
+                          </button>
+                        </div>
+                        <!-- Botón Permanente de Upgrade -->
+                        <div id="permanentUpgradeContainer"
+                          style="display: none; margin-top: 1rem; border-top: 1px dashed #e2e8f0; padding-top: 0.75rem;">
+                          <button id="btnPermanentUpgrade" class="btn-secondary-small"
+                            style="width: 100%; justify-content: center; color: #4338ca; border-color: #c7d2fe; background: #e0e7ff; cursor: pointer;">
+                            <i class="ri-rocket-line"></i> Mejorar mi Plan a PRO
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Grid Container for Payment & Hours -->
+          <div class="business-settings-grid"
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; align-items: start;">
+
+            <!-- Payment Methods Section -->
+            <section class="card" style="height: 100%;">
+              <div class="card-header">
+                <h2><i class="ri-bank-card-line"></i> Métodos de Pago</h2>
+                <button id="addPaymentMethodBtn" class="btn-primary-small">
+                  <i class="ri-add-line"></i> Agregar
+                </button>
+              </div>
+              <div class="card-content">
+                <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 1rem;">
+                  Configura los métodos de pago que tus clientes podrán seleccionar al hacer un pedido.
+                </p>
+                <div id="paymentMethodsList" class="payment-methods-list">
+                  <p class="empty-message">No hay métodos de pago configurados</p>
+                </div>
+              </div>
+            </section>
+
+            <!-- Business Hours Section -->
+            <section class="card" style="height: 100%;">
+              <div class="card-header">
+                <h2><i class="ri-time-line"></i> Horarios de Servicio</h2>
+                <button id="saveBusinessHoursBtn" class="btn-primary-small">
+                  <i class="ri-save-line"></i> Guardar Horarios
+                </button>
+              </div>
+              <div class="card-content">
+                <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 1.5rem;">
+                  Configura los horarios en que tu negocio está abierto. Los clientes solo podrán hacer pedidos
+                  durante
+                  estos horarios.
+                </p>
+                <div id="businessHoursGrid" class="business-hours-grid">
+                  <!-- Se llenará dinámicamente con JavaScript -->
+                </div>
+              </div>
+            </section>
+
+          </div>
+        </div>
+
+        <!-- Section: Pedidos (Gestion de Ordenes) -->
+        <div id="section-orders" class="dashboard-section" style="display: none;">
+          <section class="card">
+            <div class="card-header">
+              <h2><i class="ri-file-list-3-line"></i> Gestión de Pedidos</h2>
+              <div class="header-controls" style="display: flex; gap: 0.5rem; align-items: center;">
+                <button id="openExportModalBtn" class="btn-secondary-small" title="Descargar Reporte"
+                  style="height: 36px;">
+                  <i class="ri-download-2-line"></i> <span class="hide-mobile" style="display: none;">Exportar</span>
+                </button>
+                <div class="view-toggles">
+                  <button class="view-toggle-btn active" data-view="table"><i class="ri-table-line"></i></button>
+                  <button class="view-toggle-btn" data-view="mosaic"><i class="ri-grid-fill"></i></button>
+                </div>
+              </div>
+            </div>
+            <div class="card-content">
+              <!-- Search & Filter -->
+              <div class="search-bar-container" style="display:flex; gap: 1rem; flex-wrap:wrap; margin-bottom: 1.5rem;">
+                <div class="search-bar" style="flex:1;">
+                  <i class="ri-search-line"></i>
+                  <input type="text" id="searchOrdersInput" placeholder="Buscar por nombre, teléfono..." />
+                  <button id="clearOrdersSearch" class="search-clear" style="display: none;"><i
+                      class="ri-close-line"></i></button>
+                </div>
+                <div id="filterOrdersPills" class="filter-pills">
+                  <button class="filter-pill active" data-status="all">Todos</button>
+                  <button class="filter-pill" data-status="pending">Pendientes</button>
+                  <button class="filter-pill" data-status="verified">Verificados</button>
+                  <button class="filter-pill" data-status="completed">Completados</button>
+                  <button class="filter-pill" data-status="cancelled">Cancelados</button>
+                </div>
+              </div>
+
+              <!-- Orders List -->
+              <div id="ordersListContainer" class="orders-list-container table-view">
+                <div class="table-responsive table-container">
+                  <table class="data-table" id="ordersTable" style="width: 100%;">
+                    <thead>
+                      <tr>
+                        <th>Fecha</th>
+                        <th>Cliente</th>
+                        <th>Dirección</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                        <th style="text-align: right;">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody id="ordersTableBody">
+                      <!-- Filled by JS -->
+                    </tbody>
+                  </table>
+                </div>
+                <div id="ordersMosaicGrid" class="orders-mosaic-grid"
+                  style="display:none; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
+                  <!-- Filled by JS -->
+                </div>
+              </div>
+
+              <p id="noOrdersMessage" class="empty-message"
+                style="display:none; text-align: center; padding: 2rem; color: #6b7280;">No hay pedidos registrados.
+              </p>
+
+              <!-- Pagination Controls -->
+              <div id="ordersPagination" class="pagination-controls"
+                style="display: none; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                <div style="font-size: 0.9rem; color: #6b7280;">
+                  Mostrando <span id="ordersStartCount">0</span> - <span id="ordersEndCount">0</span> de <span
+                    id="ordersTotalCount">0</span> pedidos
+                </div>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                  <button id="prevOrdersPageBtn" class="btn-secondary-small" disabled>
+                    <i class="ri-arrow-left-s-line"></i> Anterior
+                  </button>
+                  <span id="ordersPageIndicator"
+                    style="display: flex; align-items: center; padding: 0 0.5rem; font-weight: 500; font-size: 0.9rem;">
+                    Página 1
+                  </span>
+                  <button id="nextOrdersPageBtn" class="btn-secondary-small" disabled>
+                    Siguiente <i class="ri-arrow-right-s-line"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Section: Categorías -->
+        <div id="section-categories" class="dashboard-section" style="display: none;">
+          <section class="card">
+            <div class="card-header">
+              <h2><i class="ri-folder-line"></i> Categorías</h2>
+              <button id="addCategoryBtn" class="btn-primary-small">
+                <i class="ri-add-line"></i> Agregar
+              </button>
+            </div>
+            <div class="card-content">
+              <!-- Search Bar -->
+              <div class="search-bar-container">
+                <div class="search-bar">
+                  <i class="ri-search-line"></i>
+                  <input type="text" id="searchCategoriesInput" placeholder="Buscar categorías..." />
+                  <button id="clearCategoriesSearch" class="search-clear" style="display: none;">
+                    <i class="ri-close-line"></i>
+                  </button>
+                </div>
+              </div>
+              <div id="categoriesList" class="categories-list">
+                <p class="empty-message">No hay categorías aún</p>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Section: Productos -->
+        <div id="section-products" class="dashboard-section" style="display: none;">
+          <section class="card">
+            <div class="card-header">
+              <h2><i class="ri-shopping-bag-line"></i> Productos</h2>
+              <button id="addProductBtn" class="btn-primary-small">
+                <i class="ri-add-line"></i> Agregar
+              </button>
+            </div>
+            <div class="card-content">
+              <!-- Search Bar -->
+              <div class="search-bar-container">
+                <div class="search-bar">
+                  <i class="ri-search-line"></i>
+                  <input type="text" id="searchProductsInput" placeholder="Buscar productos..." />
+                  <button id="clearProductsSearch" class="search-clear" style="display: none;">
+                    <i class="ri-close-line"></i>
+                  </button>
+                </div>
+              </div>
+              <div id="productsList" class="products-list">
+                <p class="empty-message">No hay productos aún</p>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Section: Promociones -->
+        <div id="section-promotions" class="dashboard-section" style="display: none;">
+          <section class="card">
+            <div class="card-header">
+              <h2><i class="ri-price-tag-3-line"></i> Promociones y Combos</h2>
+              <button id="addPromotionBtn" class="btn-primary-small">
+                <i class="ri-add-line"></i> Agregar
+              </button>
+            </div>
+            <div class="card-content">
+              <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 1.5rem;">
+                Crea banners promocionales que aparecerán en la parte superior de tu catálogo.
+              </p>
+              <div id="promotionsList" class="promotions-list">
+                <p class="empty-message">No hay promociones activas</p>
+              </div>
+            </div>
+          </section>
+        </div>
+
+
+        <!-- Section: WhatsApp -->
+        <div id="section-whatsapp" class="dashboard-section" style="display: none;">
+          <section class="card">
+            <div class="card-header">
+              <h2><i class="ri-whatsapp-line"></i> Mensaje de WhatsApp</h2>
+            </div>
+            <div class="card-content">
+              <div class="whatsapp-template-editor">
+                <div class="template-help">
+                  <p><strong>Personaliza el mensaje que se enviará por WhatsApp</strong></p>
+                  <p class="help-text">Usa los tokens para insertar información dinámica del pedido:</p>
+                </div>
+
+                <div class="tokens-grid">
+                  <button class="token-chip" data-token="{productos}" title="Lista de productos del pedido">
+                    <i class="ri-shopping-basket-line"></i> {productos}
+                  </button>
+                  <button class="token-chip" data-token="{total}" title="Total del pedido">
+                    <i class="ri-money-dollar-circle-line"></i> {total}
+                  </button>
+                  <button class="token-chip" data-token="{valor de domicilio}" title="Costo del domicilio">
+                    <i class="ri-truck-line"></i> {valor de domicilio}
+                  </button>
+                  <button class="token-chip" data-token="{nombre}" title="Nombre del cliente">
+                    <i class="ri-user-line"></i> {nombre}
+                  </button>
+                  <button class="token-chip" data-token="{direccion}" title="Dirección de entrega">
+                    <i class="ri-map-pin-line"></i> {direccion}
+                  </button>
+                  <button class="token-chip" data-token="{telefono}" title="Teléfono del cliente">
+                    <i class="ri-phone-line"></i> {telefono}
+                  </button>
+                  <button class="token-chip" data-token="{barrio}" title="Barrio">
+                    <i class="ri-map-pin-2-line"></i> {barrio}
+                  </button>
+                  <button class="token-chip" data-token="{metodo_pago}" title="Método de pago">
+                    <i class="ri-bank-card-line"></i> {metodo_pago}
+                  </button>
+                </div>
+
+                <div class="form-group" style="margin-top: 1.5rem;">
+                  <label for="whatsappTemplateInput">
+                    <i class="ri-message-3-line"></i> Plantilla del mensaje
+                  </label>
+
+                  <!-- Editor Toolbar -->
+                  <div class="editor-toolbar">
+                    <div class="toolbar-group">
+                      <button type="button" class="toolbar-btn" data-format="bold" title="Negrita (*texto*)"><i
+                          class="ri-bold"></i></button>
+                      <button type="button" class="toolbar-btn" data-format="italic" title="Cursiva (_texto_)"><i
+                          class="ri-italic"></i></button>
+                      <button type="button" class="toolbar-btn" data-format="monospace"
+                        title="Monoespacio (```texto```)"><i class="ri-code-view"></i></button>
+                    </div>
+                    <div class="toolbar-group">
+                      <div class="emoji-dropdown">
+                        <button type="button" class="toolbar-btn" id="toggleEmojiBtn" title="Insertar Emoji"><i
+                            class="ri-emotion-line"></i></button>
+                        <div id="emojiPicker" class="emoji-picker" style="display:none;">
+                          <div class="emoji-tabs">
+                            <button type="button" class="emoji-tab active" data-category="faces">😊</button>
+                            <button type="button" class="emoji-tab" data-category="food">🍔</button>
+                            <button type="button" class="emoji-tab" data-category="objects">💡</button>
+                            <button type="button" class="emoji-tab" data-category="symbols">✅</button>
+                          </div>
+                          <div class="emoji-grid" id="emojiGrid">
+                            <!-- Filled by JS -->
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <textarea id="whatsappTemplateInput" class="whatsapp-template-textarea" rows="10"
+                    placeholder="Escribe tu mensaje aquí y haz clic en los tokens para insertarlos..."></textarea>
+                  <small>Haz clic en los tokens de arriba para insertarlos en la plantilla</small>
+                </div>
+
+                <div class="template-actions">
+                  <button id="previewTemplateBtn" class="btn-secondary">
+                    <i class="ri-eye-line"></i> Vista previa
+                  </button>
+                  <button id="saveTemplateBtn" class="btn-primary">
+                    <i class="ri-save-line"></i> Guardar plantilla
+                  </button>
+                </div>
+
+                <div id="templatePreview" class="template-preview" style="display: none;">
+                  <h4><i class="ri-file-text-line"></i> Vista previa con datos de ejemplo:</h4>
+                  <div class="preview-box"></div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Section: Soporte -->
+        <div id="section-support" class="dashboard-section" style="display: none;">
+          <section class="card">
+            <div class="card-header">
+              <h2><i class="ri-customer-service-2-line"></i> Historial de Soporte</h2>
+              <button id="createTicketBtn" class="btn-primary-small">
+                <i class="ri-add-line"></i> Crear Solicitud
+              </button>
+            </div>
+            <div class="card-content">
+              <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 1.5rem;">
+                Aquí puedes ver el estado de tus solicitudes de ayuda.
+              </p>
+              <!-- Search Bar -->
+              <div class="search-bar-container">
+                <div class="search-bar">
+                  <i class="ri-search-line"></i>
+                  <input type="text" id="searchSupportInput" placeholder="Buscar por asunto..." />
+                  <button id="clearSupportSearch" class="search-clear" style="display: none;">
+                    <i class="ri-close-line"></i>
+                  </button>
+                </div>
+              </div>
+              <!-- Tabla de historial -->
+              <div class="table-container">
+                <table class="data-table" id="supportTicketsTable">
+                  <thead>
+                    <tr>
+                      <th>Tickets</th>
+                      <th>Asunto</th>
+                      <th>Fecha</th>
+                      <th>Estado</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="supportTicketsList">
+                    <!-- Se llenará con JS -->
+                  </tbody>
+                </table>
+                <p id="noTicketsMessage" class="empty-message" style="display: none;">No tienes solicitudes de
+                  soporte.</p>
+              </div>
+            </div>
+          </section>
+        </div>
+
     </div>
+
+    </main>
+  </div>
   </div>
 
   <!-- Order Details Modal -->

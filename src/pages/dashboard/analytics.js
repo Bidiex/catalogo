@@ -27,6 +27,7 @@ let elements = {
     avgTicket: null,
     mostSoldProduct: null,
     totalDelivery: null,
+    mostUsedPaymentDisplay: null,
     filterYear: null,
     filterMonth: null,
     filterCategory: null,
@@ -83,6 +84,7 @@ const cacheElements = () => {
     elements.avgTicket = document.getElementById('bi-avg-ticket');
     elements.mostSoldProduct = document.getElementById('bi-most-sold-product');
     elements.totalDelivery = document.getElementById('bi-total-delivery');
+    elements.mostUsedPaymentDisplay = document.getElementById('bi-payment-method');
 
     elements.filterYear = document.getElementById('bi-filter-year');
     elements.filterMonth = document.getElementById('bi-filter-month');
@@ -210,18 +212,9 @@ const updateKPICards = (filteredOrders) => {
 
     const avgTicket = totalOrders > 0 ? (totalSales / totalOrders) : 0;
 
-    // Calculate Total Delivery (Only if no category filter is applied, or we assume delivery is business-wide)
-    // If we filter by category, delivery implies the whole order's delivery fee?
-    // "Total $ en domicilios ... hay que separarlo de las ventas"
-    // Delivery fee is usually per order, not per item.
-    // If filtering by Category X, should we show sum of delivery fees of Order(containing X)?
-    // Usually metrics show "Sales of X". Delivery is a separate service.
-    // Let's decide: If Category Filter is ALL, show Total Delivery.
-    // If Category Filter is active, maybe show 0 or keep showing total delivery of those orders?
-    // User asked "Total $ en domicilios ... separarlo de ventas".
-    // I will sum delivery fees of all filtered orders.
     const totalDelivery = filteredOrders.reduce((sum, order) => {
-        // Only count delivery once per order.
+        // Only count delivery if no category filter, OR we decide to show it anyway
+        // Logic: sum delivery of all filtered orders
         return sum + (parseFloat(order.delivery_price) || 0);
     }, 0);
 
@@ -251,17 +244,41 @@ const updateKPICards = (filteredOrders) => {
         }
     });
 
-    if (maxCount > 0) {
-        bestSellingProduct = `${bestSellingProduct} (${maxCount})`;
-    } else {
-        bestSellingProduct = '-';
+    // Calculate Most Used Payment Method
+    const paymentCounts = {};
+    filteredOrders.forEach(order => {
+        const method = order.payment_method || 'Desconocido';
+        paymentCounts[method] = (paymentCounts[method] || 0) + 1;
+    });
+
+    let bestPaymentMethod = '-';
+    let maxPaymentCount = 0;
+
+    Object.entries(paymentCounts).forEach(([method, count]) => {
+        if (count > maxPaymentCount) {
+            maxPaymentCount = count;
+            bestPaymentMethod = method;
+        }
+    });
+
+    // Capitalize first letter of payment method
+    if (bestPaymentMethod !== '-') {
+        bestPaymentMethod = bestPaymentMethod.charAt(0).toUpperCase() + bestPaymentMethod.slice(1);
     }
 
+    // Update UI elements
     if (elements.totalOrders) elements.totalOrders.textContent = totalOrders;
     if (elements.totalSales) elements.totalSales.textContent = formatCurrency(totalSales);
     if (elements.avgTicket) elements.avgTicket.textContent = formatCurrency(avgTicket);
     if (elements.totalDelivery) elements.totalDelivery.textContent = formatCurrency(totalDelivery);
-    if (elements.mostSoldProduct) elements.mostSoldProduct.textContent = bestSellingProduct;
+
+    if (elements.mostSoldProduct) {
+        elements.mostSoldProduct.textContent = maxCount > 0 ? `${bestSellingProduct} (${maxCount})` : '-';
+    }
+
+    if (elements.mostUsedPaymentDisplay) {
+        elements.mostUsedPaymentDisplay.textContent = maxPaymentCount > 0 ? `${bestPaymentMethod} (${maxPaymentCount})` : '-';
+    }
 };
 
 const updateCharts = (orders) => {
@@ -342,8 +359,6 @@ const updateCategoryChart = (filteredOrders) => {
             if (!product) return;
 
             // Check if this ITEM matches the active category filter (if any)
-            // If the user selected "Hamburgers", we ONLY show Hamburgers in the chart (so it will be 100% Hamburgers)
-            // This ensures data consistency with the "Total Sales" card.
             const isMatch = activeCategoryFilter === 'all' || String(product.category_id) === String(activeCategoryFilter);
 
             if (!isMatch) return;
