@@ -8,16 +8,19 @@
     <link rel="stylesheet" href="404.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
 </head>
 
 <body>
-    <div class="container-404">
-        <div class="content-wrapper">
-            <div class="error-code">404</div>
-            <div class="decoration-circle"></div>
+    <div class="container">
+        <div class="content">
+            <div class="error-badge">Error 404</div>
             <h1 class="title">Página no encontrada</h1>
-            <p class="description">Parece que la página que buscas se ha movido o ya no existe.</p>
+            <p class="description">
+                Lo sentimos, no podemos encontrar la página que buscas. Es posible que haya sido eliminada,
+                cambiado de nombre o que no esté disponible temporalmente.
+            </p>
 
             <div class="actions">
                 <button id="go-back-btn" class="btn btn-secondary">
@@ -37,6 +40,10 @@
                     Ir al inicio
                 </a>
             </div>
+        </div>
+        <div class="graphic">
+            <div class="graphic-circle"></div>
+            <div class="graphic-text">404</div>
         </div>
     </div>
     <script type="module" src="404.js"></script>

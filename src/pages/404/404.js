@@ -12,13 +12,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Simple animation for entrance
-    const content = document.querySelector('.content-wrapper');
-    content.style.opacity = '0';
-    content.style.transform = 'translateY(20px)';
+    const content = document.querySelector('.content');
+    if (content) {
+        content.style.opacity = '0';
+        content.style.transform = 'translateY(20px)';
 
-    setTimeout(() => {
-        content.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-        content.style.opacity = '1';
-        content.style.transform = 'translateY(0)';
-    }, 100);
+        setTimeout(() => {
+            content.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            content.style.opacity = '1';
+            content.style.transform = 'translateY(0)';
+        }, 100);
+    }
 });
