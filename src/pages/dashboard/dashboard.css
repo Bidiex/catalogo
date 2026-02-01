@@ -286,7 +286,8 @@
   max-width: 1400px;
   width: 100%;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 0.5rem 2rem 2rem 2rem;
+  /* Reduced top padding for desktop */
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -307,6 +308,8 @@
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1.5rem;
   margin-bottom: 2rem;
+  margin-top: 1.5rem;
+  /* Added spacing from header for desktop */
 }
 
 .stat-card {
@@ -759,6 +762,16 @@
   font-size: 0.9rem;
 }
 
+/* Pagination */
+.pagination-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+}
+
 /* Buttons */
 .btn-primary {
   background: var(--color-primary);
@@ -772,6 +785,7 @@
   transition: var(--transition);
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
 }
 
@@ -803,6 +817,7 @@
   transition: var(--transition);
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.4rem;
 }
 
@@ -827,6 +842,7 @@
   transition: var(--transition);
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
 }
 
@@ -847,6 +863,7 @@
   transition: var(--transition);
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.4rem;
   text-align: center;
 }
@@ -868,6 +885,7 @@
   transition: var(--transition);
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
 }
 
@@ -1033,16 +1051,57 @@
 }
 
 @media (max-width: 640px) {
+  .dashboard-header {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    z-index: 60;
+    /* Higher than sticky (50), lower than sidebar (100) */
+    background: var(--surface-light);
+    transform: none !important;
+    /* Prevent context creation */
+    /* Ensure opaque background */
+  }
+
+  .dashboard-content {
+    transform: none !important;
+    /* Ensure no new stacking context */
+  }
+
   .header-content {
-    padding: 1rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    justify-content: flex-start;
+    gap: 0.75rem;
+  }
+
+  .header-actions {
+    margin-left: auto;
   }
 
   .header-content h1 {
     font-size: 1.2rem;
   }
 
+  .modal-actions {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  /* Fix for pagination overflow */
+  .pagination-controls {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center !important;
+    /* Override inline style if present */
+  }
+
   .dashboard-main {
     padding: 1rem;
+    padding-top: 4rem !important;
+    /* Reduced per user request */
+    margin-top: 0 !important;
   }
 
   .welcome-card {
@@ -1076,6 +1135,8 @@
   .stats-grid {
     grid-template-columns: 1fr;
     gap: 1rem;
+    margin-top: 1.5rem;
+    /* Add spacing from header as requested */
   }
 
   .stat-card {
