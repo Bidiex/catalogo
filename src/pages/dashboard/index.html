@@ -555,17 +555,29 @@
             <div class="analytics-charts-grid" style="display: flex; flex-direction: column; gap: 1.5rem;">
               <!-- Row 1 -->
               <div class="charts-row">
-                <div class="card" style="padding: 1.5rem; height: 400px;">
-                  <div id="bi-chart-orders" style="width: 100%; height: 100%;"></div>
+                <div class="card chart-card" style="padding: 1.5rem; height: 400px;">
+                  <div class="chart-loader" id="loader-orders">
+                    <div class="spinner"></div>
+                  </div>
+                  <div id="bi-chart-orders" style="width: 100%; height: 100%; opacity: 0; transition: opacity 0.5s;">
+                  </div>
                 </div>
-                <div class="card" style="padding: 1.5rem; height: 400px;">
-                  <div id="bi-chart-sales" style="width: 100%; height: 100%;"></div>
+                <div class="card chart-card" style="padding: 1.5rem; height: 400px;">
+                  <div class="chart-loader" id="loader-sales">
+                    <div class="spinner"></div>
+                  </div>
+                  <div id="bi-chart-sales" style="width: 100%; height: 100%; opacity: 0; transition: opacity 0.5s;">
+                  </div>
                 </div>
               </div>
               <!-- Row 2 -->
               <div class="charts-row">
-                <div class="card" style="padding: 1.5rem; height: 400px;">
-                  <div id="bi-chart-category" style="width: 100%; height: 100%;"></div>
+                <div class="card chart-card" style="padding: 1.5rem; height: 400px;">
+                  <div class="chart-loader" id="loader-category">
+                    <div class="spinner"></div>
+                  </div>
+                  <div id="bi-chart-category" style="width: 100%; height: 100%; opacity: 0; transition: opacity 0.5s;">
+                  </div>
                 </div>
               </div>
             </div>

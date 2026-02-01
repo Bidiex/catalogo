@@ -95,17 +95,36 @@ const cacheElements = () => {
     elements.chartOrders = document.getElementById('bi-chart-orders');
     elements.chartSales = document.getElementById('bi-chart-sales');
     elements.chartCategory = document.getElementById('bi-chart-category');
+
+    elements.loaderOrders = document.getElementById('loader-orders');
+    elements.loaderSales = document.getElementById('loader-sales');
+    elements.loaderCategory = document.getElementById('loader-category');
 };
 
 const initCharts = () => {
-    if (elements.chartOrders) elements.chartOrders = echarts.init(document.getElementById('bi-chart-orders'));
-    if (elements.chartSales) elements.chartSales = echarts.init(document.getElementById('bi-chart-sales'));
-    if (elements.chartCategory) elements.chartCategory = echarts.init(document.getElementById('bi-chart-category'));
+    // Delay initialization to ensure DOM is ready and containers have size
+    setTimeout(() => {
+        if (elements.chartOrders) elements.chartOrders = echarts.init(document.getElementById('bi-chart-orders'));
+        if (elements.chartSales) elements.chartSales = echarts.init(document.getElementById('bi-chart-sales'));
+        if (elements.chartCategory) elements.chartCategory = echarts.init(document.getElementById('bi-chart-category'));
 
-    // Fix: previous code might have assigned to state directly. Let's ensure state references are set.
-    analyticsState.charts.ordersOverTime = elements.chartOrders;
-    analyticsState.charts.salesOverTime = elements.chartSales;
-    analyticsState.charts.salesByCategory = elements.chartCategory;
+        analyticsState.charts.ordersOverTime = elements.chartOrders;
+        analyticsState.charts.salesOverTime = elements.chartSales;
+        analyticsState.charts.salesByCategory = elements.chartCategory;
+    }, 100);
+};
+
+const showLoader = (loader) => {
+    if (loader) loader.classList.remove('hidden');
+};
+
+const hideLoaderAndShowChart = (loader, chartInstance) => {
+    if (loader) loader.classList.add('hidden');
+    if (chartInstance) {
+        chartInstance.resize();
+        const dom = chartInstance.getDom();
+        if (dom) dom.style.opacity = '1';
+    }
 };
 
 const setupFilters = () => {
@@ -288,7 +307,14 @@ const updateCharts = (orders) => {
 };
 
 const updateOrdersChart = (orders) => {
-    if (!analyticsState.charts.ordersOverTime) return;
+    const loader = elements.loaderOrders;
+    // showLoader(loader); // Optional: show loader on every update? Maybe distracting.
+
+    if (!analyticsState.charts.ordersOverTime) {
+        // If chart is not initialized yet (due to timeout), retry shortly
+        setTimeout(() => updateOrdersChart(orders), 150);
+        return;
+    }
 
     const dataMap = new Map();
 
@@ -311,10 +337,16 @@ const updateOrdersChart = (orders) => {
     };
 
     analyticsState.charts.ordersOverTime.setOption(option);
+    hideLoaderAndShowChart(loader, analyticsState.charts.ordersOverTime);
 };
 
 const updateSalesChart = (orders) => {
-    if (!analyticsState.charts.salesOverTime) return;
+    const loader = elements.loaderSales;
+
+    if (!analyticsState.charts.salesOverTime) {
+        setTimeout(() => updateSalesChart(orders), 150);
+        return;
+    }
 
     const dataMap = new Map();
 
@@ -341,10 +373,16 @@ const updateSalesChart = (orders) => {
     };
 
     analyticsState.charts.salesOverTime.setOption(option);
+    hideLoaderAndShowChart(loader, analyticsState.charts.salesOverTime);
 };
 
 const updateCategoryChart = (filteredOrders) => {
-    if (!analyticsState.charts.salesByCategory) return;
+    const loader = elements.loaderCategory;
+
+    if (!analyticsState.charts.salesByCategory) {
+        setTimeout(() => updateCategoryChart(filteredOrders), 150);
+        return;
+    }
 
     const categorySales = new Map();
     const activeCategoryFilter = analyticsState.filters.category;
@@ -415,6 +453,7 @@ const updateCategoryChart = (filteredOrders) => {
     };
 
     analyticsState.charts.salesByCategory.setOption(option);
+    hideLoaderAndShowChart(loader, analyticsState.charts.salesByCategory);
 };
 
 // Utils
