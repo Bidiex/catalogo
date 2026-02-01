@@ -485,8 +485,7 @@
               </div>
 
               <!-- BI Cards -->
-              <div class="analytics-stats-grid"
-                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+              <div class="analytics-stats-grid">
                 <!-- Card: Orders -->
                 <div class="stat-card">
                   <div class="stat-icon" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;">
@@ -517,12 +516,33 @@
                     <div class="stat-value" id="bi-avg-ticket">-</div>
                   </div>
                 </div>
+
+                <!-- Card: Total Delivery -->
+                <div class="stat-card">
+                  <div class="stat-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">
+                    <i class="ri-bike-line"></i>
+                  </div>
+                  <div class="stat-content">
+                    <div class="stat-label">Total Domicilios</div>
+                    <div class="stat-value" id="bi-total-delivery">-</div>
+                  </div>
+                </div>
+                <!-- Card: Most Sold Product -->
+                <div class="stat-card">
+                  <div class="stat-icon" style="background: rgba(236, 72, 153, 0.1); color: #ec4899;">
+                    <i class="ri-trophy-line"></i>
+                  </div>
+                  <div class="stat-content">
+                    <div class="stat-label">Producto más pedido</div>
+                    <div class="stat-value-small" id="bi-most-sold-product">-</div>
+                  </div>
+                </div>
               </div>
 
               <!-- BI Charts -->
               <div class="analytics-charts-grid" style="display: flex; flex-direction: column; gap: 1.5rem;">
                 <!-- Row 1 -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem;">
+                <div class="charts-row">
                   <div class="card" style="padding: 1.5rem; height: 400px;">
                     <div id="bi-chart-orders" style="width: 100%; height: 100%;"></div>
                   </div>
@@ -531,7 +551,7 @@
                   </div>
                 </div>
                 <!-- Row 2 -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem;">
+                <div class="charts-row">
                   <div class="card" style="padding: 1.5rem; height: 400px;">
                     <div id="bi-chart-category" style="width: 100%; height: 100%;"></div>
                   </div>

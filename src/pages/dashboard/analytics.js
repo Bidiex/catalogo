@@ -25,6 +25,8 @@ let elements = {
     totalOrders: null,
     totalSales: null,
     avgTicket: null,
+    mostSoldProduct: null,
+    totalDelivery: null,
     filterYear: null,
     filterMonth: null,
     filterCategory: null,
@@ -79,6 +81,8 @@ const cacheElements = () => {
     elements.totalOrders = document.getElementById('bi-total-orders');
     elements.totalSales = document.getElementById('bi-total-sales');
     elements.avgTicket = document.getElementById('bi-avg-ticket');
+    elements.mostSoldProduct = document.getElementById('bi-most-sold-product');
+    elements.totalDelivery = document.getElementById('bi-total-delivery');
 
     elements.filterYear = document.getElementById('bi-filter-year');
     elements.filterMonth = document.getElementById('bi-filter-month');
@@ -179,7 +183,10 @@ const filterOrders = (orders) => {
 const getOrderValueForMetrics = (order) => {
     // If no Category Filter, return full Total
     if (analyticsState.filters.category === 'all') {
-        return parseFloat(order.total_amount) || 0;
+        // Subtract delivery price to get pure product sales
+        const total = parseFloat(order.total_amount) || 0;
+        const delivery = parseFloat(order.delivery_price) || 0;
+        return total - delivery;
     }
 
     // If Category Filter is Active, sum ONLY items of that category
@@ -197,16 +204,64 @@ const getOrderValueForMetrics = (order) => {
 const updateKPICards = (filteredOrders) => {
     const totalOrders = filteredOrders.length;
 
-    // Calculate Total Sales (Strict Mode)
     const totalSales = filteredOrders.reduce((sum, order) => {
         return sum + getOrderValueForMetrics(order);
     }, 0);
 
     const avgTicket = totalOrders > 0 ? (totalSales / totalOrders) : 0;
 
+    // Calculate Total Delivery (Only if no category filter is applied, or we assume delivery is business-wide)
+    // If we filter by category, delivery implies the whole order's delivery fee?
+    // "Total $ en domicilios ... hay que separarlo de las ventas"
+    // Delivery fee is usually per order, not per item.
+    // If filtering by Category X, should we show sum of delivery fees of Order(containing X)?
+    // Usually metrics show "Sales of X". Delivery is a separate service.
+    // Let's decide: If Category Filter is ALL, show Total Delivery.
+    // If Category Filter is active, maybe show 0 or keep showing total delivery of those orders?
+    // User asked "Total $ en domicilios ... separarlo de ventas".
+    // I will sum delivery fees of all filtered orders.
+    const totalDelivery = filteredOrders.reduce((sum, order) => {
+        // Only count delivery once per order.
+        return sum + (parseFloat(order.delivery_price) || 0);
+    }, 0);
+
+    // Calculate Most Sold Product
+    const productCounts = {};
+    filteredOrders.forEach(order => {
+        if (!order.order_items) return;
+        order.order_items.forEach(item => {
+            // Check if item matches current category filter
+            if (analyticsState.filters.category !== 'all') {
+                const product = analyticsState.products.find(p => String(p.id) === String(item.product_id));
+                if (!product || String(product.category_id) !== String(analyticsState.filters.category)) return;
+            }
+
+            const name = item.product_name || 'Desconocido';
+            productCounts[name] = (productCounts[name] || 0) + (item.quantity || 1);
+        });
+    });
+
+    let bestSellingProduct = '-';
+    let maxCount = 0;
+
+    Object.entries(productCounts).forEach(([name, count]) => {
+        if (count > maxCount) {
+            maxCount = count;
+            bestSellingProduct = name;
+        }
+    });
+
+    if (maxCount > 0) {
+        bestSellingProduct = `${bestSellingProduct} (${maxCount})`;
+    } else {
+        bestSellingProduct = '-';
+    }
+
     if (elements.totalOrders) elements.totalOrders.textContent = totalOrders;
     if (elements.totalSales) elements.totalSales.textContent = formatCurrency(totalSales);
     if (elements.avgTicket) elements.avgTicket.textContent = formatCurrency(avgTicket);
+    if (elements.totalDelivery) elements.totalDelivery.textContent = formatCurrency(totalDelivery);
+    if (elements.mostSoldProduct) elements.mostSoldProduct.textContent = bestSellingProduct;
 };
 
 const updateCharts = (orders) => {

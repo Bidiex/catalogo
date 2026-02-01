@@ -2997,3 +2997,41 @@ input:checked+.slider:before {
     gap: 1.5rem;
   }
 }
+
+/* ============================================
+   CHARTS GRID
+   ============================================ */
+.charts-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1.5rem;
+}
+
+@media (max-width: 640px) {
+  .charts-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================
+   ANALYTICS GRID
+   ============================================ */
+.analytics-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 1500px) {
+  .analytics-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+
+@media (max-width: 640px) {
+  .analytics-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
