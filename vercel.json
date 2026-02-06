@@ -2,27 +2,31 @@
     "rewrites": [
         {
             "source": "/c/:slug",
-            "destination": "/src/pages/catalog/index.html"
+            "destination": "/catalog.html"
         },
         {
             "source": "/login",
-            "destination": "/src/pages/login/index.html"
+            "destination": "/login.html"
         },
         {
             "source": "/dashboard",
-            "destination": "/src/pages/dashboard/index.html"
+            "destination": "/dashboard.html"
+        },
+        {
+            "source": "/product",
+            "destination": "/product.html"
         },
         {
             "source": "/reset-password",
-            "destination": "/src/pages/reset-password/index.html"
+            "destination": "/reset-password.html"
         },
         {
             "source": "/update-password",
-            "destination": "/src/pages/update-password/index.html"
+            "destination": "/update-password.html"
         },
         {
             "source": "/(.*)",
-            "destination": "/src/pages/404/index.html"
+            "destination": "/404.html"
         }
     ]
 }
