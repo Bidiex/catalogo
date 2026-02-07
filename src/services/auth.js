@@ -44,7 +44,7 @@ export const authService = {
         provider: 'google',
         options: {
           // Redirigir al dashboard después del login
-          redirectTo: `${window.location.origin}/src/pages/dashboard/index.html`,
+          redirectTo: `${window.location.origin}/auth/callback`,
           // Prompt para seleccionar cuenta cada vez (opcional)
           queryParams: {
             access_type: 'offline',
@@ -54,7 +54,7 @@ export const authService = {
       })
 
       if (error) throw error
-      
+
       // signInWithOAuth redirige automáticamente, no necesita return
       return { success: true, data }
     } catch (error) {
@@ -137,7 +137,7 @@ export const authService = {
   async resetPasswordForEmail(email) {
     try {
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/src/pages/update-password/index.html`,
+        redirectTo: `${window.location.origin}/update-password`,
       })
       if (error) throw error
       return { success: true, data }

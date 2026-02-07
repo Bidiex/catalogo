@@ -1,16 +1,16 @@
 {
     "rewrites": [
         {
-            "source": "/c/:slug",
-            "destination": "/catalog.html"
-        },
-        {
             "source": "/login",
             "destination": "/login.html"
         },
         {
             "source": "/dashboard",
             "destination": "/dashboard.html"
+        },
+        {
+            "source": "/catalog",
+            "destination": "/catalog.html"
         },
         {
             "source": "/product",
@@ -23,6 +23,14 @@
         {
             "source": "/update-password",
             "destination": "/update-password.html"
+        },
+        {
+            "source": "/auth/callback",
+            "destination": "/auth-callback.html"
+        },
+        {
+            "source": "/c/:slug",
+            "destination": "/catalog.html"
         },
         {
             "source": "/(.*)",

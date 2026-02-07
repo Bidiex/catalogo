@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autenticando...</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .loader-container {
+            text-align: center;
+            background: white;
+            padding: 3rem;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1.5rem;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 0.5rem;
+            font-size: 1.5rem;
+        }
+
+        p {
+            color: #666;
+            font-size: 0.95rem;
+        }
+
+        .error {
+            color: #e74c3c;
+            margin-top: 1rem;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="loader-container">
+        <div class="spinner"></div>
+        <h2>Autenticando</h2>
+        <p>Por favor espera un momento...</p>
+        <p class="error" id="error-message"></p>
+    </div>
+
+    <script type="module">
+        import { supabase } from '/src/config/supabase.js'
+
+        console.log('🔄 Callback page loaded')
+        console.log('📍 Current URL:', window.location.href)
+
+        // Función para mostrar errores
+        function showError(message) {
+            const errorEl = document.getElementById('error-message')
+            errorEl.textContent = message
+            errorEl.style.display = 'block'
+            console.error('❌', message)
+        }
+
+        // Manejar el callback de OAuth
+        async function handleCallback() {
+            try {
+                // Obtener los parámetros de la URL
+                const hashParams = new URLSearchParams(window.location.hash.substring(1))
+                const searchParams = new URLSearchParams(window.location.search)
+
+                console.log('🔍 Hash params:', Object.fromEntries(hashParams))
+                console.log('🔍 Search params:', Object.fromEntries(searchParams))
+
+                // Esperar a que Supabase procese la sesión
+                const { data: { session }, error } = await supabase.auth.getSession()
+
+                if (error) {
+                    console.error('❌ Error getting session:', error)
+                    showError('Error al autenticar. Redirigiendo...')
+                    setTimeout(() => window.location.href = '/login', 2000)
+                    return
+                }
+
+                if (session) {
+                    console.log('✅ Session found:', session.user.email)
+                    console.log('🚀 Redirecting to dashboard...')
+                    window.location.href = '/dashboard'
+                } else {
+                    console.log('⚠️ No session found, waiting for auth state change...')
+                }
+            } catch (err) {
+                console.error('❌ Unexpected error:', err)
+                showError('Error inesperado. Redirigiendo...')
+                setTimeout(() => window.location.href = '/login', 2000)
+            }
+        }
+
+        // Escuchar cambios de autenticación
+        supabase.auth.onAuthStateChange((event, session) => {
+            console.log('🔔 Auth state changed:', event)
+
+            if (event === 'SIGNED_IN' && session) {
+                console.log('✅ User signed in:', session.user.email)
+                console.log('🚀 Redirecting to dashboard...')
+                setTimeout(() => window.location.href = '/dashboard', 500)
+            }
+        })
+
+        // Ejecutar el handler
+        handleCallback()
+
+        // Timeout de seguridad (10 segundos)
+        setTimeout(() => {
+            console.log('⏱️ Timeout reached, redirecting to login...')
+            window.location.href = '/login'
+        }, 10000)
+    </script>
+</body>
+
+</html>

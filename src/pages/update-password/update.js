@@ -16,7 +16,7 @@ authService.getSession().then(session => {
         inputs.forEach(input => input.disabled = true)
 
         setTimeout(() => {
-            window.location.href = '/src/pages/login/index.html'
+            window.location.href = '/login'
         }, 3000)
     }
 })
@@ -46,7 +46,7 @@ updateForm.addEventListener('submit', async (e) => {
             message.textContent = 'Contraseña actualizada. Redirigiendo...'
 
             setTimeout(() => {
-                window.location.href = '/src/pages/dashboard/index.html'
+                window.location.href = '/dashboard'
             }, 2000)
         } else {
             message.style.display = 'block'

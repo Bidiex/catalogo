@@ -11,9 +11,15 @@ export default defineConfig({
         dashboard: resolve(__dirname, 'src/pages/dashboard/index.html'),
         catalog: resolve(__dirname, 'src/pages/catalog/index.html'),
         product: resolve(__dirname, 'src/pages/product/index.html'),
-        reset_password: resolve(__dirname, 'src/pages/reset-password/index.html'),
-        update_password: resolve(__dirname, 'src/pages/update-password/index.html'),
-        not_found: resolve(__dirname, 'src/pages/404/index.html'),
+        'reset-password': resolve(__dirname, 'src/pages/reset-password/index.html'),
+        'update-password': resolve(__dirname, 'src/pages/update-password/index.html'),
+        'auth-callback': resolve(__dirname, 'src/pages/auth/callback/index.html'),
+        '404': resolve(__dirname, 'src/pages/404/index.html'),
+      },
+      output: {
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]'
       }
     }
   },
@@ -22,10 +28,42 @@ export default defineConfig({
       name: 'rewrite-middleware',
       configureServer(server) {
         server.middlewares.use((req, res, next) => {
-          // Solo reescribir si NO tiene extensión (parece una ruta) y empieza con /c/
           if (req.url.startsWith('/c/') && !req.url.includes('.')) {
             req.url = '/src/pages/catalog/index.html'
           }
+          next()
+        })
+      },
+      configurePreviewServer(server) {
+        server.middlewares.use((req, res, next) => {
+          // Handle clean URLs for preview mode
+          const rewrites = {
+            '/login': '/login.html',
+            '/dashboard': '/dashboard.html',
+            '/catalog': '/catalog.html',
+            '/product': '/product.html',
+            '/reset-password': '/reset-password.html',
+            '/update-password': '/update-password.html',
+            '/auth/callback': '/auth-callback.html',
+            '/404': '/404.html'
+          }
+
+          // Check for exact match first
+          if (rewrites[req.url]) {
+            req.url = rewrites[req.url]
+          }
+          // Handle /c/:slug routes
+          else if (req.url.startsWith('/c/') && !req.url.includes('.')) {
+            req.url = '/catalog.html'
+          }
+          // Handle query strings (e.g., /auth/callback?code=...)
+          else {
+            const urlWithoutQuery = req.url.split('?')[0]
+            if (rewrites[urlWithoutQuery]) {
+              req.url = rewrites[urlWithoutQuery] + (req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : '')
+            }
+          }
+
           next()
         })
       }
@@ -51,6 +89,7 @@ export default defineConfig({
           moveFile(resolve(srcDir, 'product/index.html'), resolve(distDir, 'product.html'))
           moveFile(resolve(srcDir, 'reset-password/index.html'), resolve(distDir, 'reset-password.html'))
           moveFile(resolve(srcDir, 'update-password/index.html'), resolve(distDir, 'update-password.html'))
+          moveFile(resolve(srcDir, 'auth/callback/index.html'), resolve(distDir, 'auth-callback.html'))
           moveFile(resolve(srcDir, '404/index.html'), resolve(distDir, '404.html'))
 
           // Optional: Clean up src directory in dist if empty or no longer needed

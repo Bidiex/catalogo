@@ -173,7 +173,7 @@ async function init() {
     // Verificar autenticación
     const session = await authService.getSession()
     if (!session) {
-      window.location.href = '/src/pages/login/index.html'
+      window.location.href = '/login'
       return
     }
 
@@ -1020,7 +1020,7 @@ if (contactSupportRenewBtn) {
 if (logoutBlockedBtn) {
   logoutBlockedBtn.addEventListener('click', async () => {
     await authService.signOut()
-    window.location.href = '/src/pages/login/index.html'
+    window.location.href = '/login'
   })
 }
 // ============================================
@@ -2089,7 +2089,7 @@ logoutBtn.addEventListener('click', async () => {
   sessionStorage.clear()
 
   await authService.signOut()
-  window.location.href = '/src/pages/login/index.html'
+  window.location.href = '/login'
 })
 
 // ============================================

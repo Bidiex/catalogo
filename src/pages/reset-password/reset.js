@@ -6,7 +6,7 @@ const message = document.getElementById('message')
 const backToLoginBtn = document.getElementById('backToLogin')
 
 backToLoginBtn.addEventListener('click', () => {
-    window.location.href = '/src/pages/login/index.html'
+    window.location.href = '/login'
 })
 
 resetForm.addEventListener('submit', async (e) => {

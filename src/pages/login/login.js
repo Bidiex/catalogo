@@ -18,7 +18,7 @@ async function checkExistingSession() {
   const session = await authService.getSession()
   if (session) {
     // Si ya hay sesión, redirigir al dashboard
-    window.location.href = '/src/pages/dashboard/index.html'
+    window.location.href = '/dashboard'
   }
 }
 
@@ -56,7 +56,7 @@ loginForm.addEventListener('submit', async (e) => {
     if (result.success) {
       // Mark that user just logged in
       sessionStorage.setItem('justLoggedIn', 'true')
-      window.location.href = '/src/pages/dashboard/index.html'
+      window.location.href = '/dashboard'
     } else {
       errorMessage.textContent = result.error
       errorMessage.style.display = 'block'

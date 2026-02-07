@@ -12,6 +12,6 @@ document.querySelector('#app').innerHTML = `
   <div>
     <h1>Bienvenido al SaaS de Catálogos</h1>
     <p>Proyecto inicializado correctamente</p>
-    <a href="/src/pages/login/index.html">Ir al login</a>
+    <a href="/login">Ir al login</a>
   </div>
 `
