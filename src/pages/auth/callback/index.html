@@ -4,37 +4,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Autenticando...</title>
+    <title>Autenticando... - TraeGo</title>
+    <link rel="icon" type="image/svg+xml" href="/src/assets/icon_traego.svg" />
+    <link rel="stylesheet" href="/src/styles/global.css">
+    <link rel="stylesheet" href="/src/pages/login/login.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-
-        .loader-container {
-            text-align: center;
-            background: white;
-            padding: 3rem;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        /* Additional styles specific to callback page */
+        .login-header {
+            margin-bottom: 2rem;
         }
 
         .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
+            border: 4px solid var(--color-border, #e5e7eb);
+            border-top: 4px solid var(--color-primary, #22c55e);
             border-radius: 50%;
-            width: 50px;
-            height: 50px;
+            width: 48px;
+            height: 48px;
             animation: spin 1s linear infinite;
             margin: 0 auto 1.5rem;
         }
@@ -49,19 +34,18 @@
             }
         }
 
-        h2 {
-            color: #333;
-            margin-bottom: 0.5rem;
-            font-size: 1.5rem;
-        }
-
-        p {
-            color: #666;
+        .status-text {
+            color: var(--color-text-secondary, #6b7280);
             font-size: 0.95rem;
+            margin-top: 0.5rem;
         }
 
-        .error {
-            color: #e74c3c;
+        .error-message {
+            color: var(--color-error, #ef4444);
+            background: var(--color-error-bg, #fef2f2);
+            border: 1px solid var(--color-error-border, #fecaca);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
             margin-top: 1rem;
             display: none;
         }
@@ -69,11 +53,20 @@
 </head>
 
 <body>
-    <div class="loader-container">
-        <div class="spinner"></div>
-        <h2>Autenticando</h2>
-        <p>Por favor espera un momento...</p>
-        <p class="error" id="error-message"></p>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <img src="/src/assets/icon_traego.svg" alt="TraeGo"
+                    style="width: 60px; height: 60px; object-fit: contain;">
+                <h1>TraeGo</h1>
+                <p>Verificando tu cuenta...</p>
+            </div>
+
+            <div class="spinner"></div>
+            <p class="status-text">Por favor espera un momento</p>
+
+            <div id="error-message" class="error-message"></div>
+        </div>
     </div>
 
     <script type="module">
@@ -87,20 +80,20 @@
             const errorEl = document.getElementById('error-message')
             errorEl.textContent = message
             errorEl.style.display = 'block'
+            document.querySelector('.spinner').style.display = 'none'
+            document.querySelector('.status-text').textContent = 'Hubo un problema'
             console.error('❌', message)
         }
 
         // Manejar el callback de OAuth
         async function handleCallback() {
             try {
-                // Obtener los parámetros de la URL
                 const hashParams = new URLSearchParams(window.location.hash.substring(1))
                 const searchParams = new URLSearchParams(window.location.search)
 
                 console.log('🔍 Hash params:', Object.fromEntries(hashParams))
                 console.log('🔍 Search params:', Object.fromEntries(searchParams))
 
-                // Esperar a que Supabase procese la sesión
                 const { data: { session }, error } = await supabase.auth.getSession()
 
                 if (error) {
@@ -112,6 +105,7 @@
 
                 if (session) {
                     console.log('✅ Session found:', session.user.email)
+                    document.querySelector('.status-text').textContent = '¡Listo! Redirigiendo...'
                     console.log('🚀 Redirecting to dashboard...')
                     window.location.href = '/dashboard'
                 } else {
@@ -130,6 +124,7 @@
 
             if (event === 'SIGNED_IN' && session) {
                 console.log('✅ User signed in:', session.user.email)
+                document.querySelector('.status-text').textContent = '¡Listo! Redirigiendo...'
                 console.log('🚀 Redirecting to dashboard...')
                 setTimeout(() => window.location.href = '/dashboard', 500)
             }
