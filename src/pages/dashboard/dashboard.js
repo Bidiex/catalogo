@@ -1275,12 +1275,24 @@ function showNoBusinessState() {
   loadingState.style.display = 'none'
   noBusinessState.style.display = 'flex'
   businessExistsState.style.display = 'none'
+
+  // Disable sidebar navigation
+  const sidebarNav = document.querySelector('.sidebar-nav')
+  const mobileMenuBtn = document.getElementById('mobileMenuBtn')
+  if (sidebarNav) sidebarNav.classList.add('disabled')
+  if (mobileMenuBtn) mobileMenuBtn.classList.add('disabled')
 }
 
 function showBusinessState() {
   loadingState.style.display = 'none'
   noBusinessState.style.display = 'none'
   businessExistsState.style.display = 'block'
+
+  // Enable sidebar navigation
+  const sidebarNav = document.querySelector('.sidebar-nav')
+  const mobileMenuBtn = document.getElementById('mobileMenuBtn')
+  if (sidebarNav) sidebarNav.classList.remove('disabled')
+  if (mobileMenuBtn) mobileMenuBtn.classList.remove('disabled')
 }
 
 // ============================================

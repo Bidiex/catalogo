@@ -3141,3 +3141,17 @@ input:checked+.slider:before {
     transform: rotate(360deg);
   }
 }
+
+/* Sidebar Disabled State */
+.sidebar-nav.disabled {
+  pointer-events: none;
+  opacity: 0.5;
+  filter: grayscale(1);
+  cursor: not-allowed;
+}
+
+.mobile-menu-btn.disabled {
+  pointer-events: none;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
