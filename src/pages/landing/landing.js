@@ -1,6 +1,53 @@
 // Landing Page Logic
 
+import gsap from 'gsap';
+import ScrollTrigger from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
+
 document.addEventListener('DOMContentLoaded', () => {
+    // GSAP Floating Animation for Food Elements
+    const foodWrappers = document.querySelectorAll('.floating-food-wrapper');
+
+    if (foodWrappers.length > 0) {
+        // 1. Floating Effect (Yoyo)
+        foodWrappers.forEach((el, index) => {
+            gsap.to(el, {
+                y: '-=20', // Move up 20px
+                duration: 2 + (index * 0.5), // Different duration for each
+                yoyo: true,
+                repeat: -1,
+                ease: "sine.inOut",
+                delay: index * 0.2 // Stagger start
+            });
+        });
+
+        // 2. Scroll Effect (Scatter) on Inner Image
+        // Pizza (Top Left) -> Move Up Left
+        gsap.to('.food-pizza-wrapper .food-item', {
+            scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: 1 },
+            x: -250, y: -150, rotation: -20, scale: 0.8, opacity: 0
+        });
+
+        // Hotdog (Top Right) -> Move Up Right
+        gsap.to('.food-hotdog-wrapper .food-item', {
+            scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: 1 },
+            x: 250, y: -150, rotation: 20, scale: 0.8, opacity: 0
+        });
+
+        // Tacos (Bottom Left) -> Move Down Left
+        gsap.to('.food-tacos-wrapper .food-item', {
+            scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: 1 },
+            x: -250, y: 150, rotation: -15, scale: 0.8, opacity: 0
+        });
+
+        // Fries (Bottom Right) -> Move Down Right
+        gsap.to('.food-fries-wrapper .food-item', {
+            scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: 1 },
+            x: 250, y: 150, rotation: 15, scale: 0.8, opacity: 0
+        });
+    }
+
     // Smooth Scroll
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {

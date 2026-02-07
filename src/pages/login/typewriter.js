@@ -1,57 +1,52 @@
-
 // ============================================
 // TYPEWRITER EFFECT (desktop sidebar)
 // ============================================
-function initTypewriter() {
-    const element = document.getElementById('typewriterText')
-    if (!element) return
 
-    const phrases = [
-        'simple y rápido',
-        'profesional',
-        'sin comisiones',
-        'en minutos',
-        '100% personalizable'
-    ]
+const phrases = [
+    'simple y rápido',
+    'profesional',
+    'sin comisiones',
+    'en minutos',
+    '100% personalizable'
+];
 
-    let phraseIndex = 0
-    let charIndex = 0
-    let isDeleting = false
-    let typingSpeed = 100
+const element = document.getElementById('typewriterText');
+const typeSpeed = 100; // Speed associated with typing
+const deleteSpeed = 50; // Speed associated with deleting
+const pauseStart = 500; // Pause before typing next phrase
+const pauseEnd = 2000; // Pause after typing phrase
 
-    function type() {
-        const currentPhrase = phrases[phraseIndex]
+function typeWriter(text, i, element, speed, isDeleting = false, phraseIndex = 0) {
+    if (!element) return;
 
-        if (isDeleting) {
-            element.textContent = currentPhrase.substring(0, charIndex)
-            charIndex--
-            typingSpeed = 50
-        } else {
-            element.textContent = currentPhrase.substring(0, charIndex)
-            charIndex++
-            typingSpeed = 100
-        }
-
-        // When phrase is complete
-        if (!isDeleting && charIndex === currentPhrase.length) {
-            typingSpeed = 2000 // Pause at end
-            isDeleting = true
-        }
-
-        // When deletion is complete
-        if (isDeleting && charIndex === 0) {
-            isDeleting = false
-            phraseIndex = (phraseIndex + 1) % phrases.length
-            typingSpeed = 500 // Pause before next phrase
-        }
-
-        setTimeout(type, typingSpeed)
+    // Handle typing
+    if (!isDeleting && i <= text.length) {
+        element.textContent = text.substring(0, i);
+        i++;
+        setTimeout(() => typeWriter(text, i, element, speed, false, phraseIndex), speed);
     }
-
-    type()
+    // Handle deleting
+    else if (isDeleting && i >= 0) {
+        element.textContent = text.substring(0, i);
+        i--;
+        setTimeout(() => typeWriter(text, i, element, deleteSpeed, true, phraseIndex), deleteSpeed);
+    }
+    // Finished typing, wait then delete
+    else if (!isDeleting && i > text.length) {
+        setTimeout(() => typeWriter(text, text.length, element, deleteSpeed, true, phraseIndex), pauseEnd);
+    }
+    // Finished deleting, move to next phrase
+    else if (isDeleting && i < 0) {
+        const nextPhraseIndex = (phraseIndex + 1) % phrases.length;
+        const nextPhrase = phrases[nextPhraseIndex];
+        setTimeout(() => typeWriter(nextPhrase, 0, element, typeSpeed, false, nextPhraseIndex), pauseStart);
+    }
 }
 
-// Initialize typewriter on page load
+// Initialize on load
 if (window.innerWidth >= 1024) {
-    initTypewriter()
+    const startPhrase = phrases[0];
+    if (element) {
+        typeWriter(startPhrase, 0, element, typeSpeed);
+    }
 }

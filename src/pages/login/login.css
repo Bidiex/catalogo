@@ -278,21 +278,45 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: 3rem;
+    align-items: center;
+    gap: 2rem;
     max-width: 500px;
     margin: 0 auto;
+    text-align: center;
+  }
+
+  /* Avatar with gradient mask */
+  .sidebar-avatar {
+    width: 100%;
+    max-width: 280px;
+    position: relative;
+  }
+
+  .sidebar-avatar img {
+    width: 100%;
+    height: auto;
+    display: block;
+    mask-image: linear-gradient(to bottom,
+        rgba(0, 0, 0, 1) 0%,
+        rgba(0, 0, 0, 1) 70%,
+        rgba(0, 0, 0, 0) 100%);
+    -webkit-mask-image: linear-gradient(to bottom,
+        rgba(0, 0, 0, 1) 0%,
+        rgba(0, 0, 0, 1) 70%,
+        rgba(0, 0, 0, 0) 100%);
   }
 
   .sidebar-logo {
     display: flex;
     align-items: center;
     gap: 1rem;
+    justify-content: center;
   }
 
   .sidebar-logo img {
     width: 48px;
     height: 48px;
-    filter: brightness(0) invert(1);
+    /* filter: brightness(0) invert(1); - Removed to show original logo colors */
   }
 
   .sidebar-logo h2 {
@@ -303,9 +327,9 @@
   }
 
   .sidebar-tagline h3 {
-    font-size: 2.5rem;
+    font-size: 2rem;
     font-weight: 700;
-    line-height: 1.2;
+    line-height: 1.3;
     margin: 0;
     color: white;
   }
@@ -337,25 +361,7 @@
     }
   }
 
-  .sidebar-features {
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-  }
-
-  .feature-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-size: 1rem;
-    color: rgba(255, 255, 255, 0.9);
-  }
-
-  .feature-item i {
-    font-size: 1.5rem;
-    color: #4ced17;
-    flex-shrink: 0;
-  }
+  /* Feature items removed - no longer in use */
 
   .login-form-wrapper {
     padding: 2rem;

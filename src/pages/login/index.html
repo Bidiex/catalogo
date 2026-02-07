@@ -7,7 +7,7 @@
   <title>Iniciar Sesión - TraeGo</title>
   <link rel="icon" type="image/svg+xml" href="/src/assets/icon_traego.svg" />
   <link rel="stylesheet" href="/src/styles/global.css">
-  <link rel="stylesheet" href="./login.css">
+  <link rel="stylesheet" href="/src/pages/login/login.css">
 </head>
 
 <body>
@@ -15,32 +15,24 @@
     <!-- Sidebar panel - visible only on desktop -->
     <div class="login-sidebar">
       <div class="sidebar-content">
+        <!-- Avatar at top -->
+        <div class="sidebar-avatar">
+          <img src="/src/assets/avatar-login.webp" alt="TraeGo Delivery">
+        </div>
+
+        <!-- Logo and brand name -->
         <div class="sidebar-logo">
           <img src="/src/assets/icon_traego.svg" alt="TraeGo">
           <h2>TraeGo</h2>
         </div>
 
+        <!-- Tagline with typewriter -->
         <div class="sidebar-tagline">
           <h3>
             Tu catálogo digital
             <br>
             <span class="typewriter-text" id="typewriterText"></span>
           </h3>
-        </div>
-
-        <div class="sidebar-features">
-          <div class="feature-item">
-            <i class="ri-check-line"></i>
-            <span>Crea tu catálogo en minutos</span>
-          </div>
-          <div class="feature-item">
-            <i class="ri-check-line"></i>
-            <span>Sin comisiones por venta</span>
-          </div>
-          <div class="feature-item">
-            <i class="ri-check-line"></i>
-            <span>100% personalizable</span>
-          </div>
         </div>
       </div>
     </div>
@@ -151,7 +143,7 @@
     </div>
   </div>
 
-  <script type="module" src="./login.js"></script>
+  <script type="module" src="/src/pages/login/login.js"></script>
 </body>
 
 </html>
