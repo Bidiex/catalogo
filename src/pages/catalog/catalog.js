@@ -792,6 +792,18 @@ function renderBusinessInfo() {
     document.documentElement.style.setProperty('--color-primary', primaryColor)
     document.documentElement.style.setProperty('--primary-hover', primaryHover)
   }
+
+  // Apply Header Background Image
+  const catalogHeader = document.querySelector('.catalog-header')
+  if (catalogHeader) {
+    if (currentBusiness.header_background_url) {
+      catalogHeader.style.backgroundImage = `url('${currentBusiness.header_background_url}')`
+      catalogHeader.classList.add('has-background-image')
+    } else {
+      catalogHeader.style.backgroundImage = 'none'
+      catalogHeader.classList.remove('has-background-image')
+    }
+  }
 }
 
 

@@ -627,6 +627,52 @@
                         </div>
                       </div>
 
+
+                      <!-- Header Background Image Section -->
+                      <div class="header-background-section">
+                        <h3 class="section-subtitle">
+                          <i class="ri-image-2-line"></i> Imagen de Fondo del Header
+                        </h3>
+                        <p class="section-description">
+                          Personaliza el fondo del header de tu catálogo para darle un toque único
+                        </p>
+
+                        <div class="resolution-tip"
+                          style="background: #eff6ff; border-left: 3px solid var(--color-primary); padding: 0.75rem; margin-bottom: 1rem; border-radius: 4px;">
+                          <p style="margin: 0; font-size: 0.85rem; color: #1e40af;">
+                            <i class="ri-lightbulb-line" style="margin-right: 0.25rem;"></i>
+                            <strong>Recomendación:</strong> Usa una imagen de <strong>1200x400 píxeles</strong> para
+                            mejores resultados. Formatos: JPG, PNG o WEBP (máx. 2MB).
+                          </p>
+                        </div>
+
+                        <div class="header-bg-preview" id="header-bg-preview">
+                          <i class="ri-landscape-line"></i>
+                          <p>Sin imagen de fondo</p>
+                          <small>Tamaño recomendado: 1200x400px</small>
+                        </div>
+
+                        <input type="file" id="header-bg-input" accept="image/jpeg,image/jpg,image/png,image/webp"
+                          style="display: none;">
+
+                        <div class="header-bg-actions">
+                          <button type="button" id="uploadHeaderBgBtn" class="btn-secondary-small">
+                            <i class="ri-upload-2-line"></i> Subir imagen
+                          </button>
+                          <button type="button" id="removeHeaderBgBtn" class="btn-secondary-small danger"
+                            style="display: none;">
+                            <i class="ri-delete-bin-line"></i> Eliminar
+                          </button>
+                        </div>
+
+                        <div id="header-bg-upload-progress" class="upload-progress-bar" style="display: none;">
+                          <div class="progress-bar">
+                            <div class="progress-fill"></div>
+                          </div>
+                          <p>Subiendo imagen...</p>
+                        </div>
+                      </div>
+
                       <!-- Info Rows (Moved Here) -->
                       <div class="business-details-list" style="margin-top: 1rem;">
                         <div class="info-row">

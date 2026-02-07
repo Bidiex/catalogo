@@ -269,6 +269,9 @@ function initSidebarNavigation() {
   // Inicializar carga de logo
   initBusinessLogoUpload()
 
+  // Inicializar carga de imagen de fondo del header
+  initHeaderBackgroundUpload()
+
   // Inicializar editor de WhatsApp
   initWhatsAppEditor()
 
@@ -531,6 +534,135 @@ function initBusinessLogoUpload() {
         notify.error('Error al actualizar el logo')
         if (logoUploadProgress) logoUploadProgress.style.display = 'none'
       }
+    })
+  }
+}
+
+function initHeaderBackgroundUpload() {
+  const headerBgPreview = document.getElementById('header-bg-preview')
+  const headerBgInput = document.getElementById('header-bg-input')
+  const uploadHeaderBgBtn = document.getElementById('uploadHeaderBgBtn')
+  const removeHeaderBgBtn = document.getElementById('removeHeaderBgBtn')
+  const headerBgUploadProgress = document.getElementById('header-bg-upload-progress')
+
+  if (headerBgPreview) {
+    headerBgPreview.addEventListener('click', () => {
+      headerBgInput.click()
+    })
+  }
+
+  if (uploadHeaderBgBtn) {
+    uploadHeaderBgBtn.addEventListener('click', () => {
+      headerBgInput.click()
+    })
+  }
+
+  if (removeHeaderBgBtn) {
+    removeHeaderBgBtn.addEventListener('click', async () => {
+      const result = await confirm.show({
+        title: '¿Eliminar imagen de fondo?',
+        message: 'La imagen se eliminará permanentemente del header.',
+        confirmText: 'Eliminar',
+        cancelText: 'Cancelar',
+        type: 'danger'
+      })
+
+      if (!result) return
+
+      try {
+        const oldImageUrl = currentBusiness.header_background_url
+
+        // Update business - set to null first
+        await businessService.updateBusiness(currentBusiness.id, { header_background_url: null })
+        currentBusiness.header_background_url = null
+        renderBusinessInfo()
+        notify.success('Imagen de fondo eliminada')
+
+        // Delete from storage in background (don't await to avoid blocking UI)
+        if (oldImageUrl) {
+          // Extract path from URL
+          let path = oldImageUrl
+          if (oldImageUrl.includes('product-images/')) {
+            const parts = oldImageUrl.split('product-images/')
+            path = parts[1] || oldImageUrl
+          }
+
+          // Delete from storage
+          supabase.storage
+            .from('product-images')
+            .remove([path])
+            .catch(err => console.warn('Could not delete old image from storage:', err))
+        }
+      } catch (error) {
+        console.error('Error removing header background:', error)
+        notify.error('Error al eliminar la imagen')
+      }
+    })
+  }
+
+  if (headerBgInput) {
+    headerBgInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0]
+      if (!file) return
+
+      if (!file.type.match('image/(jpeg|jpg|png|webp)')) {
+        notify.error('Solo se permiten archivos JPG, PNG o WEBP')
+        return
+      }
+
+      if (file.size > 2 * 1024 * 1024) {
+        notify.error('El archivo debe pesar menos de 2MB')
+        return
+      }
+
+      // Show progress
+      if (headerBgUploadProgress) {
+        headerBgUploadProgress.style.display = 'block'
+        const bar = headerBgUploadProgress.querySelector('.progress-fill')
+        if (bar) bar.style.width = '0%'
+      }
+
+      try {
+        // Resize image to header size (wider aspect ratio)
+        const resizedFile = await imageService.resizeImage(file, 1200, 400, 0.85)
+
+        if (headerBgUploadProgress) {
+          const bar = headerBgUploadProgress.querySelector('.progress-fill')
+          if (bar) bar.style.width = '50%'
+        }
+
+        const result = await imageService.upload(resizedFile, 'business-headers')
+
+        if (result.success) {
+          if (headerBgUploadProgress) {
+            const bar = headerBgUploadProgress.querySelector('.progress-fill')
+            if (bar) bar.style.width = '100%'
+          }
+
+          // Delete old image if exists
+          if (currentBusiness.header_background_url) {
+            await imageService.delete(currentBusiness.header_background_url)
+          }
+
+          // Update business with new header background
+          await businessService.updateBusiness(currentBusiness.id, { header_background_url: result.url })
+
+          currentBusiness.header_background_url = result.url
+          renderBusinessInfo()
+          notify.success('Imagen de fondo actualizada')
+
+          setTimeout(() => {
+            if (headerBgUploadProgress) headerBgUploadProgress.style.display = 'none'
+          }, 500)
+        }
+      } catch (error) {
+        console.error('Error updating header background:', error)
+        notify.error('Error al actualizar la imagen de fondo')
+        if (headerBgUploadProgress) headerBgUploadProgress.style.display = 'none'
+      }
+
+      // Clear input
+      headerBgInput.value = ''
     })
   }
 }
@@ -1180,6 +1312,25 @@ function renderBusinessInfo() {
       logoDisplay.innerHTML = `<img src="${currentBusiness.logo_url}" alt="Logo" style="object-fit:cover; width:100%; height:100%;">`
     } else {
       logoDisplay.innerHTML = `<i class="ri-store-2-line" style="font-size: 3rem; color: #9ca3af;"></i>`
+    }
+  }
+
+  // Update header background preview
+  const headerBgPreview = document.getElementById('header-bg-preview')
+  const removeHeaderBgBtn = document.getElementById('removeHeaderBgBtn')
+  if (headerBgPreview) {
+    if (currentBusiness.header_background_url) {
+      headerBgPreview.innerHTML = `<img src="${currentBusiness.header_background_url}" alt="Header Background">`
+      headerBgPreview.classList.add('has-image')
+      if (removeHeaderBgBtn) removeHeaderBgBtn.style.display = 'inline-flex'
+    } else {
+      headerBgPreview.innerHTML = `
+        <i class="ri-landscape-line"></i>
+        <p>Sin imagen de fondo</p>
+        <small>Tamaño recomendado: 1200x400px</small>
+      `
+      headerBgPreview.classList.remove('has-image')
+      if (removeHeaderBgBtn) removeHeaderBgBtn.style.display = 'none'
     }
   }
 
