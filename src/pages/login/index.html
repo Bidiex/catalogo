@@ -12,105 +12,142 @@
 
 <body>
   <div class="login-container">
-    <div class="login-card">
-      <div class="login-header">
-        <img src="/src/assets/icon_traego.svg" alt="TraeGo" style="width: 60px; height: 60px; object-fit: contain;">
-        <h1>TraeGo</h1>
-        <p>Inicia sesión para gestionar tu negocio</p>
+    <!-- Sidebar panel - visible only on desktop -->
+    <div class="login-sidebar">
+      <div class="sidebar-content">
+        <div class="sidebar-logo">
+          <img src="/src/assets/icon_traego.svg" alt="TraeGo">
+          <h2>TraeGo</h2>
+        </div>
+
+        <div class="sidebar-tagline">
+          <h3>
+            Tu catálogo digital
+            <br>
+            <span class="typewriter-text" id="typewriterText"></span>
+          </h3>
+        </div>
+
+        <div class="sidebar-features">
+          <div class="feature-item">
+            <i class="ri-check-line"></i>
+            <span>Crea tu catálogo en minutos</span>
+          </div>
+          <div class="feature-item">
+            <i class="ri-check-line"></i>
+            <span>Sin comisiones por venta</span>
+          </div>
+          <div class="feature-item">
+            <i class="ri-check-line"></i>
+            <span>100% personalizable</span>
+          </div>
+        </div>
       </div>
+    </div>
 
-      <!-- Botón de Google -->
-      <button type="button" class="btn-google" id="googleLoginBtn">
-        <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-          <path
-            d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"
-            fill="#4285F4" />
-          <path
-            d="M9.003 18c2.43 0 4.467-.806 5.956-2.18L12.05 13.56c-.806.54-1.836.86-3.047.86-2.344 0-4.328-1.584-5.036-3.711H.96v2.332C2.44 15.983 5.485 18 9.003 18z"
-            fill="#34A853" />
-          <path
-            d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71 0-.593.102-1.17.282-1.71V4.958H.957C.347 6.173 0 7.548 0 9s.348 2.827.957 4.042l3.007-2.332z"
-            fill="#FBBC05" />
-          <path
-            d="M9.003 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.464.891 11.426 0 9.003 0 5.485 0 2.44 2.017.96 4.958L3.967 7.29c.708-2.127 2.692-3.71 5.036-3.71z"
-            fill="#EA4335" />
-        </svg>
-        <span>Continuar con Google</span>
-      </button>
+    <!-- Form wrapper -->
+    <div class="login-form-wrapper">
+      <div class="login-card">
+        <div class="login-header">
+          <img src="/src/assets/icon_traego.svg" alt="TraeGo" style="width: 60px; height: 60px; object-fit: contain;">
+          <h1>TraeGo</h1>
+          <p>Inicia sesión para gestionar tu negocio</p>
+        </div>
 
-      <!-- Botón para registro -->
-      <button type="button" class="btn-secondary" id="toggleRegister">
-        <i class="ri-user-add-line"></i>
-        Crear cuenta nueva
-      </button>
+        <!-- Botón de Google -->
+        <button type="button" class="btn-google" id="googleLoginBtn">
+          <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"
+              fill="#4285F4" />
+            <path
+              d="M9.003 18c2.43 0 4.467-.806 5.956-2.18L12.05 13.56c-.806.54-1.836.86-3.047.86-2.344 0-4.328-1.584-5.036-3.711H.96v2.332C2.44 15.983 5.485 18 9.003 18z"
+              fill="#34A853" />
+            <path
+              d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71 0-.593.102-1.17.282-1.71V4.958H.957C.347 6.173 0 7.548 0 9s.348 2.827.957 4.042l3.007-2.332z"
+              fill="#FBBC05" />
+            <path
+              d="M9.003 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.464.891 11.426 0 9.003 0 5.485 0 2.44 2.017.96 4.958L3.967 7.29c.708-2.127 2.692-3.71 5.036-3.71z"
+              fill="#EA4335" />
+          </svg>
+          <span>Continuar con Google</span>
+        </button>
 
-      <!-- Separador -->
-      <div class="divider">
-        <span>o</span>
+        <!-- Botón para registro -->
+        <button type="button" class="btn-secondary" id="toggleRegister">
+          <i class="ri-user-add-line"></i>
+          Crear cuenta nueva
+        </button>
+
+        <!-- Separador -->
+        <div class="divider">
+          <span>o</span>
+        </div>
+
+        <!-- Formulario de Login -->
+        <form id="loginForm" class="login-form">
+          <div class="form-group">
+            <label for="email">Correo electrónico</label>
+            <input type="email" id="email" name="email" placeholder="tu@email.com" required autocomplete="email">
+          </div>
+
+
+          <div class="form-group">
+            <label for="password">Contraseña</label>
+            <input type="password" id="password" name="password" placeholder="••••••••" required
+              autocomplete="current-password" minlength="6">
+          </div>
+
+          <div style="text-align: right; margin-top: 0.25rem;">
+            <a href="../reset-password/index.html"
+              style="color: var(--color-primary); text-decoration: none; font-size: 0.85rem; font-weight: 500;">¿Olvidaste
+              tu contraseña?</a>
+          </div>
+
+
+          <!-- Mensaje de error -->
+          <div id="errorMessage" class="error-message" style="display: none;"></div>
+
+          <!-- Botón submit -->
+          <button type="submit" class="btn-primary" id="loginBtn">
+            <i class="ri-login-box-line"></i>
+            Iniciar sesión
+          </button>
+        </form>
+
+        <!-- Formulario de Registro (oculto por defecto) -->
+        <form id="registerForm" class="login-form" style="display: none;">
+          <div class="form-group">
+            <label for="registerEmail">Correo electrónico</label>
+            <input type="email" id="registerEmail" name="email" placeholder="tu@email.com" required
+              autocomplete="email">
+          </div>
+
+          <div class="form-group">
+            <label for="registerPassword">Contraseña</label>
+            <input type="password" id="registerPassword" name="password" placeholder="Mínimo 6 caracteres" required
+              autocomplete="new-password" minlength="6">
+          </div>
+
+          <div class="form-group">
+            <label for="confirmPassword">Confirmar contraseña</label>
+            <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Repite la contraseña"
+              required autocomplete="new-password" minlength="6">
+          </div>
+
+          <!-- Mensaje de error registro -->
+          <div id="registerErrorMessage" class="error-message" style="display: none;"></div>
+
+          <!-- Botón submit registro -->
+          <button type="submit" class="btn-primary" id="registerBtn">
+            Crear cuenta
+          </button>
+
+          <button type="button" class="btn-text" id="backToLogin">
+            ← Volver al inicio de sesión
+          </button>
+        </form>
       </div>
-
-      <!-- Formulario de Login -->
-      <form id="loginForm" class="login-form">
-        <div class="form-group">
-          <label for="email">Correo electrónico</label>
-          <input type="email" id="email" name="email" placeholder="tu@email.com" required autocomplete="email">
-        </div>
-
-
-        <div class="form-group">
-          <label for="password">Contraseña</label>
-          <input type="password" id="password" name="password" placeholder="••••••••" required
-            autocomplete="current-password" minlength="6">
-        </div>
-
-        <div style="text-align: right; margin-top: 0.25rem;">
-          <a href="../reset-password/index.html"
-            style="color: var(--color-primary); text-decoration: none; font-size: 0.85rem; font-weight: 500;">¿Olvidaste
-            tu contraseña?</a>
-        </div>
-
-
-        <!-- Mensaje de error -->
-        <div id="errorMessage" class="error-message" style="display: none;"></div>
-
-        <!-- Botón submit -->
-        <button type="submit" class="btn-primary" id="loginBtn">
-          <i class="ri-login-box-line"></i>
-          Iniciar sesión
-        </button>
-      </form>
-
-      <!-- Formulario de Registro (oculto por defecto) -->
-      <form id="registerForm" class="login-form" style="display: none;">
-        <div class="form-group">
-          <label for="registerEmail">Correo electrónico</label>
-          <input type="email" id="registerEmail" name="email" placeholder="tu@email.com" required autocomplete="email">
-        </div>
-
-        <div class="form-group">
-          <label for="registerPassword">Contraseña</label>
-          <input type="password" id="registerPassword" name="password" placeholder="Mínimo 6 caracteres" required
-            autocomplete="new-password" minlength="6">
-        </div>
-
-        <div class="form-group">
-          <label for="confirmPassword">Confirmar contraseña</label>
-          <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Repite la contraseña" required
-            autocomplete="new-password" minlength="6">
-        </div>
-
-        <!-- Mensaje de error registro -->
-        <div id="registerErrorMessage" class="error-message" style="display: none;"></div>
-
-        <!-- Botón submit registro -->
-        <button type="submit" class="btn-primary" id="registerBtn">
-          Crear cuenta
-        </button>
-
-        <button type="button" class="btn-text" id="backToLogin">
-          ← Volver al inicio de sesión
-        </button>
-      </form>
     </div>
   </div>
 

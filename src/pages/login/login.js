@@ -1,6 +1,7 @@
 import { authService } from '../../services/auth.js'
 import { notify } from '../../utils/notifications.js'
 import { buttonLoader } from '../../utils/buttonLoader.js'
+import './typewriter.js'
 
 // Elementos del DOM
 const loginForm = document.getElementById('loginForm')

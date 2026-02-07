@@ -9,6 +9,18 @@
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
+/* Sidebar - hidden on mobile */
+.login-sidebar {
+  display: none;
+}
+
+.login-form-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .login-card {
   background: white;
   border-radius: 16px;
@@ -226,4 +238,131 @@
 .divider span {
   padding: 0 1rem;
   font-size: 0.9rem;
+}
+
+/* ============================================
+   DESKTOP LAYOUT - 2 COLUMNS
+   ============================================ */
+@media (min-width: 1024px) {
+  .login-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .login-sidebar {
+    display: flex;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    color: white;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .login-sidebar::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(76, 237, 23, 0.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .sidebar-content {
+    position: relative;
+    z-index: 1;
+    padding: 3rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3rem;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  .sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .sidebar-logo img {
+    width: 48px;
+    height: 48px;
+    filter: brightness(0) invert(1);
+  }
+
+  .sidebar-logo h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0;
+    color: white;
+  }
+
+  .sidebar-tagline h3 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin: 0;
+    color: white;
+  }
+
+  .typewriter-text {
+    display: inline-block;
+    color: #4ced17;
+    font-weight: 800;
+    min-height: 1.2em;
+    position: relative;
+  }
+
+  .typewriter-text::after {
+    content: '|';
+    display: inline-block;
+    animation: blink 1s step-end infinite;
+    margin-left: 2px;
+  }
+
+  @keyframes blink {
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0;
+    }
+  }
+
+  .sidebar-features {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .feature-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .feature-item i {
+    font-size: 1.5rem;
+    color: #4ced17;
+    flex-shrink: 0;
+  }
+
+  .login-form-wrapper {
+    padding: 2rem;
+    background: #f3f4f6;
+  }
+
+  .login-card {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  }
 }
