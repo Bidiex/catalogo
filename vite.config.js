@@ -28,9 +28,28 @@ export default defineConfig({
       name: 'rewrite-middleware',
       configureServer(server) {
         server.middlewares.use((req, res, next) => {
-          if (req.url.startsWith('/c/') && !req.url.includes('.')) {
+          // Handle clean URLs for dev mode
+          const rewrites = {
+            '/login': '/src/pages/login/index.html',
+            '/dashboard': '/src/pages/dashboard/index.html',
+            '/catalog': '/src/pages/catalog/index.html',
+            '/product': '/src/pages/product/index.html',
+            '/reset-password': '/src/pages/reset-password/index.html',
+            '/update-password': '/src/pages/update-password/index.html',
+            '/auth/callback': '/src/pages/auth/callback/index.html',
+            '/404': '/src/pages/404/index.html'
+          }
+
+          // Check for exact match first
+          const urlWithoutQuery = req.url.split('?')[0]
+          if (rewrites[urlWithoutQuery]) {
+            req.url = rewrites[urlWithoutQuery] + (req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : '')
+          }
+          // Handle /c/:slug routes
+          else if (req.url.startsWith('/c/') && !req.url.includes('.')) {
             req.url = '/src/pages/catalog/index.html'
           }
+
           next()
         })
       },
