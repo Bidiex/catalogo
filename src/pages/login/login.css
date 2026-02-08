@@ -252,6 +252,15 @@
     align-items: stretch;
   }
 
+  /* Modifier for centered layout without sidebar */
+  .login-container.centered-layout {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f3f4f6;
+    /* Ensure background matches */
+  }
+
   .login-sidebar {
     display: flex;
     background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);

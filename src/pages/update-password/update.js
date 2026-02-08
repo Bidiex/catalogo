@@ -5,19 +5,38 @@ const updateForm = document.getElementById('updateForm')
 const message = document.getElementById('message')
 
 // Verify session primarily
-authService.getSession().then(session => {
-    if (!session) {
-        // If no session, they might have lost the magic link context or it expired
-        // Redirect to login or show error
-        message.style.display = 'block'
-        message.textContent = 'Enlace inválido o expirado. Por favor solicita uno nuevo.'
-        updateForm.querySelector('button').disabled = true
-        const inputs = updateForm.querySelectorAll('input')
-        inputs.forEach(input => input.disabled = true)
+// Verify session and handle password recovery flow
+authService.onAuthStateChange(async (event, session) => {
+    if (event === 'PASSWORD_RECOVERY') {
+        // User indicates they are here for password recovery, valid state
+        return;
+    }
 
-        setTimeout(() => {
-            window.location.href = '/login'
-        }, 3000)
+    if (event === 'SIGNED_IN') {
+        // User is signed in, allowing update
+        return;
+    }
+
+    // If we just loaded and have no session, wait a bit to see if Supabase processes the hash
+    if (!session) {
+        // Check if we have a hash which might indicate a magic link/recovery
+        if (window.location.hash && window.location.hash.includes('type=recovery')) {
+            return;
+        }
+
+        // Double check session after a short delay to ensure it wasn't just slow to load
+        const currentSession = await authService.getSession();
+        if (!currentSession) {
+            message.style.display = 'block'
+            message.textContent = 'Enlace inválido o expirado. Por favor solicita uno nuevo.'
+            updateForm.querySelector('button').disabled = true
+            const inputs = updateForm.querySelectorAll('input')
+            inputs.forEach(input => input.disabled = true)
+
+            setTimeout(() => {
+                window.location.href = '/login'
+            }, 3000)
+        }
     }
 })
 
