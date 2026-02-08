@@ -24,7 +24,7 @@ let businessStatus = { isOpen: true, message: '' }
 let selectedProduct = null
 let productOptions = []
 let currentQuantity = 1
-let selectedQuickComment = null
+let selectedQuickComments = []
 let selectedSides = []
 let selectedSize = null
 let currentSearchQuery = ''
@@ -1060,7 +1060,7 @@ async function openProductModal(productId) {
   if (!selectedProduct) return
 
   currentQuantity = 1
-  selectedQuickComment = null
+  selectedQuickComments = []
   selectedSides = []
   selectedSize = null
 
@@ -1235,7 +1235,7 @@ function renderProductOptions() {
     quickCommentsList.innerHTML = quickComments.map((comment, index) => `
       <div class="quick-comment-option">
         <input 
-          type="radio" 
+          type="checkbox" 
           id="comment-${comment.id}" 
           name="quickComment" 
           value="${comment.id}"
@@ -1246,13 +1246,20 @@ function renderProductOptions() {
     `).join('')
 
     // Event listeners
-    quickCommentsList.querySelectorAll('input[type="radio"]').forEach(radio => {
-      radio.addEventListener('change', (e) => {
+    quickCommentsList.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+      checkbox.addEventListener('change', (e) => {
         if (e.target.checked) {
-          selectedQuickComment = {
+          if (selectedQuickComments.length >= 3) {
+            e.target.checked = false
+            notify.warning('Máximo 3 comentarios rápidos')
+            return
+          }
+          selectedQuickComments.push({
             id: e.target.value,
             name: e.target.dataset.name
-          }
+          })
+        } else {
+          selectedQuickComments = selectedQuickComments.filter(c => c.id !== e.target.value)
         }
       })
     })
@@ -1308,7 +1315,7 @@ function closeProductModal() {
   selectedProduct = null
   productOptions = []
   currentQuantity = 1
-  selectedQuickComment = null
+  selectedQuickComments = []
   selectedSides = []
 
   // Reset visibility states
@@ -1335,7 +1342,7 @@ addToCartBtn.addEventListener('click', () => {
   if (!selectedProduct) return
 
   const options = {
-    quickComment: selectedQuickComment,
+    quickComments: selectedQuickComments,
     sides: selectedSides,
     size: selectedSize // Add selected size to options
   }
@@ -1416,7 +1423,11 @@ function renderCartItems() {
 
     // Construir texto de opciones
     let optionsText = ''
-    if (item.options?.quickComment) {
+    if (item.options?.quickComments && item.options.quickComments.length > 0) {
+      item.options.quickComments.forEach(comment => {
+        optionsText += `<div style="font-size: 0.8rem; color: #666; margin-top: 0.25rem;">• ${comment.name}</div>`
+      })
+    } else if (item.options?.quickComment) {
       optionsText += `<div style="font-size: 0.8rem; color: #666; margin-top: 0.25rem;">• ${item.options.quickComment.name}</div>`
     }
     if (item.options?.sides && item.options.sides.length > 0) {
@@ -1717,8 +1728,12 @@ Método de pago: {metodo_pago}
       // Línea principal del producto
       let line = `- ${item.quantity}x ${item.options?.size ? `${item.name} - ${item.options.size.name}` : item.name} ($${subtotal.toLocaleString('es-CO')})`
 
-      // Comentario rápido
-      if (item.options?.quickComment) {
+      // Comentarios rápidos (Multi y Single/Legacy support)
+      if (item.options?.quickComments && item.options.quickComments.length > 0) {
+        item.options.quickComments.forEach(comment => {
+          line += `\n  ${comment.name}`
+        })
+      } else if (item.options?.quickComment) {
         line += `\n  ${item.options.quickComment.name}`
       }
 
