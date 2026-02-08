@@ -69,6 +69,11 @@ export const authService = {
     try {
       const { error } = await supabase.auth.signOut()
       if (error) throw error
+
+      // Limpiar almacenamiento local y de sesión para evitar conflictos
+      localStorage.clear()
+      sessionStorage.clear()
+
       return { success: true }
     } catch (error) {
       return { success: false, error: error.message }
