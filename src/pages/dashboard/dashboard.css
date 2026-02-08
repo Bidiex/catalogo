@@ -3155,3 +3155,25 @@ input:checked+.slider:before {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Business Settings Grid */
+.business-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+  align-items: start;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 640px) {
+  .dashboard-main {
+    padding: 1rem !important;
+    /* Reduce padding on mobile */
+  }
+
+  .business-settings-grid {
+    grid-template-columns: 1fr;
+    /* Stack vertically, fit width */
+  }
+}
