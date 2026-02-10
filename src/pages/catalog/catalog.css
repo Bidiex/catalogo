@@ -2228,50 +2228,62 @@
 /* =========================================
    DESKTOP 3-COLUMN LAYOUT (min-width: 1024px)
    ========================================= */
+/* --- DESKTOP 3-COLUMN LAYOUT (Dynamic) --- */
 @media (min-width: 1024px) {
 
-  /* --- GRID LAYOUT --- */
-  #catalogContent {
-    display: grid;
-    grid-template-columns: 18% 1fr 22%;
-    /* Adjusted slightly for cart width */
-    gap: 1.5rem;
-    max-width: 1600px;
-    margin: 0 auto;
-    padding: 0 1.5rem;
-    align-items: start;
-    position: relative;
-    min-height: 100vh;
+  /* HIDE Mobile Header Elements */
+  .catalog-header {
+    display: none !important;
   }
 
-  /* --- LEFT COLUMN: NAVIGATION SIDEBAR --- */
+  .search-bar-container {
+    display: none;
+    /* Moved to center column */
+  }
+
+  .categories-nav {
+    display: none;
+    /* Moved to Sidebar */
+  }
+
+  /* MAIN GRID CONTAINER */
+  #catalogContent {
+    display: grid;
+    /* Default: 2 Columns (Sidebar | Content) - Cart hidden */
+    grid-template-columns: 18% 1fr 0px;
+    gap: 0;
+    height: 100vh;
+    overflow: hidden;
+    transition: grid-template-columns 0.3s ease;
+  }
+
+  /* Active Cart State: 3 Columns (Sidebar | Content | Cart) */
+  #catalogContent.has-active-cart {
+    grid-template-columns: 18% 1fr 20%;
+  }
+
+  /* 1. LEFT SIDEBAR */
   .desktop-sidebar {
     display: flex;
     flex-direction: column;
+    background: #fff;
+    border-right: 1px solid #e5e7eb;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 1.5rem;
     position: sticky;
     top: 0;
-    height: 100vh;
-    padding: 2rem 0;
-    overflow-y: auto;
-    border-right: 1px solid #e5e7eb;
+    z-index: 100;
   }
 
-  .sidebar-brand {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    /* Center logo/name */
-    text-align: center;
-    margin-bottom: 2rem;
-  }
-
+  /* Sidebar Elements */
   .sidebar-logo {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    margin-bottom: 1rem;
-    background-color: #f3f4f6;
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
     overflow: hidden;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   }
 
   .sidebar-logo img {
@@ -2280,143 +2292,158 @@
     object-fit: cover;
   }
 
-  .sidebar-brand h2 {
+  .sidebar-business-name {
     font-size: 1.25rem;
     font-weight: 700;
-    color: var(--color-text);
-  }
-
-  .sidebar-info {
-    font-size: 0.9rem;
-    color: #64748b;
-    text-align: center;
+    margin-bottom: 0.5rem;
+    color: #111;
   }
 
   .sidebar-info p {
+    font-size: 0.9rem;
+    color: #666;
     margin-bottom: 1rem;
-    line-height: 1.5;
+    line-height: 1.4;
   }
 
-  .sidebar-contact .contact-item {
-    justify-content: center;
-    margin-bottom: 0.5rem;
+  .sidebar-contact {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
   }
 
-  /* --- CENTER COLUMN: MAIN CONTENT --- */
+  .contact-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: #444;
+  }
+
+  /* Sidebar Categories */
+  .sidebar-categories {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    border-top: 1px solid #eee;
+    padding-top: 1.5rem;
+  }
+
+  .sidebar-category-item {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: #4b5563;
+    transition: all 0.2s;
+    font-weight: 500;
+  }
+
+  .sidebar-category-item:hover {
+    background-color: #f3f4f6;
+    color: var(--color-primary);
+  }
+
+  .sidebar-category-item.active {
+    background-color: var(--color-primary);
+    color: white;
+  }
+
+  .sidebar-imperdibles {
+    color: #f59e0b;
+  }
+
+  .sidebar-imperdibles:hover {
+    color: #d97706;
+  }
+
+  .sidebar-imperdibles.active {
+    background-color: #f59e0b;
+    color: white;
+  }
+
+  /* 2. CENTER CONTENT */
   .catalog-center-content {
-    padding: 1.5rem 0;
-    min-width: 0;
-    /* Prevent flex/grid overflow */
+    background: #f9fafb;
+    height: 100vh;
+    overflow-y: auto;
+    position: relative;
+    padding: 0;
+    /* Clear padding, use inner wrappers */
   }
 
-  /* Hide the old Header on Desktop because we have Sidebar now */
-  .catalog-header {
-    display: none;
-  }
-
-  /* Sticky Wrapper adjustments for Center Column */
-  .catalog-sticky-wrapper {
+  /* Center Header (Search + Banner) */
+  .desktop-search-nav-row {
     position: sticky;
     top: 0;
     z-index: 90;
-    background: white;
-    margin-bottom: 1rem;
-    border-radius: 12px;
-    border: 1px solid #e5e7eb;
-    overflow: hidden;
-    /* For radius */
-  }
-
-  .catalog-sticky-wrapper.is-stuck {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  }
-
-  /* Search & Nav Row */
-  .desktop-search-nav-row {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    padding: 1rem 2rem;
+    border-bottom: 1px solid #e5e7eb;
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 1rem;
-    padding: 1rem;
   }
 
-  .catalog-search-container {
-    padding: 0;
-    flex: 1;
-    /* Search takes available space or fixed? */
-    max-width: 300px;
-  }
-
-  .catalog-search-bar {
-    width: 100%;
-    margin: 0;
-  }
-
-  /* Banner adjustments */
-  .promo-banner-container {
-    position: relative;
-    /* Not absolute anymore */
-    width: 100%;
-    height: auto;
-    margin-bottom: 2rem;
-    display: block !important;
-    /* Ensure visibility */
-  }
-
-  .promo-carousel {
-    max-height: 300px;
-    height: auto;
-    aspect-ratio: 21/9;
-    /* Widescreen banner */
-  }
-
-
-  /* --- RIGHT COLUMN: CART --- */
-  /* We need to override the existing fixed modal styles for #cartPanel */
-  #cartPanel {
-    display: flex !important;
-    /* Always show on desktop */
-    position: sticky;
-    top: 0;
-    right: auto;
-    bottom: auto;
-    width: 100%;
-    height: 100vh;
-    transform: none;
-    z-index: 10;
-    box-shadow: none;
-    border-left: 1px solid #e5e7eb;
-    background: white;
-    flex-direction: column;
-  }
-
-  /* Remove overlay on desktop */
-  #cartOverlay {
-    display: none;
-  }
-
-  .cart-content {
-    width: 100%;
-    height: 100%;
-    border-radius: 0;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .cart-header {
-    padding: 1.5rem;
-  }
-
-  .cart-close {
-    display: none;
-    /* Hide close button on desktop */
-  }
-
-  /* Hide FAB on desktop */
-  .cart-fab {
+  /* Hide Categories Nav inside center column on desktop */
+  .desktop-search-nav-row .categories-nav,
+  .desktop-search-nav-row .nav-scroll-btn {
     display: none !important;
   }
 
+  .desktop-search-container {
+    max-width: 600px;
+    width: 100%;
+  }
+
+  /* Promo Banner Positioning */
+  .promo-banner-container {
+    margin: 0 2rem 1.5rem 2rem;
+    border-radius: 12px;
+    overflow: hidden;
+    /* Make it look integrated */
+  }
+
+  /* 3. RIGHT SIDEBAR (CART) */
+  #cartPanel {
+    display: block !important;
+    /* Always "block" in DOM, but hidden by grid width */
+    position: relative !important;
+    width: 100% !important;
+    height: 100vh !important;
+    transform: none !important;
+    border-left: 1px solid #e5e7eb;
+    background: #fff;
+    z-index: 95;
+    /* Hide content when collapsed */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s;
+  }
+
+  #catalogContent.has-active-cart #cartPanel {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .cart-header {
+    display: flex;
+    /* Or whatever layout it needs */
+  }
+
+  /* Hide Close Button on Desktop */
+  #cartClose {
+    display: none;
+  }
+
+  /* Hide Overlay on Desktop */
+  .cart-overlay {
+    display: none !important;
+  }
 }
+
 
 /* --- MOBILE SAFETY (max-width: 1023px) --- */
 @media (max-width: 1023.98px) {

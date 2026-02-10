@@ -905,6 +905,63 @@ function renderCategoriesNav() {
   })
 }
 
+function renderDesktopSidebarCategories() {
+  const sidebarContainer = document.getElementById('sidebarCategories')
+  if (!sidebarContainer) return
+
+  // Reuse categories data
+  let html = ''
+
+  // "Todos" option
+  html += `
+    <div class="sidebar-category-item active" data-category="all" onclick="window.selectSidebarCategory('all')">
+      <span>Todos</span>
+    </div>
+  `
+
+  // "Imperdibles" option
+  const hasDiscountedProducts = products.some(p => p.discount)
+  if (hasDiscountedProducts) {
+    html += `
+      <div class="sidebar-category-item sidebar-imperdibles" data-category="imperdibles" onclick="window.selectSidebarCategory('imperdibles')">
+        <i class="ri-star-fill"></i> <span>Imperdibles</span>
+      </div>
+    `
+  }
+
+  // Categories
+  categories.forEach(category => {
+    html += `
+      <div class="sidebar-category-item" data-category="${category.id}" onclick="window.selectSidebarCategory('${category.id}')">
+        <span>${category.name}</span>
+      </div>
+    `
+  })
+
+  sidebarContainer.innerHTML = html
+}
+
+window.selectSidebarCategory = (categoryId) => {
+  // Update UI active state
+  document.querySelectorAll('.sidebar-category-item').forEach(el => {
+    el.classList.remove('active')
+    if (el.dataset.category === categoryId) el.classList.add('active')
+  })
+
+  // Sync with mobile nav if possible (optional but good for consistency)
+  document.querySelectorAll('.category-nav-btn').forEach(btn => {
+    btn.classList.remove('active')
+    if (btn.dataset.category === categoryId) btn.classList.add('active')
+  })
+
+  // Render Products
+  currentCategoryFilter = categoryId
+  renderProducts(categoryId, currentSearchQuery)
+
+  // Scroll to top of products
+  document.getElementById('catalogMain')?.scrollIntoView({ behavior: 'smooth' })
+}
+
 function renderProducts(filteredCategoryId = 'all', searchQuery = '') {
   currentCategoryFilter = filteredCategoryId
   currentSearchQuery = searchQuery
@@ -1464,6 +1521,29 @@ function updateCartUI() {
   // Actualizar panel del carrito si está abierto
   if (cartPanel.style.display === 'flex') {
     renderCartItems()
+  }
+
+  // NEW: Update Dynamic Desktop Layout
+  toggleDynamicCartLayout()
+}
+
+function toggleDynamicCartLayout() {
+  const content = document.getElementById('catalogContent')
+  if (!content) return
+
+  // Check total items from cart service directly or DOM
+  // We already calculated totalItems in updateCartUI, but let's re-fetch to be safe or use cart.totalItems if available.
+  // The cart object wrapper might not have .totalItems property directly exposed in this scope context without re-calculating unless we rely on cart.get().
+  // Let's rely on the cart service state.
+
+  if (!currentBusiness) return
+  const cartItems = cart.get(currentBusiness.id)
+  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0)
+
+  if (totalItems > 0) {
+    content.classList.add('has-active-cart')
+  } else {
+    content.classList.remove('has-active-cart')
   }
 }
 
