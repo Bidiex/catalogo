@@ -813,6 +813,41 @@ function renderBusinessInfo() {
     }
   }
 
+  // --- DESKTOP SIDEBAR POPULATION ---
+  const sidebarLogo = document.getElementById('sidebarLogo')
+  const sidebarName = document.getElementById('sidebarBusinessName')
+  const sidebarDesc = document.getElementById('sidebarDescription')
+  const sidebarAddr = document.getElementById('sidebarAddress')
+  const sidebarPh = document.getElementById('sidebarPhone')
+  const desktopSidebar = document.getElementById('desktopSidebar')
+
+  if (desktopSidebar) {
+    // Show sidebar if desktop (handled by CSS, but ensure content)
+    if (currentBusiness.logo_url && sidebarLogo) {
+      sidebarLogo.innerHTML = `<img src="${currentBusiness.logo_url}" alt="${currentBusiness.name}">`
+    }
+    if (sidebarName) sidebarName.textContent = currentBusiness.name
+    if (sidebarDesc) sidebarDesc.textContent = currentBusiness.description || ''
+
+    if (sidebarAddr) {
+      if (currentBusiness.address) {
+        sidebarAddr.style.display = 'flex'
+        sidebarAddr.querySelector('.text').textContent = currentBusiness.address
+      } else {
+        sidebarAddr.style.display = 'none'
+      }
+    }
+
+    if (sidebarPh) {
+      if (currentBusiness.whatsapp_number) {
+        sidebarPh.style.display = 'flex'
+        sidebarPh.querySelector('.text').textContent = currentBusiness.whatsapp_number
+      } else {
+        sidebarPh.style.display = 'none'
+      }
+    }
+  }
+
   // Apply Custom Color
   if (currentBusiness.primary_color) {
     const primaryColor = currentBusiness.primary_color

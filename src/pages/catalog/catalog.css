@@ -2226,142 +2226,223 @@
 }
 
 /* =========================================
-   DESKTOP REFINEMENTS (min-width: 1024px)
+   DESKTOP 3-COLUMN LAYOUT (min-width: 1024px)
    ========================================= */
 @media (min-width: 1024px) {
 
-  /* 1. Header Layout & Promo Banner Position */
-  .header-content {
-    flex-direction: row;
-    align-items: flex-start;
-    justify-content: space-between;
+  /* --- GRID LAYOUT --- */
+  #catalogContent {
+    display: grid;
+    grid-template-columns: 18% 1fr 22%;
+    /* Adjusted slightly for cart width */
+    gap: 1.5rem;
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    align-items: start;
     position: relative;
-    padding-bottom: 1rem;
+    min-height: 100vh;
   }
 
-  /* Left side of header (Logo, Name, Info) */
-  .header-left-group {
+  /* --- LEFT COLUMN: NAVIGATION SIDEBAR --- */
+  .desktop-sidebar {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    max-width: 50%;
-    /* Ensure it doesn't overlap banner */
-    z-index: 2;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    padding: 2rem 0;
+    overflow-y: auto;
+    border-right: 1px solid #e5e7eb;
   }
 
-  /* Position Promo Banner in the top-right empty space */
-  .promo-banner-container {
-    position: absolute;
-    top: 50%;
-    right: 16px;
-    transform: translateY(-50%);
-    width: 450px;
-    height: auto;
-    margin: 0;
-    padding: 0;
-    z-index: 10;
-    transition: opacity 0.3s ease, transform 0.3s ease;
+  .sidebar-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* Center logo/name */
+    text-align: center;
+    margin-bottom: 2rem;
   }
 
-  /* Adjust carousel height for small banner version */
-  .promo-carousel {
-    max-height: 220px;
-    /* Smaller height for header integration */
-    aspect-ratio: auto;
-    height: 200px;
-    background: transparent;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  .sidebar-logo {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin-bottom: 1rem;
+    background-color: #f3f4f6;
+    overflow: hidden;
   }
 
-  /* HIDE BANNER ON SCROLL class (toggled by JS) */
-  .promo-banner-hidden {
-    opacity: 0;
-    pointer-events: none;
-    transform: translateY(-60%);
-    /* Slide up slightly */
+  .sidebar-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
+  .sidebar-brand h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-text);
+  }
 
-  /* 2. Search & Categories Row */
+  .sidebar-info {
+    font-size: 0.9rem;
+    color: #64748b;
+    text-align: center;
+  }
+
+  .sidebar-info p {
+    margin-bottom: 1rem;
+    line-height: 1.5;
+  }
+
+  .sidebar-contact .contact-item {
+    justify-content: center;
+    margin-bottom: 0.5rem;
+  }
+
+  /* --- CENTER COLUMN: MAIN CONTENT --- */
+  .catalog-center-content {
+    padding: 1.5rem 0;
+    min-width: 0;
+    /* Prevent flex/grid overflow */
+  }
+
+  /* Hide the old Header on Desktop because we have Sidebar now */
+  .catalog-header {
+    display: none;
+  }
+
+  /* Sticky Wrapper adjustments for Center Column */
+  .catalog-sticky-wrapper {
+    position: sticky;
+    top: 0;
+    z-index: 90;
+    background: white;
+    margin-bottom: 1rem;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+    /* For radius */
+  }
+
+  .catalog-sticky-wrapper.is-stuck {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Search & Nav Row */
   .desktop-search-nav-row {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0.5rem 16px;
-    background: white;
+    gap: 1rem;
+    padding: 1rem;
   }
 
-  /* Search Bar fixed width */
   .catalog-search-container {
     padding: 0;
-    /* Remove default padding */
-    width: 350px;
-    flex-shrink: 0;
+    flex: 1;
+    /* Search takes available space or fixed? */
+    max-width: 300px;
   }
 
   .catalog-search-bar {
-    margin: 0;
     width: 100%;
+    margin: 0;
   }
 
-  /* Categories Nav flex grow */
-  .categories-nav-wrapper {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    min-width: 0;
-    /* Prevent flex overflow */
+  /* Banner adjustments */
+  .promo-banner-container {
     position: relative;
+    /* Not absolute anymore */
+    width: 100%;
+    height: auto;
+    margin-bottom: 2rem;
+    display: block !important;
+    /* Ensure visibility */
   }
 
-  .categories-nav {
-    flex: 1;
-    border-bottom: none;
-    /* Remove mobile border */
-    overflow-x: auto;
-    /* Keep scroll behavior but hide bar */
-    scroll-behavior: smooth;
+  .promo-carousel {
+    max-height: 300px;
+    height: auto;
+    aspect-ratio: 21/9;
+    /* Widescreen banner */
   }
 
-  /* Navigation Arrows */
-  .nav-arrow {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    border: 1px solid #e5e7eb;
+
+  /* --- RIGHT COLUMN: CART --- */
+  /* We need to override the existing fixed modal styles for #cartPanel */
+  #cartPanel {
+    display: flex !important;
+    /* Always show on desktop */
+    position: sticky;
+    top: 0;
+    right: auto;
+    bottom: auto;
+    width: 100%;
+    height: 100vh;
+    transform: none;
+    z-index: 10;
+    box-shadow: none;
+    border-left: 1px solid #e5e7eb;
     background: white;
-    color: #6b7280;
+    flex-direction: column;
+  }
+
+  /* Remove overlay on desktop */
+  #cartOverlay {
+    display: none;
+  }
+
+  .cart-content {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    flex-shrink: 0;
-    z-index: 5;
+    flex-direction: column;
   }
 
-  .nav-arrow:hover {
-    background: #f9fafb;
-    color: var(--color-primary);
-    border-color: var(--color-primary);
+  .cart-header {
+    padding: 1.5rem;
   }
 
-  .nav-arrow:active {
-    transform: scale(0.95);
+  .cart-close {
+    display: none;
+    /* Hide close button on desktop */
+  }
+
+  /* Hide FAB on desktop */
+  .cart-fab {
+    display: none !important;
   }
 
 }
 
-/* Ensure mobile layout doesn't see desktop elements implies default styles apply */
+/* --- MOBILE SAFETY (max-width: 1023px) --- */
 @media (max-width: 1023.98px) {
-  .nav-arrow {
-    display: none;
+  #desktopSidebar {
+    display: none !important;
   }
 
   .desktop-search-nav-row {
+    display: none;
+    /* Or fallback to block if we want to reuse it? 
+                     Actually mobile index.html still has the old structure inside? 
+                     No, we wrapped it. We need to handle mobile view of the search/nav row 
+                     which is inside .desktop-search-nav-row in HTML now.
+                  */
+    /* Wait, if I hide .desktop-search-nav-row on mobile, mobile loses search/nav?
+        Check HTML structure again. */
     display: block;
+    /* It wraps standard mobile elements too */
+  }
+
+  /* On mobile, we want standard block layout for that row */
+  .categories-nav-wrapper {
+    display: block;
+  }
+
+  .nav-arrow {
+    display: none;
   }
 }
