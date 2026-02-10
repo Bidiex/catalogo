@@ -4743,6 +4743,14 @@ function renderOrders() {
               </button>` : ''
         }
             ${order.status === 'verified' ?
+          `<button class="btn-icon" style="color: #7e22ce;" onclick="window.dispatchOrder('${order.id}')" title="Despachar Pedido">
+                <i class="ri-motorbike-fill"></i>
+              </button>
+              <button class="btn-icon danger" onclick="window.cancelOrder('${order.id}')" title="Cancelar Pedido">
+                <i class="ri-close-line"></i>
+              </button>` : ''
+        }
+            ${order.status === 'dispatched' ?
           `<button class="btn-icon" style="color: #2563eb;" onclick="window.completeOrder('${order.id}')" title="Completar Pedido">
                 <i class="ri-flag-line"></i>
               </button>
@@ -4788,6 +4796,12 @@ function renderOrders() {
              </button>` : ''
         }
             ${order.status === 'verified' ?
+          `<button class="btn-primary-small" style="flex: 1; background: #7e22ce; justify-content: center; align-items: center;" onclick="window.dispatchOrder('${order.id}')">Despachar</button>
+             <button class="btn-secondary-small danger" style="flex: 0 0 36px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="window.cancelOrder('${order.id}')" title="Cancelar">
+                <i class="ri-close-line"></i>
+             </button>` : ''
+        }
+            ${order.status === 'dispatched' ?
           `<button class="btn-primary-small" style="flex: 1; background: #2563eb; justify-content: center; align-items: center;" onclick="window.completeOrder('${order.id}')">Completar</button>
              <button class="btn-secondary-small danger" style="flex: 0 0 36px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="window.cancelOrder('${order.id}')" title="Cancelar">
                 <i class="ri-close-line"></i>
@@ -4804,6 +4818,7 @@ function getOrderStatusBadge(status) {
   const styles = {
     pending: { bg: '#fff7ed', color: '#c2410c', text: 'Pendiente', icon: 'ri-time-line' },
     verified: { bg: '#f0fdf4', color: '#15803d', text: 'Verificado', icon: 'ri-check-double-line' },
+    dispatched: { bg: '#f3e8ff', color: '#7e22ce', text: 'Despachado', icon: 'ri-motorbike-fill' },
     completed: { bg: '#eff6ff', color: '#1d4ed8', text: 'Completado', icon: 'ri-flag-line' },
     cancelled: { bg: '#fef2f2', color: '#b91c1c', text: 'Cancelado', icon: 'ri-close-circle-line' }
   }
@@ -4899,8 +4914,17 @@ window.viewOrderDetails = async (orderId) => {
       content.innerHTML += `
          <div style="display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
             <button class="btn-secondary danger" style="flex: 1;" onclick="window.cancelOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">Cancelar Pedido</button>
+            <button class="btn-primary" style="flex: 1; background: #7e22ce;" onclick="window.dispatchOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">
+              <i class="ri-motorbike-fill"></i> Despachar
+            </button>
+         </div>
+      `
+    } else if (orderData.status === 'dispatched') {
+      content.innerHTML += `
+         <div style="display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
+            <button class="btn-secondary danger" style="flex: 1;" onclick="window.cancelOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">Cancelar Pedido</button>
             <button class="btn-primary" style="flex: 1; background: #2563eb;" onclick="window.completeOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">
-              <i class="ri-flag-line"></i> Marcar como Completado
+              <i class="ri-flag-line"></i> Completar
             </button>
          </div>
       `
@@ -4910,6 +4934,28 @@ window.viewOrderDetails = async (orderId) => {
     console.error('Error details:', error)
     notify.error('Error al cargar detalles')
     if (modal) modal.style.display = 'none'
+  }
+}
+
+window.dispatchOrder = async (orderId) => {
+  const confirmed = await confirm.show({
+    title: '¿Despachar pedido?',
+    message: 'El pedido pasará a estado despachado (en camino).',
+    type: 'info',
+    confirmText: 'Despachar'
+  })
+  if (!confirmed) return
+
+  const loadingToast = notify.loading('Despachando pedido...')
+  try {
+    const { error } = await ordersService.updateStatus(orderId, 'dispatched')
+    if (error) throw error
+
+    notify.updateLoading(loadingToast, 'Pedido despachado correctamente', 'success')
+    loadOrders()
+  } catch (error) {
+    console.error('Error dispatching order:', error)
+    notify.updateLoading(loadingToast, 'Error al despachar el pedido', 'error')
   }
 }
 
@@ -5039,27 +5085,27 @@ function showOwnerOrdersLimitModal() {
   modal.id = 'ownerOrdersLimitModal'
   modal.className = 'confirm-modal'
   modal.innerHTML = `
-    <div class="confirm-overlay"></div>
-    <div class="confirm-content">
-      <div class="confirm-icon confirm-icon-warning">
-        <i class="ri-error-warning-line"></i>
-      </div>
-      <h3 class="confirm-title">Límite de Pedidos Alcanzado</h3>
-      <p class="confirm-message">
-        Has alcanzado el límite de <strong>300 pedidos mensuales</strong> de tu plan Plus.
-        <br><br>
-        No podrás recibir más pedidos hasta que actualices a <strong>Plan Pro</strong> con pedidos ilimitados.
-      </p>
-      <div class="confirm-actions">
-        <button class="btn-confirm-cancel" id="dismissOwnerLimit">
-          Entendido
-        </button>
-        <button class="btn-confirm-ok btn-confirm-warning" id="upgradeToProBtn">
-          <i class="ri-vip-crown-line"></i> Actualizar a PRO
-        </button>
-      </div>
-    </div>
-  `
+        < div class="confirm-overlay" ></div >
+          <div class="confirm-content">
+            <div class="confirm-icon confirm-icon-warning">
+              <i class="ri-error-warning-line"></i>
+            </div>
+            <h3 class="confirm-title">Límite de Pedidos Alcanzado</h3>
+            <p class="confirm-message">
+              Has alcanzado el límite de <strong>300 pedidos mensuales</strong> de tu plan Plus.
+              <br><br>
+                No podrás recibir más pedidos hasta que actualices a <strong>Plan Pro</strong> con pedidos ilimitados.
+              </p>
+                <div class="confirm-actions">
+                  <button class="btn-confirm-cancel" id="dismissOwnerLimit">
+                    Entendido
+                  </button>
+                  <button class="btn-confirm-ok btn-confirm-warning" id="upgradeToProBtn">
+                    <i class="ri-vip-crown-line"></i> Actualizar a PRO
+                  </button>
+                </div>
+              </div>
+              `
 
   document.body.appendChild(modal)
   modal.style.display = 'flex'
