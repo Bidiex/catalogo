@@ -4277,6 +4277,12 @@ window.openDiscountModal = async function (productId) {
       discountStartDate.value = existingDiscount.start_date
       discountEndDate.value = existingDiscount.end_date
 
+      // Check if expired and update toggle visual state
+      const todayStr = new Date().toISOString().split('T')[0]
+      if (existingDiscount.end_date < todayStr) {
+        discountActiveInput.checked = false
+      }
+
       // Calculate and show discounted price
       updateDiscountedPrice()
 
@@ -4347,28 +4353,39 @@ if (discountForm) {
         const endDate = discountEndDate.value
         const isActive = discountActiveInput.checked
 
-        // Validation
-        if (!percentage || percentage <= 0 || percentage >= 100) {
-          notify.error('El porcentaje debe estar entre 1 y 99')
-          return
-        }
 
-        if (!startDate || !endDate) {
-          notify.error('Debes ingresar ambas fechas (inicio y fin)')
-          return
-        }
+        // Validation logic
+        if (isActive) {
+          // Si se está activando, todas las validaciones son requeridas
+          if (!percentage || percentage <= 0 || percentage >= 100) {
+            notify.error('El porcentaje debe estar entre 1 y 99')
+            return
+          }
 
-        // Validate dates using string comparison to avoid timezone issues
-        const todayStr = new Date().toISOString().split('T')[0] // Format: YYYY-MM-DD
+          if (!startDate || !endDate) {
+            notify.error('Debes ingresar ambas fechas (inicio y fin)')
+            return
+          }
 
-        if (startDate < todayStr) {
-          notify.error('La fecha de inicio no puede ser anterior a hoy')
-          return
-        }
+          // Validate dates using string comparison to avoid timezone issues
+          const todayStr = new Date().toISOString().split('T')[0] // Format: YYYY-MM-DD
 
-        if (endDate < startDate) {
-          notify.error('La fecha fin no puede ser anterior a la fecha inicio')
-          return
+          if (startDate < todayStr) {
+            notify.error('La fecha de inicio no puede ser anterior a hoy')
+            return
+          }
+
+          if (endDate < startDate) {
+            notify.error('La fecha fin no puede ser anterior a la fecha inicio')
+            return
+          }
+        } else {
+          // Si se está desactivando, solo validamos que el porcentaje sea válido si se ingresó algo
+          // Las fechas no son obligatorias para desactivar
+          if (percentage && (percentage <= 0 || percentage >= 100)) {
+            notify.error('El porcentaje debe estar entre 1 y 99')
+            return
+          }
         }
 
         const discountData = {
