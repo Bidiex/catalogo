@@ -88,23 +88,33 @@
         </div>
       </header>
 
-      <!-- Search Bar -->
-      <div class="catalog-search-container">
-        <div class="catalog-search-bar">
-          <i class="ri-search-line"></i>
-          <input type="text" id="catalogSearchInput" placeholder="Buscar productos..." />
-          <button id="clearCatalogSearch" class="catalog-search-clear" style="display: none;">
-            <i class="ri-close-line"></i>
+      <div class="desktop-search-nav-row">
+        <!-- Search Bar -->
+        <div class="catalog-search-container">
+          <div class="catalog-search-bar">
+            <i class="ri-search-line"></i>
+            <input type="text" id="catalogSearchInput" placeholder="Buscar productos..." />
+            <button id="clearCatalogSearch" class="catalog-search-clear" style="display: none;">
+              <i class="ri-close-line"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Categories navigation -->
+        <div class="categories-nav-wrapper">
+          <button id="scrollLeft" class="nav-arrow left" aria-label="Anterior">
+            <i class="ri-arrow-left-s-line"></i>
+          </button>
+          <nav class="categories-nav" id="categoriesNav">
+            <div class="categories-nav-track">
+              <button class="category-nav-btn active" data-category="all">Todos</button>
+            </div>
+          </nav>
+          <button id="scrollRight" class="nav-arrow right" aria-label="Siguiente">
+            <i class="ri-arrow-right-s-line"></i>
           </button>
         </div>
       </div>
-
-      <!-- Categories navigation -->
-      <nav class="categories-nav" id="categoriesNav">
-        <div class="categories-nav-track">
-          <button class="category-nav-btn active" data-category="all">Todos</button>
-        </div>
-      </nav>
     </div>
 
     <!-- Promo Banner / Carousel (Moved below sticky wrapper) -->

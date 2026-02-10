@@ -2224,3 +2224,144 @@
     overflow-y: auto;
   }
 }
+
+/* =========================================
+   DESKTOP REFINEMENTS (min-width: 1024px)
+   ========================================= */
+@media (min-width: 1024px) {
+
+  /* 1. Header Layout & Promo Banner Position */
+  .header-content {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    position: relative;
+    padding-bottom: 1rem;
+  }
+
+  /* Left side of header (Logo, Name, Info) */
+  .header-left-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 50%;
+    /* Ensure it doesn't overlap banner */
+    z-index: 2;
+  }
+
+  /* Position Promo Banner in the top-right empty space */
+  .promo-banner-container {
+    position: absolute;
+    top: 50%;
+    right: 16px;
+    transform: translateY(-50%);
+    width: 450px;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    z-index: 10;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+
+  /* Adjust carousel height for small banner version */
+  .promo-carousel {
+    max-height: 220px;
+    /* Smaller height for header integration */
+    aspect-ratio: auto;
+    height: 200px;
+    background: transparent;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  /* HIDE BANNER ON SCROLL class (toggled by JS) */
+  .promo-banner-hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-60%);
+    /* Slide up slightly */
+  }
+
+
+  /* 2. Search & Categories Row */
+  .desktop-search-nav-row {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0.5rem 16px;
+    background: white;
+  }
+
+  /* Search Bar fixed width */
+  .catalog-search-container {
+    padding: 0;
+    /* Remove default padding */
+    width: 350px;
+    flex-shrink: 0;
+  }
+
+  .catalog-search-bar {
+    margin: 0;
+    width: 100%;
+  }
+
+  /* Categories Nav flex grow */
+  .categories-nav-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    /* Prevent flex overflow */
+    position: relative;
+  }
+
+  .categories-nav {
+    flex: 1;
+    border-bottom: none;
+    /* Remove mobile border */
+    overflow-x: auto;
+    /* Keep scroll behavior but hide bar */
+    scroll-behavior: smooth;
+  }
+
+  /* Navigation Arrows */
+  .nav-arrow {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid #e5e7eb;
+    background: white;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    z-index: 5;
+  }
+
+  .nav-arrow:hover {
+    background: #f9fafb;
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+
+  .nav-arrow:active {
+    transform: scale(0.95);
+  }
+
+}
+
+/* Ensure mobile layout doesn't see desktop elements implies default styles apply */
+@media (max-width: 1023.98px) {
+  .nav-arrow {
+    display: none;
+  }
+
+  .desktop-search-nav-row {
+    display: block;
+  }
+}

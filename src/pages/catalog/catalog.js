@@ -163,8 +163,37 @@ async function init() {
 
     showCatalog()
 
+    showCatalog()
+
     // Header scroll compression
     initHeaderScrollCompression()
+
+    // Scroll optimization for Categories
+    const categoriesNav = document.getElementById('categoriesNav')
+    const scrollLeftBtn = document.getElementById('scrollLeft')
+    const scrollRightBtn = document.getElementById('scrollRight')
+
+    if (scrollLeftBtn && scrollRightBtn && categoriesNav) {
+      scrollLeftBtn.addEventListener('click', () => {
+        categoriesNav.scrollBy({ left: -200, behavior: 'smooth' })
+      })
+
+      scrollRightBtn.addEventListener('click', () => {
+        categoriesNav.scrollBy({ left: 200, behavior: 'smooth' })
+      })
+    }
+
+    // Desktop Promo Banner Scroll Effect
+    const promoBanner = document.getElementById('promoBannerContainer')
+    if (promoBanner && window.matchMedia("(min-width: 1024px)").matches) {
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 50) {
+          promoBanner.classList.add('promo-banner-hidden')
+        } else {
+          promoBanner.classList.remove('promo-banner-hidden')
+        }
+      })
+    }
 
     // Initialize scroll animations
     initScrollAnimations()
