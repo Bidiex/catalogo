@@ -168,6 +168,12 @@ async function init() {
     // Header scroll compression
     initHeaderScrollCompression()
 
+    // NEW: Render Desktop Sidebar Categories
+    renderDesktopSidebarCategories()
+
+    // Initial check for cart layout
+    toggleDynamicCartLayout()
+
     // Scroll optimization for Categories
     const categoriesNav = document.getElementById('categoriesNav')
     const scrollLeftBtn = document.getElementById('scrollLeft')

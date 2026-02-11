@@ -2250,7 +2250,8 @@
   #catalogContent {
     display: grid;
     /* Default: 2 Columns (Sidebar | Content) - Cart hidden */
-    grid-template-columns: 18% 1fr 0px;
+    /* 16% Sidebar | 84% Content | 0% Cart */
+    grid-template-columns: 16vw 1fr 0px;
     gap: 0;
     height: 100vh;
     overflow: hidden;
@@ -2259,7 +2260,8 @@
 
   /* Active Cart State: 3 Columns (Sidebar | Content | Cart) */
   #catalogContent.has-active-cart {
-    grid-template-columns: 18% 1fr 20%;
+    /* 16% Sidebar | 64% Content | 20% Cart */
+    grid-template-columns: 16vw 1fr 20vw;
   }
 
   /* 1. LEFT SIDEBAR */
@@ -2392,6 +2394,17 @@
   .desktop-search-nav-row .nav-scroll-btn {
     display: none !important;
   }
+
+  /* IMPORTANT: Hide mobile nav arrows on desktop too */
+  .desktop-search-nav-row .categories-nav-wrapper .nav-arrow {
+    display: none !important;
+  }
+
+  /* IMPORTANT: Hide the entire categories-nav-wrapper on desktop if it contains the nav we moved to sidebar */
+  .desktop-search-nav-row .categories-nav-wrapper {
+    display: none !important;
+  }
+
 
   .desktop-search-container {
     max-width: 600px;
