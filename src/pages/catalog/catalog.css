@@ -2228,6 +2228,13 @@
 /* =========================================
    DESKTOP 3-COLUMN LAYOUT (min-width: 1024px)
    ========================================= */
+
+/* Default hidden on mobile */
+.desktop-sidebar,
+.cart-panel {
+  display: none;
+}
+
 /* --- DESKTOP 3-COLUMN LAYOUT (Dynamic) --- */
 @media (min-width: 1024px) {
 
@@ -2236,226 +2243,641 @@
     display: none !important;
   }
 
-  .search-bar-container {
-    display: none;
-    /* Moved to center column */
-  }
-
-  .categories-nav {
-    display: none;
-    /* Moved to Sidebar */
-  }
-
-  /* MAIN GRID CONTAINER */
+  /* MAIN LAYOUT CONTAINER */
   #catalogContent {
-    display: grid;
-    /* Default: 2 Columns (Sidebar | Content) - Cart hidden */
-    /* 16% Sidebar | 84% Content | 0% Cart */
-    grid-template-columns: 16vw 1fr 0px;
-    gap: 0;
+    display: flex;
     height: 100vh;
     overflow: hidden;
-    transition: grid-template-columns 0.3s ease;
+    background-color: #f8fafc;
+    /* bg-slate-50 */
   }
 
-  /* Active Cart State: 3 Columns (Sidebar | Content | Cart) */
-  #catalogContent.has-active-cart {
-    /* 16% Sidebar | 64% Content | 20% Cart */
-    grid-template-columns: 16vw 1fr 20vw;
-  }
-
-  /* 1. LEFT SIDEBAR */
+  /* 1. LEFT SIDEBAR (22vw) */
   .desktop-sidebar {
+    width: 22vw;
+    min-width: 260px;
+    height: 100%;
+    background-color: #fff;
+    border-right: 1px solid #e2e8f0;
+    /* border-slate-200 */
     display: flex;
     flex-direction: column;
-    background: #fff;
-    border-right: 1px solid #e5e7eb;
-    height: 100vh;
-    overflow-y: auto;
-    padding: 1.5rem;
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    z-index: 20;
   }
 
-  /* Sidebar Elements */
+  .sidebar-header {
+    padding: 1.5rem;
+    /* p-6 */
+    border-bottom: 1px solid #f1f5f9;
+    /* border-slate-100 */
+  }
+
+  .sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
   .sidebar-logo {
-    width: 60px;
-    height: 60px;
-    border-radius: 12px;
+    width: 3rem;
+    height: 3rem;
+    background-color: var(--color-primary);
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.25rem;
     overflow: hidden;
-    margin-bottom: 1rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    margin-bottom: 0;
+    box-shadow: none;
+    flex-shrink: 0;
   }
 
   .sidebar-logo img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    aspect-ratio: 1/1;
   }
 
   .sidebar-business-name {
     font-size: 1.25rem;
     font-weight: 700;
-    margin-bottom: 0.5rem;
-    color: #111;
+    color: var(--color-text);
+    margin: 0;
+    line-height: 1.2;
   }
 
-  .sidebar-info p {
-    font-size: 0.9rem;
-    color: #666;
-    margin-bottom: 1rem;
-    line-height: 1.4;
-  }
-
-  .sidebar-contact {
+  .sidebar-info-group {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    margin-bottom: 1.5rem;
   }
 
-  .contact-item {
+  .sidebar-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #94a3b8;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .sidebar-contact-item {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 0.85rem;
-    color: #444;
+    font-size: 0.9rem;
+    color: #475569;
+    line-height: 1.4;
+    padding: 0.25rem 0;
   }
 
-  /* Sidebar Categories */
-  .sidebar-categories {
+  /* Badge Styles for Status */
+  .sidebar-contact-item.business-status {
+    display: inline-flex;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    width: fit-content;
+  }
+
+  .sidebar-contact-item.business-status.open {
+    background-color: #dcfce7;
+    /* green-100 */
+    color: #166534;
+    /* green-800 */
+  }
+
+  .sidebar-contact-item.business-status.open i {
+    color: #166534;
+  }
+
+  .sidebar-contact-item.business-status.closed {
+    background-color: #fee2e2;
+    /* red-100 */
+    color: #991b1b;
+    /* red-800 */
+  }
+
+  .sidebar-contact-item.business-status.closed i {
+    color: #991b1b;
+  }
+
+  .sidebar-contact-item i {
+    color: var(--color-primary);
+    font-size: 1.1rem;
+  }
+
+  /* Sidebar Navigation */
+  .sidebar-nav {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    border-top: 1px solid #eee;
-    padding-top: 1.5rem;
+    gap: 0.25rem;
+  }
+
+  .sidebar-nav .sidebar-label {
+    padding: 0 0.5rem;
+    margin-bottom: 0.75rem;
   }
 
   .sidebar-category-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
     padding: 0.75rem 1rem;
-    border-radius: 8px;
-    cursor: pointer;
+    border-radius: 0.5rem;
     font-size: 0.95rem;
-    color: #4b5563;
-    transition: all 0.2s;
     font-weight: 500;
+    color: #475569;
+    transition: all 0.2s;
+    cursor: pointer;
   }
 
   .sidebar-category-item:hover {
-    background-color: #f3f4f6;
-    color: var(--color-primary);
+    background-color: #f8fafc;
+    color: var(--color-text);
   }
 
   .sidebar-category-item.active {
-    background-color: var(--color-primary);
-    color: white;
+    background-color: rgba(var(--color-primary-rgb), 0.1);
+    color: var(--color-primary);
   }
 
-  .sidebar-imperdibles {
-    color: #f59e0b;
+  /* Imperdibles Special Style */
+  .sidebar-category-item.sidebar-imperdibles {
+    background-color: #ffb24f;
+    /* Custom Orange/Yellow */
+    color: #000000;
+    /* Black text */
   }
 
-  .sidebar-imperdibles:hover {
-    color: #d97706;
+  .sidebar-category-item.sidebar-imperdibles:hover {
+    opacity: 0.9;
   }
 
-  .sidebar-imperdibles.active {
-    background-color: #f59e0b;
-    color: white;
+  .sidebar-category-item.sidebar-imperdibles i {
+    color: #000000;
   }
 
-  /* 2. CENTER CONTENT */
-  .catalog-center-content {
-    background: #f9fafb;
-    height: 100vh;
+  .sidebar-category-item i {
+    font-size: 1.25rem;
+  }
+
+  /* Hide Global Footer on Desktop */
+  .catalog-footer {
+    display: none !important;
+  }
+
+  .sidebar-footer {
+    padding: 1rem;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    flex-direction: row;
+    /* Side by side */
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: auto;
+  }
+
+  .sidebar-traego-branding {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Removed width 100% so it fits with button if desired, or we can just use the items directly */
+  }
+
+  /* We will remove the text label via JS/HTML update, ensuring compact look */
+
+  .traego-logo-img {
+    height: 1.25rem;
+    /* Smaller logo */
+    width: auto;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+  }
+
+  .traego-logo-img:hover {
+    opacity: 1;
+  }
+
+  .btn-traego {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.4rem 0.75rem;
+    /* Smaller padding */
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    color: #475569;
+    font-size: 0.75rem;
+    /* Smaller text */
+    font-weight: 600;
+    width: auto;
+    /* Allow shrink */
+    text-decoration: none;
+    transition: all 0.2s;
+    gap: 0.25rem;
+  }
+
+  .btn-traego:hover {
+    background-color: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #0f172a;
+  }
+
+  .btn-traego i {
+    font-size: 0.85rem;
+    color: var(--color-primary);
+  }
+
+  /* --- PRODUCT MODAL DESKTOP LAYOUT (2 Columns) --- */
+  /* Redefine modal content for desktop */
+  #productModal .product-modal-content,
+  #promotionModal .product-modal-content {
+    display: flex;
+    flex-direction: row;
+    width: 900px;
+    max-width: 90%;
+    height: 80vh;
+    /* Fixed height for consistent layout */
+    max-height: 80vh;
+    overflow: hidden;
+    /* Container doesn't scroll, right side does */
+  }
+
+  /* Left Column: Image */
+  #productModal .product-modal-image,
+  #promotionModal .product-modal-image {
+    width: 45%;
+    height: 100%;
+    object-fit: cover;
+    flex-shrink: 0;
+    border-radius: 1rem 0 0 1rem;
+    /* Rounded corners on left */
+  }
+
+  /* Right Column: Info & Options */
+  #productModal .product-modal-info,
+  #promotionModal .product-modal-info {
+    width: 55%;
+    height: 100%;
     overflow-y: auto;
-    position: relative;
-    padding: 0;
-    /* Clear padding, use inner wrappers */
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
   }
 
-  /* Center Header (Search + Banner) */
+  /* Ensure close button is positioned correctly relative to the modal content */
+  .product-modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 50;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+
+  /* 2. CENTER CONTENT (Dynamic Width) */
+  .catalog-center-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    background-color: #f8fafc;
+    /* bg-slate-50 */
+  }
+
+  /* Sticky Header */
   .desktop-search-nav-row {
     position: sticky;
     top: 0;
-    z-index: 90;
-    background: rgba(255, 255, 255, 0.95);
+    z-index: 10;
+    background-color: rgba(255, 255, 255, 0.9);
     backdrop-filter: blur(8px);
+    border-bottom: 1px solid #e2e8f0;
+    /* Removed fixed height, let padding define it */
     padding: 1rem 2rem;
-    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+  }
+
+  /* Search Input Style from Inspiration */
+  .catalog-search-container {
+    flex: 1;
+    max-width: 600px;
+    position: relative;
+    padding: 0;
+    /* Override */
+    background: transparent;
+    /* Override */
+    margin: 0;
+    /* Override */
+  }
+
+  .catalog-search-bar {
+    width: 100%;
+    position: relative;
+    padding: 0;
+    /* Override */
+    background: transparent;
+    /* Override */
+    border: none;
+    /* Override */
+    max-width: none;
+    /* Override */
+    margin: 0;
+    /* Override */
+    display: block;
+    /* Override flex */
+  }
+
+  .catalog-search-bar input {
+    width: 100%;
+    padding: 0.6rem 1rem 0.6rem 2.75rem;
+    background-color: #f1f5f9;
+    /* bg-slate-100 */
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 0.95rem;
+    color: #334155;
+    transition: box-shadow 0.2s;
+  }
+
+  .catalog-search-bar input:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-primary);
+  }
+
+  .catalog-search-bar i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    margin: 0;
+    /* Override */
+    /* text-slate-400 */
+  }
+
+  /* Hide Mobile Nav Elements */
+  .categories-nav-wrapper {
+    display: none !important;
+  }
+
+  /* Main Scrollable Area */
+  .catalog-main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2rem;
+    width: 100%;
+    /* Force full width */
+  }
+
+  .products-container {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding-bottom: 1rem;
+  }
+
+  /* Product Grid override */
+  .products-grid,
+  .products-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    overflow-x: visible;
+    padding: 0;
+    width: 100%;
+  }
+
+  /* Force card size in desktop */
+  .products-grid .product-card,
+  .products-row .product-card {
+    flex: 0 0 250px;
+    /* Don't grow, don't shrink, fixed base */
+    width: 250px;
+    max-width: 250px;
+    min-width: 250px;
+  }
+
+  /* Optional: Adjust for smaller screens still within desktop range if needed, 
+     but user asked for max/min restriction. 
+     Flexbox with wrap handles the "jump to next line" requirement automatically. */
+
+  .category-section {
+    width: 100%;
+    /* Occupy full width */
+    margin-bottom: 2rem;
+  }
+
+  .category-section h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--color-text);
+  }
+
+  /* 3. RIGHT SIDEBAR (25vw) - Cart */
+  #cartPanel {
+    width: 25vw;
+    /* Slightly increased for better fit */
+    min-width: 320px;
+    height: 100%;
+
+    display: flex;
+    flex-direction: column;
+    z-index: 30;
+    /* Transition for sliding in/out */
+    transition: margin-right 0.3s ease, opacity 0.3s ease;
+    margin-right: -25vw;
+    /* Hidden by default */
+    opacity: 0;
+    position: relative;
+    box-shadow: -4px 0 15px rgba(0, 0, 0, 0.05);
+    background-color: #fff;
+    border-left: 1px solid #e2e8f0;
+  }
+
+  /* Show Cart state */
+  #catalogContent.has-active-cart #cartPanel {
+    margin-right: 0;
+    opacity: 1;
+    display: flex !important;
+    /* Ensure flex layout */
+  }
+
+  /* FIX: Ensure cart content is visible and takes full height */
+  #cartPanel .cart-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    position: relative;
+    transform: none;
+    box-shadow: none;
+    border-radius: 0;
+    background: transparent;
+    padding: 0;
+    visibility: visible !important;
+    /* Force visible */
+    opacity: 1 !important;
+  }
+
+  #cartPanel .cart-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #f1f5f9;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  #cartPanel .cart-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: block !important;
+    /* Force display block for standard flow */
+  }
+
+  /* Force Cart Items to be visible */
+  #cartPanel .cart-item {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    background: #fff;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  #cartPanel .cart-item-info {
+    flex: 1;
+    display: block !important;
+  }
+
+  #cartPanel .cart-footer {
+    padding: 1.5rem;
+    border-top: 1px solid #f1f5f9;
+    background: #fff;
+    flex-shrink: 0;
+    display: block !important;
+    /* Force visible */
+  }
+
+  /* Hide search bar in sidebar if present */
+  .desktop-sidebar .catalog-search-container {
+    display: none;
+  }
+
+  .cart-overlay {
+    display: none !important;
+  }
+
+  .cart-close {
+    display: none !important;
+  }
+
+  .cart-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .cart-header h2 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--color-text);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .cart-badge-desktop {
+    background-color: rgba(var(--color-primary-rgb), 0.1);
+    color: var(--color-primary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+  }
+
+  .cart-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
     display: flex;
     flex-direction: column;
     gap: 1rem;
   }
 
-  /* Hide Categories Nav inside center column on desktop */
-  .desktop-search-nav-row .categories-nav,
-  .desktop-search-nav-row .nav-scroll-btn {
-    display: none !important;
+  .cart-item {
+    padding: 0.75rem;
+    background-color: #f8fafc;
+    border-radius: 0.5rem;
+    border: 1px solid transparent;
+    /* default */
+    margin-bottom: 0;
   }
 
-  /* IMPORTANT: Hide mobile nav arrows on desktop too */
-  .desktop-search-nav-row .categories-nav-wrapper .nav-arrow {
-    display: none !important;
+  .cart-item-image {
+    width: 4rem;
+    /* w-16 */
+    height: 4rem;
+    /* h-16 */
+    border-radius: 0.25rem;
   }
 
-  /* IMPORTANT: Hide the entire categories-nav-wrapper on desktop if it contains the nav we moved to sidebar */
-  .desktop-search-nav-row .categories-nav-wrapper {
-    display: none !important;
+  .cart-footer {
+    padding: 1.5rem;
+    background-color: #f8fafc;
+    border-top: 1px solid #e2e8f0;
   }
 
+  .cart-total-amount {
+    font-size: 1.25rem;
+    font-weight: 700;
+  }
 
-  .desktop-search-container {
-    max-width: 600px;
+  .btn-whatsapp {
     width: 100%;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    font-weight: 700;
+    justify-content: center;
+    box-shadow: 0 4px 6px -1px rgba(37, 211, 102, 0.2);
   }
 
-  /* Promo Banner Positioning */
-  .promo-banner-container {
-    margin: 0 2rem 1.5rem 2rem;
-    border-radius: 12px;
-    overflow: hidden;
-    /* Make it look integrated */
-  }
-
-  /* 3. RIGHT SIDEBAR (CART) */
-  #cartPanel {
-    display: block !important;
-    /* Always "block" in DOM, but hidden by grid width */
-    position: relative !important;
-    width: 100% !important;
-    height: 100vh !important;
-    transform: none !important;
-    border-left: 1px solid #e5e7eb;
-    background: #fff;
-    z-index: 95;
-    /* Hide content when collapsed */
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s;
-  }
-
-  #catalogContent.has-active-cart #cartPanel {
-    opacity: 1;
-    visibility: visible;
-  }
-
-  .cart-header {
-    display: flex;
-    /* Or whatever layout it needs */
-  }
-
-  /* Hide Close Button on Desktop */
-  #cartClose {
-    display: none;
-  }
-
-  /* Hide Overlay on Desktop */
-  .cart-overlay {
+  /* Hide FAB on Desktop */
+  #cartFab {
     display: none !important;
   }
+
 }
+
+/* End Desktop Media Query */
 
 
 /* --- MOBILE SAFETY (max-width: 1023px) --- */
@@ -2484,5 +2906,154 @@
 
   .nav-arrow {
     display: none;
+  }
+}
+
+/* ============================================
+   DESKTOP MODAL REDESIGN (min-width: 1024px)
+   ============================================ */
+@media (min-width: 1024px) {
+
+  /* Use ID selector for higher specificity to override any default class styles */
+  #productModal,
+  #promotionModal {
+    /* Ensure the overlay itself is flex centering (JS sets this to flex, which is correct) */
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+
+  #productModal .product-modal-content,
+  #promotionModal .product-modal-content {
+    width: 900px;
+    max-width: 90%;
+    height: 600px;
+    max-height: 85vh;
+    display: grid;
+    grid-template-columns: 45% 1fr;
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas:
+      "header header"
+      "image info"
+      "image footer";
+    overflow: hidden;
+    /* Main container doesn't scroll, inner areas do */
+    padding: 0;
+    gap: 0;
+    background: white;
+    border-radius: 1rem;
+    position: relative;
+    /* Ensure no flex properties interfere */
+    flex-direction: row;
+  }
+
+  /* Reset flex behavior from mobile/default */
+  #productModal .product-modal-body,
+  #promotionModal .product-modal-body {
+    display: contents;
+    /* Unwrap the body container to let children participate in the grid */
+  }
+
+  /* 1. HEADER (Top Full Width) */
+  #productModal .product-modal-header,
+  #promotionModal .product-modal-header {
+    grid-area: header;
+    position: static;
+    /* Remove sticky */
+    border-bottom: 1px solid var(--color-border);
+    padding: 1rem 1.5rem;
+    background: white;
+    z-index: 20;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* 2. IMAGE (Left Column) */
+  #productModal .product-modal-image,
+  #promotionModal .product-modal-image {
+    grid-area: image;
+    height: 100%;
+    width: 100%;
+    aspect-ratio: auto;
+    /* Allow flexible aspect ratio to fill area */
+    background: #f8fafc;
+    border-right: 1px solid var(--color-border);
+    margin: 0;
+    padding: 0;
+    max-height: none;
+    /* Override default max-height */
+  }
+
+  #productModal .product-modal-image img,
+  #promotionModal .product-modal-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* 3. INFO (Right Column - Top Part) */
+  #productModal .product-modal-info,
+  #promotionModal .product-modal-info {
+    grid-area: info;
+    overflow-y: auto;
+    /* Independent scrolling for info */
+    padding: 1.5rem 2rem;
+    max-height: none;
+    /* Reset limitation */
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* 4. FOOTER (Right Column - Bottom Part) */
+  #productModal .product-modal-footer,
+  #promotionModal .product-modal-footer {
+    grid-area: footer;
+    position: static;
+    /* Remove sticky */
+    border-top: 1px solid var(--color-border);
+    padding: 1rem 2rem;
+    background: white;
+    z-index: 20;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Adjustments for content inside Info area */
+  .product-modal-name {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .product-modal-price {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+    color: var(--color-primary);
+    font-weight: 700;
+  }
+
+  .product-modal-description {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #4b5563;
+  }
+
+  /* Ensure Size Selector and Options look good in the right column */
+  #sizeSelectorContainer {
+    margin-top: 1.5rem;
+  }
+
+  .product-options-section {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  /* Adjust Footer buttons layout if needed */
+  .product-modal-quantity {
+    margin-right: 1rem;
   }
 }

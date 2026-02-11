@@ -762,7 +762,8 @@ function showError() {
 function showCatalog() {
   loadingState.style.display = 'none'
   errorState.style.display = 'none'
-  catalogContent.style.display = 'block'
+  // Remove inline style so CSS can control display (Flex on Desktop, Block on Mobile)
+  catalogContent.style.display = ''
 }
 
 // ============================================
@@ -913,14 +914,64 @@ function renderCategoriesNav() {
 
 function renderDesktopSidebarCategories() {
   const sidebarContainer = document.getElementById('sidebarCategories')
-  if (!sidebarContainer) return
+  const desktopSidebar = document.getElementById('desktopSidebar')
+  if (!sidebarContainer || !desktopSidebar) return
+
+  // CLEAR SIDEBAR CONTENT to rebuild structure based on inspiration
+  desktopSidebar.innerHTML = `
+    <div class="sidebar-header">
+      <div class="sidebar-brand">
+        <div id="desktopSidebarLogo" class="sidebar-logo">
+           ${currentBusiness.logo_url ? `<img src="${currentBusiness.logo_url}" alt="${currentBusiness.name}">` : '<i class="ri-store-2-line"></i>'}
+        </div>
+        <h2 class="sidebar-business-name">${currentBusiness.name}</h2>
+      </div>
+      
+      <div class="sidebar-info-group">
+        <div class="sidebar-label">Información</div>
+        ${currentBusiness.address ? `
+        <div class="sidebar-contact-item">
+          <i class="ri-map-pin-line"></i>
+          <span>${currentBusiness.address}</span>
+        </div>` : ''}
+        ${currentBusiness.whatsapp_number ? `
+        <div class="sidebar-contact-item">
+          <i class="ri-whatsapp-line"></i>
+          <span>${currentBusiness.whatsapp_number}</span>
+        </div>` : ''}
+        <div class="sidebar-contact-item business-status ${businessStatus.isOpen ? 'open' : 'closed'}">
+          <i class="ri-time-line"></i>
+          <span>${businessStatus.message}</span>
+        </div>
+      </div>
+    </div>
+    
+    <nav class="sidebar-nav" id="desktopSidebarNav">
+       <div class="sidebar-label">Categorías</div>
+       <!-- Categories injected here -->
+    </nav>
+    
+    <div class="sidebar-footer">
+       <!-- Compact Logo -->
+       <img src="/logo_traego.svg" alt="TraeGo" class="traego-logo-img">
+       
+       <!-- Compact Button -->
+       <a href="https://traego.co" target="_blank" rel="noopener noreferrer" class="btn-traego">
+          <span>Ir a TraeGo</span>
+          <i class="ri-external-link-line"></i>
+       </a>
+    </div>
+  `
+
+  const navContainer = document.getElementById('desktopSidebarNav')
 
   // Reuse categories data
-  let html = ''
+  let html = '<div class="sidebar-label">Categorías</div>'
 
   // "Todos" option
   html += `
     <div class="sidebar-category-item active" data-category="all" onclick="window.selectSidebarCategory('all')">
+      <i class="ri-apps-line"></i>
       <span>Todos</span>
     </div>
   `
@@ -937,14 +988,19 @@ function renderDesktopSidebarCategories() {
 
   // Categories
   categories.forEach(category => {
+    // Basic icon mapping based on name (optional improvement)
+    let icon = 'ri-price-tag-3-line'
+    if (category.name.toLowerCase().includes('hamburguesa')) icon = 'ri-goblet-line' // Example
+
     html += `
       <div class="sidebar-category-item" data-category="${category.id}" onclick="window.selectSidebarCategory('${category.id}')">
+        <i class="${icon}"></i>
         <span>${category.name}</span>
       </div>
     `
   })
 
-  sidebarContainer.innerHTML = html
+  navContainer.innerHTML = html
 }
 
 window.selectSidebarCategory = (categoryId) => {
@@ -1525,7 +1581,12 @@ function updateCartUI() {
   }
 
   // Actualizar panel del carrito si está abierto
-  if (cartPanel.style.display === 'flex') {
+  // Check both explicit mobile style (flex) OR desktop state class (active cart)
+  const isDesktop = window.matchMedia("(min-width: 1024px)").matches
+  const isMobileOpen = cartPanel.style.display === 'flex'
+  // En desktop siempre queremos renderizar si hay items (updateCartUI se llama al agregar)
+  // Pero para ser seguros, renderizamos si está abierto en móvil O si es desktop
+  if (isMobileOpen || isDesktop) {
     renderCartItems()
   }
 
