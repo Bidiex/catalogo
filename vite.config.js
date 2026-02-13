@@ -14,6 +14,10 @@ export default defineConfig({
         'reset-password': resolve(__dirname, 'src/pages/reset-password/index.html'),
         'update-password': resolve(__dirname, 'src/pages/update-password/index.html'),
         'auth-callback': resolve(__dirname, 'src/pages/auth/callback/index.html'),
+        'admin-dashboard': resolve(__dirname, 'src/pages/admin/dashboard/index.html'),
+        'admin-businesses': resolve(__dirname, 'src/pages/admin/businesses/index.html'),
+        'admin-business-detail': resolve(__dirname, 'src/pages/admin/business-detail/index.html'),
+        'admin-setup-catalogo': resolve(__dirname, 'src/pages/admin/setup-catalogo/index.html'),
         '404': resolve(__dirname, 'src/pages/404/index.html'),
       },
       output: {
@@ -37,6 +41,10 @@ export default defineConfig({
             '/reset-password': '/src/pages/reset-password/index.html',
             '/update-password': '/src/pages/update-password/index.html',
             '/auth/callback': '/src/pages/auth/callback/index.html',
+            '/admin/dashboard': '/src/pages/admin/dashboard/index.html',
+            '/admin/businesses': '/src/pages/admin/businesses/index.html',
+            '/admin/business-detail': '/src/pages/admin/business-detail/index.html',
+            '/admin/setup-catalogo': '/src/pages/admin/setup-catalogo/index.html',
             '/404': '/src/pages/404/index.html'
           }
 
@@ -64,6 +72,10 @@ export default defineConfig({
             '/reset-password': '/reset-password.html',
             '/update-password': '/update-password.html',
             '/auth/callback': '/auth-callback.html',
+            '/admin/dashboard': '/admin-dashboard.html',
+            '/admin/businesses': '/admin-businesses.html',
+            '/admin/business-detail': '/admin-business-detail.html',
+            '/admin/setup-catalogo': '/admin-setup-catalogo.html',
             '/404': '/404.html'
           }
 
@@ -109,6 +121,10 @@ export default defineConfig({
           moveFile(resolve(srcDir, 'reset-password/index.html'), resolve(distDir, 'reset-password.html'))
           moveFile(resolve(srcDir, 'update-password/index.html'), resolve(distDir, 'update-password.html'))
           moveFile(resolve(srcDir, 'auth/callback/index.html'), resolve(distDir, 'auth-callback.html'))
+          moveFile(resolve(srcDir, 'admin/dashboard/index.html'), resolve(distDir, 'admin-dashboard.html'))
+          moveFile(resolve(srcDir, 'admin/businesses/index.html'), resolve(distDir, 'admin-businesses.html'))
+          moveFile(resolve(srcDir, 'admin/business-detail/index.html'), resolve(distDir, 'admin-business-detail.html'))
+          moveFile(resolve(srcDir, 'admin/setup-catalogo/index.html'), resolve(distDir, 'admin-setup-catalogo.html'))
           moveFile(resolve(srcDir, '404/index.html'), resolve(distDir, '404.html'))
 
           // Optional: Clean up src directory in dist if empty or no longer needed

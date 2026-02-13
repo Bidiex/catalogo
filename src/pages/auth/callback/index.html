@@ -20,6 +20,7 @@
 
     <script type="module">
         import { supabase } from '/src/config/supabase.js'
+        import { authGuard } from '/src/utils/auth-guard.js'
 
         console.log('🔄 Callback page loaded')
         console.log('📍 Current URL:', window.location.href)
@@ -55,8 +56,17 @@
                 if (session) {
                     console.log('✅ Session found:', session.user.email)
                     document.querySelector('.status-text').textContent = '¡Listo! Redirigiendo...'
-                    console.log('🚀 Redirecting to dashboard...')
-                    window.location.href = '/dashboard'
+
+                    // Check for Superadmin status before redirecting
+                    const { isAdmin } = await authGuard.checkAdminSession()
+
+                    if (isAdmin) {
+                        console.log('🚀 Redirecting to ADMIN dashboard...')
+                        window.location.href = '/admin/dashboard'
+                    } else {
+                        console.log('🚀 Redirecting to dashboard...')
+                        window.location.href = '/dashboard'
+                    }
                 } else {
                     console.log('⚠️ No session found, waiting for auth state change...')
                 }
@@ -68,14 +78,25 @@
         }
 
         // Escuchar cambios de autenticación
-        supabase.auth.onAuthStateChange((event, session) => {
+        supabase.auth.onAuthStateChange(async (event, session) => {
             console.log('🔔 Auth state changed:', event)
 
             if (event === 'SIGNED_IN' && session) {
                 console.log('✅ User signed in:', session.user.email)
                 document.querySelector('.status-text').textContent = '¡Listo! Redirigiendo...'
-                console.log('🚀 Redirecting to dashboard...')
-                setTimeout(() => window.location.href = '/dashboard', 500)
+
+                // Check for Superadmin status
+                const { isAdmin } = await authGuard.checkAdminSession()
+
+                setTimeout(() => {
+                    if (isAdmin) {
+                        console.log('🚀 Redirecting to ADMIN dashboard...')
+                        window.location.href = '/admin/dashboard'
+                    } else {
+                        console.log('🚀 Redirecting to dashboard...')
+                        window.location.href = '/dashboard'
+                    }
+                }, 500)
             }
         })
 

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Superadmin Dashboard - TraeGo</title>
+    <link rel="icon" type="image/svg+xml" href="/src/assets/icon_traego.svg" />
+    <link rel="stylesheet" href="/src/styles/global.css">
+    <link rel="stylesheet" href="/src/pages/admin/dashboard/admin-dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <h1 class="logo">
+                <img src="/src/assets/logo_traego.svg" alt="TraeGo Logo" style="height: 40px;">
+                <span class="sr-only">SuperAdmin</span>
+            </h1>
+
+            <nav class="admin-nav">
+                <a href="/admin/dashboard" class="admin-nav-item active">
+                    <i class="fa-solid fa-chart-line"></i>
+                    Dashboard
+                </a>
+                <a href="/admin/businesses" class="admin-nav-item">
+                    <i class="fa-solid fa-store"></i>
+                    Negocios
+                </a>
+            </nav>
+
+            <div class="admin-user">
+                <p id="adminEmail">Cargando...</p>
+                <button id="logoutBtn" class="logout-btn-admin">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Cerrar Sesión
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <header class="admin-header">
+                <h2>Dashboard General</h2>
+                <button id="refreshBtn" class="admin-refresh-btn" title="Actualizar datos">
+                    <i class="fa-solid fa-rotate"></i>
+                    <span>Actualizar</span>
+                </button>
+            </header>
+
+            <!-- Metrics Cards -->
+            <div class="metrics-grid">
+                <!-- Total Business -->
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h3>Total Negocios</h3>
+                        <div class="metric-value skeleton-text" id="totalBusinesses">--</div>
+                    </div>
+                    <div class="metric-icon" style="background: #e0f2fe; color: #0284c7;">
+                        <i class="fa-solid fa-store"></i>
+                    </div>
+                </div>
+
+                <!-- Trial Business -->
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h3>En Trial</h3>
+                        <div class="metric-value skeleton-text" id="trialBusinesses">--</div>
+                        <div class="metric-sub text-danger" id="expiringTrial">-- expiran pronto</div>
+                    </div>
+                    <div class="metric-icon" style="background: #fef9c3; color: #ca8a04;">
+                        <i class="fa-solid fa-clock"></i>
+                    </div>
+                </div>
+
+                <!-- Active Business -->
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h3>Activos (Pagos)</h3>
+                        <div class="metric-value skeleton-text" id="activeBusinesses">--</div>
+                    </div>
+                    <div class="metric-icon" style="background: #dcfce7; color: #166534;">
+                        <i class="fa-solid fa-check-circle"></i>
+                    </div>
+                </div>
+
+                <!-- Recent Orders -->
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h3>Pedidos (30d)</h3>
+                        <div class="metric-value skeleton-text" id="recentOrders">--</div>
+                    </div>
+                    <div class="metric-icon" style="background: #f3e8ff; color: #9333ea;">
+                        <i class="fa-solid fa-box"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <h3>Crecimiento de Negocios</h3>
+                    <canvas id="growthChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3>Distribución por Estado</h3>
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="recent-activity">
+                <h3>Actividad Reciente</h3>
+                <div style="overflow-x: auto;">
+                    <table class="activity-table">
+                        <thead>
+                            <tr>
+                                <th>Negocio</th>
+                                <th>Estado</th>
+                                <th>Plan</th>
+                                <th>Último Acceso</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activityTableBody">
+                            <tr>
+                                <td colspan="4" style="text-align: center; padding: 2rem;">Cargando...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="module" src="/src/pages/admin/dashboard/dashboard.js"></script>
+</body>
+
+</html>

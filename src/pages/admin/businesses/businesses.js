@@ -1,0 +1,331 @@
+import { authGuard } from '../../../utils/auth-guard.js'
+import { adminService } from '../../../services/admin.js'
+import { adminUtils } from '../../../utils/admin-utils.js'
+import { authService } from '../../../services/auth.js'
+
+// State
+let state = {
+    businesses: [],
+    filtered: [],
+    currentPage: 1,
+    itemsPerPage: 20,
+    sort: { col: 'created_at', asc: false },
+    filter: { status: 'all', search: '' }
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', async () => {
+    // Auth Check
+    const { isAdmin } = await authGuard.checkAdminSession()
+    if (!isAdmin) {
+        window.location.href = '/login'
+        return
+    }
+
+    const user = await authService.getCurrentUser()
+    if (user) document.getElementById('adminEmail').textContent = user.email
+
+    // Load Data
+    await loadBusinesses()
+
+    // Listeners
+    setupListeners()
+})
+
+async function loadBusinesses() {
+    const refreshBtn = document.getElementById('refreshBtn')
+    const icon = refreshBtn.querySelector('i')
+    icon.classList.add('fa-spin')
+    refreshBtn.disabled = true
+
+    try {
+        const { success, data, error } = await adminService.getBusinesses()
+
+        if (success) {
+            state.businesses = data
+            applyFilters()
+        } else {
+            console.error('Error:', error)
+            alert('Error al cargar negocios')
+        }
+    } catch (err) {
+        console.error(err)
+    } finally {
+        icon.classList.remove('fa-spin')
+        refreshBtn.disabled = false
+    }
+}
+
+function setupListeners() {
+    // Refresh
+    document.getElementById('refreshBtn').addEventListener('click', loadBusinesses)
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+        await authService.signOut()
+        authGuard.clearAdminCache()
+        window.location.href = '/login'
+    })
+
+    // Search
+    const searchInput = document.getElementById('searchInput')
+    searchInput.addEventListener('input', adminUtils.debounce((e) => {
+        state.filter.search = e.target.value.toLowerCase().trim()
+        state.currentPage = 1
+        applyFilters()
+    }, 300))
+
+    // Filter Chips
+    document.querySelectorAll('.filter-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Remove active from all
+            document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'))
+            // Add active to clicked
+            btn.classList.add('active')
+            // Update state
+            state.filter.status = btn.dataset.filter
+            state.currentPage = 1
+            applyFilters()
+        })
+    })
+
+    // Sorting
+    document.querySelectorAll('.sortable').forEach(th => {
+        th.addEventListener('click', () => {
+            const col = th.dataset.sort
+
+            // Toggle direction if clicking same col
+            if (state.sort.col === col) {
+                state.sort.asc = !state.sort.asc
+            } else {
+                state.sort.col = col
+                state.sort.asc = true // Default asc for new col
+            }
+
+            updateSortIcons()
+            sortData()
+            renderTable()
+            renderPagination()
+        })
+    })
+}
+
+function applyFilters() {
+    let result = [...state.businesses]
+
+    // Filter by Status
+    if (state.filter.status !== 'all') {
+        result = result.filter(b => {
+            const isTrial = b.plan_type === 'trial' || !b.plan_type
+            const isActive = b.is_active && (b.plan_type === 'plus' || b.plan_type === 'pro')
+            const isPaused = !b.is_active
+            // Note: 'cancelled' logic depends on business rule (e.g. plan_expires_at < now AND !is_active),
+            // for now assuming 'paused' covers inactive.
+
+            switch (state.filter.status) {
+                case 'trial': return isTrial
+                case 'active': return isActive && b.is_active // redundant check but safe
+                case 'paused': return isPaused
+                // case 'cancelled': return ...
+                default: return true
+            }
+        })
+    }
+
+    // Filter by Search
+    if (state.filter.search) {
+        const term = state.filter.search
+        result = result.filter(b =>
+            b.name.toLowerCase().includes(term) ||
+            (b.email && b.email.toLowerCase().includes(term))
+        )
+    }
+
+    state.filtered = result
+    updateCounts()
+    sortData() // re-sort after filter
+    renderTable()
+    renderPagination()
+}
+
+function updateCounts() {
+    const all = state.businesses.length
+    const trial = state.businesses.filter(b => b.plan_type === 'trial' || !b.plan_type).length
+    const active = state.businesses.filter(b => b.is_active && b.plan_type !== 'trial').length
+    const paused = state.businesses.filter(b => !b.is_active).length
+
+    document.getElementById('count-all').textContent = all
+    document.getElementById('count-trial').textContent = trial
+    document.getElementById('count-active').textContent = active
+    document.getElementById('count-paused').textContent = paused
+    // Cancelled logic TBD
+}
+
+function sortData() {
+    state.filtered.sort((a, b) => {
+        let valA = a[state.sort.col]
+        let valB = b[state.sort.col]
+
+        // Handle special cases
+        if (state.sort.col === 'status') {
+            valA = a.is_active ? 1 : 0
+            valB = b.is_active ? 1 : 0
+        }
+        if (state.sort.col === 'plan') valA = a.plan_type || ''
+        if (state.sort.col === 'orders') valA = a.monthly_orders_count || 0
+
+        // Null handling
+        if (valA === null || valA === undefined) valA = ''
+        if (valB === null || valB === undefined) valB = ''
+
+        if (valA < valB) return state.sort.asc ? -1 : 1
+        if (valA > valB) return state.sort.asc ? 1 : -1
+        return 0
+    })
+}
+
+function updateSortIcons() {
+    document.querySelectorAll('.sortable').forEach(th => {
+        th.classList.remove('active')
+        const icon = th.querySelector('.sort-icon')
+        icon.className = 'fa-solid fa-sort sort-icon'
+
+        if (th.dataset.sort === state.sort.col) {
+            th.classList.add('active')
+            icon.className = state.sort.asc
+                ? 'fa-solid fa-sort-up sort-icon'
+                : 'fa-solid fa-sort-down sort-icon'
+        }
+    })
+}
+
+function paginate() {
+    const start = (state.currentPage - 1) * state.itemsPerPage
+    const end = start + state.itemsPerPage
+    return state.filtered.slice(start, end)
+}
+
+function renderTable() {
+    const tbody = document.getElementById('businessesTableBody')
+    const totalEl = document.getElementById('totalResults')
+
+    // Update header count
+    totalEl.textContent = `${state.filtered.length} negocios encontrados`
+
+    // Empty state
+    if (state.filtered.length === 0) {
+        const msg = state.filter.search
+            ? `No se encontraron negocios con "${state.filter.search}"`
+            : 'No hay negocios registrados aún'
+
+        tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 3rem;">
+          <div style="color: var(--text-tertiary); font-size: 3rem; margin-bottom: 1rem;">
+            <i class="fa-solid fa-store-slash"></i>
+          </div>
+          <p style="color: var(--text-secondary);">${msg}</p>
+        </td>
+      </tr>
+    `
+        return
+    }
+
+    // Render rows
+    const pageData = paginate()
+    tbody.innerHTML = ''
+
+    pageData.forEach(b => {
+        const tr = document.createElement('tr')
+
+        // Status Logic
+        let statusBadge = ''
+        if (!b.is_active) {
+            statusBadge = '<span class="badge paused">Inactivo</span>'
+        } else {
+            statusBadge = '<span class="badge active">Activo</span>'
+            if (b.plan_type === 'trial') {
+                const days = adminUtils.getDaysRemaining(b.plan_expires_at)
+                statusBadge = `<span class="badge trial">Trial (${days}d)</span>`
+            }
+        }
+
+        const date = adminUtils.formatDate(b.created_at)
+
+        tr.innerHTML = `
+      <td style="font-weight: 500;">${b.name}</td>
+      <td style="color: var(--text-secondary);">${b.email || '-'}</td>
+      <td>${statusBadge}</td>
+      <td style="text-transform: capitalize;">${b.plan_type || 'trial'}</td>
+      <td>${b.monthly_orders_count || 0}</td>
+      <td style="white-space: nowrap;">${date}</td>
+      <td style="text-align: right;">
+        <div class="action-buttons" style="justify-content: flex-end;">
+          <button class="action-btn view" title="Ver Detalle" onclick="window.location.href='/admin/business-detail?id=${b.id}'">
+            <i class="fa-solid fa-eye"></i>
+          </button>
+          <button class="action-btn setup" title="Setup Catálogo" onclick="window.location.href='/admin/setup-catalogo?negocio_id=${b.id}'">
+            <i class="fa-solid fa-box-open"></i>
+          </button>
+        </div>
+      </td>
+    `
+        // Click row specific logic if needed (excluded actions)
+        // tr.addEventListener('click', (e) => {
+        //   if (!e.target.closest('.action-btn')) ...
+        // })
+
+        tbody.appendChild(tr)
+    })
+}
+
+function renderPagination() {
+    const container = document.getElementById('paginationContainer')
+    const totalPages = Math.ceil(state.filtered.length / state.itemsPerPage)
+
+    if (totalPages <= 1) {
+        container.style.display = 'none'
+        return
+    }
+
+    container.style.display = 'flex'
+    const start = (state.currentPage - 1) * state.itemsPerPage + 1
+    const end = Math.min(start + state.itemsPerPage - 1, state.filtered.length)
+
+    document.getElementById('paginationInfo').textContent = `Mostrando ${start}-${end} de ${state.filtered.length}`
+
+    const controls = document.getElementById('paginationControls')
+    controls.innerHTML = ''
+
+    // Prev
+    const prevBtn = document.createElement('button')
+    prevBtn.className = 'page-btn'
+    prevBtn.innerHTML = '<i class="fa-solid fa-chevron-left"></i>'
+    prevBtn.disabled = state.currentPage === 1
+    prevBtn.onclick = () => changePage(state.currentPage - 1)
+    controls.appendChild(prevBtn)
+
+    // Pages
+    // Simple logic: show all if < 7 pages, else truncated logic could be added
+    for (let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement('button')
+        btn.className = `page-btn ${i === state.currentPage ? 'active' : ''}`
+        btn.textContent = i
+        btn.onclick = () => changePage(i)
+        controls.appendChild(btn)
+    }
+
+    // Next
+    const nextBtn = document.createElement('button')
+    nextBtn.className = 'page-btn'
+    nextBtn.innerHTML = '<i class="fa-solid fa-chevron-right"></i>'
+    nextBtn.disabled = state.currentPage === totalPages
+    nextBtn.onclick = () => changePage(state.currentPage + 1)
+    controls.appendChild(nextBtn)
+}
+
+function changePage(page) {
+    state.currentPage = page
+    renderTable()
+    renderPagination()
+}

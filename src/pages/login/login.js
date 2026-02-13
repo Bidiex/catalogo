@@ -1,6 +1,7 @@
 import { authService } from '../../services/auth.js'
 import { notify } from '../../utils/notifications.js'
 import { buttonLoader } from '../../utils/buttonLoader.js'
+import { authGuard } from '../../utils/auth-guard.js'
 import './typewriter.js'
 
 // Elementos del DOM
@@ -18,8 +19,13 @@ checkExistingSession()
 async function checkExistingSession() {
   const session = await authService.getSession()
   if (session) {
-    // Si ya hay sesión, redirigir al dashboard
-    window.location.href = '/dashboard'
+    // Check if user is admin
+    const { isAdmin } = await authGuard.checkAdminSession()
+    if (isAdmin) {
+      window.location.href = '/admin/dashboard'
+    } else {
+      window.location.href = '/dashboard'
+    }
   }
 }
 
@@ -57,7 +63,15 @@ loginForm.addEventListener('submit', async (e) => {
     if (result.success) {
       // Mark that user just logged in
       sessionStorage.setItem('justLoggedIn', 'true')
-      window.location.href = '/dashboard'
+
+      // Check for Superadmin status before redirecting
+      const { isAdmin } = await authGuard.checkAdminSession()
+
+      if (isAdmin) {
+        window.location.href = '/admin/dashboard'
+      } else {
+        window.location.href = '/dashboard'
+      }
     } else {
       errorMessage.textContent = result.error
       errorMessage.style.display = 'block'
