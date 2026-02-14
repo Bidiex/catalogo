@@ -69,8 +69,15 @@ function renderData() {
 
     // General Info
     document.getElementById('inputName').value = b.name || ''
-    document.getElementById('inputEmail').value = b.email || '' // Readonly
-    document.getElementById('inputPhone').value = b.phone || ''
+    document.getElementById('inputDescription').value = b.description || ''
+    // Use whatsapp_number as the primary phone field
+    document.getElementById('inputPhone').value = b.whatsapp_number || b.phone || ''
+
+    // Address
+    document.getElementById('inputAddress').value = b.address || ''
+
+    // Logo
+    updateLogoPreview(b.logo_url)
 
     // Metrics
     document.getElementById('metricRegistered').textContent = adminUtils.formatDate(b.created_at)
@@ -80,7 +87,10 @@ function renderData() {
 
     // Status & Plan
     document.getElementById('selectStatus').value = b.is_active ? 'active' : 'inactive'
-    document.getElementById('selectPlan').value = b.plan_type || 'trial'
+    // Default to 'plus' if current plan is not in the list (e.g. was trial or enterprise)
+    const validPlans = ['plus', 'pro']
+    const currentPlan = b.plan_type || 'plus'
+    document.getElementById('selectPlan').value = validPlans.includes(currentPlan) ? currentPlan : 'plus'
 
     // Trial Logic
     toggleTrialInputs(b.plan_type || 'trial')
@@ -141,13 +151,25 @@ function setupListeners() {
 
         const name = document.getElementById('inputName').value
         const phone = document.getElementById('inputPhone').value
+        const description = document.getElementById('inputDescription').value
+
+        const direccion = document.getElementById('inputAddress').value
 
         const loading = notify.loading('Guardando...')
 
-        const { success, error } = await adminService.updateBusiness(businessId, { name, phone })
+        // Map phone to whatsapp_number as per schema/user request
+        const updates = {
+            name,
+            whatsapp_number: phone,
+            description,
+            description,
+            address: direccion
+        }
+
+        const { success, error } = await adminService.updateBusiness(businessId, updates)
 
         if (success) {
-            await adminService.logAction(null, businessId, 'UPDATE_INFO', { name, phone })
+            await adminService.logAction(null, businessId, 'UPDATE_INFO', updates)
             notify.updateLoading(loading, 'Información actualizada')
             loadBusinessData()
         } else {
@@ -257,4 +279,52 @@ function setupListeners() {
     document.getElementById('btnSetupCatalog').addEventListener('click', () => {
         window.location.href = `/admin/setup-catalogo?negocio_id=${businessId}`
     })
+
+    // 6. Logo Upload
+    const logoInput = document.getElementById('logoInput')
+    logoInput.addEventListener('change', async (e) => {
+        if (!e.target.files.length) return
+
+        const file = e.target.files[0]
+        if (file.size > 2 * 1024 * 1024) { // 2MB
+            notify.error('La imagen no puede pesar más de 2MB')
+            return
+        }
+
+        const loading = notify.loading('Subiendo logo...')
+        const ext = file.name.split('.').pop()
+        const path = `${businessId}/logo-${Date.now()}.${ext}`
+
+        const { success, data, error } = await adminService.uploadLogo(path, file)
+
+        if (success) {
+            // Update DB
+            const { success: dbSuccess, error: dbError } = await adminService.updateBusiness(businessId, { logo_url: data.publicUrl })
+
+            if (dbSuccess) {
+                notify.updateLoading(loading, 'Logo actualizado')
+                updateLogoPreview(data.publicUrl)
+                currentBusiness.logo_url = data.publicUrl // Update local state
+                await adminService.logAction(null, businessId, 'UPDATE_LOGO', { url: data.publicUrl })
+            } else {
+                notify.updateLoading(loading, 'Error guardando URL: ' + dbError, 'error')
+            }
+        } else {
+            notify.updateLoading(loading, 'Error subiendo imagen: ' + error, 'error')
+        }
+    })
+}
+
+function updateLogoPreview(url) {
+    const img = document.getElementById('logoPreview')
+    const placeholder = document.getElementById('logoPlaceholder')
+
+    if (url) {
+        img.src = url
+        img.style.display = 'block'
+        placeholder.style.display = 'none'
+    } else {
+        img.style.display = 'none'
+        placeholder.style.display = 'block'
+    }
 }

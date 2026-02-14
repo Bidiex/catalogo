@@ -22,6 +22,52 @@ export const adminService = {
     },
 
     /**
+     * Obtener usuarios con sus negocios (RPC)
+     */
+    async getUsersWithBusinesses() {
+        try {
+            const { data, error } = await supabase.rpc('get_users_with_businesses')
+            if (error) throw error
+            return { success: true, data }
+        } catch (error) {
+            console.error('Admin API Error (getUsersWithBusinesses):', error)
+            return { success: false, error: error.message }
+        }
+    },
+
+    /**
+     * Crear negocio para usuario
+     */
+    async createBusiness(userId, businessData) {
+        try {
+            const { data, error } = await supabase
+                .from('businesses')
+                .insert([{
+                    user_id: userId,
+                    name: businessData.name,
+                    whatsapp_number: businessData.phone,
+                    description: businessData.description,
+                    plan_type: businessData.plan || 'free',
+                    is_active: businessData.is_active !== undefined ? businessData.is_active : true, // Default active/trial
+                    plan_expires_at: businessData.plan_expires_at,
+                    // New fields
+                    address: businessData.address
+                }])
+                .select()
+                .single()
+
+            if (error) throw error
+
+            await this.logAction(null, data.id, 'CREATE_BUSINESS_ADMIN', { userId, name: businessData.name })
+
+            return { success: true, data }
+        } catch (error) {
+            console.error('Admin API Error (createBusiness):', error)
+            return { success: false, error: error.message }
+        }
+    },
+
+    /**
      * Obtener negocio por ID
      */
     async getBusinessById(businessId) {
@@ -260,6 +306,59 @@ export const adminService = {
             return { success: true, data }
         } catch (error) {
             console.error('Error creating category:', error)
+            return { success: false, error: error.message }
+        }
+    },
+
+    // --- STORAGE ---
+
+    async uploadImage(path, blob) {
+        try {
+            // 1. Upload
+            const { data, error } = await supabase.storage
+                .from('product-images')
+                .upload(path, blob, {
+                    cacheControl: '3600',
+                    upsert: false,
+                    contentType: blob.type
+                })
+
+            if (error) throw error
+
+            // 2. Get Public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from('product-images')
+                .getPublicUrl(path)
+
+            return { success: true, data: { ...data, publicUrl } }
+
+        } catch (error) {
+            console.error('Storage Upload Error:', error)
+            return { success: false, error: error.message }
+        }
+    },
+
+    async uploadLogo(path, blob) {
+        try {
+            // 1. Upload
+            const { data, error } = await supabase.storage
+                .from('negocios-logos')
+                .upload(path, blob, {
+                    cacheControl: '3600',
+                    upsert: false,
+                    contentType: blob.type
+                })
+
+            if (error) throw error
+
+            // 2. Get Public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from('negocios-logos')
+                .getPublicUrl(path)
+
+            return { success: true, data: { ...data, publicUrl } }
+        } catch (error) {
+            console.error('Logo Upload Error:', error)
             return { success: false, error: error.message }
         }
     }

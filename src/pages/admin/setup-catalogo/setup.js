@@ -1,4 +1,5 @@
 import { authGuard } from '../../../utils/auth-guard.js'
+import JSZip from 'jszip'
 import { adminService } from '../../../services/admin.js'
 import { productService } from '../../../services/products.js'
 import { authService } from '../../../services/auth.js'
@@ -7,6 +8,7 @@ import { notify, confirm } from '../../../utils/notifications.js'
 let businessId = null
 let categories = []
 let previewData = []
+let zipImages = {} // Store blobs: { "filename.jpg": Blob }
 
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. Auth & Init
@@ -161,7 +163,9 @@ function setupListeners() {
                 category_id: catId,
                 name,
                 price: parseFloat(price),
-                description: desc
+                description: desc,
+                is_active: true,
+                is_available: true
             })
 
             notify.updateLoading(loading, 'Producto agregado')
@@ -201,16 +205,80 @@ function handleFile(file) {
     document.getElementById('fileName').textContent = file.name
 
     const reader = new FileReader()
-    reader.onload = (e) => {
-        const data = new Uint8Array(e.target.result)
-        const workbook = XLSX.read(data, { type: 'array' })
-        const sheetName = workbook.SheetNames[0]
-        const sheet = workbook.Sheets[sheetName]
-        const json = XLSX.utils.sheet_to_json(sheet)
+    reader.onload = async (e) => {
+        const data = e.target.result
 
-        validateAndPreview(json)
+        if (file.name.endsWith('.zip')) {
+            await processZip(data)
+        } else {
+            // Standard Excel/CSV
+            const workbook = XLSX.read(data, { type: 'array' })
+            processWorkbook(workbook)
+        }
     }
     reader.readAsArrayBuffer(file)
+}
+
+async function processZip(data) {
+    try {
+        const zip = await JSZip.loadAsync(data)
+
+        // 1. Find Excel File (flexible name check)
+        // We look for any .xlsx file if specific one is not found, or stick to 'productos.xlsx'
+        // Let's stick to strict 'productos.xlsx' for the excel, or maybe allow any xlsx? 
+        // Instructions said 'productos.xlsx', let's iterate to find *any* xlsx to be helpful.
+        const excelFile = Object.values(zip.files).find(f => !f.dir && f.name.match(/\.(xlsx|xls|csv)$/i))
+
+        if (!excelFile) {
+            notify.error('No se encontró archivo Excel (.xlsx, .xls, .csv) en el ZIP')
+            return
+        }
+
+        // Extract Excel
+        const excelInfo = await excelFile.async('arraybuffer') // renamed variable check
+        // XLSX.read expects Uint8Array or ArrayBuffer. 
+        const workbook = XLSX.read(excelInfo, { type: 'array' })
+
+        // 2. Extract Images (Robust scan)
+        zipImages = {} // Format: { "filename.jpg": Blob } (key is lowercase for matching)
+
+        const imageExtensions = ['.jpg', '.jpeg', '.png', '.webp']
+
+        const filePromises = []
+
+        zip.forEach((relativePath, file) => {
+            if (file.dir) return
+            // Ignore Mac OS artifacts
+            if (relativePath.includes('__MACOSX') || relativePath.startsWith('.')) return
+
+            const lowerName = relativePath.toLowerCase()
+            if (imageExtensions.some(ext => lowerName.endsWith(ext))) {
+                filePromises.push((async () => {
+                    const blob = await file.async('blob')
+                    // Store by basename, lowercased, for easy lookup
+                    // e.g. "Folder/Coca-Cola.JPG" -> matches excel "coca-cola.jpg" or "Coca-Cola.JPG"
+                    const basename = relativePath.split('/').pop().trim().toLowerCase()
+                    zipImages[basename] = blob
+                })())
+            }
+        })
+
+        await Promise.all(filePromises)
+        console.log('Images loaded:', Object.keys(zipImages)) // Debug
+
+        processWorkbook(workbook)
+
+    } catch (err) {
+        console.error('ZIP Error:', err)
+        notify.error('Error procesando el archivo ZIP')
+    }
+}
+
+function processWorkbook(workbook) {
+    const sheetName = workbook.SheetNames[0]
+    const sheet = workbook.Sheets[sheetName]
+    const json = XLSX.utils.sheet_to_json(sheet)
+    validateAndPreview(json)
 }
 
 function validateAndPreview(data) {
@@ -239,8 +307,34 @@ function validateAndPreview(data) {
         if (isValid) validCount++
         else errorsCount++
 
+        // Check image
+        let imgStatus = '-'
+        let hasImage = false
+        const rawImgName = normalized['imagen'] || normalized['image'] || normalized['foto']
+
+        let matchingBlobKey = null
+
+        if (rawImgName) {
+            const cleanName = rawImgName.toString().trim().toLowerCase()
+            if (zipImages[cleanName]) {
+                imgStatus = `<span title="${rawImgName}">✅ ${rawImgName}</span>`
+                hasImage = true
+                matchingBlobKey = cleanName
+            } else {
+                imgStatus = `<span class="text-danger" title="No encontrada en ZIP">⚠️ ${rawImgName}</span>`
+            }
+        }
+
         // standardized object
-        const item = { category, name, price, description: normalized['descripción'] || normalized['description'] || '', isValid }
+        const item = {
+            category,
+            name,
+            price,
+            description: normalized['descripción'] || normalized['description'] || '',
+            imageFile: hasImage ? matchingBlobKey : null, // Store key to retrieve blob from zipImages
+            originalImageName: rawImgName,
+            isValid
+        }
         previewData.push(item)
 
         // Render in preview (first 5)
@@ -251,6 +345,7 @@ function validateAndPreview(data) {
                 <td>${category || '-'}</td>
                 <td>${name || '-'}</td>
                 <td>${price || '-'}</td>
+                <td>${imgStatus}</td>
                 <td>${isValid ? '<i class="fa-solid fa-check text-success"></i>' : '<i class="fa-solid fa-times text-danger"></i>'}</td>
             `
             tbody.appendChild(tr)
@@ -295,25 +390,49 @@ async function importProducts() {
                 catId = existing.id
             } else {
                 // Create new
-                const { success, data } = await adminService.createCategory(businessId, item.category.trim())
-                if (success) {
+                try {
+                    const { success, data, error } = await adminService.createCategory(businessId, item.category.trim())
+
+                    if (!success) {
+                        console.error('Failed to create category', item.category, error)
+                        notify.error(`Error creando categoría "${item.category}": ${error || 'Desconocido'}`)
+                        continue // Skip product if cat creation failed
+                    }
+
                     catId = data.id
                     categories.push(data) // Update local cache
-                } else {
-                    console.error('Failed to create category', item.category)
-                    continue // Skip product if cat creation failed
+                } catch (catError) {
+                    console.error('Exception creating category', item.category, catError)
+                    notify.error(`Error inesperado creando categoría "${item.category}"`)
+                    continue
                 }
             }
 
-            // 2. Create Product
+            // 2. Upload Image (if any)
+            let imageUrl = null
+            // item.imageFile is the key to zipImages
+            if (item.imageFile && zipImages[item.imageFile]) {
+                // Pass original name if possible or just use the key (which is lowercased)
+                // Better to use original name for extension detection if we can, but key works too if we trust extension
+                // Let's use item.originalImageName for the filename part to preserve extension case if needed, 
+                // but usually extension case doesn't matter for MIME type detection in browser
+                // defaulting to normalized key is safer for retrieval
+                imageUrl = await uploadImageToStorage(zipImages[item.imageFile], item.originalImageName || item.imageFile, businessId)
+            }
+
+            // 3. Create Product
             await productService.create({
                 business_id: businessId,
                 category_id: catId,
                 name: item.name,
                 price: parseFloat(item.price),
-                description: item.description
+                description: item.description,
+                image_url: imageUrl,
+                is_active: true,
+                is_available: true
             })
             imported++
+            notify.updateLoading(loading, `Importando ${imported}/${previewData.filter(i => i.isValid).length}...`)
         }
 
         notify.updateLoading(loading, `${imported} productos importados correctamente`)
@@ -325,11 +444,49 @@ async function importProducts() {
         document.getElementById('importValidationMsg').textContent = ''
         document.getElementById('btnImport').disabled = true
         previewData = []
+        zipImages = {} // Clear blobs
 
         loadProducts()
 
     } catch (e) {
         console.error(e)
         notify.updateLoading(loading, 'Error en importación', 'error')
+    }
+}
+
+async function uploadImageToStorage(blob, filename, businessId) {
+    try {
+        const ext = filename.split('.').pop()
+        const storagePath = `${businessId}/${Date.now()}-${filename}`
+
+        // We need supabase client here. adminService probably uses it.
+        // Assuming we can access it via adminService or global supabase object if exposed.
+        // Since adminService imports it, let's follow that pattern or import it here if needed.
+        // But wait, setup.js imports authService/adminService but not supabase client directly.
+        // I'll check adminService to see if I can expose it or if I should import it.
+        // Importing it directly is safer.
+
+        // Actually, importing createClient is not optimal if we already have it.
+        // Let's look at imports again. 
+        // No direct supabase import. I'll stick to using adminService.supabase if available, or I'll just import it.
+        // Let's assume for now I'll add the import to the top of the file in next chunk or rely on a helper.
+        // Better: I'll use a new helper function or import the client.
+
+        // RE-READING IMPORTS: No supabase import.
+        // I will add `import { supabase } from '../../../supabase.js'` (checking path).
+        // Path check: src/pages/admin/setup-catalogo/setup.js -> ../../../supabase.js ? 
+        // Let's check where supabase client is defined. usually src/supabase.js.
+
+        const { data, error } = await adminService.uploadImage(storagePath, blob)
+
+        if (error) {
+            console.error('Upload error:', error)
+            return null
+        }
+
+        return data.publicUrl
+    } catch (err) {
+        console.error('Upload exception:', err)
+        return null
     }
 }

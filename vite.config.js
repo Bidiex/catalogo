@@ -15,6 +15,7 @@ export default defineConfig({
         'update-password': resolve(__dirname, 'src/pages/update-password/index.html'),
         'auth-callback': resolve(__dirname, 'src/pages/auth/callback/index.html'),
         'admin-dashboard': resolve(__dirname, 'src/pages/admin/dashboard/index.html'),
+        'admin-users': resolve(__dirname, 'src/pages/admin/users/index.html'),
         'admin-businesses': resolve(__dirname, 'src/pages/admin/businesses/index.html'),
         'admin-business-detail': resolve(__dirname, 'src/pages/admin/business-detail/index.html'),
         'admin-setup-catalogo': resolve(__dirname, 'src/pages/admin/setup-catalogo/index.html'),
@@ -42,6 +43,7 @@ export default defineConfig({
             '/update-password': '/src/pages/update-password/index.html',
             '/auth/callback': '/src/pages/auth/callback/index.html',
             '/admin/dashboard': '/src/pages/admin/dashboard/index.html',
+            '/admin/users': '/src/pages/admin/users/index.html',
             '/admin/businesses': '/src/pages/admin/businesses/index.html',
             '/admin/business-detail': '/src/pages/admin/business-detail/index.html',
             '/admin/setup-catalogo': '/src/pages/admin/setup-catalogo/index.html',
@@ -73,6 +75,7 @@ export default defineConfig({
             '/update-password': '/update-password.html',
             '/auth/callback': '/auth-callback.html',
             '/admin/dashboard': '/admin-dashboard.html',
+            '/admin/users': '/admin-users.html',
             '/admin/businesses': '/admin-businesses.html',
             '/admin/business-detail': '/admin-business-detail.html',
             '/admin/setup-catalogo': '/admin-setup-catalogo.html',
@@ -122,6 +125,7 @@ export default defineConfig({
           moveFile(resolve(srcDir, 'update-password/index.html'), resolve(distDir, 'update-password.html'))
           moveFile(resolve(srcDir, 'auth/callback/index.html'), resolve(distDir, 'auth-callback.html'))
           moveFile(resolve(srcDir, 'admin/dashboard/index.html'), resolve(distDir, 'admin-dashboard.html'))
+          moveFile(resolve(srcDir, 'admin/users/index.html'), resolve(distDir, 'admin-users.html'))
           moveFile(resolve(srcDir, 'admin/businesses/index.html'), resolve(distDir, 'admin-businesses.html'))
           moveFile(resolve(srcDir, 'admin/business-detail/index.html'), resolve(distDir, 'admin-business-detail.html'))
           moveFile(resolve(srcDir, 'admin/setup-catalogo/index.html'), resolve(distDir, 'admin-setup-catalogo.html'))

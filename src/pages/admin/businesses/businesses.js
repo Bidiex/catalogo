@@ -254,7 +254,7 @@ function renderTable() {
 
         tr.innerHTML = `
       <td style="font-weight: 500;">${b.name}</td>
-      <td style="color: var(--text-secondary);">${b.email || '-'}</td>
+      <!-- Email column removed -->
       <td>${statusBadge}</td>
       <td style="text-transform: capitalize;">${b.plan_type || 'trial'}</td>
       <td>${b.monthly_orders_count || 0}</td>

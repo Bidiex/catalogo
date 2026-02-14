@@ -185,6 +185,10 @@
                     <i class="fa-solid fa-chart-line"></i>
                     Dashboard
                 </a>
+                <a href="/admin/users" class="admin-nav-item">
+                    <i class="fa-solid fa-users"></i>
+                    Usuarios y Negocios
+                </a>
                 <a href="/admin/businesses" class="admin-nav-item active">
                     <i class="fa-solid fa-store"></i>
                     Negocios
@@ -260,11 +264,16 @@
                 <!-- Bulk Upload -->
                 <div class="section-card">
                     <h3><i class="fa-solid fa-file-import"></i> Carga Masiva (Excel/CSV)</h3>
-                    <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 1rem;">
-                        Sube un archivo con columnas: <strong>Categoría, Nombre, Precio, Descripción</strong>.
+                    Sube un archivo <strong>ZIP</strong> que contenga:
+                    <ul style="margin: 0.5rem 0 1rem 1.5rem; list-style-type: disc;">
+                        <li><code>productos.xlsx</code> (con columnas: Categoría, Nombre, Precio, Descripción,
+                            <strong>Imagen</strong>)
+                        </li>
+                        <li>Carpeta <code>imagenes/</code> con las fotos (jpg, png, webp)</li>
+                    </ul>
                     </p>
 
-                    <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" hidden>
+                    <input type="file" id="fileInput" accept=".zip, .xlsx, .xls, .csv" hidden>
                     <div class="upload-area" id="uploadArea">
                         <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
                         <p id="fileName">Haz clic o arrastra un archivo aquí</p>
@@ -277,6 +286,7 @@
                                     <th>Cat.</th>
                                     <th>Nom.</th>
                                     <th>$$</th>
+                                    <th>Img</th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
