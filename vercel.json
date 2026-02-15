@@ -29,6 +29,26 @@
             "destination": "/auth-callback.html"
         },
         {
+            "source": "/admin/dashboard",
+            "destination": "/admin-dashboard.html"
+        },
+        {
+            "source": "/admin/users",
+            "destination": "/admin-users.html"
+        },
+        {
+            "source": "/admin/businesses",
+            "destination": "/admin-businesses.html"
+        },
+        {
+            "source": "/admin/business-detail",
+            "destination": "/admin-business-detail.html"
+        },
+        {
+            "source": "/admin/setup-catalogo",
+            "destination": "/admin-setup-catalogo.html"
+        },
+        {
             "source": "/c/:slug",
             "destination": "/catalog.html"
         },
