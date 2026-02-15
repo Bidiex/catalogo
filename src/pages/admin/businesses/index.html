@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Negocios - Superadmin</title>
+    <link rel="icon" type="image/svg+xml" href="/src/assets/icon_traego.svg" />
+    <link rel="stylesheet" href="/src/styles/global.css">
+    <link rel="stylesheet" href="/src/pages/admin/dashboard/admin-dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <h1 class="logo">
+                <img src="/src/assets/logo_traego.svg" alt="TraeGo Logo" style="height: 40px;">
+                <span class="sr-only">SuperAdmin</span>
+            </h1>
+
+            <nav class="admin-nav">
+                <a href="/admin/dashboard" class="admin-nav-item">
+                    <i class="fa-solid fa-chart-line"></i>
+                    Dashboard
+                </a>
+                <a href="/admin/users" class="admin-nav-item">
+                    <i class="fa-solid fa-users"></i>
+                    Usuarios y Negocios
+                </a>
+                <a href="/admin/businesses" class="admin-nav-item active">
+                    <i class="fa-solid fa-store"></i>
+                    Negocios
+                </a>
+            </nav>
+
+            <div class="admin-user">
+                <p id="adminEmail">Cargando...</p>
+                <button id="logoutBtn" class="logout-btn-admin">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Cerrar Sesión
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <header class="admin-header">
+                <div>
+                    <h2>Gestión de Negocios</h2>
+                    <p style="font-size: 0.875rem; color: var(--text-secondary);" id="totalResults">Cargando...</p>
+                </div>
+                <button id="refreshBtn" class="admin-refresh-btn" title="Actualizar datos">
+                    <i class="fa-solid fa-rotate"></i>
+                    <span>Actualizar</span>
+                </button>
+            </header>
+
+            <!-- Filters -->
+            <div class="admin-filters">
+                <div class="search-container">
+                    <i class="fa-solid fa-search search-icon"></i>
+                    <input type="text" id="searchInput" class="search-input" placeholder="Buscar por nombre o email...">
+                </div>
+
+                <div class="filter-chips">
+                    <button class="filter-chip active" data-filter="all">
+                        Todos <span class="filter-count" id="count-all">0</span>
+                    </button>
+                    <!-- Trial filter removed -->
+                    <button class="filter-chip" data-filter="active">
+                        Activos <span class="filter-count" id="count-active">0</span>
+                    </button>
+                    <button class="filter-chip" data-filter="paused">
+                        Pausados <span class="filter-count" id="count-paused">0</span>
+                    </button>
+                    <button class="filter-chip" data-filter="cancelled">
+                        Cancelados <span class="filter-count" id="count-cancelled">0</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="recent-activity" style="padding: 0; overflow: hidden;">
+                <div style="overflow-x: auto;">
+                    <table class="activity-table">
+                        <thead>
+                            <tr>
+                                <th class="sortable active" data-sort="name">
+                                    Negocio <i class="fa-solid fa-sort-down sort-icon"></i>
+                                </th>
+                                <!-- Email column removed -->
+                                <th class="sortable" data-sort="status">
+                                    Estado <i class="fa-solid fa-sort sort-icon"></i>
+                                </th>
+                                <th class="sortable" data-sort="orders">
+                                    Pedidos <i class="fa-solid fa-sort sort-icon"></i>
+                                </th>
+                                <th class="sortable" data-sort="created_at">
+                                    Registro <i class="fa-solid fa-sort sort-icon"></i>
+                                </th>
+                                <th style="text-align: right;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="businessesTableBody">
+                            <tr>
+                                <td colspan="7" style="text-align: center; padding: 3rem;">
+                                    <i class="fa-solid fa-spinner fa-spin"
+                                        style="font-size: 2rem; color: var(--primary);"></i>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination-container" id="paginationContainer" style="display: none;">
+                <div class="pagination-info" id="paginationInfo">Mostrando 0-0 de 0</div>
+                <div class="pagination-controls" id="paginationControls">
+                    <!-- Buttons generated by JS -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="/src/pages/admin/businesses/businesses.js"></script>
+</body>
+
+</html>

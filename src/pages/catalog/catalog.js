@@ -214,6 +214,10 @@ async function init() {
     cleanOldCarts()
 
   } catch (error) {
+    if (error.message === 'Business not operational' || error.message === 'Business incomplete') {
+      // Handled by showMaintenanceState
+      return
+    }
     console.error('Error loading catalog:', error)
     showError()
   }
@@ -389,6 +393,14 @@ async function loadCatalogData() {
     } catch (err) {
       console.error('Error loading promotions', err)
       promotions = []
+    }
+
+    // Verify operational readiness (NEW)
+    // If no payment methods OR no business hours, block catalog
+    if (!paymentMethods || paymentMethods.length === 0 || !businessHours || businessHours.length === 0) {
+      console.warn('Business Incomplete: Missing payment methods or hours')
+      showMaintenanceState()
+      throw new Error('Business incomplete')
     }
 
     // Verificar si el negocio está abierto

@@ -1,0 +1,350 @@
+/* Delivery Persons Page Styles */
+
+.delivery-persons-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.delivery-persons-controls {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.search-delivery-input {
+    flex: 1;
+    min-width: 250px;
+    position: relative;
+}
+
+.search-delivery-input input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+}
+
+.search-delivery-input i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+}
+
+/* Vehicle Badges */
+.badge-vehicle {
+    padding: 2px 8px;
+    border-radius: 999px;
+    /* Pill shape */
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: capitalize;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border: 1px solid transparent;
+    /* Prepared for subtle borders */
+    transition: all 0.2s;
+}
+
+.badge-vehicle i {
+    font-size: 0.9rem;
+}
+
+/* Vehicle Colors - Softer Pastels */
+.badge-vehicle.moto {
+    background-color: #eff6ff;
+    /* Blue 50 */
+    color: #2563eb;
+    /* Blue 600 */
+    border-color: #dbeafe;
+}
+
+.badge-vehicle.bicicleta {
+    background-color: #f0fdf4;
+    /* Green 50 */
+    color: #16a34a;
+    /* Green 600 */
+    border-color: #dcfce7;
+}
+
+.badge-vehicle.moto_electrica {
+    background-color: #faf5ff;
+    /* Purple 50 */
+    color: #9333ea;
+    /* Purple 600 */
+    border-color: #f3e8ff;
+}
+
+.badge-vehicle.ciclomotor {
+    background-color: #fff7ed;
+    /* Orange 50 */
+    color: #ea580c;
+    /* Orange 600 */
+    border-color: #ffedd5;
+}
+
+.badge-vehicle.carro {
+    background-color: #f8fafc;
+    /* Slate 50 */
+    color: #475569;
+    /* Slate 600 */
+    border-color: #e2e8f0;
+}
+
+/* Status Badges */
+.badge-status {
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.badge-status::before {
+    content: '';
+    display: block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+.badge-status.active {
+    background-color: #f0fdf4;
+    color: #15803d;
+    border: 1px solid #dcfce7;
+}
+
+.badge-status.active::before {
+    background-color: #16a34a;
+}
+
+.badge-status.inactive {
+    background-color: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fee2e2;
+}
+
+.badge-status.inactive::before {
+    background-color: #dc2626;
+}
+
+/* Unique Code Style */
+.delivery-code {
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    background: #f8fafc;
+    padding: 4px 8px;
+    border-radius: 6px;
+    color: #334155;
+    border: 1px solid #e2e8f0;
+    font-size: 0.85rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Form Styles */
+.form-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.form-group.full-width {
+    width: 100%;
+}
+
+.vehicle-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Detail Modal Styles */
+.delivery-detail-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.delivery-avatar-large {
+    width: 64px;
+    height: 64px;
+    background: #f1f5f9;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: #64748b;
+}
+
+.delivery-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-box {
+    background: #f8fafc;
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+}
+
+.stat-box .value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0f172a;
+    display: block;
+}
+
+.stat-box .label {
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.recent-deliveries-list {
+    margin-top: 1rem;
+}
+
+.recent-delivery-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.recent-delivery-item:last-child {
+    border-bottom: none;
+}
+
+/* Modal Actions for Override */
+.modal-actions {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+/* Order Assignment Modal */
+.assignment-list {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-top: 1rem;
+}
+
+.assignment-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.assignment-option:last-child {
+    border-bottom: none;
+}
+
+.assignment-option:hover {
+    background-color: #f8fafc;
+}
+
+.assignment-option.selected {
+    background-color: #eff6ff;
+    border-color: #bfdbfe;
+}
+
+.assignment-info h4 {
+    margin: 0;
+    font-size: 1rem;
+    color: #1e293b;
+}
+
+.assignment-info p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+/* Modal Body Padding */
+.delivery-detail-body,
+.assign-body {
+    padding: 1.5rem;
+}
+
+/* Vehicle Options styling removed (replaced by select) */
+
+/* Toggle Switch */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #cbd5e1;
+    transition: .4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+input:checked+.slider {
+    background-color: var(--color-primary, #10b981);
+}
+
+input:focus+.slider {
+    box-shadow: 0 0 1px var(--color-primary, #10b981);
+}
+
+input:checked+.slider:before {
+    transform: translateX(24px);
+}
+
+.slider.round {
+    border-radius: 24px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}

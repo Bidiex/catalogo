@@ -31,11 +31,21 @@ export const businessService = {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('No authenticated')
 
+      // Calculate default plan expiration (30 days from now)
+      const now = new Date()
+      const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+
       const { data, error } = await supabase
         .from('businesses')
         .insert([{
           user_id: user.id,
-          ...businessData
+          ...businessData,
+          // Force defaults for new logic
+          plan_type: 'plus',
+          plan_expires_at: expiresAt.toISOString(),
+          is_active: true,
+          monthly_orders_count: 0,
+          plan_renewed_at: now.toISOString()
         }])
         .select()
         .single()
@@ -211,10 +221,10 @@ export const businessService = {
         }
       }
 
-      // Initialize plan_renewed_at for existing businesses
+      // Initialize plan_renewed_at for existing businesses (safe guard)
       if (!business.plan_renewed_at) {
         await this.initializePlanRenewal(businessId, business.plan_expires_at)
-        // Calculate renewed date for immediate use
+        // Recalculate basic
         const expiresDate = new Date(business.plan_expires_at)
         const renewedDate = new Date(expiresDate)
         renewedDate.setDate(renewedDate.getDate() - 30)
@@ -231,13 +241,20 @@ export const businessService = {
 
       if (plan === 'plus') {
         const current = business.monthly_orders_count || 0
-        const limit = 300
+        const baseLimit = 300
+
+        // Handle negative counter (fair extension logic)
+        // If current is -50, it means 50 carried over orders.
+        // Effective remaining = 300 (base) + 50 (carried) = 350 - 0 (used since renewal?)
+        // Actually, 'current' is the *net* usage.
+        // So remaining = baseLimit - current.
+        // E.g. 300 - (-50) = 350. Correct.
 
         return {
-          allowed: current < limit,
-          current,
-          limit,
-          remaining: limit - current,
+          allowed: current < baseLimit,
+          current: current,
+          limit: baseLimit,
+          remaining: baseLimit - current,
           cycleStart: business.plan_renewed_at,
           cycleEnd: business.plan_expires_at
         }

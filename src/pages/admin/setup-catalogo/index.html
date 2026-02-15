@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Catálogo - SuperAdmin</title>
+    <link rel="icon" type="image/svg+xml" href="/src/assets/icon_traego.svg" />
+    <link rel="stylesheet" href="/src/styles/global.css">
+    <link rel="stylesheet" href="/src/pages/admin/dashboard/admin-dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <style>
+        .setup-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+            .setup-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .section-card {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .section-card h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 0.625rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 0.625rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            /* Bolder text for bright bg */
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            /* Subtle shadow for readability on bright green */
+        }
+
+        .btn-primary:hover {
+            filter: brightness(0.95);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* File Upload */
+        .upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 0.75rem;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+            background-color: var(--bg-secondary);
+        }
+
+        .upload-icon {
+            font-size: 2.5rem;
+            color: var(--text-tertiary);
+            margin-bottom: 1rem;
+        }
+
+        /* Preview Table */
+        .preview-container {
+            margin-top: 1.5rem;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            display: none;
+        }
+
+        .preview-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+
+        .preview-table th,
+        .preview-table td {
+            padding: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+            text-align: left;
+        }
+
+        .preview-table th {
+            background: var(--bg-hover);
+            font-weight: 600;
+        }
+
+        .row-error {
+            background-color: #fee2e2;
+        }
+
+        /* Products List */
+        .products-table-container {
+            overflow-x: auto;
+        }
+
+        .product-row td {
+            vertical-align: middle;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            padding: 0.4rem;
+            border-radius: 0.25rem;
+        }
+
+        .delete-btn:hover {
+            background-color: #fee2e2;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <h1 class="logo">
+                <img src="/src/assets/logo_traego.svg" alt="TraeGo Logo" style="height: 40px;">
+                <span class="sr-only">SuperAdmin</span>
+            </h1>
+
+            <nav class="admin-nav">
+                <a href="/admin/dashboard" class="admin-nav-item">
+                    <i class="fa-solid fa-chart-line"></i>
+                    Dashboard
+                </a>
+                <a href="/admin/users" class="admin-nav-item">
+                    <i class="fa-solid fa-users"></i>
+                    Usuarios y Negocios
+                </a>
+                <a href="/admin/businesses" class="admin-nav-item active">
+                    <i class="fa-solid fa-store"></i>
+                    Negocios
+                </a>
+            </nav>
+
+            <div class="admin-user">
+                <p id="adminEmail">Cargando...</p>
+                <button id="logoutBtn" class="logout-btn-admin">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Cerrar Sesión
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <button onclick="history.back()" class="back-btn"
+                style="margin-bottom: 1rem; border:none; background:none; cursor:pointer; color:var(--text-secondary); display:flex; align-items:center; gap:0.5rem;">
+                <i class="fa-solid fa-arrow-left"></i> Volver
+            </button>
+
+            <header class="admin-header">
+                <div>
+                    <h2 id="pageTitle">Setup Catálogo</h2>
+                    <span id="headerStatusBadge"></span>
+                </div>
+            </header>
+
+            <div class="setup-grid">
+                <!-- Individual Add -->
+                <div class="section-card">
+                    <h3><i class="fa-solid fa-plus-circle"></i> Nuevo Producto</h3>
+                    <form id="addProductForm">
+                        <div class="form-group">
+                            <label class="form-label">Categoría</label>
+                            <select id="categorySelect" class="form-select">
+                                <option value="">-- Seleccionar --</option>
+                            </select>
+                            <input type="text" id="newCategoryInput" class="form-input"
+                                placeholder="O escribe una nueva categoría..."
+                                style="margin-top: 0.5rem; display: none;">
+                            <small class="text-secondary"
+                                style="font-size: 0.75rem; cursor: pointer; color: var(--primary);"
+                                id="toggleCategoryInput">
+                                + Nueva categoría
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Nombre del Producto</label>
+                            <input type="text" id="productName" class="form-input" required>
+                        </div>
+
+                        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div>
+                                <label class="form-label">Precio</label>
+                                <input type="number" id="productPrice" class="form-input" min="0" step="0.01" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Descripción (Opcional)</label>
+                            <textarea id="productDesc" class="form-textarea" rows="2"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn-primary" id="btnAddProduct">
+                            <i class="fa-solid fa-plus"></i> Agregar Producto
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Bulk Upload -->
+                <div class="section-card">
+                    <h3><i class="fa-solid fa-file-import"></i> Carga Masiva (Excel/CSV)</h3>
+                    Sube un archivo <strong>ZIP</strong> que contenga:
+                    <ul style="margin: 0.5rem 0 1rem 1.5rem; list-style-type: disc;">
+                        <li><code>productos.xlsx</code> (con columnas: Categoría, Nombre, Precio, Descripción,
+                            <strong>Imagen</strong>)
+                        </li>
+                        <li>Carpeta <code>imagenes/</code> con las fotos (jpg, png, webp)</li>
+                    </ul>
+                    </p>
+
+                    <input type="file" id="fileInput" accept=".zip, .xlsx, .xls, .csv" hidden>
+                    <div class="upload-area" id="uploadArea">
+                        <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                        <p id="fileName">Haz clic o arrastra un archivo aquí</p>
+                    </div>
+
+                    <div class="preview-container" id="previewContainer">
+                        <table class="preview-table">
+                            <thead>
+                                <tr>
+                                    <th>Cat.</th>
+                                    <th>Nom.</th>
+                                    <th>$$</th>
+                                    <th>Img</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="previewBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div id="importValidationMsg" style="margin-top: 1rem; font-size: 0.875rem;"></div>
+
+                    <button type="button" class="btn-primary" id="btnImport" style="margin-top: 1rem;" disabled>
+                        <i class="fa-solid fa-file-import"></i> Procesar Importación
+                    </button>
+                </div>
+            </div>
+
+            <!-- Existing Products -->
+            <div class="section-card">
+                <h3>Productos Agregados (<span id="productsCount">0</span>)</h3>
+                <div class="products-table-container">
+                    <table class="activity-table">
+                        <thead>
+                            <tr>
+                                <th>Categoría</th>
+                                <th>Producto</th>
+                                <th>Precio</th>
+                                <th style="text-align: right;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsTableBody">
+                            <tr>
+                                <td colspan="4" class="text-center">Cargando...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="/src/pages/admin/setup-catalogo/setup.js"></script>
+</body>
+
+</html>

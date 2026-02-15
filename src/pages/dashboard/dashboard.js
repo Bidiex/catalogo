@@ -1,4 +1,6 @@
 import { authService } from '../../services/auth.js'
+import { generateOrderInvoice } from '../../utils/invoiceGenerator.js'
+
 import { businessService } from '../../services/business.js'
 import { categoryService } from '../../services/categories.js'
 import { productService } from '../../services/products.js'
@@ -16,6 +18,7 @@ import { promotionOptionsService } from '../../services/promotionOptions.js'
 import { imageService } from '../../services/images.js'
 import { supportService } from '../../services/support.js'
 import { ordersService } from '../../services/orders.js'
+import { deliveryPersonsService } from '../../services/deliveryPersons.js'
 import { initAnalytics, updateAnalytics } from './analytics.js'
 import * as XLSX from 'xlsx'
 // ============================================
@@ -42,6 +45,8 @@ let ordersItemsPerPage = 20
 let ordersTotalCount = 0
 let currentOrderFilter = 'all'
 let currentOrdersView = 'table' // 'table' or 'mosaic'
+let deliveryPersons = []
+let editingDeliveryPerson = null
 
 // Wizard onboarding logo
 let wizardLogoUrl = null
@@ -199,6 +204,9 @@ async function init() {
     initOrders()
     initOrderExport()
 
+    // Inicializar domiciliarios
+    initDeliveryPersons()
+
     // Cargar negocio
     await loadBusiness()
 
@@ -253,6 +261,10 @@ function initSidebarNavigation() {
       if (section === 'orders' && currentBusiness) {
         checkAndShowOrdersLimitWarning()
         loadOrders()
+      }
+
+      if (section === 'delivery-persons' && currentBusiness) {
+        loadDeliveryPersons()
       }
 
       // Cambiar sección
@@ -772,6 +784,7 @@ function updatePageTitle(sectionName) {
     'categories': 'Categorías',
     'products': 'Productos',
     'promotions': 'Promociones',
+    'delivery-persons': 'Gestión de Domiciliarios',
     'whatsapp': 'Mensaje de WhatsApp',
     'support': 'Soporte y Ayuda'
   }
@@ -842,6 +855,9 @@ async function loadAllData() {
 
     // Check product limit for UI usage bar
     updatePlanUsageUI()
+
+    // Check operational requirements (Alert)
+    checkOperationalRequirements()
 
   } catch (error) {
     console.error('Error loading data:', error)
@@ -977,6 +993,7 @@ function initOrderExport() {
               'Dirección': order.customer_address,
               'Barrio': order.customer_neighborhood || '',
               'Estado': getOrderStatusLabel(order.status),
+              'Domiciliario': order.delivery_persons ? `${order.delivery_persons.name} (${order.delivery_persons.unique_code})` : 'No asignado',
               'Total': order.total_amount ? `$${parseFloat(order.total_amount).toLocaleString()}` : '$0',
               'Método Pago': order.payment_method,
               'Productos': itemsList,
@@ -1302,6 +1319,19 @@ function renderBusinessInfo() {
   businessName.textContent = currentBusiness.name
   businessWhatsapp.textContent = currentBusiness.whatsapp_number
 
+  // Update description
+  const descriptionDisplay = document.getElementById('businessDescription')
+  if (descriptionDisplay) {
+    descriptionDisplay.textContent = currentBusiness.description || 'Sin descripción'
+    if (!currentBusiness.description) {
+      descriptionDisplay.style.fontStyle = 'italic'
+      descriptionDisplay.style.color = '#9ca3af'
+    } else {
+      descriptionDisplay.style.fontStyle = 'normal'
+      descriptionDisplay.style.color = 'var(--text-primary)'
+    }
+  }
+
   // Update address
   const addressDisplay = document.getElementById('businessAddress')
   if (addressDisplay) {
@@ -1530,6 +1560,12 @@ function openBusinessModal(isEdit = false) {
     descriptionInput.value = ''
   }
 
+  // Reset validation state
+  const saveBtn = document.getElementById('saveBusinessBtn')
+  const errorMsg = document.getElementById('whatsappError')
+  if (saveBtn) saveBtn.disabled = false
+  if (errorMsg) errorMsg.style.display = 'none'
+
   businessModal.style.display = 'flex'
 }
 
@@ -1550,15 +1586,55 @@ document.getElementById('businessNameInput').addEventListener('input', (e) => {
   }
 })
 
+// WhatsApp Validation Listener
+const whatsappInput = document.getElementById('businessWhatsappInput')
+if (whatsappInput) {
+  whatsappInput.addEventListener('input', (e) => {
+    const val = e.target.value
+    const clean = val.replace(/\s+/g, '')
+    const saveBtn = document.getElementById('saveBusinessBtn')
+    const errorMsg = document.getElementById('whatsappError')
+
+    // Regla: Debe empezar por 3 y tener máximo 10 dígitos
+    // Permitimos vacío durante la edición, pero HTML required lo bloqueará al enviar
+    const startsWith3 = clean.startsWith('3')
+    const validLength = clean.length <= 10
+
+    if (clean.length > 0 && (!startsWith3 || !validLength)) {
+      if (errorMsg) errorMsg.style.display = 'block'
+      if (saveBtn) {
+        saveBtn.disabled = true
+        saveBtn.style.opacity = '0.5'
+        saveBtn.style.cursor = 'not-allowed'
+      }
+    } else {
+      if (errorMsg) errorMsg.style.display = 'none'
+      if (saveBtn) {
+        saveBtn.disabled = false
+        saveBtn.style.opacity = '1'
+        saveBtn.style.cursor = 'pointer'
+      }
+    }
+  })
+}
+
 document.getElementById('businessForm').addEventListener('submit', async (e) => {
   e.preventDefault()
 
   const name = document.getElementById('businessNameInput').value
   const slug = document.getElementById('businessSlugInput').value
-  const whatsapp = document.getElementById('businessWhatsappInput').value
+  let whatsapp = document.getElementById('businessWhatsappInput').value
   const address = document.getElementById('businessAddressInput').value
   const deliveryPrice = parseFloat(document.getElementById('businessDeliveryPriceInput').value) || 0
   const description = document.getElementById('businessDescriptionInput').value
+
+  // Sanitize WhatsApp
+  whatsapp = whatsapp.trim().replace(/\s+/g, '')
+
+  if (!whatsapp.startsWith('3') || whatsapp.length > 10) {
+    notify.error('Número válido requerido: empieza por 3, máx 10 dígitos')
+    return
+  }
 
   const saveBtn = document.getElementById('saveBusinessBtn')
 
@@ -4726,11 +4802,14 @@ function renderOrders() {
             <div style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${order.customer_address}">
               ${order.customer_address}
             </div>
-             <div style="font-size: 0.8rem; color: #6b7280;">${order.customer_neighborhood || ''}</div>
+            <div style="font-size: 0.8rem; color: #6b7280;">${order.customer_neighborhood || ''}</div>
           </td>
-          <td style="font-weight: 600;">$${parseFloat(order.total_amount).toLocaleString()}</td>
+          <td class="order-total-amount">$${parseFloat(order.total_amount).toLocaleString()}</td>
           <td>${getOrderStatusBadge(order.status)}</td>
           <td style="text-align: right;">
+            <button class="btn-icon ${order.internal_notes ? 'note-has-content' : ''}" onclick="window.editInternalNotes('${order.id}')" title="${order.internal_notes ? 'Editar nota interna' : 'Agregar nota interna'}">
+              <i class="${order.internal_notes ? 'ri-sticky-note-fill' : 'ri-sticky-note-line'}"></i>
+            </button>
             <button class="btn-icon" onclick="window.viewOrderDetails('${order.id}')" title="Ver detalles">
               <i class="ri-eye-line"></i>
             </button>
@@ -4743,7 +4822,7 @@ function renderOrders() {
               </button>` : ''
         }
             ${order.status === 'verified' ?
-          `<button class="btn-icon" style="color: #7e22ce;" onclick="window.dispatchOrder('${order.id}')" title="Despachar Pedido">
+          `<button class="btn-icon" style="color: #7e22ce;" onclick="window.openAssignOrderModal('${order.id}', '${order.id.slice(0, 8)}')" title="Despachar Pedido">
                 <i class="ri-motorbike-fill"></i>
               </button>
               <button class="btn-icon danger" onclick="window.cancelOrder('${order.id}')" title="Cancelar Pedido">
@@ -4758,8 +4837,8 @@ function renderOrders() {
                 <i class="ri-close-line"></i>
               </button>` : ''
         }
-            <button class="btn-icon danger" onclick="window.deleteOrder('${order.id}')" title="Eliminar del historial">
-              <i class="ri-delete-bin-line"></i>
+            <button class="btn-icon" onclick="window.printOrderInvoice('${order.id}')" title="Imprimir Factura">
+              <i class="ri-printer-line"></i>
             </button>
           </td>
         </tr>
@@ -4778,8 +4857,8 @@ function renderOrders() {
              <span style="font-weight: 600; font-family: monospace;">#${order.id.slice(0, 8)}</span>
              <div style="display: flex; gap: 0.5rem; align-items: center;">
                 ${getOrderStatusBadge(order.status)}
-                <button class="btn-icon danger" onclick="window.deleteOrder('${order.id}')" title="Eliminar" style="padding: 0.25rem 0.5rem; min-width: auto;">
-                  <i class="ri-delete-bin-line"></i>
+                <button class="btn-icon" onclick="window.printOrderInvoice('${order.id}')" title="Imprimir Factura" style="padding: 0.25rem 0.5rem; min-width: auto;">
+                  <i class="ri-printer-line"></i>
                 </button>
              </div>
           </div>
@@ -4796,7 +4875,7 @@ function renderOrders() {
              </button>` : ''
         }
             ${order.status === 'verified' ?
-          `<button class="btn-primary-small" style="flex: 1; background: #7e22ce; justify-content: center; align-items: center;" onclick="window.dispatchOrder('${order.id}')">Despachar</button>
+          `<button class="btn-primary-small" style="flex: 1; background: #7e22ce; justify-content: center; align-items: center;" onclick="window.openAssignOrderModal('${order.id}', '${order.id.slice(0, 8)}')">Despachar</button>
              <button class="btn-secondary-small danger" style="flex: 0 0 36px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="window.cancelOrder('${order.id}')" title="Cancelar">
                 <i class="ri-close-line"></i>
              </button>` : ''
@@ -4861,6 +4940,9 @@ window.viewOrderDetails = async (orderId) => {
             <label style="font-size: 0.8rem; color: #6b7280; display: block;">Cliente</label>
             <div style="font-weight: 600;">${orderData.customer_name}</div>
             <div>${orderData.customer_phone}</div>
+            <button class="btn-secondary-small" style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.5rem;" onclick="window.printOrderInvoice('${orderId}')">
+                <i class="ri-printer-line"></i> Imprimir Factura
+            </button>
          </div>
          <div>
             <label style="font-size: 0.8rem; color: #6b7280; display: block;">Estado</label>
@@ -4914,7 +4996,7 @@ window.viewOrderDetails = async (orderId) => {
       content.innerHTML += `
          <div style="display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
             <button class="btn-secondary danger" style="flex: 1;" onclick="window.cancelOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">Cancelar Pedido</button>
-            <button class="btn-primary" style="flex: 1; background: #7e22ce;" onclick="window.dispatchOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">
+            <button class="btn-primary" style="flex: 1; background: #7e22ce;" onclick="window.openAssignOrderModal('${orderId}', '${orderId.slice(0, 8)}'); document.getElementById('orderDetailsModal').style.display='none'">
               <i class="ri-motorbike-fill"></i> Despachar
             </button>
          </div>
@@ -4930,10 +5012,127 @@ window.viewOrderDetails = async (orderId) => {
       `
     }
 
+    // Common Action: Internal Notes
+    // Add this after status-specific actions or as a separate block
+    // We add it to content regardless of status (unless cancelled?)
+    if (orderData.status !== 'cancelled') {
+      const notesSection = document.createElement('div')
+      notesSection.style.marginTop = '1.5rem'
+      notesSection.style.paddingTop = '1rem'
+      notesSection.style.borderTop = '1px dashed #e5e7eb'
+      notesSection.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <h4 style="font-size: 0.9rem; color: #374151; display: flex; align-items: center; gap: 0.5rem; margin: 0;">
+                    <i class="ri-sticky-note-line"></i> Notas Internas (Privado)
+                </h4>
+                <button class="btn-secondary-small" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="window.editInternalNotes('${orderId}')">
+                    <i class="ri-edit-line"></i> ${orderData.internal_notes ? 'Editar' : 'Agregar'}
+                </button>
+            </div>
+            <div id="internalNotesDisplay-${orderId}" style="background: #eff6ff; padding: 0.75rem; border-radius: 6px; font-size: 0.9rem; color: #1e40af; min-height: 40px;">
+                ${orderData.internal_notes || '<span style="color: #94a3b8; font-style: italic;">Sin notas internas...</span>'}
+            </div>
+        `
+      content.appendChild(notesSection)
+    }
+
+    // Add Delete/Cancel Button at the bottom for all orders
+    const deleteSection = document.createElement('div')
+    deleteSection.style.marginTop = '2rem'
+    deleteSection.style.paddingTop = '1rem'
+    deleteSection.style.borderTop = '1px solid #f3f4f6'
+
+    // Use a container for better spacing if needed, fitting the "SaaS look"
+    deleteSection.innerHTML = `
+        <button class="btn-secondary danger" style="width: 100%; justify-content: center; padding: 0.75rem;" onclick="window.deleteOrder('${orderId}', true)">
+            <i class="ri-delete-bin-line"></i> Eliminar Pedido del Historial
+        </button>
+        <p style="margin-top: 0.5rem; font-size: 0.75rem; color: #9ca3af; text-align: center;">
+            Esta acción elimina el registro permanentemente.
+        </p>
+    `
+    content.appendChild(deleteSection)
+
   } catch (error) {
     console.error('Error details:', error)
     notify.error('Error al cargar detalles')
     if (modal) modal.style.display = 'none'
+  }
+}
+
+window.editInternalNotes = async (orderId) => {
+  // Find order in local state to get current note
+  const order = orders.find(o => o.id === orderId)
+  if (!order) return
+
+  const currentText = order.internal_notes || ''
+
+  const existingModal = document.getElementById('noteModal')
+  if (existingModal) existingModal.remove()
+
+  const modal = document.createElement('div')
+  modal.id = 'noteModal'
+  modal.className = 'confirm-modal' // Reuse confirm modal styles
+  modal.style.zIndex = '9999' // Above details modal
+  modal.innerHTML = `
+        <div class="confirm-overlay"></div>
+        <div class="confirm-content" style="width: 100%; max-width: 400px;">
+            <h3 class="confirm-title" style="margin-bottom: 1rem;">Notas Internas</h3>
+            <textarea id="noteInput" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; min-height: 100px; font-family: inherit; margin-bottom: 1rem; resize: vertical;" placeholder="Escribe aquí observaciones privadas del pedido...">${currentText}</textarea>
+            <div class="confirm-actions">
+                <button class="btn-confirm-cancel" id="cancelNote">Cancelar</button>
+                <button class="btn-confirm-ok" id="saveNote">Guardar Nota</button>
+            </div>
+        </div>
+    `
+  document.body.appendChild(modal)
+
+  // Animation
+  modal.style.display = 'flex'
+  setTimeout(() => modal.classList.add('confirm-show'), 10)
+
+  const textarea = modal.querySelector('#noteInput')
+  textarea.focus()
+
+  // Handlers
+  const close = () => {
+    modal.classList.remove('confirm-show')
+    setTimeout(() => modal.remove(), 200)
+  }
+
+  modal.querySelector('.confirm-overlay').onclick = close
+  modal.querySelector('#cancelNote').onclick = close
+
+  modal.querySelector('#saveNote').onclick = async () => {
+    const newNote = textarea.value.trim()
+    const saveBtn = modal.querySelector('#saveNote')
+
+    try {
+      saveBtn.textContent = 'Guardando...'
+      saveBtn.disabled = true
+
+      await ordersService.updateInternalNotes(orderId, newNote)
+
+      // Update local state
+      order.internal_notes = newNote
+
+      // Update UI in Details Modal if open
+      const displayEl = document.getElementById(`internalNotesDisplay-${orderId}`)
+      if (displayEl) {
+        displayEl.innerHTML = newNote || '<span style="color: #94a3b8; font-style: italic;">Sin notas internas...</span>'
+      }
+
+      // Re-render table to update button style
+      renderOrders()
+
+      notify.success('Nota guardada')
+      close()
+    } catch (error) {
+      console.error(error)
+      notify.error('Error al guardar nota')
+      saveBtn.textContent = 'Guardar Nota'
+      saveBtn.disabled = false
+    }
   }
 }
 
@@ -5027,7 +5226,7 @@ window.cancelOrder = async (orderId) => {
   }
 }
 
-window.deleteOrder = async (orderId) => {
+window.deleteOrder = async (orderId, fromModal = false) => {
   const confirmed = await confirm.show({
     title: '¿Eliminar pedido?',
     message: 'Este pedido será eliminado permanentemente. Esta acción no se puede deshacer.',
@@ -5043,9 +5242,36 @@ window.deleteOrder = async (orderId) => {
     notify.updateLoading(loadingToast, 'Pedido eliminado', 'success')
     orders = orders.filter(o => o.id !== orderId)
     renderOrders()
+    if (fromModal) {
+      document.getElementById('orderDetailsModal').style.display = 'none'
+    }
   } catch (error) {
     console.error(error)
     notify.updateLoading(loadingToast, 'Error al eliminar pedido', 'error')
+  }
+}
+
+window.printOrderInvoice = async (orderId) => {
+  // Determine source of order data
+  let order = orders.find(o => o.id === orderId)
+
+  // If we have detailed data (e.g. from modal fetch), ideally we use that, 
+  // but the generator might need full item details which might not be in the list view object if it's simplified.
+  // However, usually 'orders' list has items. 
+  // If not, we fetch it.
+
+  const loadingToast = notify.loading('Generando factura...')
+  try {
+    // Fetch full details to ensure we have everything (items, options, etc)
+    const fullOrder = await ordersService.getOrderDetails(orderId)
+
+    // Pass currentBusiness (global variable)
+    await generateOrderInvoice(fullOrder, currentBusiness)
+
+    notify.updateLoading(loadingToast, 'Factura generada', 'success')
+  } catch (error) {
+    console.error('Invoice error:', error)
+    notify.updateLoading(loadingToast, 'Error al generar factura', 'error')
   }
 }
 
@@ -5162,3 +5388,504 @@ function tryInitRealtime() {
 
 // Start trying to initialize after a short delay
 setTimeout(tryInitRealtime, 1000)
+
+// ============================================
+// OPERATIONAL REQUIREMENTS CHECK
+// ============================================
+function checkOperationalRequirements() {
+  const alert = document.getElementById('operationalAlert')
+  const alertText = document.getElementById('operationalAlertText')
+  const alertBtn = document.getElementById('operationalAlertBtn')
+
+  if (!alert) return
+
+  const missing = []
+
+  if (!paymentMethods || paymentMethods.length === 0) {
+    missing.push('Métodos de Pago')
+  }
+
+  if (!businessHours || businessHours.length === 0) {
+    missing.push('Horarios de Atención')
+  }
+
+  if (missing.length > 0) {
+    alert.style.display = 'flex'
+    // Join with ' y ' if 2 items, otherwise comma separated (though max 2 here)
+    alertText.textContent = `Debes configurar: ${missing.join(' y ')} para recibir pedidos.`
+
+    // Setup button click
+    if (alertBtn) {
+      alertBtn.onclick = () => {
+        switchSection('business')
+        // Try to visually highlight or scroll to settings
+        // Since settings are in 'Mi Negocio', finding the settings grid is key
+        setTimeout(() => {
+          const settingsGrid = document.querySelector('.business-settings-grid')
+          if (settingsGrid) {
+            settingsGrid.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }
+        }, 100)
+      }
+    }
+  } else {
+    alert.style.display = 'none'
+  }
+}
+
+// ============================================
+// GESTIÓN DE DOMICILIARIOS
+// ============================================
+function initDeliveryPersons() {
+  // Search & Filter
+  const searchInput = document.getElementById('searchDeliveryInput')
+  const filterPills = document.querySelectorAll('#filterVehiclePills .filter-pill')
+  const addBtn = document.getElementById('addDeliveryPersonBtn')
+
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      const term = e.target.value.toLowerCase()
+      const activePill = document.querySelector('#filterVehiclePills .filter-pill.active')
+      const currentType = activePill ? activePill.dataset.vehicle : 'all'
+      filterDeliveryPersons(term, currentType)
+    })
+  }
+
+  if (filterPills.length > 0) {
+    filterPills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        // Update active state
+        filterPills.forEach(p => p.classList.remove('active'))
+        pill.classList.add('active')
+
+        // Filter
+        const type = pill.dataset.vehicle
+        const term = searchInput ? searchInput.value.toLowerCase() : ''
+        filterDeliveryPersons(term, type)
+      })
+    })
+  }
+
+  // Create Modal
+  if (addBtn) {
+    addBtn.addEventListener('click', () => {
+      openDeliveryPersonModal()
+    })
+  }
+
+  // Modal Buttons
+  const closeBtn = document.getElementById('closeDeliveryPersonModal')
+  const cancelBtn = document.getElementById('cancelDeliveryPersonBtn')
+  const saveBtn = document.getElementById('saveDeliveryPersonBtn')
+  const form = document.getElementById('deliveryPersonForm')
+
+  if (closeBtn) closeBtn.addEventListener('click', closeDeliveryPersonModal)
+  if (cancelBtn) cancelBtn.addEventListener('click', closeDeliveryPersonModal)
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      await saveDeliveryPerson()
+    })
+  }
+
+  // Detail Modal
+  const closeDetailBtn = document.getElementById('closeDeliveryDetailModal')
+  if (closeDetailBtn) {
+    closeDetailBtn.addEventListener('click', () => {
+      document.getElementById('deliveryDetailModal').style.display = 'none'
+    })
+  }
+
+  // Assign Modal
+  const closeAssignBtn = document.getElementById('closeAssignOrderModal')
+  const cancelAssignBtn = document.getElementById('cancelAssignBtn')
+  const confirmAssignBtn = document.getElementById('confirmAssignBtn')
+
+  if (closeAssignBtn) closeAssignBtn.addEventListener('click', closeAssignOrderModal)
+  if (cancelAssignBtn) cancelAssignBtn.addEventListener('click', closeAssignOrderModal)
+
+  if (confirmAssignBtn) {
+    confirmAssignBtn.addEventListener('click', confirmOrderAssignment)
+  }
+
+  // Assign Search
+  const searchAssignInput = document.getElementById('searchAssignInput')
+  if (searchAssignInput) {
+    searchAssignInput.addEventListener('input', (e) => {
+      filterAssignmentList(e.target.value)
+    })
+  }
+}
+
+async function loadDeliveryPersons() {
+  try {
+    if (!currentBusiness) return
+
+    // Show loader if needed
+    const data = await deliveryPersonsService.getAll(currentBusiness.id)
+    deliveryPersons = data || []
+
+    // Reset UI Filters
+    const filterPills = document.querySelectorAll('#filterVehiclePills .filter-pill')
+    filterPills.forEach(p => p.classList.remove('active'))
+    const allPill = document.querySelector('#filterVehiclePills .filter-pill[data-vehicle="all"]')
+    if (allPill) allPill.classList.add('active')
+
+    const searchInput = document.getElementById('searchDeliveryInput')
+    if (searchInput) searchInput.value = ''
+
+    // Initial Render
+    filterDeliveryPersons('', 'all')
+  } catch (error) {
+    console.error('Error loading delivery persons:', error)
+    notify.error('Error al cargar domiciliarios')
+  }
+}
+
+function filterDeliveryPersons(searchTerm, vehicleType) {
+  let filtered = deliveryPersons
+
+  if (searchTerm) {
+    filtered = filtered.filter(dp =>
+      dp.name.toLowerCase().includes(searchTerm) ||
+      dp.unique_code.toLowerCase().includes(searchTerm)
+    )
+  }
+
+  if (vehicleType && vehicleType !== 'all') {
+    filtered = filtered.filter(dp => dp.vehicle_type === vehicleType)
+  }
+
+  renderDeliveryPersonsTable(filtered)
+}
+
+function renderDeliveryPersonsTable(list) {
+  const tbody = document.getElementById('deliveryPersonsTableBody')
+  const emptyState = document.getElementById('noDeliveryPersonsState')
+  const tableContainer = document.querySelector('#section-delivery-persons .table-container')
+
+  if (!tbody) return
+
+  tbody.innerHTML = ''
+
+  if (list.length === 0) {
+    if (deliveryPersons.length === 0) {
+      // No deliveries at all
+      tableContainer.style.display = 'none'
+      emptyState.style.display = 'flex'
+    } else {
+      // Filter result empty
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 2rem;">No se encontraron resultados</td></tr>`
+      tableContainer.style.display = 'block'
+      emptyState.style.display = 'none'
+    }
+  } else {
+    tableContainer.style.display = 'block'
+    emptyState.style.display = 'none'
+
+    list.forEach(dp => {
+      const tr = document.createElement('tr')
+
+      const statusClass = dp.is_active ? 'active' : 'inactive'
+      const statusText = dp.is_active ? 'Activo' : 'Inactivo'
+
+      tr.innerHTML = `
+        <td><span class="delivery-code">${dp.unique_code}</span></td>
+        <td><strong>${dp.name}</strong></td>
+        <td><span class="badge-vehicle ${dp.vehicle_type}">${dp.vehicle_type.replace('_', ' ')}</span></td>
+        <td><span class="badge-status ${statusClass}">${statusText}</span></td>
+        <td>${dp.total_deliveries || 0}</td>
+        <td>
+          <div class="action-buttons">
+            <button class="btn-icon" onclick="viewDeliveryDetail('${dp.id}')" title="Ver detalles">
+              <i class="ri-eye-line"></i>
+            </button>
+            <button class="btn-icon" onclick="editDeliveryPerson('${dp.id}')" title="Editar">
+              <i class="ri-pencil-line"></i>
+            </button>
+            <button class="btn-icon danger" onclick="deleteDeliveryPerson('${dp.id}')" title="Eliminar">
+              <i class="ri-delete-bin-line"></i>
+            </button>
+          </div>
+        </td>
+      `
+      tbody.appendChild(tr)
+    })
+  }
+}
+
+// Global functions for inline onclick handlers
+window.viewDeliveryDetail = async (id) => {
+  try {
+    const person = deliveryPersons.find(p => p.id === id)
+    if (!person) return
+
+    // Load extra history
+    const history = await deliveryPersonsService.getHistory(id)
+
+    document.getElementById('detailName').textContent = person.name
+    document.getElementById('detailCode').textContent = person.unique_code
+
+    const vSpan = document.getElementById('detailVehicle')
+    vSpan.className = `badge-vehicle ${person.vehicle_type}`
+    vSpan.textContent = person.vehicle_type.replace('_', ' ')
+
+    const sSpan = document.getElementById('detailStatus')
+    sSpan.className = `badge-status ${person.is_active ? 'active' : 'inactive'}`
+    sSpan.textContent = person.is_active ? 'Activo' : 'Inactivo'
+
+    document.getElementById('detailTotalDeliveries').textContent = person.total_deliveries || 0
+    document.getElementById('detailJoinedDate').textContent = new Date(person.created_at).toLocaleDateString()
+
+    // Render Recent History
+    const hBody = document.getElementById('detailRecentHistory')
+    hBody.innerHTML = ''
+
+    if (!history || history.length === 0) {
+      hBody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Sin pedidos recientes</td></tr>`
+    } else {
+      history.forEach(h => {
+        const row = document.createElement('tr')
+        row.innerHTML = `
+                <td>${new Date(h.assigned_at || h.created_at).toLocaleDateString()}</td>
+                <td>#${h.id.slice(0, 8)}</td>
+                <td>${h.customer_name}</td>
+                <td>$${parseFloat(h.total_amount).toLocaleString()}</td>
+                <td><span class="status-badge status-${h.status}">${getTranslatedStatus(h.status)}</span></td>
+            `
+        hBody.appendChild(row)
+      })
+    }
+
+    document.getElementById('deliveryDetailModal').style.display = 'flex'
+  } catch (error) {
+    console.error(error)
+    notify.error('Error al cargar detalles')
+  }
+}
+
+window.editDeliveryPerson = (id) => {
+  const person = deliveryPersons.find(p => p.id === id)
+  if (person) {
+    openDeliveryPersonModal(person)
+  }
+}
+
+window.deleteDeliveryPerson = async (id) => {
+  const confirmed = await confirm.show({
+    title: 'Eliminar domiciliario',
+    message: '¿Estás seguro? Esta acción no se puede deshacer. Solo se puede eliminar si no tiene pedidos activos.',
+    confirmText: 'Sí, eliminar',
+    type: 'danger'
+  })
+
+  if (confirmed) {
+    try {
+      await deliveryPersonsService.delete(id)
+      notify.success('Domiciliario eliminado')
+      loadDeliveryPersons()
+    } catch (error) {
+      notify.error(error.message || 'Error al eliminar')
+    }
+  }
+}
+
+// Modal Logic
+function openDeliveryPersonModal(person = null) {
+  const modal = document.getElementById('deliveryPersonModal')
+  const title = document.getElementById('deliveryPersonModalTitle')
+  const form = document.getElementById('deliveryPersonForm')
+
+  // Groups
+  const codeGroup = document.getElementById('codeGroup')
+
+  // Fields
+  const idInput = document.getElementById('deliveryPersonId')
+  const codeInput = document.getElementById('deliveryPersonCode')
+  const nameInput = document.getElementById('deliveryPersonName')
+  const activeCheck = document.getElementById('deliveryPersonActive')
+  const vehicleSelect = document.getElementById('deliveryPersonVehicle')
+
+  if (person) {
+    title.textContent = 'Editar Domiciliario'
+    editingDeliveryPerson = person
+    idInput.value = person.id
+    codeGroup.style.display = 'block'
+    codeInput.value = person.unique_code
+    nameInput.value = person.name
+    activeCheck.checked = person.is_active
+    vehicleSelect.value = person.vehicle_type
+  } else {
+    title.textContent = 'Nuevo Domiciliario'
+    editingDeliveryPerson = null
+    idInput.value = ''
+    form.reset()
+    codeGroup.style.display = 'none' // Hidden on create (will be generated)
+    activeCheck.checked = true
+    vehicleSelect.value = 'moto' // Default
+  }
+
+  modal.style.display = 'flex'
+}
+
+function closeDeliveryPersonModal() {
+  document.getElementById('deliveryPersonModal').style.display = 'none'
+  editingDeliveryPerson = null
+}
+
+async function saveDeliveryPerson() {
+  const saveBtn = document.getElementById('saveDeliveryPersonBtn')
+
+  try {
+    await buttonLoader.execute(saveBtn, async () => {
+      const name = document.getElementById('deliveryPersonName').value
+      const isActive = document.getElementById('deliveryPersonActive').checked
+      const vehicleType = document.getElementById('deliveryPersonVehicle').value
+
+      const data = {
+        business_id: currentBusiness.id,
+        name,
+        vehicle_type: vehicleType,
+        is_active: isActive
+      }
+
+      if (editingDeliveryPerson) {
+        // Update
+        await deliveryPersonsService.update(editingDeliveryPerson.id, data)
+        notify.success('Domiciliario actualizado')
+      } else {
+        // Create
+        await deliveryPersonsService.create(data)
+        notify.success('Domiciliario creado exitosamente')
+      }
+
+      closeDeliveryPersonModal()
+      loadDeliveryPersons()
+    }, 'Guardando...')
+  } catch (error) {
+    console.error(error)
+    notify.error('Error al guardar')
+  }
+}
+
+// ORDER ASSIGNMENT LOGIC
+
+let orderToAssignId = null
+let selectedDeliveryPersonId = null
+
+// Called from Orders Table (Need to update renderOrdersTable separately)
+window.openAssignOrderModal = async (orderId, orderNumber) => {
+  orderToAssignId = orderId
+  selectedDeliveryPersonId = null
+
+  const modal = document.getElementById('assignOrderModal')
+  document.getElementById('assignOrderNumber').textContent = `#${orderNumber}`
+
+  // Ensure we have the latest list
+  if (deliveryPersons.length === 0 || !deliveryPersons) {
+    try {
+      const data = await deliveryPersonsService.getAll(currentBusiness.id)
+      deliveryPersons = data || []
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  renderAssignmentList(deliveryPersons)
+
+  modal.style.display = 'flex'
+}
+
+function renderAssignmentList(list) {
+  const listContainer = document.getElementById('assignmentList')
+  listContainer.innerHTML = ''
+
+  // "Unassigned" option
+  const nullDiv = document.createElement('div')
+  nullDiv.className = 'assignment-option'
+  nullDiv.onclick = () => selectAssignmentOption(null, nullDiv)
+  nullDiv.innerHTML = `
+        <div class="assignment-info">
+            <h4>Sin asignar</h4>
+            <p>Despachar sin domiciliario específico</p>
+        </div>
+        <i class="ri-user-unfollow-line"></i>
+    `
+  listContainer.appendChild(nullDiv)
+
+  // Filter active persons
+  const activeList = list.filter(p => p.is_active)
+
+  activeList.forEach(p => {
+    const div = document.createElement('div')
+    div.className = 'assignment-option'
+    div.onclick = () => selectAssignmentOption(p.id, div)
+    div.innerHTML = `
+             <div class="assignment-info">
+                <h4>${p.name}</h4>
+                <p><strong>${p.unique_code}</strong> • ${p.vehicle_type.replace('_', ' ')}</p>
+            </div>
+            <i class="ri-motorbike-line"></i>
+        `
+    listContainer.appendChild(div)
+  })
+}
+
+function selectAssignmentOption(id, element) {
+  selectedDeliveryPersonId = id
+
+  // Visual selection
+  document.querySelectorAll('.assignment-option').forEach(el => el.classList.remove('selected'))
+  element.classList.add('selected')
+}
+
+function filterAssignmentList(term) {
+  const termLower = term.toLowerCase()
+
+  // Always keep "null" option conceptually, but maybe filter active list
+  const filtered = deliveryPersons.filter(p =>
+    p.is_active && (
+      p.name.toLowerCase().includes(termLower) ||
+      p.unique_code.toLowerCase().includes(termLower)
+    )
+  )
+
+  renderAssignmentList(filtered)
+}
+
+function closeAssignOrderModal() {
+  document.getElementById('assignOrderModal').style.display = 'none'
+  orderToAssignId = null
+  selectedDeliveryPersonId = null
+}
+
+async function confirmOrderAssignment() {
+  if (!orderToAssignId) return
+
+  const confirmBtn = document.getElementById('confirmAssignBtn')
+
+  try {
+    await buttonLoader.execute(confirmBtn, async () => {
+      await ordersService.assignDeliveryPerson(orderToAssignId, selectedDeliveryPersonId)
+
+      notify.success('Pedido despachado correctamente')
+      closeAssignOrderModal()
+      loadOrders(ordersCurrentPage) // Refresh orders
+    }, 'Procesando...')
+  } catch (error) {
+    console.error(error)
+    notify.error('Error al despachar pedido')
+  }
+}
+
+function getTranslatedStatus(status) {
+  const map = {
+    'pending': 'Pendiente',
+    'verified': 'Verificado',
+    'dispatched': 'Despachado',
+    'completed': 'Completado',
+    'cancelled': 'Cancelado'
+  }
+  return map[status] || status
+}

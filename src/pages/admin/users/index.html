@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usuarios y Negocios - SuperAdmin</title>
+    <link rel="icon" type="image/svg+xml" href="/src/assets/icon_traego.svg" />
+    <link rel="stylesheet" href="/src/styles/global.css">
+    <link rel="stylesheet" href="/src/pages/admin/dashboard/admin-dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/src/pages/admin/users/users.css">
+    <!-- Inline styles removed -->
+</head>
+
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <h1 class="logo">
+                <img src="/src/assets/logo_traego.svg" alt="TraeGo Logo" style="height: 40px;">
+                <span class="sr-only">SuperAdmin</span>
+            </h1>
+
+            <nav class="admin-nav">
+                <a href="/admin/dashboard" class="admin-nav-item">
+                    <i class="fa-solid fa-chart-line"></i>
+                    Dashboard
+                </a>
+                <a href="/admin/users" class="admin-nav-item active">
+                    <i class="fa-solid fa-users"></i>
+                    Usuarios y Negocios
+                </a>
+                <a href="/admin/businesses" class="admin-nav-item">
+                    <i class="fa-solid fa-store"></i>
+                    Negocios
+                </a>
+            </nav>
+
+            <div class="admin-user">
+                <p id="adminEmail">Cargando...</p>
+                <button id="logoutBtn" class="logout-btn-admin">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Cerrar Sesión
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <header class="admin-header">
+                <div>
+                    <h2>Usuarios y Negocios</h2>
+                    <p style="font-size: 0.875rem; color: var(--text-secondary);">
+                        <span id="countTotal">0</span> usuarios •
+                        <span id="countWithBus">0</span> con negocio •
+                        <span id="countNoBus">0</span> sin negocio
+                    </p>
+                </div>
+                <button id="refreshBtn" class="admin-refresh-btn" title="Actualizar datos">
+                    <i class="fa-solid fa-rotate"></i>
+                    <span>Actualizar</span>
+                </button>
+            </header>
+
+            <!-- Filters -->
+            <div class="admin-filters">
+                <div class="search-container">
+                    <i class="fa-solid fa-search search-icon"></i>
+                    <input type="text" id="searchInput" class="search-input"
+                        placeholder="Buscar por email, nombre de negocio...">
+                </div>
+
+                <div class="filter-chips">
+                    <button class="filter-chip active" data-filter="all">Todos</button>
+                    <button class="filter-chip" data-filter="with_business">Con Negocio</button>
+                    <button class="filter-chip" data-filter="no_business">Sin Negocio</button>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="recent-activity" style="padding: 0; overflow: hidden;">
+                <div style="overflow-x: auto;">
+                    <table class="activity-table">
+                        <thead>
+                            <tr>
+                                <th>Usuario (Email)</th>
+                                <th>Negocio</th>
+                                <th>Estado</th>
+                                <th>Plan</th>
+                                <th>Registrado</th>
+                                <th style="text-align: right;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <tr>
+                                <td colspan="6" style="text-align: center; padding: 3rem;">
+                                    <i class="fa-solid fa-spinner fa-spin"
+                                        style="font-size: 2rem; color: var(--primary);"></i>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Create Business -->
+    <div class="modal-overlay" id="createBusinessModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Crear Negocio para Usuario</h3>
+                <button class="close-modal-btn" style="background:none; border:none; cursor:pointer;"
+                    onclick="closeModal()">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+            <form id="createBusinessForm">
+                <div class="modal-body">
+                    <input type="hidden" id="modalUserId">
+
+                    <div class="form-group">
+                        <label class="form-label">Usuario</label>
+                        <input type="email" id="modalUserEmail" class="form-input" readonly
+                            style="background: #f3f4f6;">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Nombre del Negocio *</label>
+                        <input type="text" id="modalBusName" class="form-input" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Teléfono (WhatsApp)</label>
+                        <input type="tel" id="modalBusPhone" class="form-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Descripción</label>
+                        <textarea id="modalBusDescription" class="form-textarea" rows="2"
+                            style="width:100%; padding:0.625rem; border:1px solid var(--border-color); border-radius:0.5rem;"></textarea>
+                    </div>
+
+                    <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div>
+                            <label class="form-label">Plan Inicial</label>
+                            <select id="modalBusPlan" class="form-select">
+                                <option value="trial">Trial</option>
+                                <option value="plus">Plus</option>
+                                <option value="pro">Pro</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">Días de Trial</label>
+                            <input type="number" id="modalBusTrialDays" class="form-input" value="30">
+                        </div>
+                    </div>
+
+                    <h4 style="margin-top: 1rem; margin-bottom: 0.5rem; font-size: 0.9rem;">Ubicación (Opcional)</h4>
+                    <div class="form-group">
+                        <label class="form-label">Dirección</label>
+                        <input type="text" id="modalBusAddress" class="form-input">
+                    </div>
+
+
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeModal()">Cancelar</button>
+                    <button type="submit" class="btn-primary">Crear Negocio</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="/src/pages/admin/users/users.js"></script>
+    <script>
+        function closeModal() {
+            document.getElementById('createBusinessModal').style.display = 'none';
+        }
+    </script>
+</body>
+
+</html>
