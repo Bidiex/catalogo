@@ -1,0 +1,69 @@
+/* Inherits from global.css and admin-dashboard.css */
+
+.badge-priority {
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.badge-priority.low {
+    background-color: #f3f4f6;
+    color: #374151;
+}
+
+.badge-priority.normal {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+.badge-priority.high {
+    background-color: #ffedd5;
+    color: #9a3412;
+}
+
+.badge-priority.urgent {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.badge-status {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    /* Square badge style as requested before? Keeping consistent with admin-dashboard pills for now */
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.badge-status.pending {
+    background-color: #f3f4f6;
+    color: #4b5563;
+    border: 1px solid #e5e7eb;
+}
+
+.badge-status.in_progress {
+    background-color: #eff6ff;
+    color: #2563eb;
+    border: 1px solid #bfdbfe;
+}
+
+.badge-status.resolved {
+    background-color: #f0fdf4;
+    color: #16a34a;
+    border: 1px solid #bbf7d0;
+}
+
+.badge-status.closed {
+    background-color: #f9fafb;
+    color: #1f2937;
+    border: 1px solid #e5e7eb;
+    text-decoration: line-through;
+}
+
+/* Modal Specifics */
+.modal-body img {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}

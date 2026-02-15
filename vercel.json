@@ -49,6 +49,10 @@
             "destination": "/admin-setup-catalogo.html"
         },
         {
+            "source": "/admin/support",
+            "destination": "/admin-support.html"
+        },
+        {
             "source": "/c/:slug",
             "destination": "/catalog.html"
         },

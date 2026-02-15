@@ -489,5 +489,60 @@ export const adminService = {
             console.error('Logo Upload Error:', error)
             return { success: false, error: error.message }
         }
+    },
+
+    // --- SOPORTE ---
+
+    /**
+     * Obtener tickets de soporte
+     */
+    async getSupportTickets() {
+        try {
+            const { data, error } = await supabase
+                .from('support_tickets')
+                .select(`
+                    *,
+                    businesses(name)
+                `)
+                .order('created_at', { ascending: false })
+
+            if (error) throw error
+            return { success: true, data }
+        } catch (error) {
+            console.error('Admin API Error (getSupportTickets):', error)
+            return { success: false, error: error.message }
+        }
+    },
+
+    /**
+     * Actualizar ticket (estado, prioridad, etc)
+     */
+    async updateTicket(ticketId, updates) {
+        try {
+            // Prepare update object
+            const dataToUpdate = { ...updates }
+
+            // If status is being resolved/closed, set timestamp
+            if (updates.status) {
+                if (updates.status === 'resolved' || updates.status === 'closed') {
+                    dataToUpdate.resolved_at = new Date()
+                } else {
+                    dataToUpdate.resolved_at = null
+                }
+            }
+
+            const { data, error } = await supabase
+                .from('support_tickets')
+                .update(dataToUpdate)
+                .eq('id', ticketId)
+                .select()
+                .single()
+
+            if (error) throw error
+            return { success: true, data }
+        } catch (error) {
+            console.error('Admin API Error (updateTicket):', error)
+            return { success: false, error: error.message }
+        }
     }
 }

@@ -19,6 +19,7 @@ export default defineConfig({
         'admin-businesses': resolve(__dirname, 'src/pages/admin/businesses/index.html'),
         'admin-business-detail': resolve(__dirname, 'src/pages/admin/business-detail/index.html'),
         'admin-setup-catalogo': resolve(__dirname, 'src/pages/admin/setup-catalogo/index.html'),
+        'admin-support': resolve(__dirname, 'src/pages/admin/support/index.html'),
         '404': resolve(__dirname, 'src/pages/404/index.html'),
       },
       output: {
@@ -47,6 +48,7 @@ export default defineConfig({
             '/admin/businesses': '/src/pages/admin/businesses/index.html',
             '/admin/business-detail': '/src/pages/admin/business-detail/index.html',
             '/admin/setup-catalogo': '/src/pages/admin/setup-catalogo/index.html',
+            '/admin/support': '/src/pages/admin/support/index.html',
             '/404': '/src/pages/404/index.html'
           }
 
@@ -79,6 +81,7 @@ export default defineConfig({
             '/admin/businesses': '/admin-businesses.html',
             '/admin/business-detail': '/admin-business-detail.html',
             '/admin/setup-catalogo': '/admin-setup-catalogo.html',
+            '/admin/support': '/admin-support.html',
             '/404': '/404.html'
           }
 
@@ -129,6 +132,7 @@ export default defineConfig({
           moveFile(resolve(srcDir, 'admin/businesses/index.html'), resolve(distDir, 'admin-businesses.html'))
           moveFile(resolve(srcDir, 'admin/business-detail/index.html'), resolve(distDir, 'admin-business-detail.html'))
           moveFile(resolve(srcDir, 'admin/setup-catalogo/index.html'), resolve(distDir, 'admin-setup-catalogo.html'))
+          moveFile(resolve(srcDir, 'admin/support/index.html'), resolve(distDir, 'admin-support.html'))
           moveFile(resolve(srcDir, '404/index.html'), resolve(distDir, '404.html'))
 
           // Optional: Clean up src directory in dist if empty or no longer needed

@@ -44,16 +44,23 @@ async function loadDashboardData() {
     refreshBtn.disabled = true
 
     try {
-        // Fetch all businesses
-        const { success, data: businesses, error } = await adminService.getBusinesses()
+        // Fetch all data (parallel)
+        const [businessesResult, ticketsResult] = await Promise.all([
+            adminService.getBusinesses(),
+            adminService.getSupportTickets()
+        ])
 
-        if (!success) {
-            console.error('Error loading businesses:', error)
+        if (!businessesResult.success) {
+            console.error('Error loading businesses:', businessesResult.error)
             alert('Error al cargar datos')
             return
         }
 
-        renderMetrics(businesses)
+        // Verify parallel results
+        const businesses = businessesResult.data
+        const tickets = ticketsResult.data || []
+
+        renderMetrics(businesses, tickets)
         renderCharts(businesses)
         renderActivityTable(businesses)
 
@@ -65,20 +72,16 @@ async function loadDashboardData() {
     }
 }
 
-function renderMetrics(businesses) {
+function renderMetrics(businesses, tickets) {
     // Calculate Metrics
     const total = businesses.length
 
     // Status counts
-    const trial = businesses.filter(b => b.plan_type === 'trial' || !b.plan_type).length
     const active = businesses.filter(b => b.is_active && (b.plan_type === 'plus' || b.plan_type === 'pro')).length
 
-    // Expiring trials (< 7 days)
-    const expiringCount = businesses.filter(b => {
-        if (b.plan_type !== 'trial') return false
-        const daysLeft = adminUtils.getDaysRemaining(b.plan_expires_at)
-        return daysLeft < 7 && daysLeft >= 0
-    }).length
+    // Tickets
+    const pendingTickets = tickets.filter(t => t.status === 'pending' || t.status === 'in_progress').length
+    const resolvedTickets = tickets.filter(t => t.status === 'resolved' || t.status === 'closed').length
 
     // Total Orders (Sum of monthly_orders_count for now, ideal would be dedicated orders table query)
     // For now we use the counter in business table
@@ -86,11 +89,11 @@ function renderMetrics(businesses) {
 
     // Update DOM
     animateValue('totalBusinesses', total)
-    animateValue('trialBusinesses', trial)
+    animateValue('pendingTickets', pendingTickets)
     animateValue('activeBusinesses', active)
     animateValue('recentOrders', totalOrders) // Note: This is an approximation based on current month count
 
-    document.getElementById('expiringTrial').textContent = `${expiringCount} expiran pronto`
+    document.getElementById('resolvedTickets').textContent = `${resolvedTickets} resueltos`
 }
 
 function renderCharts(businesses) {
