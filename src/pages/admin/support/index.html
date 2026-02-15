@@ -4,13 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Usuarios y Negocios - SuperAdmin</title>
+    <title>Soporte - SuperAdmin</title>
     <link rel="icon" type="image/svg+xml" href="/src/assets/icon_traego.svg" />
     <link rel="stylesheet" href="/src/styles/global.css">
     <link rel="stylesheet" href="/src/pages/admin/dashboard/admin-dashboard.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/src/pages/admin/users/users.css">
-    <!-- Inline styles removed -->
+    <link rel="stylesheet" href="/src/pages/admin/support/support.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body>
@@ -27,7 +27,7 @@
                     <i class="fa-solid fa-chart-line"></i>
                     Dashboard
                 </a>
-                <a href="/admin/users" class="admin-nav-item active">
+                <a href="/admin/users" class="admin-nav-item">
                     <i class="fa-solid fa-users"></i>
                     Usuarios y Negocios
                 </a>
@@ -35,7 +35,7 @@
                     <i class="fa-solid fa-store"></i>
                     Negocios
                 </a>
-                <a href="/admin/support" class="admin-nav-item">
+                <a href="/admin/support" class="admin-nav-item active">
                     <i class="fa-solid fa-headset"></i>
                     Soporte
                 </a>
@@ -54,11 +54,9 @@
         <main class="admin-main">
             <header class="admin-header">
                 <div>
-                    <h2>Usuarios y Negocios</h2>
+                    <h2>Soporte Técnico</h2>
                     <p style="font-size: 0.875rem; color: var(--text-secondary);">
-                        <span id="countTotal">0</span> usuarios •
-                        <span id="countWithBus">0</span> con negocio •
-                        <span id="countNoBus">0</span> sin negocio
+                        Gestiona las solicitudes de soporte de los negocios.
                     </p>
                 </div>
                 <button id="refreshBtn" class="admin-refresh-btn" title="Actualizar datos">
@@ -72,13 +70,14 @@
                 <div class="search-container">
                     <i class="fa-solid fa-search search-icon"></i>
                     <input type="text" id="searchInput" class="search-input"
-                        placeholder="Buscar por email, nombre de negocio...">
+                        placeholder="Buscar por código, asunto o negocio...">
                 </div>
 
                 <div class="filter-chips">
                     <button class="filter-chip active" data-filter="all">Todos</button>
-                    <button class="filter-chip" data-filter="with_business">Con Negocio</button>
-                    <button class="filter-chip" data-filter="no_business">Sin Negocio</button>
+                    <button class="filter-chip" data-filter="pending">Pendientes</button>
+                    <button class="filter-chip" data-filter="in_progress">En Progreso</button>
+                    <button class="filter-chip" data-filter="resolved">Resueltos</button>
                 </div>
             </div>
 
@@ -88,17 +87,18 @@
                     <table class="activity-table">
                         <thead>
                             <tr>
-                                <th>Usuario (Email)</th>
-                                <th>Negocio</th>
+                                <th>Ticket</th>
+                                <th>Negocio / Contacto</th>
+                                <th>Asunto</th>
                                 <th>Estado</th>
-                                <th>Plan</th>
-                                <th>Registrado</th>
+                                <th>Prioridad</th>
+                                <th>Fecha</th>
                                 <th style="text-align: right;">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody id="usersTableBody">
+                        <tbody id="ticketsTableBody">
                             <tr>
-                                <td colspan="6" style="text-align: center; padding: 3rem;">
+                                <td colspan="7" style="text-align: center; padding: 3rem;">
                                     <i class="fa-solid fa-spinner fa-spin"
                                         style="font-size: 2rem; color: var(--primary);"></i>
                                 </td>
@@ -110,79 +110,72 @@
         </main>
     </div>
 
-    <!-- Modal Create Business -->
-    <div class="modal-overlay" id="createBusinessModal">
+    <!-- Modal Ticket Detail -->
+    <div class="modal-overlay" id="ticketModal">
         <div class="modal">
             <div class="modal-header">
-                <h3>Crear Negocio para Usuario</h3>
+                <h3>Detalle del Ticket <span id="modalTicketCode" style="color: var(--primary);"></span></h3>
                 <button class="close-modal-btn" style="background:none; border:none; cursor:pointer;"
                     onclick="closeModal()">
                     <i class="fa-solid fa-times"></i>
                 </button>
             </div>
-            <form id="createBusinessForm">
-                <div class="modal-body">
-                    <input type="hidden" id="modalUserId">
-
-                    <div class="form-group">
-                        <label class="form-label">Usuario</label>
-                        <input type="email" id="modalUserEmail" class="form-input" readonly
-                            style="background: #f3f4f6;">
+            <div class="modal-body">
+                <div style="margin-bottom: 1.5rem;">
+                    <h4 id="modalTicketTitle" style="margin-bottom: 0.5rem;"></h4>
+                    <p id="modalTicketDesc" style="color: var(--text-secondary); white-space: pre-wrap;"></p>
+                    <div id="modalTicketImage" style="margin-top: 1rem; display: none;">
+                        <img src="" alt="Adjunto"
+                            style="max-width: 100%; border-radius: 0.5rem; border: 1px solid var(--border-color);">
                     </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Nombre del Negocio *</label>
-                        <input type="text" id="modalBusName" class="form-input" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Teléfono (WhatsApp)</label>
-                        <input type="tel" id="modalBusPhone" class="form-input">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Descripción</label>
-                        <textarea id="modalBusDescription" class="form-textarea" rows="2"
-                            style="width:100%; padding:0.625rem; border:1px solid var(--border-color); border-radius:0.5rem;"></textarea>
-                    </div>
-
-                    <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div>
-                            <label class="form-label">Plan Inicial</label>
-                            <select id="modalBusPlan" class="form-select">
-                                <option value="trial">Trial</option>
-                                <option value="plus">Plus</option>
-                                <option value="pro">Pro</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="form-label">Días de Trial</label>
-                            <input type="number" id="modalBusTrialDays" class="form-input" value="30">
-                        </div>
-                    </div>
-
-                    <h4 style="margin-top: 1rem; margin-bottom: 0.5rem; font-size: 0.9rem;">Ubicación (Opcional)</h4>
-                    <div class="form-group">
-                        <label class="form-label">Dirección</label>
-                        <input type="text" id="modalBusAddress" class="form-input">
-                    </div>
-
-
-
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn-secondary" onclick="closeModal()">Cancelar</button>
-                    <button type="submit" class="btn-primary">Crear Negocio</button>
+
+                <div
+                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding: 1rem; background: #f9fafb; border-radius: 0.5rem;">
+                    <div>
+                        <small style="color: #6b7280;">Negocio</small>
+                        <div id="modalTicketBusiness" style="font-weight: 500;"></div>
+                    </div>
+                    <div>
+                        <small style="color: #6b7280;">Contacto</small>
+                        <div id="modalTicketContact"></div>
+                        <div id="modalTicketPhone" style="font-size: 0.875rem;"></div>
+                    </div>
                 </div>
-            </form>
+
+                <div style="margin-top: 1.5rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <label class="form-label">Estado</label>
+                        <select id="modalTicketStatus" class="form-select">
+                            <option value="pending">Pendiente</option>
+                            <option value="in_progress">En Progreso</option>
+                            <option value="resolved">Resuelto</option>
+                            <option value="closed">Cerrado</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Prioridad</label>
+                        <select id="modalTicketPriority" class="form-select">
+                            <option value="low">Baja</option>
+                            <option value="normal">Normal</option>
+                            <option value="high">Alta</option>
+                            <option value="urgent">Urgente</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeModal()">Cerrar</button>
+                <button type="button" id="btnUpdateStatus" class="btn-primary">Guardar Cambios</button>
+            </div>
         </div>
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="/src/pages/admin/users/users.js"></script>
+    <script type="module" src="/src/pages/admin/support/support.js"></script>
     <script>
         function closeModal() {
-            document.getElementById('createBusinessModal').style.display = 'none';
+            document.getElementById('ticketModal').style.display = 'none';
         }
     </script>
 </body>
