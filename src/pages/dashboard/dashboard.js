@@ -1,6 +1,4 @@
-import { invoiceGenerator } from '../../utils/invoiceGenerator.js'
-// Note: importing as named export, but file checks show "export const generateOrderInvoice"
-// So I should import { generateOrderInvoice }
+import { authService } from '../../services/auth.js'
 import { generateOrderInvoice } from '../../utils/invoiceGenerator.js'
 
 import { businessService } from '../../services/business.js'
@@ -4998,7 +4996,7 @@ window.viewOrderDetails = async (orderId) => {
       content.innerHTML += `
          <div style="display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
             <button class="btn-secondary danger" style="flex: 1;" onclick="window.cancelOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">Cancelar Pedido</button>
-            <button class="btn-primary" style="flex: 1; background: #7e22ce;" onclick="window.dispatchOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">
+            <button class="btn-primary" style="flex: 1; background: #7e22ce;" onclick="window.openAssignOrderModal('${orderId}', '${orderId.slice(0, 8)}'); document.getElementById('orderDetailsModal').style.display='none'">
               <i class="ri-motorbike-fill"></i> Despachar
             </button>
          </div>
@@ -5041,11 +5039,17 @@ window.viewOrderDetails = async (orderId) => {
     // Add Delete/Cancel Button at the bottom for all orders
     const deleteSection = document.createElement('div')
     deleteSection.style.marginTop = '2rem'
-    deleteSection.style.textAlign = 'center'
+    deleteSection.style.paddingTop = '1rem'
+    deleteSection.style.borderTop = '1px solid #f3f4f6'
+
+    // Use a container for better spacing if needed, fitting the "SaaS look"
     deleteSection.innerHTML = `
-        <button class="btn-text danger" onclick="window.deleteOrder('${orderId}', true)">
+        <button class="btn-secondary danger" style="width: 100%; justify-content: center; padding: 0.75rem;" onclick="window.deleteOrder('${orderId}', true)">
             <i class="ri-delete-bin-line"></i> Eliminar Pedido del Historial
         </button>
+        <p style="margin-top: 0.5rem; font-size: 0.75rem; color: #9ca3af; text-align: center;">
+            Esta acción elimina el registro permanentemente.
+        </p>
     `
     content.appendChild(deleteSection)
 

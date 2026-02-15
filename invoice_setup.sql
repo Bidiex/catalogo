@@ -16,7 +16,7 @@ CREATE POLICY "Businesses can manage their own invoice sequences"
 ON public.invoice_sequences
 FOR ALL
 USING (auth.uid() IN (
-    SELECT user_id FROM business_users WHERE business_id = invoice_sequences.business_id
+    SELECT user_id FROM public.businesses WHERE id = invoice_sequences.business_id
 ));
 
 -- 2. Add invoice columns to orders table
