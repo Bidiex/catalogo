@@ -687,6 +687,21 @@
   border-color: var(--danger);
 }
 
+.btn-icon.note-has-content {
+  background-color: #fef9c3;
+  color: #854d0e;
+  border-color: #fde047;
+}
+
+.btn-icon.note-has-content:hover {
+  background-color: #fde047;
+  border-color: #eab308;
+}
+
+.order-total-amount {
+  font-weight: 600;
+}
+
 /* Products list */
 .products-list {
   display: grid;
@@ -986,6 +1001,14 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+.form-group-inline {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
 
 .form-group label {
@@ -3176,4 +3199,195 @@ input:checked+.slider:before {
     grid-template-columns: 1fr;
     /* Stack vertically, fit width */
   }
+}
+
+/* Operational Alert */
+.operational-alert {
+  background-color: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-left: 4px solid #f97316;
+  border-radius: var(--radius-md);
+  padding: 1rem 1.5rem;
+  margin: 1.5rem 2rem 0 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: var(--shadow-sm);
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.operational-alert .alert-icon {
+  font-size: 1.5rem;
+  color: #f97316;
+  display: flex;
+  align-items: center;
+}
+
+.operational-alert .alert-content {
+  flex: 1;
+}
+
+.operational-alert h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #9a3412;
+  margin: 0 0 0.25rem 0;
+}
+
+.operational-alert p {
+  font-size: 0.9rem;
+  color: #c2410c;
+  margin: 0;
+}
+
+.btn-primary-small {
+  background: var(--color-primary);
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+.btn-primary-small:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+/* Empty Message Style */
+.empty-message {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  background: var(--bg-light);
+  border-radius: var(--radius-md);
+  margin: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+/* ============================================
+   CONFIRM MODAL STYLES (Dynamic)
+   ============================================ */
+.confirm-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  display: flex;
+  /* Hidden by default via opacity/visibility usually, but here we control display in JS too */
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s, visibility 0.2s;
+}
+
+.confirm-modal.confirm-show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.confirm-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+}
+
+.confirm-content {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  /* radius-lg */
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 10;
+  width: 90%;
+  max-width: 400px;
+  transform: scale(0.95);
+  transition: transform 0.2s;
+}
+
+.confirm-modal.confirm-show .confirm-content {
+  transform: scale(1);
+}
+
+.confirm-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text);
+  /* Ensure var is available or use #1f2937 */
+  margin: 0 0 1rem 0;
+  text-align: center;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.btn-confirm-cancel {
+  background: white;
+  border: 1px solid #d1d5db;
+  color: #374151;
+  padding: 0.6rem 1.2rem;
+  border-radius: 0.375rem;
+  /* radius-md */
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-confirm-cancel:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+/* Match btn-primary style approximately if var not available, but vars are usually available */
+.btn-confirm-ok {
+  background: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  color: white;
+  padding: 0.6rem 1.2rem;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-confirm-ok:hover {
+  filter: brightness(0.95);
+  /* Simple hover effect */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }

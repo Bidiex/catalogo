@@ -11,7 +11,7 @@ let currentBusiness = null
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. Auth Check
-    const { isAdmin, userId: adminId } = await authGuard.checkAdminSession()
+    const { isAdmin } = await authGuard.checkAdminSession()
     if (!isAdmin) {
         window.location.href = '/login'
         return
@@ -70,7 +70,6 @@ function renderData() {
     // General Info
     document.getElementById('inputName').value = b.name || ''
     document.getElementById('inputDescription').value = b.description || ''
-    // Use whatsapp_number as the primary phone field
     document.getElementById('inputPhone').value = b.whatsapp_number || b.phone || ''
 
     // Address
@@ -81,19 +80,19 @@ function renderData() {
 
     // Metrics
     document.getElementById('metricRegistered').textContent = adminUtils.formatDate(b.created_at)
-    document.getElementById('metricProducts').textContent = b.products_count || 0 // Assuming view/join returns this
-    document.getElementById('metricOrders').textContent = b.orders_count || 0     // Assuming view/join returns this
-    document.getElementById('metricLastAccess').textContent = 'N/A' // Need auth_logs implementation for real data
+    document.getElementById('metricProducts').textContent = b.products_count || 0
+    document.getElementById('metricOrders').textContent = b.orders_count || 0
+    document.getElementById('metricLastAccess').textContent = 'N/A'
 
     // Status & Plan
     document.getElementById('selectStatus').value = b.is_active ? 'active' : 'inactive'
-    // Default to 'plus' if current plan is not in the list (e.g. was trial or enterprise)
+
     const validPlans = ['plus', 'pro']
     const currentPlan = b.plan_type || 'plus'
     document.getElementById('selectPlan').value = validPlans.includes(currentPlan) ? currentPlan : 'plus'
 
-    // Trial Logic
-    toggleTrialInputs(b.plan_type || 'trial')
+    // Plan Expiry Logic (formerly Trial Logic)
+    togglePlanInputs(b.plan_type || 'plus')
     if (b.plan_expires_at) {
         document.getElementById('inputTrialEnd').value = b.plan_expires_at.split('T')[0]
         updateTrialDaysDisplay(b.plan_expires_at)
@@ -109,19 +108,29 @@ function updateHeaderBadge(b) {
 
     if (!b.is_active) {
         html = '<span class="badge paused" style="font-size: 1rem; padding: 0.25rem 0.75rem;">Inactivo</span>'
-    } else if (b.plan_type === 'trial') {
-        const days = adminUtils.getDaysRemaining(b.plan_expires_at)
-        html = `<span class="badge trial" style="font-size: 1rem; padding: 0.25rem 0.75rem;">Trial (${days}d)</span>`
     } else {
-        html = `<span class="badge active" style="font-size: 1rem; padding: 0.25rem 0.75rem;">Active ${b.plan_type}</span>`
+        // Show days remaining for active plans (Plus)
+        const days = adminUtils.getDaysRemaining(b.plan_expires_at)
+
+        if (b.plan_type === 'pro') {
+            html = `<span class="badge active" style="font-size: 1rem; padding: 0.25rem 0.75rem; background-color: #dcfce7; color: #166534;">PRO</span>`
+        } else {
+            // Plus / Default
+            if (days < 0) {
+                html = `<span class="badge paused" style="font-size: 1rem; padding: 0.25rem 0.75rem; background-color: #fee2e2; color: #991b1b;">Vencido (${Math.abs(days)}d)</span>`
+            } else {
+                html = `<span class="badge active" style="font-size: 1rem; padding: 0.25rem 0.75rem;">Activo (${days}d)</span>`
+            }
+        }
     }
 
     container.innerHTML = html
 }
 
-function toggleTrialInputs(planType) {
+function togglePlanInputs(planType) {
     const container = document.getElementById('trialInfoContainer')
-    if (planType === 'trial') {
+    // Show expiry for both 'plus' and 'pro' as both have monthly periods
+    if (planType === 'plus' || planType === 'pro') {
         container.style.display = 'block'
     } else {
         container.style.display = 'none'
@@ -131,9 +140,24 @@ function toggleTrialInputs(planType) {
 function updateTrialDaysDisplay(dateStr) {
     const days = adminUtils.getDaysRemaining(dateStr)
     const el = document.getElementById('trialDaysRemaining')
-    el.innerHTML = `<i class="fa-solid fa-clock"></i> <span>${days} días restantes</span>`
-    if (days < 3) el.style.color = '#dc2626'; // Red warning
-    else el.style.color = '#b45309';
+
+    if (days < 0) {
+        el.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> <span>Vencido hace ${Math.abs(days)} días</span>`
+        el.style.color = '#dc2626'
+        el.style.backgroundColor = '#fee2e2'
+        el.style.borderColor = '#fca5a5'
+    } else {
+        el.innerHTML = `<i class="fa-solid fa-clock"></i> <span>${days} días restantes</span>`
+        if (days < 3) {
+            el.style.color = '#dc2626'
+            el.style.backgroundColor = '#fffbeb' // maintain yellow bg?
+            el.style.borderColor = '#fcd34d'
+        } else {
+            el.style.color = '#b45309'
+            el.style.backgroundColor = '#fffbeb'
+            el.style.borderColor = '#fcd34d'
+        }
+    }
 }
 
 function setupListeners() {
@@ -152,16 +176,13 @@ function setupListeners() {
         const name = document.getElementById('inputName').value
         const phone = document.getElementById('inputPhone').value
         const description = document.getElementById('inputDescription').value
-
         const direccion = document.getElementById('inputAddress').value
 
         const loading = notify.loading('Guardando...')
 
-        // Map phone to whatsapp_number as per schema/user request
         const updates = {
             name,
             whatsapp_number: phone,
-            description,
             description,
             address: direccion
         }
@@ -183,7 +204,7 @@ function setupListeners() {
 
         const status = document.getElementById('selectStatus').value
         const plan = document.getElementById('selectPlan').value
-        const trialEnd = document.getElementById('inputTrialEnd').value
+        const planEnd = document.getElementById('inputTrialEnd').value
 
         const isActive = status === 'active'
 
@@ -197,8 +218,11 @@ function setupListeners() {
 
         const updates = {
             is_active: isActive,
-            plan_type: plan,
-            plan_expires_at: plan === 'trial' ? trialEnd : null // Clear expiry if not trial? Or keep it? keeping simplistic for now
+            plan_type: plan
+        }
+
+        if ((plan === 'plus' || plan === 'pro') && planEnd) {
+            updates.plan_expires_at = planEnd
         }
 
         const { success, error } = await adminService.updateBusiness(businessId, updates)
@@ -212,9 +236,9 @@ function setupListeners() {
         }
     })
 
-    // Plan Select Change Listener to toggle date picker
+    // Plan Select Change Listener
     document.getElementById('selectPlan').addEventListener('change', (e) => {
-        toggleTrialInputs(e.target.value)
+        togglePlanInputs(e.target.value)
     })
 
     // 3. Admin Notes
@@ -224,51 +248,33 @@ function setupListeners() {
         const notes = document.getElementById('adminNotes').value
         const loading = notify.loading('Guardando notas...')
 
-        // Note: Assuming 'admin_notes' column exists on businesses table.
         const { success, error } = await adminService.updateBusiness(businessId, { admin_notes: notes })
 
         if (success) {
             notify.updateLoading(loading, 'Notas guardadas')
-            // No log for notes? Or maybe yes? User said "NO registrar en log (son privadas)"
         } else {
             notify.updateLoading(loading, error, 'error')
         }
     })
 
-    // 4. Extend Trial
+    // 4. Extend Plan (Fair Extension)
     document.getElementById('btnExtendTrial').addEventListener('click', async () => {
         if (!currentBusiness) return
 
         if (!(await confirm.show({
-            title: 'Extender Trial',
-            message: '¿Añadir 30 días al periodo de trial actual?',
+            title: 'Extender Plan',
+            message: '¿Añadir 30 días al plan actual? (Se acumularán los pedidos no usados)',
             confirmText: 'Sí, extender',
             type: 'info'
         }))) return
 
-        const loading = notify.loading('Extendiendo trial...')
+        const loading = notify.loading('Extendiendo plan...')
 
-        // Calculate new date
-        let baseDate = new Date()
-        if (currentBusiness.plan_expires_at && new Date(currentBusiness.plan_expires_at) > baseDate) {
-            baseDate = new Date(currentBusiness.plan_expires_at)
-        }
-
-        baseDate.setDate(baseDate.getDate() + 30) // Add 30 days
-        const newDateStr = baseDate.toISOString()
-
-        // Force plan to trial and active if extending? usually yes.
-        const updates = {
-            plan_type: 'trial',
-            is_active: true,
-            plan_expires_at: newDateStr
-        }
-
-        const { success, error } = await adminService.updateBusiness(businessId, updates)
+        // Use new adminService method
+        const { success, error } = await adminService.extendBusinessPlan(businessId)
 
         if (success) {
-            await adminService.logAction(null, businessId, 'EXTEND_TRIAL', { added_days: 30, new_date: newDateStr })
-            notify.updateLoading(loading, 'Trial extendido exitosamente')
+            notify.updateLoading(loading, 'Plan extendido exitosamente')
             loadBusinessData()
         } else {
             notify.updateLoading(loading, error, 'error')
@@ -286,7 +292,7 @@ function setupListeners() {
         if (!e.target.files.length) return
 
         const file = e.target.files[0]
-        if (file.size > 2 * 1024 * 1024) { // 2MB
+        if (file.size > 2 * 1024 * 1024) {
             notify.error('La imagen no puede pesar más de 2MB')
             return
         }
@@ -298,13 +304,12 @@ function setupListeners() {
         const { success, data, error } = await adminService.uploadLogo(path, file)
 
         if (success) {
-            // Update DB
             const { success: dbSuccess, error: dbError } = await adminService.updateBusiness(businessId, { logo_url: data.publicUrl })
 
             if (dbSuccess) {
                 notify.updateLoading(loading, 'Logo actualizado')
                 updateLogoPreview(data.publicUrl)
-                currentBusiness.logo_url = data.publicUrl // Update local state
+                currentBusiness.logo_url = data.publicUrl
                 await adminService.logAction(null, businessId, 'UPDATE_LOGO', { url: data.publicUrl })
             } else {
                 notify.updateLoading(loading, 'Error guardando URL: ' + dbError, 'error')

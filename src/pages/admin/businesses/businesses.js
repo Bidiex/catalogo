@@ -116,15 +116,22 @@ function applyFilters() {
     // Filter by Status
     if (state.filter.status !== 'all') {
         result = result.filter(b => {
-            const isTrial = b.plan_type === 'trial' || !b.plan_type
-            const isActive = b.is_active && (b.plan_type === 'plus' || b.plan_type === 'pro')
+            // New logic: trial plan no longer exists.
+            const isTrial = false // Deprecated
+            const isActive = b.is_active
             const isPaused = !b.is_active
-            // Note: 'cancelled' logic depends on business rule (e.g. plan_expires_at < now AND !is_active),
-            // for now assuming 'paused' covers inactive.
+            // Cancelled logic: active but expired? or just paused?
+            // "Active" means is_active = true and plan not expired? 
+            // User said: "negocio inmediatamente entra en plan Plus... no existe plan trial"
+            // So if is_active = true, it's active.
+
+            // Check expiry for "Active" vs "Expired"?
+            // Using simple is_active for now as requested by user logic "si le cobro... lo manejo manualmente"
+            // But maybe filter "expired"?
+            // For now map chips to simple states
 
             switch (state.filter.status) {
-                case 'trial': return isTrial
-                case 'active': return isActive && b.is_active // redundant check but safe
+                case 'active': return isActive
                 case 'paused': return isPaused
                 // case 'cancelled': return ...
                 default: return true
@@ -150,15 +157,17 @@ function applyFilters() {
 
 function updateCounts() {
     const all = state.businesses.length
-    const trial = state.businesses.filter(b => b.plan_type === 'trial' || !b.plan_type).length
-    const active = state.businesses.filter(b => b.is_active && b.plan_type !== 'trial').length
+
+    // Logic updated
+    const active = state.businesses.filter(b => b.is_active).length
     const paused = state.businesses.filter(b => !b.is_active).length
 
     document.getElementById('count-all').textContent = all
-    document.getElementById('count-trial').textContent = trial
     document.getElementById('count-active').textContent = active
     document.getElementById('count-paused').textContent = paused
-    // Cancelled logic TBD
+
+    // Trial count removed or 0
+    // document.getElementById('count-trial').textContent = 0
 }
 
 function sortData() {
@@ -171,7 +180,7 @@ function sortData() {
             valA = a.is_active ? 1 : 0
             valB = b.is_active ? 1 : 0
         }
-        if (state.sort.col === 'plan') valA = a.plan_type || ''
+        // Removed plan sort
         if (state.sort.col === 'orders') valA = a.monthly_orders_count || 0
 
         // Null handling
@@ -243,10 +252,12 @@ function renderTable() {
         if (!b.is_active) {
             statusBadge = '<span class="badge paused">Inactivo</span>'
         } else {
-            statusBadge = '<span class="badge active">Activo</span>'
-            if (b.plan_type === 'trial') {
-                const days = adminUtils.getDaysRemaining(b.plan_expires_at)
-                statusBadge = `<span class="badge trial">Trial (${days}d)</span>`
+            // Check expiry
+            const days = adminUtils.getDaysRemaining(b.plan_expires_at)
+            if (days < 0) {
+                statusBadge = '<span class="badge paused" style="background:#fee2e2; color:#991b1b;">Vencido</span>'
+            } else {
+                statusBadge = `<span class="badge active">Activo (${days}d)</span>`
             }
         }
 
@@ -256,7 +267,7 @@ function renderTable() {
       <td style="font-weight: 500;">${b.name}</td>
       <!-- Email column removed -->
       <td>${statusBadge}</td>
-      <td style="text-transform: capitalize;">${b.plan_type || 'trial'}</td>
+      <!-- Plan column removed -->
       <td>${b.monthly_orders_count || 0}</td>
       <td style="white-space: nowrap;">${date}</td>
       <td style="text-align: right;">
@@ -270,11 +281,6 @@ function renderTable() {
         </div>
       </td>
     `
-        // Click row specific logic if needed (excluded actions)
-        // tr.addEventListener('click', (e) => {
-        //   if (!e.target.closest('.action-btn')) ...
-        // })
-
         tbody.appendChild(tr)
     })
 }
@@ -306,7 +312,6 @@ function renderPagination() {
     controls.appendChild(prevBtn)
 
     // Pages
-    // Simple logic: show all if < 7 pages, else truncated logic could be added
     for (let i = 1; i <= totalPages; i++) {
         const btn = document.createElement('button')
         btn.className = `page-btn ${i === state.currentPage ? 'active' : ''}`

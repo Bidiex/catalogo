@@ -165,6 +165,62 @@ export const ordersService = {
     },
 
     /**
+     * Update internal notes for an order
+     * @param {string} orderId 
+     * @param {string} notes 
+     */
+    async updateInternalNotes(orderId, notes) {
+        try {
+            const { data, error } = await supabase
+                .from('orders')
+                .update({ internal_notes: notes })
+                .eq('id', orderId)
+                .select()
+                .single()
+
+            if (error) throw error
+            return data
+        } catch (error) {
+            console.error('ordersService.updateInternalNotes error:', error)
+            throw error
+        }
+    },
+
+    /**
+     * Assign a delivery person to an order and update status to 'despachado'
+     * @param {string} orderId 
+     * @param {string|null} deliveryPersonId 
+     */
+    async assignDeliveryPerson(orderId, deliveryPersonId) {
+        try {
+            const updates = {
+                status: 'dispatched',
+                assigned_at: new Date().toISOString()
+            }
+
+            if (deliveryPersonId) {
+                updates.delivery_person_id = deliveryPersonId
+            }
+            // If null/undefined, we don't include it in the update payload.
+            // This prevents triggering any DB logic that might dislike explicit NULLs during status change,
+            // while preserving the existing NULL value (if it was pending/unassigned).
+
+            const { data, error } = await supabase
+                .from('orders')
+                .update(updates)
+                .eq('id', orderId)
+                .select()
+                .single()
+
+            if (error) throw error
+            return data
+        } catch (error) {
+            console.error('ordersService.assignDeliveryPerson error:', error)
+            throw error
+        }
+    },
+
+    /**
      * Get all orders for export within a date range
      * @param {string} businessId
      * @param {Object} options - { startDate, endDate, status }
@@ -185,6 +241,10 @@ export const ordersService = {
                         product_name,
                         product_id,
                         options
+                    ),
+                    delivery_persons (
+                        unique_code,
+                        name
                     )
                 `)
                 .eq('business_id', businessId)
