@@ -2335,21 +2335,31 @@ logoutBtn.addEventListener('click', async () => {
 // PRODUCT OPTIONS MANAGEMENT
 // ============================================
 
+// ============================================
+// PRODUCT OPTIONS MANAGEMENT
+// ============================================
+
 let currentProductForOptions = null
-let quickComments = []
-let sides = []
+let productOptionGroups = []
+let ungroupedOptions = []
+let editingGroup = null
 let editingOption = null
-let editingOptionType = null
+let editingOptionType = null // 'quick_comment' or 'side' (internal logic)
 
 const productOptionsModal = document.getElementById('productOptionsModal')
 const closeProductOptionsModal = document.getElementById('closeProductOptionsModal')
 const closeProductOptionsBtn = document.getElementById('closeProductOptionsBtn')
 const optionsProductName = document.getElementById('optionsProductName')
+
+// NEW: Containers for Groups
 const quickCommentsListDashboard = document.getElementById('quickCommentsListDashboard')
-const sidesListDashboard = document.getElementById('sidesListDashboard')
-const addQuickCommentBtn = document.getElementById('addQuickCommentBtn')
+const sidesListDashboard = document.getElementById('sidesListDashboard') // We might keep using this for sides or similar
+
+// Buttons
+const addQuickCommentBtn = document.getElementById('addQuickCommentBtn') // Will be "Agregar Grupo"
 const addSideBtn = document.getElementById('addSideBtn')
 
+// Option Modal
 const optionModal = document.getElementById('optionModal')
 const closeOptionModal = document.getElementById('closeOptionModal')
 const cancelOptionBtn = document.getElementById('cancelOptionBtn')
@@ -2359,19 +2369,51 @@ const optionNameInput = document.getElementById('optionNameInput')
 const optionPriceInput = document.getElementById('optionPriceInput')
 const optionPriceGroup = document.getElementById('optionPriceGroup')
 
+// GROUP MODAL ELEMENTS (To be created dynamically or used if exists)
+// We will reuse optionModal structure but inject new fields or create a new modal on the fly?
+// Better to create the HTML structure in JS for the Group Modal since it doesn't exist in HTML
+let groupModal = null
+
 // Función para abrir modal de opciones
 async function openProductOptionsModal(productId) {
   currentProductForOptions = products.find(p => p.id === productId)
   if (!currentProductForOptions) return
 
-  // Fix: Clear promotion context to avoid mixing up options
   currentPromotionForOptions = null
 
   // Resetear estado
-  quickComments = []
-  sides = []
+  productOptionGroups = []
+  ungroupedOptions = []
 
   optionsProductName.textContent = currentProductForOptions.name
+
+  // Update Button Text
+  // Replace the button to remove old listeners
+  const oldBtn = document.getElementById('addQuickCommentBtn')
+  const newBtn = oldBtn.cloneNode(true)
+  oldBtn.parentNode.replaceChild(newBtn, oldBtn)
+
+  // Update Button Text and Click Handler
+  newBtn.textContent = 'Nuevo Grupo'
+  newBtn.onclick = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    console.log('Opening Group Modal...')
+    openGroupModal()
+  }
+
+  // Restore Side button
+  const oldSideBtn = document.getElementById('addSideBtn')
+  const newSideBtn = oldSideBtn.cloneNode(true)
+  oldSideBtn.parentNode.replaceChild(newSideBtn, oldSideBtn)
+
+  newSideBtn.style.display = 'block'
+  newSideBtn.textContent = 'Agregar Acompañante'
+  newSideBtn.onclick = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    openOptionModal('side')
+  }
 
   await loadProductOptions(productId)
   renderProductOptionsDashboard()
@@ -2383,69 +2425,220 @@ async function openProductOptionsModal(productId) {
   productOptionsModal.style.display = 'flex'
 }
 
+let productSides = [] // New array for sides
+
 async function loadProductOptions(productId) {
   try {
-    const options = await productOptionsService.getByProduct(productId)
-    quickComments = options.filter(opt => opt.type === 'quick_comment')
-    sides = options.filter(opt => opt.type === 'side')
+    const data = await productOptionsService.getGroupsByProduct(productId)
+    productOptionGroups = data
+
+    // Fetch all options to separate Sides and Ungrouped Comments
+    const allOptions = await productOptionsService.getByProduct(productId)
+
+    // Filter Sides: Assuming type is 'side'
+    productSides = allOptions.filter(opt => opt.type === 'side')
+
+    // Filter Ungrouped Comments: type is 'quick_comment' (or null) AND group_id is null
+    ungroupedOptions = allOptions.filter(opt => (opt.type === 'quick_comment' || !opt.type) && !opt.group_id)
+
   } catch (error) {
     console.error('Error loading product options:', error)
-    quickComments = []
-    sides = []
+    productOptionGroups = []
+    ungroupedOptions = []
+    productSides = []
   }
 }
 
 function renderProductOptionsDashboard() {
-  // Renderizar comentarios rápidos
-  if (quickComments.length === 0) {
-    quickCommentsListDashboard.innerHTML = '<p class="empty-message" style="padding: 1rem; text-align: center; color: #9ca3af; font-size: 0.9rem;">No hay comentarios rápidos</p>'
-  } else {
-    quickCommentsListDashboard.innerHTML = quickComments.map(comment => `
-      <div class="option-item">
-        <div class="option-item-info">
-          <div class="option-item-name">${comment.name}</div>
-        </div>
-        <div class="option-item-actions">
-          <button class="btn-icon-small edit-option" data-id="${comment.id}" data-type="quick_comment">Editar</button>
-          <button class="btn-icon-small danger delete-option" data-id="${comment.id}">Eliminar</button>
-        </div>
-      </div>
-    `).join('')
+  quickCommentsListDashboard.innerHTML = ''
 
-    attachOptionEventListeners()
+  // Clean sides list if it exists (it should, based on HTML view)
+  if (sidesListDashboard) sidesListDashboard.innerHTML = ''
+
+  // ============================
+  // RENDER GROUPS
+  // ============================
+  if (productOptionGroups.length > 0) {
+    productOptionGroups.forEach(group => {
+      const groupEl = document.createElement('div')
+      groupEl.className = 'option-group-item'
+      groupEl.style.cssText = 'border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 1rem; padding: 1rem; background: #f9fafb;'
+
+      const typeLabel = group.type === 'radio' ? 'Selección Única (Radio)' : 'Selección Múltiple (Checkbox)'
+      const limitsLabel = group.type === 'checkbox' && group.max_selections > 0
+        ? `(Máx. ${group.max_selections})`
+        : ''
+
+      groupEl.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
+          <div>
+            <h4 style="margin: 0; font-weight: 600; color: #374151;">${group.name}</h4>
+            <span style="font-size: 0.75rem; color: #6b7280;">${typeLabel} ${limitsLabel}</span>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn-icon-small edit-group" data-id="${group.id}">Editar</button>
+            <button class="btn-icon-small danger delete-group" data-id="${group.id}">Eliminar</button>
+            <button class="btn-icon-small primary add-option-to-group" data-group-id="${group.id}" style="margin-left: 0.5rem;">+ Opción</button>
+          </div>
+        </div>
+        <div class="group-options-list">
+          ${group.options && group.options.length > 0 ? '' : '<p style="color: #9ca3af; font-size: 0.85rem; font-style: italic;">Sin opciones</p>'}
+        </div>
+      `
+
+      // Render Options inside Group
+      const optionsContainer = groupEl.querySelector('.group-options-list')
+      if (group.options && group.options.length > 0) {
+        group.options.forEach(opt => {
+          const optEl = document.createElement('div')
+          optEl.className = 'option-item'
+          optEl.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: white; border: 1px solid #eee; border-radius: 6px; margin-bottom: 0.25rem;'
+          optEl.innerHTML = `
+            <div class="option-item-info">
+              <span class="option-item-name" style="font-weight: 500;">${opt.name}</span>
+              ${parseFloat(opt.price) > 0 ? `<span class="option-item-price" style="margin-left: 0.5rem; color: #059669; font-size: 0.85rem;">+$${parseFloat(opt.price).toLocaleString()}</span>` : ''}
+            </div>
+            <div class="option-item-actions">
+              <button class="btn-icon-small edit-option" data-id="${opt.id}" data-group-id="${group.id}">Editar</button>
+              <button class="btn-icon-small danger delete-option" data-id="${opt.id}">Eliminar</button>
+            </div>
+          `
+          optionsContainer.appendChild(optEl)
+        })
+      }
+
+      quickCommentsListDashboard.appendChild(groupEl)
+    })
   }
 
-  // Renderizar acompañantes
-  if (sides.length === 0) {
-    sidesListDashboard.innerHTML = '<p class="empty-message" style="padding: 1rem; text-align: center; color: #9ca3af; font-size: 0.9rem;">No hay acompañantes</p>'
-  } else {
-    sidesListDashboard.innerHTML = sides.map(side => `
-      <div class="option-item">
-        <div class="option-item-info">
-          <div class="option-item-name">${side.name}</div>
-          <div class="option-item-price">+$${parseFloat(side.price).toLocaleString()}</div>
-        </div>
-        <div class="option-item-actions">
-          <button class="btn-icon-small edit-option" data-id="${side.id}" data-type="side">Editar</button>
-          <button class="btn-icon-small danger delete-option" data-id="${side.id}">Eliminar</button>
+  // ============================
+  // RENDER UNGROUPED (Legacy)
+  // ============================
+  if (ungroupedOptions.length > 0) {
+    const ungroupedEl = document.createElement('div')
+    ungroupedEl.className = 'option-group-item'
+    ungroupedEl.style.cssText = 'border: 1px dashed #9ca3af; border-radius: 8px; margin-bottom: 1rem; padding: 1rem; background: #fff;'
+
+    ungroupedEl.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
+        <div>
+          <h4 style="margin: 0; font-weight: 600; color: #6b7280;">Opciones Generales (Sin Grupo)</h4>
         </div>
       </div>
-    `).join('')
+      <div class="group-options-list"></div>
+    `
+    const optionsContainer = ungroupedEl.querySelector('.group-options-list')
+    ungroupedOptions.forEach(opt => {
+      const optEl = document.createElement('div')
+      optEl.className = 'option-item'
+      optEl.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: #f9fafb; border: 1px solid #eee; border-radius: 6px; margin-bottom: 0.25rem;'
+      optEl.innerHTML = `
+        <div class="option-item-info">
+          <span class="option-item-name" style="font-weight: 500;">${opt.name}</span>
+          ${parseFloat(opt.price) > 0 ? `<span class="option-item-price" style="margin-left: 0.5rem; color: #059669; font-size: 0.85rem;">+$${parseFloat(opt.price).toLocaleString()}</span>` : ''}
+        </div>
+        <div class="option-item-actions">
+          <button class="btn-icon-small edit-option" data-id="${opt.id}" data-group-id="">Editar</button>
+          <button class="btn-icon-small danger delete-option" data-id="${opt.id}">Eliminar</button>
+        </div>
+      `
+      optionsContainer.appendChild(optEl)
+    })
 
-    attachOptionEventListeners()
+    quickCommentsListDashboard.appendChild(ungroupedEl)
   }
+
+  if (productOptionGroups.length === 0 && ungroupedOptions.length === 0) {
+    quickCommentsListDashboard.innerHTML = '<p class="empty-message" style="padding: 2rem; text-align: center; color: #9ca3af;">No hay grupos de opciones configurados. <br>Crea un grupo para empezar.</p>'
+  }
+
+  // ============================
+  // RENDER SIDES (Acompañantes)
+  // ============================
+  if (sidesListDashboard) {
+    if (productSides.length > 0) {
+      // Check if we need a container or just list items
+      // Using simpler styling for sides
+      const sidesContainer = document.createElement('div')
+      sidesContainer.className = 'sides-container'
+      // Header for Sides REMOVED to avoid duplication
+      // sidesContainer.innerHTML = '<h4>Acompañantes</h4>' 
+
+      productSides.forEach(opt => {
+        const optEl = document.createElement('div')
+        optEl.className = 'option-item side-item'
+        // styles moved to CSS .side-item
+        optEl.innerHTML = `
+            <div class="option-item-info">
+              <span class="option-item-name" style="font-weight: 500;">${opt.name}</span>
+              ${parseFloat(opt.price) > 0 ? `<span class="option-item-price" style="margin-left: 0.5rem; color: #d97706; font-size: 0.85rem;">+$${parseFloat(opt.price).toLocaleString()}</span>` : ''}
+            </div>
+            <div class="option-item-actions">
+              <button class="btn-icon-small edit-option-side" data-id="${opt.id}">Editar</button>
+              <button class="btn-icon-small danger delete-option-side" data-id="${opt.id}">Eliminar</button>
+            </div>
+          `
+        sidesContainer.appendChild(optEl)
+      })
+
+      sidesListDashboard.appendChild(sidesContainer)
+      sidesListDashboard.style.display = 'block'
+    } else {
+      sidesListDashboard.innerHTML = '<p style="color: #9ca3af; font-size: 0.85rem; padding: 1rem; text-align: center;">Sin acompañantes</p>'
+      sidesListDashboard.style.display = 'block'
+    }
+  }
+
+  attachOptionEventListeners()
 }
 
 function attachOptionEventListeners() {
+  // Group Listeners
+  document.querySelectorAll('.edit-group').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = e.target.dataset.id
+      openGroupModal(id)
+    })
+  })
+
+  document.querySelectorAll('.delete-group').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = e.target.dataset.id
+      deleteGroup(id)
+    })
+  })
+
+  document.querySelectorAll('.add-option-to-group').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const groupId = e.target.dataset.groupId
+      openOptionModal('quick_comment', null, groupId)
+    })
+  })
+
+  // Option Listeners (Groups & Ungrouped)
   document.querySelectorAll('.edit-option').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const id = e.target.dataset.id
-      const type = e.target.dataset.type
-      openEditOptionModal(id, type)
+      openOptionModal('quick_comment', id)
     })
   })
 
   document.querySelectorAll('.delete-option').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = e.target.dataset.id
+      deleteOption(id)
+    })
+  })
+
+  // Side Listeners
+  document.querySelectorAll('.edit-option-side').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = e.target.dataset.id
+      openOptionModal('side', id)
+    })
+  })
+
+  document.querySelectorAll('.delete-option-side').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const id = e.target.dataset.id
       deleteOption(id)
@@ -2457,51 +2650,240 @@ function attachOptionEventListeners() {
 closeProductOptionsModal.addEventListener('click', () => {
   productOptionsModal.style.display = 'none'
   currentProductForOptions = null
+  addSideBtn.style.display = 'block' // Restore
 })
 
 closeProductOptionsBtn.addEventListener('click', () => {
   productOptionsModal.style.display = 'none'
   currentProductForOptions = null
+  addSideBtn.style.display = 'block' // Restore
 })
 
-// Abrir modal para agregar comentario rápido
-addQuickCommentBtn.addEventListener('click', () => {
-  openOptionModal('quick_comment')
-})
+// ============================================
+// GROUP MODAL MANAGEMENT
+// ============================================
+function createGroupModalHTML() {
+  if (document.getElementById('groupModal')) return
 
-// Abrir modal para agregar acompañante
-addSideBtn.addEventListener('click', () => {
-  openOptionModal('side')
-})
+  const modal = document.createElement('div')
+  modal.id = 'groupModal'
+  modal.className = 'modal' // Changed from modal-overlay to match other modals
+  modal.style.display = 'none'
+  modal.style.zIndex = '9999' // Ensure it is on top of productOptionsModal
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="groupModalTitle">Nuevo Grupo</h3>
+        <button class="btn-icon" id="closeGroupModal"><i class="ri-close-line"></i></button>
+      </div>
+      <form id="groupForm" class="modal-form">
+        <div class="form-group">
+          <label>Nombre del Grupo</label>
+          <input type="text" id="groupNameInput" class="form-input" placeholder="Ej: Salsas, Término, Adiciones" required>
+        </div>
+        <div class="form-group">
+          <label>Tipo de Selección</label>
+          <select id="groupTypeInput" class="form-select">
+            <option value="checkbox">Selección Múltiple (Checkboxes)</option>
+            <option value="radio">Selección Única (Radio Buttons)</option>
+          </select>
+        </div>
+        <div class="form-grid" id="groupLimitsContainer">
+          <div class="form-group">
+            <label>Mínimo (0 = Opcional)</label>
+            <input type="number" id="groupMinInput" class="form-input" value="0" min="0">
+          </div>
+          <div class="form-group">
+            <label>Máximo (0 = Ilimitado)</label>
+            <input type="number" id="groupMaxInput" class="form-input" value="0" min="0">
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="cancelGroupBtn">Cancelar</button>
+          <button type="submit" class="btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  `
+  document.body.appendChild(modal)
 
-function openOptionModal(type, optionId = null) {
-  editingOptionType = type
+  // Listeners
+  document.getElementById('closeGroupModal').addEventListener('click', closeGroupModalFn)
+  document.getElementById('cancelGroupBtn').addEventListener('click', closeGroupModalFn)
+  document.getElementById('groupForm').addEventListener('submit', handleGroupSubmit)
+
+  // Toggle limits visibility based on type
+  document.getElementById('groupTypeInput').addEventListener('change', (e) => {
+    const container = document.getElementById('groupLimitsContainer')
+    if (e.target.value === 'radio') {
+      container.style.opacity = '0.5'
+      document.getElementById('groupMinInput').disabled = true
+      document.getElementById('groupMaxInput').disabled = true
+    } else {
+      container.style.opacity = '1'
+      document.getElementById('groupMinInput').disabled = false
+      document.getElementById('groupMaxInput').disabled = false
+    }
+  })
+}
+
+function openGroupModal(groupId = null) {
+  try {
+    console.log('openGroupModal called with groupId:', groupId)
+    createGroupModalHTML()
+
+    const modal = document.getElementById('groupModal')
+    const title = document.getElementById('groupModalTitle')
+    const nameInput = document.getElementById('groupNameInput')
+    const typeInput = document.getElementById('groupTypeInput')
+    const minInput = document.getElementById('groupMinInput')
+    const maxInput = document.getElementById('groupMaxInput')
+
+    if (!modal) {
+      console.error('Modal element not found!')
+      return
+    }
+
+    if (groupId) {
+      editingGroup = productOptionGroups.find(g => g.id === groupId)
+      title.textContent = 'Editar Grupo'
+      nameInput.value = editingGroup.name
+      typeInput.value = editingGroup.type
+      minInput.value = editingGroup.min_selections
+      maxInput.value = editingGroup.max_selections
+
+      // Trigger change to update UI state
+      typeInput.dispatchEvent(new Event('change'))
+    } else {
+      editingGroup = null
+      title.textContent = 'Nuevo Grupo'
+      nameInput.value = ''
+      typeInput.value = 'checkbox'
+      minInput.value = 0
+      maxInput.value = 0
+      typeInput.dispatchEvent(new Event('change'))
+    }
+
+    modal.style.display = 'flex'
+  } catch (error) {
+    console.error('Error opening group modal:', error)
+    notify.error('Error al abrir el modal de grupo')
+  }
+}
+
+function closeGroupModalFn() {
+  document.getElementById('groupModal').style.display = 'none'
+  document.getElementById('groupForm').reset()
+  editingGroup = null
+}
+
+async function handleGroupSubmit(e) {
+  e.preventDefault()
+
+  const name = document.getElementById('groupNameInput').value
+  const type = document.getElementById('groupTypeInput').value
+  const min = parseInt(document.getElementById('groupMinInput').value) || 0
+  const max = parseInt(document.getElementById('groupMaxInput').value) || 0
+
+  const submitBtn = e.submitter || document.querySelector('#groupForm button[type="submit"]')
+
+  await buttonLoader.execute(submitBtn, async () => {
+    try {
+      const groupData = {
+        product_id: currentProductForOptions.id,
+        name,
+        type,
+        min_selections: min,
+        max_selections: max
+      }
+
+      if (editingGroup) {
+        await productOptionsService.updateGroup(editingGroup.id, groupData)
+        notify.success('Grupo actualizado')
+      } else {
+        groupData.display_order = productOptionGroups.length
+        await productOptionsService.createGroup(groupData)
+        notify.success('Grupo creado')
+      }
+
+      closeGroupModalFn()
+      await loadProductOptions(currentProductForOptions.id)
+      renderProductOptionsDashboard()
+
+    } catch (error) {
+      console.error('Error saving group:', error)
+      notify.error('Error al guardar grupo')
+    }
+  }, 'Guardando...')
+}
+
+async function deleteGroup(groupId) {
+  const result = await confirm.show({
+    title: '¿Eliminar grupo?',
+    message: 'Se eliminarán todas las opciones dentro de este grupo.',
+    confirmText: 'Eliminar',
+    cancelText: 'Cancelar',
+    type: 'danger'
+  })
+
+  if (!result) return
+
+  try {
+    await productOptionsService.deleteGroup(groupId)
+    notify.success('Grupo eliminado')
+    await loadProductOptions(currentProductForOptions.id)
+    renderProductOptionsDashboard()
+  } catch (error) {
+    console.error('Error deleting group:', error)
+    notify.error('Error al eliminar grupo')
+  }
+}
+
+// ============================================
+// OPTION MODAL ADAPTATION
+// ============================================
+
+let currentGroupIdForOption = null
+
+function openOptionModal(type, optionId = null, groupId = null) {
+  editingOptionType = type // Keep for compatibility
+  currentGroupIdForOption = groupId
 
   if (optionId) {
     // Editar
-    const allOptions = [...quickComments, ...sides]
-    editingOption = allOptions.find(opt => opt.id === optionId)
+    // Search in groups or ungrouped
+    let found = ungroupedOptions.find(opt => opt.id === optionId)
+    if (!found) {
+      for (const g of productOptionGroups) {
+        found = g.options.find(opt => opt.id === optionId)
+        if (found) {
+          currentGroupIdForOption = g.id
+          break
+        }
+      }
+    }
+    editingOption = found
 
-    optionModalTitle.textContent = type === 'quick_comment' ? 'Editar Comentario' : 'Editar Acompañante'
+    optionModalTitle.textContent = 'Editar Opción'
     optionNameInput.value = editingOption.name
     optionPriceInput.value = editingOption.price || 0
   } else {
     // Crear
     editingOption = null
-    optionModalTitle.textContent = type === 'quick_comment' ? 'Nuevo Comentario Rápido' : 'Nuevo Acompañante'
+    optionModalTitle.textContent = 'Nueva Opción'
     optionNameInput.value = ''
     optionPriceInput.value = 0
   }
 
-  // Mostrar/ocultar campo de precio según el tipo
-  if (type === 'quick_comment') {
-    optionPriceGroup.style.display = 'none'
-  } else {
-    optionPriceGroup.style.display = 'flex'
-  }
+  // Siempre mostrar precio (ahora todas pueden tener precio)
+  optionPriceGroup.style.display = 'flex'
 
   optionModal.style.display = 'flex'
 }
+
+// Update existing optionForm submit listener?? 
+// We need to modify the existing one to include group_id
+// Since we are replacing the block containing the event listener, we can rewrite it.
 
 function openEditOptionModal(optionId, type) {
   openOptionModal(type, optionId)
@@ -2511,6 +2893,7 @@ function closeOptionModalFn() {
   optionModal.style.display = 'none'
   editingOption = null
   editingOptionType = null
+  currentGroupIdForOption = null
   optionForm.reset()
 }
 
@@ -2522,14 +2905,14 @@ optionForm.addEventListener('submit', async (e) => {
   e.preventDefault()
 
   const name = optionNameInput.value
-  const price = (editingOptionType === 'side' || editingPromotionOptionType === 'side') ? parseFloat(optionPriceInput.value) : 0
+  const price = parseFloat(optionPriceInput.value) || 0
   const submitBtn = e.submitter || document.querySelector('#optionForm button[type="submit"]')
 
   await buttonLoader.execute(submitBtn, async () => {
     try {
       // Check if we're working with promotions or products
       if (currentPromotionForOptions) {
-        // PROMOTION OPTIONS
+        // PROMOTION OPTIONS (Legacy/Parallel logic?)
         const optionData = {
           promotion_id: currentPromotionForOptions.id,
           type: editingPromotionOptionType,
@@ -2551,19 +2934,31 @@ optionForm.addEventListener('submit', async (e) => {
         renderPromotionOptionsDashboard()
 
       } else if (currentProductForOptions) {
-        // PRODUCT OPTIONS
+        // PRODUCT OPTIONS (Groups & Sides)
+
+        // Determine type: use editingOptionType if set (e.g. 'side'), otherwise default to 'quick_comment'
+        const typeToSave = editingOptionType || 'quick_comment'
+
         const optionData = {
           product_id: currentProductForOptions.id,
-          type: editingOptionType,
+          type: typeToSave,
           name,
           price,
+          // Group ID is only for quick_comments belonging to a group
+          group_id: (typeToSave === 'side') ? null : (currentGroupIdForOption || null),
           display_order: editingOption ? editingOption.display_order : 0
         }
+
+        console.log('Saving option with data:', optionData)
 
         if (editingOption) {
           await productOptionsService.update(editingOption.id, optionData)
           notify.success('Opción actualizada')
         } else {
+          // Calculate new display order if possible, otherwise DB handles it or it's 0
+          // Ideally we fetch max order, but for now 0 or append
+          // If we have local list, we can use it.
+          // For now, let's just save.
           await productOptionsService.create(optionData)
           notify.success('Opción creada')
         }

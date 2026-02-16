@@ -8,6 +8,7 @@ import { favorites } from '../../utils/favorites.js'
 import { colorUtils } from '../../utils/colorUtils.js'
 import { ordersService } from '../../services/orders.js'
 import { businessService } from '../../services/business.js'
+import { productOptionsService } from '../../services/productOptions.js'
 import gsap from 'gsap'
 
 
@@ -1308,7 +1309,7 @@ async function openProductModal(productId) {
   renderSizeSelector()
 
   // Cargar opciones del producto
-  productOptions = await loadProductOptions(productId)
+  await loadProductOptionsCatalog(productId) // Renamed to avoid confusion/conflict
   renderProductOptions()
 
   productModal.style.display = 'flex'
@@ -1325,6 +1326,51 @@ async function openProductModal(productId) {
         productModalHeader.classList.remove('scrolled')
       }
     })
+  }
+}
+
+// Global variables for options (Catalog Scope)
+let productOptionGroups = []
+let ungroupedOptions = []
+
+async function loadProductOptionsCatalog(productId) {
+  try {
+    console.group('🛒 Loading Options for Product:', productId)
+
+    // Fetch Groups
+    try {
+      productOptionGroups = await productOptionsService.getGroupsByProduct(productId)
+    } catch (err) {
+      console.error('Error fetching groups:', err)
+      productOptionGroups = []
+    }
+    console.log('📦 Groups fetched:', productOptionGroups)
+
+    // Fetch All Options (to get ungrouped ones)
+    let allOptions = []
+    try {
+      allOptions = await productOptionsService.getByProduct(productId)
+    } catch (err) {
+      console.error('Error fetching all options:', err)
+      allOptions = []
+    }
+
+    // Filter ungrouped options: Include those with NO group_id OR those whose group_id doesn't match any loaded group
+    const groupIds = productOptionGroups.map(g => g.id.toString())
+    ungroupedOptions = allOptions.filter(opt => !opt.group_id || !groupIds.includes(opt.group_id.toString()))
+
+    console.log('🔸 Ungrouped options:', ungroupedOptions)
+
+    // For legacy headers logic in rendered function
+    productOptions = ungroupedOptions // Maintain compatibility for legacy render parts if reused
+
+    console.groupEnd()
+  } catch (error) {
+    console.error('❌ Critical Error loading product options:', error)
+    console.groupEnd()
+    productOptionGroups = []
+    ungroupedOptions = []
+    productOptions = []
   }
 }
 
@@ -1420,102 +1466,155 @@ function renderSizeSelector() {
 }
 
 function renderProductOptions() {
-  // Filtrar por tipo
-  const quickComments = productOptions.filter(opt => opt.type === 'quick_comment')
-  const sides = productOptions.filter(opt => opt.type === 'side')
+  const optionsContainer = document.getElementById('optionsContainer') || createOptionsContainer()
+  optionsContainer.innerHTML = '' // Clear existing
 
-  // Renderizar comentarios rápidos
+  // 1. Render Groups
+  productOptionGroups.forEach(group => {
+    const groupEl = document.createElement('div')
+    groupEl.className = 'option-group-section'
+    groupEl.dataset.groupId = group.id
+    groupEl.dataset.type = group.type
+    groupEl.dataset.min = group.min_selections
+    groupEl.dataset.max = group.max_selections
+    groupEl.style.marginBottom = '1.5rem'
+
+    const requiredBadge = group.min_selections > 0 ? `<span style="color:red; font-size: 0.8rem; margin-left: 0.25rem;">* Obligatorio</span>` : ''
+    const limitsLabel = group.type === 'checkbox' && group.max_selections > 0 ? `<span style="color:#6b7280; font-size: 0.8rem;">(Máx. ${group.max_selections})</span>` : ''
+    const subtitle = group.type === 'radio' ? 'Selecciona una opción' : `Selecciona opciones ${limitsLabel}`
+
+    groupEl.innerHTML = `
+      <div style="margin-bottom: 0.5rem;">
+        <h4 style="font-size: 1rem; font-weight: 600; color: #374151; margin: 0;">${group.name} ${requiredBadge}</h4>
+        <p style="font-size: 0.85rem; color: #9ca3af; margin: 0;">${subtitle}</p>
+      </div>
+      <div class="group-options-list" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
+    `
+
+    const listContainer = groupEl.querySelector('.group-options-list')
+
+    group.options.forEach(opt => {
+      const optId = `opt-${opt.id}`
+      const priceText = parseFloat(opt.price) > 0 ? `+$${parseFloat(opt.price).toLocaleString()}` : ''
+      const inputType = group.type === 'radio' ? 'radio' : 'checkbox'
+      const inputName = group.type === 'radio' ? `group-${group.id}` : `group-${group.id}[]`
+
+      const itemEl = document.createElement('div')
+      itemEl.className = 'option-item-wrapper'
+      itemEl.innerHTML = `
+        <input type="${inputType}" id="${optId}" name="${inputName}" value="${opt.id}" data-price="${opt.price}" data-name="${opt.name}" class="option-input">
+        <label for="${optId}" class="option-label">
+          <span style="font-weight: 500; color: #4b5563;">${opt.name}</span>
+          <span style="font-weight: 600; color: var(--color-primary);">${priceText}</span>
+        </label>
+      `
+      // Styling handled by CSS or existing classes
+      listContainer.appendChild(itemEl)
+    })
+
+    optionsContainer.appendChild(groupEl)
+  })
+
+
+  // 2. Render Ungrouped Options (Legacy Quick Comments & Sides)
+  // Use existing sections if they exist in HTML, or append to optionsContainer
+
+  const quickComments = ungroupedOptions.filter(opt => opt.type === 'quick_comment')
+  const sides = ungroupedOptions.filter(opt => opt.type === 'side')
+
   if (quickComments.length > 0) {
-    quickCommentsSection.classList.remove('hidden')
-    quickCommentsList.innerHTML = quickComments.map((comment, index) => `
-      <div class="quick-comment-option">
-        <input 
-          type="checkbox" 
-          id="comment-${comment.id}" 
-          name="quickComment" 
-          value="${comment.id}"
-          data-name="${comment.name}"
-        >
-        <label for="comment-${comment.id}">${comment.name}</label>
-      </div>
-    `).join('')
-
-    // Event listeners
-    quickCommentsList.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-      checkbox.addEventListener('change', (e) => {
-        if (e.target.checked) {
-          if (selectedQuickComments.length >= 3) {
-            e.target.checked = false
-            notify.warning('Máximo 3 comentarios rápidos')
-            return
-          }
-          selectedQuickComments.push({
-            id: e.target.value,
-            name: e.target.dataset.name
-          })
-        } else {
-          selectedQuickComments = selectedQuickComments.filter(c => c.id !== e.target.value)
-        }
-      })
-    })
-  } else {
-    quickCommentsSection.classList.add('hidden')
-  }
-
-  // Renderizar acompañantes
-  if (sides.length > 0) {
-    sidesSection.classList.remove('hidden')
-    sidesList.innerHTML = sides.map(side => `
-      <div class="side-option" data-id="${side.id}">
-        <div class="side-option-left">
-          <input 
-            type="checkbox" 
-            id="side-${side.id}" 
-            value="${side.id}"
-            data-name="${side.name}"
-            data-price="${side.price}"
-          >
-          <label for="side-${side.id}" class="side-option-name">${side.name}</label>
+    const qcSection = document.createElement('div')
+    qcSection.className = 'ungrouped-section mb-6'
+    qcSection.innerHTML = `
+      <h4 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem;">Comentarios Rápidos</h4>
+      <div class="quick-comments-list"></div>
+    `
+    const list = qcSection.querySelector('.quick-comments-list')
+    quickComments.forEach(comment => {
+      list.innerHTML += `
+        <div class="quick-comment-option">
+          <input type="checkbox" id="comment-${comment.id}" name="quickComment" value="${comment.id}" data-name="${comment.name}">
+          <label for="comment-${comment.id}">${comment.name}</label>
         </div>
-        <span class="side-option-price">+$${parseFloat(side.price).toLocaleString()}</span>
-      </div>
-    `).join('')
+      `
+    })
+    optionsContainer.appendChild(qcSection)
 
-    // Event listeners
-    sidesList.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+    // Add legacy limit listener (Max 3)
+    list.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
       checkbox.addEventListener('change', (e) => {
-        const sideOption = e.target.closest('.side-option')
-
-        if (e.target.checked) {
-          sideOption.classList.add('selected')
-          selectedSides.push({
-            id: e.target.value,
-            name: e.target.dataset.name,
-            price: parseFloat(e.target.dataset.price)
-          })
-        } else {
-          sideOption.classList.remove('selected')
-          selectedSides = selectedSides.filter(s => s.id !== e.target.value)
+        const checked = list.querySelectorAll('input:checked').length
+        if (checked > 3 && e.target.checked) {
+          e.target.checked = false;
+          notify.warning('Máximo 3 comentarios rápidos');
         }
       })
     })
-  } else {
-    sidesSection.classList.add('hidden')
   }
+
+  if (sides.length > 0) {
+    const sideSection = document.createElement('div')
+    sideSection.className = 'ungrouped-section mb-6'
+    sideSection.innerHTML = `
+      <h4 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem;">Acompañantes</h4>
+      <div class="sides-list"></div>
+    `
+    const list = sideSection.querySelector('.sides-list')
+    sides.forEach(side => {
+      list.innerHTML += `
+        <div class="side-option">
+          <div class="side-option-left">
+            <input type="checkbox" id="side-${side.id}" value="${side.id}" data-name="${side.name}" data-price="${side.price}">
+            <label for="side-${side.id}" class="side-option-name">${side.name}</label>
+          </div>
+          <span class="side-option-price">+$${parseFloat(side.price).toLocaleString()}</span>
+        </div>
+      `
+    })
+    optionsContainer.appendChild(sideSection)
+  }
+
+  // Clean up legacy hardcoded sections if they exist to avoid duplication
+  quickCommentsSection.classList.add('hidden')
+  sidesSection.classList.add('hidden')
 }
+
+// Helper to ensure container exists
+function createOptionsContainer() {
+  const container = document.createElement('div')
+  container.id = 'optionsContainer'
+  container.style.marginTop = '1rem'
+  // Insert after size selector
+  const sizeContainer = document.getElementById('sizeSelectorContainer')
+  if (sizeContainer && sizeContainer.parentNode) {
+    sizeContainer.parentNode.insertBefore(container, sizeContainer.nextSibling)
+  } else {
+    // Fallback
+    document.querySelector('.product-modal-body').appendChild(container)
+  }
+  return container
+}
+
 
 function closeProductModal() {
   clearUrl()
   productModal.style.display = 'none'
   selectedProduct = null
   productOptions = []
+  productOptionGroups = []
+  ungroupedOptions = []
   currentQuantity = 1
   selectedQuickComments = []
   selectedSides = []
+  selectedSize = null
 
   // Reset visibility states
   quickCommentsSection.classList.add('hidden')
   sidesSection.classList.add('hidden')
+
+  // Clear generated container
+  const container = document.getElementById('optionsContainer')
+  if (container) container.innerHTML = ''
 }
 
 productModalClose.addEventListener('click', closeProductModal)
@@ -1536,10 +1635,74 @@ increaseQty.addEventListener('click', () => {
 addToCartBtn.addEventListener('click', () => {
   if (!selectedProduct) return
 
+  // 1. Validate and Collect Groups
+  const collectedGroups = []
+  const groupSections = document.querySelectorAll('.option-group-section')
+  let validationError = null
+
+  for (const groupEl of groupSections) {
+    const groupId = groupEl.dataset.groupId
+    const groupName = groupEl.querySelector('h4').innerText.split('*')[0].trim()
+    const type = groupEl.dataset.type
+    const min = parseInt(groupEl.dataset.min) || 0
+    const max = parseInt(groupEl.dataset.max) || 0
+
+    const inputs = groupEl.querySelectorAll('input:checked')
+    const selectedCount = inputs.length
+
+    if (selectedCount < min) {
+      validationError = `Debes seleccionar al menos ${min} opción(es) en "${groupName}"`
+      break
+    }
+    if (type === 'checkbox' && max > 0 && selectedCount > max) {
+      validationError = `Puedes seleccionar máximo ${max} opción(es) en "${groupName}"`
+      break
+    }
+
+    if (selectedCount > 0) {
+      const selections = Array.from(inputs).map(inp => ({
+        id: inp.value,
+        name: inp.dataset.name,
+        price: parseFloat(inp.dataset.price) || 0
+      }))
+      collectedGroups.push({
+        id: groupId,
+        name: groupName,
+        selections: selections
+      })
+    }
+  }
+
+  if (validationError) {
+    notify.warning(validationError)
+    return
+  }
+
+  // 2. Collect Ungrouped (Legacy)
+  const legacyQuickComments = []
+  const qcInputs = document.querySelectorAll('.quick-comments-list input:checked')
+  qcInputs.forEach(inp => {
+    legacyQuickComments.push({
+      id: inp.value,
+      name: inp.dataset.name
+    })
+  })
+
+  const legacySides = []
+  const sideInputs = document.querySelectorAll('.sides-list input:checked')
+  sideInputs.forEach(inp => {
+    legacySides.push({
+      id: inp.value,
+      name: inp.dataset.name,
+      price: parseFloat(inp.dataset.price) || 0
+    })
+  })
+
   const options = {
-    quickComments: selectedQuickComments,
-    sides: selectedSides,
-    size: selectedSize // Add selected size to options
+    groups: collectedGroups, // NEW: Grouped options
+    quickComments: legacyQuickComments, // Legacy
+    sides: legacySides, // Legacy
+    size: selectedSize
   }
 
   // Guardar el nombre ANTES de cerrar el modal
@@ -1562,8 +1725,8 @@ addToCartBtn.addEventListener('click', () => {
   // Create product object with final price
   const productToAdd = {
     ...selectedProduct,
-    price: finalPrice, // Use size price or discounted price
-    displayName: productName // Store full name with size for display
+    price: finalPrice,
+    displayName: productName
   }
 
   cart.add(currentBusiness.id, productToAdd, currentQuantity, options)
@@ -1646,6 +1809,18 @@ function renderCartItems() {
 
     // Construir texto de opciones
     let optionsText = ''
+
+    // 1. Grupos de Opciones (New)
+    if (item.options?.groups && item.options.groups.length > 0) {
+      item.options.groups.forEach(group => {
+        const selectionsText = group.selections.map(s => {
+          return parseFloat(s.price) > 0 ? `${s.name} (+$${parseFloat(s.price).toLocaleString()})` : s.name
+        }).join(', ')
+        optionsText += `<div style="font-size: 0.8rem; color: #666; margin-top: 0.25rem;"><strong>${group.name}:</strong> ${selectionsText}</div>`
+      })
+    }
+
+    // 2. Comentarios rápidos (Legacy)
     if (item.options?.quickComments && item.options.quickComments.length > 0) {
       item.options.quickComments.forEach(comment => {
         optionsText += `<div style="font-size: 0.8rem; color: #666; margin-top: 0.25rem;">• ${comment.name}</div>`
@@ -1653,6 +1828,8 @@ function renderCartItems() {
     } else if (item.options?.quickComment) {
       optionsText += `<div style="font-size: 0.8rem; color: #666; margin-top: 0.25rem;">• ${item.options.quickComment.name}</div>`
     }
+
+    // 3. Acompañantes (Legacy)
     if (item.options?.sides && item.options.sides.length > 0) {
       optionsText += item.options.sides.map(side =>
         `<div style="font-size: 0.8rem; color: #666; margin-top: 0.25rem;">+ ${side.name} ($${parseFloat(side.price).toLocaleString()})</div>`
@@ -1866,9 +2043,19 @@ checkoutForm.addEventListener('submit', async (e) => {
         // Preparar items
         const orderItems = cartItems.map(item => {
           let unitPrice = parseFloat(item.price)
-          // Incluir precio de acompañantes en el precio unitario del item
+
+          // Incluir precio de acompañantes (Legacy)
           if (item.options?.sides) {
             unitPrice += item.options.sides.reduce((s, side) => s + parseFloat(side.price), 0)
+          }
+
+          // Incluir precio de grupos (New)
+          if (item.options?.groups) {
+            item.options.groups.forEach(group => {
+              if (group.selections) {
+                unitPrice += group.selections.reduce((s, sel) => s + parseFloat(sel.price), 0)
+              }
+            })
           }
 
           // Build options object properly
@@ -1940,16 +2127,35 @@ Método de pago: {metodo_pago}
       const basePrice = parseFloat(item.price)
       let itemPrice = basePrice
 
-      // Calcular precio con acompañantes
+      // Calcular precio con acompañantes (Legacy)
       if (item.options?.sides && item.options.sides.length > 0) {
         const sidesTotal = item.options.sides.reduce((sum, side) => sum + parseFloat(side.price), 0)
         itemPrice += sidesTotal
+      }
+
+      // Calcular precio de grupos (New)
+      if (item.options?.groups) {
+        item.options.groups.forEach(group => {
+          if (group.selections) {
+            itemPrice += group.selections.reduce((sum, sel) => sum + parseFloat(sel.price), 0)
+          }
+        })
       }
 
       const subtotal = itemPrice * item.quantity
 
       // Línea principal del producto
       let line = `- ${item.quantity}x ${item.options?.size ? `${item.name} - ${item.options.size.name}` : item.name} ($${subtotal.toLocaleString('es-CO')})`
+
+      // Grupos de Opciones (New)
+      if (item.options?.groups && item.options.groups.length > 0) {
+        item.options.groups.forEach(group => {
+          const selectionsText = group.selections.map(s => {
+            return parseFloat(s.price) > 0 ? `${s.name} (+$${parseFloat(s.price).toLocaleString('es-CO')})` : s.name
+          }).join(', ')
+          line += `\n  ${group.name}: ${selectionsText}`
+        })
+      }
 
       // Comentarios rápidos (Multi y Single/Legacy support)
       if (item.options?.quickComments && item.options.quickComments.length > 0) {
@@ -1975,6 +2181,14 @@ Método de pago: {metodo_pago}
       // Add sides price
       if (item.options?.sides) {
         price += item.options.sides.reduce((s, side) => s + parseFloat(side.price), 0)
+      }
+      // Add groups price
+      if (item.options?.groups) {
+        item.options.groups.forEach(group => {
+          if (group.selections) {
+            price += group.selections.reduce((s, sel) => s + parseFloat(sel.price), 0)
+          }
+        })
       }
       return sum + (price * item.quantity)
     }, 0)

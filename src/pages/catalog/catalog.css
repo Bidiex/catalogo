@@ -1429,6 +1429,34 @@
   font-weight: 600;
 }
 
+/* New styles for dynamic options */
+.option-item-wrapper {
+  display: flex;
+  align-items: flex-start;
+  /* Align to top in case of long text */
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  cursor: pointer;
+}
+
+.option-input {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  /* Slight optical adjustment */
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.option-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  cursor: pointer;
+  user-select: none;
+}
+
 /* Ajustes al modal para opciones */
 .product-modal-content {
   max-height: 95vh;
