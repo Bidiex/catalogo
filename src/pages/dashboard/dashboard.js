@@ -4,6 +4,7 @@ import { generateOrderInvoice } from '../../utils/invoiceGenerator.js'
 import { businessService } from '../../services/business.js'
 import { categoryService } from '../../services/categories.js'
 import { productService } from '../../services/products.js'
+import { dailyMenusService } from '../../services/dailyMenus.js'
 import { paymentMethodsService } from '../../services/paymentMethods.js'
 import { businessHoursService } from '../../services/businessHours.js'
 import { notify } from '../../utils/notifications.js'
@@ -206,6 +207,9 @@ async function init() {
 
     // Inicializar domiciliarios
     initDeliveryPersons()
+
+    // Inicializar Tabs de Productos
+    initProductsTabs()
 
     // Cargar negocio
     await loadBusiness()
@@ -1402,7 +1406,12 @@ function renderCategories(categoriesToRender = null) {
   categoriesList.innerHTML = catsToShow.map(category => `
     <div class="category-item" data-id="${category.id}">
       <div class="category-item-info">
-        <div class="category-item-name">${category.name}</div>
+        <div class="category-item-name">
+          ${category.name}
+          ${category.is_active === false
+      ? '<span class="status-badge" style="background:#f3f4f6; color:#6b7280; font-size:0.75rem; padding:0.1rem 0.5rem; border-radius:99px; margin-left:0.5rem;">Inactiva</span>'
+      : ''}
+        </div>
       </div>
       <div class="category-item-actions">
   <button class="btn-icon edit-category" data-id="${category.id}">
@@ -1682,6 +1691,7 @@ function openCategoryModal() {
   editingCategory = null
   document.getElementById('categoryModalTitle').textContent = 'Nueva Categoría'
   document.getElementById('categoryNameInput').value = ''
+  document.getElementById('categoryActiveInput').checked = true
   categoryModal.style.display = 'flex'
 }
 
@@ -1691,6 +1701,7 @@ function openEditCategoryModal(categoryId) {
 
   document.getElementById('categoryModalTitle').textContent = 'Editar Categoría'
   document.getElementById('categoryNameInput').value = editingCategory.name
+  document.getElementById('categoryActiveInput').checked = editingCategory.is_active !== false
   categoryModal.style.display = 'flex'
 }
 
@@ -1704,19 +1715,24 @@ document.getElementById('categoryForm').addEventListener('submit', async (e) => 
   e.preventDefault()
 
   const name = document.getElementById('categoryNameInput').value
+  const isActive = document.getElementById('categoryActiveInput').checked
   const submitBtn = e.submitter || document.querySelector('#categoryForm button[type="submit"]')
 
   await buttonLoader.execute(submitBtn, async () => {
     try {
       if (editingCategory) {
         // Actualizar
-        await categoryService.update(editingCategory.id, { name })
+        await categoryService.update(editingCategory.id, {
+          name,
+          is_active: isActive
+        })
         notify.success('Categoría actualizada')
       } else {
         // Crear
         await categoryService.create({
           business_id: currentBusiness.id,
           name,
+          is_active: isActive,
           display_order: categories.length
         })
         notify.success('Categoría creada')
@@ -6313,4 +6329,328 @@ function getTranslatedStatus(status) {
     'cancelled': 'Cancelado'
   }
   return map[status] || status
+}
+
+// ============================================
+// PRODUCTS TABS LOGIC
+// ============================================
+function initProductsTabs() {
+  const tabBtns = document.querySelectorAll('.products-tab-btn')
+  const tabContents = document.querySelectorAll('.products-tab-content')
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      // Remove active from all
+      tabBtns.forEach(b => b.classList.remove('active'))
+      tabContents.forEach(c => {
+        c.classList.remove('active')
+        c.style.display = 'none'
+      })
+
+      // Add active to clicked
+      btn.classList.add('active')
+      const tabId = btn.dataset.tab
+      const content = document.getElementById(`tab-${tabId}`)
+      if (content) {
+        content.classList.add('active')
+        content.style.display = 'block'
+      }
+
+      // Load data if needed
+      if (tabId === 'categories') {
+        loadCategories()
+      } else if (tabId === 'menus') {
+        loadDailyMenus()
+      } else if (tabId === 'products') {
+        loadProducts()
+      }
+    })
+  })
+
+  // Init Daily Menu UI
+  initDailyMenuUI()
+}
+
+async function loadCategories() {
+  try {
+    const list = document.getElementById('categoriesList')
+    if (list) list.innerHTML = '<p class="empty-message">Cargando categorías...</p>'
+
+    // Fetch fresh data
+    const data = await categoryService.getByBusiness(currentBusiness.id)
+    categories = data || []
+
+    renderCategories()
+  } catch (error) {
+    console.error('Error loading categories:', error)
+    notify.error('Error al cargar categorías')
+  }
+}
+
+async function loadProducts() {
+  try {
+    if (productsList) productsList.innerHTML = '<p class="empty-message">Cargando productos...</p>'
+    const data = await productService.getByBusiness(currentBusiness.id)
+    products = data || []
+    renderProducts()
+  } catch (error) {
+    console.error('Error loading products:', error)
+    if (productsList) productsList.innerHTML = '<p class="empty-message error">Error al cargar productos</p>'
+  }
+}
+
+
+
+// ============================================
+// DAILY MENUS LOGIC
+// ============================================
+let dailyMenus = []
+let editingDailyMenu = null
+let tempSelectedMenuProducts = new Set()
+
+function initDailyMenuUI() {
+  const addBtn = document.getElementById('addDailyMenuBtn')
+  if (addBtn) {
+    addBtn.addEventListener('click', () => {
+      openDailyMenuModal()
+    })
+  }
+
+  const closeBtn = document.getElementById('closeDailyMenuModal')
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      document.getElementById('dailyMenuModal').style.display = 'none'
+    })
+  }
+
+  const cancelBtn = document.getElementById('cancelDailyMenuBtn')
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => {
+      document.getElementById('dailyMenuModal').style.display = 'none'
+    })
+  }
+
+  const form = document.getElementById('dailyMenuForm')
+  if (form) {
+    form.addEventListener('submit', handleDailyMenuSubmit)
+  }
+
+  // Product search in menu modal
+  const searchInput = document.getElementById('searchMenuProductsInput')
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      renderMenuProductSelection(e.target.value)
+    })
+  }
+}
+
+async function loadDailyMenus() {
+  if (!currentBusiness) return
+
+  const container = document.getElementById('dailyMenusList')
+  if (!container) return
+
+  container.innerHTML = '<p class="empty-message">Cargando menús...</p>'
+
+  try {
+    dailyMenus = await dailyMenusService.getByBusiness(currentBusiness.id)
+    renderDailyMenusList()
+  } catch (error) {
+    console.error('Error loading daily menus:', error)
+    container.innerHTML = '<p class="empty-message error">Error al cargar menús del día</p>'
+    notify.error('Error al cargar menús del día')
+  }
+}
+
+function renderDailyMenusList() {
+  const container = document.getElementById('dailyMenusList')
+  if (!container) return
+  container.innerHTML = ''
+
+  if (dailyMenus.length === 0) {
+    // Span across all columns if grid
+    container.innerHTML = '<p class="empty-message" style="grid-column: 1 / -1;">No hay menús creados</p>'
+    return
+  }
+
+  dailyMenus.forEach(menu => {
+    const el = document.createElement('div')
+    el.className = 'daily-menu-item'
+    if (menu.is_active) el.classList.add('active')
+
+    const statusBadge = menu.is_active
+      ? '<span class="status-badge active">Activa</span>'
+      : '<span class="status-badge inactive">Inactiva</span>'
+
+    const productCount = menu.daily_menu_items ? menu.daily_menu_items.length : 0
+
+    el.innerHTML = `
+      <div class="menu-info">
+        <h4>
+          ${menu.name}
+          ${statusBadge}
+        </h4>
+        <p>
+          ${productCount} productos
+        </p>
+      </div>
+      <div class="actions" style="display: flex; gap: 0.5rem;">
+        <button class="btn-icon edit-menu-btn" title="Editar">
+          <i class="ri-edit-line"></i> <span>Editar</span>
+        </button>
+        <button class="btn-icon danger delete-menu-btn" title="Eliminar">
+          <i class="ri-delete-bin-line"></i> <span>Eliminar</span>
+        </button>
+      </div>
+    `
+
+    // Event Listeners
+    el.querySelector('.edit-menu-btn').addEventListener('click', () => openDailyMenuModal(menu))
+    el.querySelector('.delete-menu-btn').addEventListener('click', () => confirmDeleteDailyMenu(menu.id))
+
+    container.appendChild(el)
+  })
+}
+
+async function openDailyMenuModal(menu = null) {
+  editingDailyMenu = menu
+  tempSelectedMenuProducts = new Set()
+
+  if (menu && menu.daily_menu_items) {
+    menu.daily_menu_items.forEach(item => tempSelectedMenuProducts.add(item.product_id))
+  }
+
+  const modal = document.getElementById('dailyMenuModal')
+  const title = document.getElementById('dailyMenuModalTitle')
+  const nameInput = document.getElementById('dailyMenuNameInput')
+  const activeInput = document.getElementById('dailyMenuActiveInput')
+
+  title.textContent = menu ? 'Editar Menú' : 'Nuevo Menú del Día'
+  nameInput.value = menu ? menu.name : ''
+  activeInput.checked = menu ? menu.is_active : false
+
+  // Ensure products are loaded
+  if (products.length === 0) {
+    try {
+      products = await productService.getByBusiness(currentBusiness.id)
+    } catch (e) {
+      console.error("Error loading products for menu modal", e)
+    }
+  }
+
+  renderMenuProductSelection('')
+
+  modal.style.display = 'flex'
+}
+
+function renderMenuProductSelection(search = '') {
+  const container = document.getElementById('menuProductsSelectionList')
+  if (!container) return
+  container.innerHTML = ''
+
+  const filteredDetails = products.filter(p =>
+    p.name.toLowerCase().includes(search.toLowerCase())
+  )
+
+  if (filteredDetails.length === 0) {
+    container.innerHTML = '<p class="empty-message">No se encontraron productos</p>'
+    return
+  }
+
+  filteredDetails.forEach(product => {
+    const isChecked = tempSelectedMenuProducts.has(product.id)
+
+    const div = document.createElement('div')
+    div.style.display = 'flex'
+    div.style.alignItems = 'center'
+    div.style.padding = '0.5rem'
+    div.style.borderBottom = '1px solid #f1f5f9'
+
+    div.innerHTML = `
+       <label style="display: flex; align-items: center; width: 100%; cursor: pointer;">
+         <input type="checkbox" value="${product.id}" ${isChecked ? 'checked' : ''} style="margin-right: 0.75rem; transform: scale(1.1);">
+         <div style="flex: 1;">
+           <div style="font-weight: 500; font-size: 0.9rem;">${product.name}</div>
+           <div style="font-size: 0.8rem; color: #64748b;">$${parseFloat(product.price).toLocaleString()}</div>
+         </div>
+       </label>
+     `
+
+    const checkbox = div.querySelector('input')
+    checkbox.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        tempSelectedMenuProducts.add(product.id)
+      } else {
+        tempSelectedMenuProducts.delete(product.id)
+      }
+    })
+
+    container.appendChild(div)
+  })
+}
+
+async function handleDailyMenuSubmit(e) {
+  e.preventDefault()
+
+  const name = document.getElementById('dailyMenuNameInput').value
+  const isActive = document.getElementById('dailyMenuActiveInput').checked
+  const productIds = Array.from(tempSelectedMenuProducts)
+
+  // Validation
+  if (productIds.length === 0) {
+    notify.error('Debes seleccionar al menos un producto')
+    return
+  }
+
+  const submitBtn = e.target.querySelector('button[type="submit"]')
+  const originalText = submitBtn.textContent
+  submitBtn.disabled = true
+  submitBtn.textContent = 'Guardando...'
+
+  try {
+    let menuId
+    if (editingDailyMenu) {
+      // Update
+      await dailyMenusService.update(editingDailyMenu.id, {
+        name,
+        is_active: isActive
+      })
+      menuId = editingDailyMenu.id
+    } else {
+      // Create
+      const newMenu = await dailyMenusService.create({
+        business_id: currentBusiness.id,
+        name,
+        is_active: isActive
+      })
+      menuId = newMenu.id
+    }
+
+    // Update items
+    await dailyMenusService.updateItems(menuId, productIds)
+
+    notify.success('Menú guardado correctamente')
+    document.getElementById('dailyMenuModal').style.display = 'none'
+    loadDailyMenus()
+
+  } catch (error) {
+    console.error('Error saving menu:', error)
+    notify.error('Error al guardar el menú')
+  } finally {
+    submitBtn.disabled = false
+    submitBtn.textContent = originalText
+  }
+}
+
+async function confirmDeleteDailyMenu(id) {
+  if (confirm('¿Estás seguro de eliminar este menú?')) {
+    try {
+      await dailyMenusService.delete(id)
+      notify.success('Menú eliminado')
+      loadDailyMenus()
+    } catch (error) {
+      console.error('Error deleting menu:', error)
+      notify.error('Error al eliminar menú')
+    }
+  }
 }

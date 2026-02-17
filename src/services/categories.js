@@ -21,6 +21,26 @@ export const categoryService = {
   },
 
   /**
+   * Obtener solo categorías ACTIVAS de un negocio (Para el catálogo)
+   */
+  async getActiveByBusiness(businessId) {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('business_id', businessId)
+        .eq('is_active', true)
+        .order('display_order', { ascending: true })
+
+      if (error) throw error
+      return data || []
+    } catch (error) {
+      console.error('Error getting categories:', error)
+      throw error
+    }
+  },
+
+  /**
    * Crear categoría
    */
   async create(categoryData) {

@@ -2,6 +2,7 @@ import { supabase } from '../../config/supabase.js'
 import { cart } from '../../utils/cart.js'
 import { notify } from '../../utils/notifications.js'
 import { promotionsService } from '../../services/promotions.js'
+import { dailyMenusService } from '../../services/dailyMenus.js'
 import { promotionOptionsService } from '../../services/promotionOptions.js'
 import { productSizesService } from '../../services/productSizes.js'
 import { favorites } from '../../utils/favorites.js'
@@ -30,6 +31,7 @@ let selectedSides = []
 let selectedSize = null
 let currentSearchQuery = ''
 let currentCategoryFilter = 'all'
+let activeDailyMenu = null
 
 // Promotions State
 let promotions = []
@@ -291,15 +293,24 @@ function showMaintenanceState() {
 
 async function loadCatalogData() {
   try {
-    // Cargar categorías
+    // Cargar categorías activas
     const { data: categoriesData, error: categoriesError } = await supabase
       .from('categories')
       .select('*')
       .eq('business_id', currentBusiness.id)
+      .eq('is_active', true)
       .order('display_order', { ascending: true })
 
     if (categoriesError) throw categoriesError
     categories = categoriesData || []
+
+    // Cargar Menú del Día activo
+    try {
+      activeDailyMenu = await dailyMenusService.getActive(currentBusiness.id)
+    } catch (err) {
+      console.error('Error loading daily menu:', err)
+      activeDailyMenu = null
+    }
 
     // Cargar productos disponibles
     const { data: productsData, error: productsError } = await supabase
@@ -897,6 +908,11 @@ function renderCategoriesNav() {
   // Botón "Todos"
   let html = '<button class="category-nav-btn active" data-category="all">Todos</button>'
 
+  // Menú del Día (Si existe)
+  if (activeDailyMenu) {
+    html += `<button class="category-nav-btn category-nav-daily" data-category="daily-menu" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; border: none;"><i class="ri-restaurant-line"></i> ${activeDailyMenu.name}</button>`
+  }
+
   // Botón "Imperdibles" - Solo si hay productos con descuento activo
   const hasDiscountedProducts = products.some(p => p.discount)
   if (hasDiscountedProducts) {
@@ -987,6 +1003,12 @@ function renderDesktopSidebarCategories() {
       <i class="ri-apps-line"></i>
       <span>Todos</span>
     </div>
+    
+    ${activeDailyMenu ? `
+    <div class="sidebar-category-item category-daily-menu" data-category="daily-menu" onclick="window.selectSidebarCategory('daily-menu')" style="color: #16a34a; font-weight: 600; background: #f0fdf4;">
+      <i class="ri-restaurant-line"></i>
+      <span>${activeDailyMenu.name}</span>
+    </div>` : ''}
   `
 
   // "Imperdibles" option
@@ -1059,11 +1081,11 @@ function renderProducts(filteredCategoryId = 'all', searchQuery = '') {
     filteredProducts = filteredProducts.filter(p => p.discount)
   }
   // Filtrar por categoría normal
-  else if (filteredCategoryId !== 'all') {
+  else if (filteredCategoryId !== 'all' && filteredCategoryId !== 'daily-menu') {
     filteredProducts = filteredProducts.filter(p => p.category_id === filteredCategoryId)
   }
 
-  if (filteredProducts.length === 0) {
+  if (filteredProducts.length === 0 && filteredCategoryId !== 'daily-menu') {
     if (searchQuery.trim() || filteredCategoryId !== 'all') {
       productsContainer.innerHTML = '<p class="empty-message">No se encontraron productos</p>'
     } else {
@@ -1074,8 +1096,46 @@ function renderProducts(filteredCategoryId = 'all', searchQuery = '') {
 
   let html = ''
 
-  if (filteredCategoryId === 'all' && !searchQuery.trim()) {
-    // Mostrar por categorías (vista normal sin búsqueda)
+  // Special Case: Daily Menu Filter
+  if (filteredCategoryId === 'daily-menu' && activeDailyMenu) {
+    const menuProductIds = activeDailyMenu.daily_menu_items.map(item => item.product_id)
+    const menuProducts = filteredProducts.filter(p => menuProductIds.includes(p.id))
+
+    if (menuProducts.length > 0) {
+      // Sort
+      const sortMap = new Map()
+      activeDailyMenu.daily_menu_items.forEach((item, index) => sortMap.set(item.product_id, index))
+      menuProducts.sort((a, b) => (sortMap.get(a.id) || 0) - (sortMap.get(b.id) || 0))
+
+      html += renderCategorySection({ name: activeDailyMenu.name, isDailyMenu: true }, menuProducts)
+    } else {
+      productsContainer.innerHTML = '<p class="empty-message">No hay productos en el menú del día</p>'
+      return
+    }
+  }
+
+  else if (filteredCategoryId === 'all' && !searchQuery.trim()) {
+
+    // 1. Mostrar Menú del Día si está activo (Destacado)
+    if (activeDailyMenu) {
+      const menuProductIds = activeDailyMenu.daily_menu_items.map(item => item.product_id)
+      const menuProducts = filteredProducts.filter(p => menuProductIds.includes(p.id))
+
+      if (menuProducts.length > 0) {
+        // Sort
+        const sortMap = new Map()
+        activeDailyMenu.daily_menu_items.forEach((item, index) => sortMap.set(item.product_id, index))
+        menuProducts.sort((a, b) => (sortMap.get(a.id) || 0) - (sortMap.get(b.id) || 0))
+
+        // Determinamos si es el único contenido (sin categorías activas)
+        const isOnlyDailyMenu = categories.length === 0
+        const layout = isOnlyDailyMenu ? 'grid' : 'row'
+
+        html += renderCategorySection({ name: activeDailyMenu.name, isDailyMenu: true }, menuProducts, layout)
+      }
+    }
+
+    // 2. Mostrar por categorías (vista normal sin búsqueda)
     if (categories.length > 0) {
       categories.forEach(category => {
         const categoryProducts = filteredProducts.filter(p => p.category_id === category.id)
@@ -1090,17 +1150,32 @@ function renderProducts(filteredCategoryId = 'all', searchQuery = '') {
         html += renderCategorySection({ name: 'Otros' }, uncategorizedProducts)
       }
     } else {
-      // No hay categorías, mostrar todos
-      html += `<div class="products-grid">${filteredProducts.map(renderProductCard).join('')}</div>`
+      // No hay categorías, mostrar todos solo si NO estamos en modo "solo menú del día"
+      // Si solo hay menú del día, ya se mostró arriba (o se debería mostrar de forma especial)
+
+      const isOnlyDailyMenuMode = activeDailyMenu && categories.length === 0
+
+      if (!isOnlyDailyMenuMode) {
+        html += renderCategorySection({ name: 'Todos los productos' }, filteredProducts)
+      }
     }
-  } else {
-    // Mostrar como grid simple (cuando hay búsqueda o filtro de categoría)
-    html += `<div class="products-grid">${filteredProducts.map(renderProductCard).join('')}</div>`
+  }
+  else {
+    // Vista plana (búsqueda o categoría específica normal)
+    const sectionName = filteredCategoryId === 'all'
+      ? `Resultados para "${searchQuery}"`
+      : categories.find(c => c.id === filteredCategoryId)?.name || 'Productos'
+
+    html += renderCategorySection({ name: sectionName }, filteredProducts, 'grid')
   }
 
   productsContainer.innerHTML = html
 
-  // Event listeners para las cards
+  // Re-attach event listeners
+  attachProductCardListeners()
+}
+
+function attachProductCardListeners() {
   document.querySelectorAll('.product-card').forEach(card => {
     card.addEventListener('click', (e) => {
       // No abrir modal si se hizo click en el botón de favoritos
@@ -1114,11 +1189,14 @@ function renderProducts(filteredCategoryId = 'all', searchQuery = '') {
   })
 }
 
-function renderCategorySection(category, categoryProducts) {
+
+function renderCategorySection(category, categoryProducts, layout = 'row') {
+  const containerClass = layout === 'grid' ? 'products-grid' : 'products-row'
+
   return `
     <div class="category-section">
       <h2>${category.name}</h2>
-      <div class="products-row">
+      <div class="${containerClass}">
         ${categoryProducts.map(renderProductCard).join('')}
       </div>
     </div>
