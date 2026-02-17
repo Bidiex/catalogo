@@ -1107,7 +1107,7 @@ function renderProducts(filteredCategoryId = 'all', searchQuery = '') {
       activeDailyMenu.daily_menu_items.forEach((item, index) => sortMap.set(item.product_id, index))
       menuProducts.sort((a, b) => (sortMap.get(a.id) || 0) - (sortMap.get(b.id) || 0))
 
-      html += renderCategorySection({ name: activeDailyMenu.name, isDailyMenu: true }, menuProducts)
+      html += renderCategorySection({ name: activeDailyMenu.name, isDailyMenu: true }, menuProducts, 'grid')
     } else {
       productsContainer.innerHTML = '<p class="empty-message">No hay productos en el menú del día</p>'
       return
