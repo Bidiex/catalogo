@@ -5317,17 +5317,47 @@ window.viewOrderDetails = async (orderId) => {
     const orderData = await ordersService.getOrderDetails(orderId)
 
     // Render Modal Content
-    const itemsHtml = orderData.items.map(item => `
+    // Render Modal Content
+    const itemsHtml = orderData.items.map(item => {
+      let optionsHtml = ''
+
+      // 1. Grupos de Opciones (Nuevo sistema)
+      if (item.options?.groups && item.options.groups.length > 0) {
+        optionsHtml += item.options.groups.map(group => {
+          // Formatear selecciones: Nombre (+$Precio)
+          const selections = group.selections.map(s => {
+            return parseFloat(s.price) > 0 ? `${s.name} (+$${parseFloat(s.price).toLocaleString()})` : s.name
+          }).join(', ')
+          return `<div style="font-size: 0.8rem; color: #6b7280; margin-top: 2px;"><strong>${group.name}:</strong> ${selections}</div>`
+        }).join('')
+      }
+
+      // 2. Comentarios Rápidos (Múltiples - Nuevo)
+      if (item.options?.quickComments && item.options.quickComments.length > 0) {
+        optionsHtml += item.options.quickComments.map(c =>
+          `<div style="font-size: 0.8rem; color: #6b7280; margin-top: 2px;">Nota: ${c.name}</div>`
+        ).join('')
+      }
+      // Fallback: Comentario Rápido Único (Legacy)
+      else if (item.options?.quickComment) {
+        optionsHtml += `<div style="font-size: 0.8rem; color: #6b7280; margin-top: 2px;">Nota: ${item.options.quickComment.name}</div>`
+      }
+
+      // 3. Acompañantes (Legacy)
+      if (item.options?.sides && item.options.sides.length > 0) {
+        optionsHtml += `<div style="font-size: 0.8rem; color: #6b7280; margin-top: 2px;">+ ${item.options.sides.map(s => s.name).join(', ')}</div>`
+      }
+
+      return `
       <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #eee; padding: 0.5rem 0;">
         <div>
           <div style="font-weight: 500;">${item.quantity}x ${item.product_name}</div>
           ${item.options?.size ? `<div style="font-size: 0.8rem; color: #6b7280;">Tamaño: ${item.options.size.name}</div>` : ''}
-          ${item.options?.quickComment ? `<div style="font-size: 0.8rem; color: #6b7280;">Nota: ${item.options.quickComment.name}</div>` : ''}
-          ${item.options?.sides?.length ? `<div style="font-size: 0.8rem; color: #6b7280;">+ ${item.options.sides.map(s => s.name).join(', ')}</div>` : ''}
+          ${optionsHtml}
         </div>
         <div style="font-weight: 600;">$${parseFloat(item.total_price).toLocaleString()}</div>
       </div>
-    `).join('')
+    `}).join('')
 
     content.innerHTML = `
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">

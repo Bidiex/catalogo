@@ -476,9 +476,7 @@
   color: var(--color-text);
 }
 
-.card-content {
-  /* Contenedor flexible */
-}
+/* .card-content {} removed */
 
 /* Business info */
 .business-info {
@@ -1175,9 +1173,7 @@
    PRODUCT OPTIONS MANAGEMENT
    ============================================ */
 
-.options-section {
-  /* Ya definido */
-}
+/* .options-section {} removed */
 
 .options-list {
   display: flex;
@@ -1242,6 +1238,16 @@
 
 .btn-icon-small.danger:hover {
   background: #fee;
+}
+
+.btn-icon-small.primary {
+  background: #8b5cf6;
+  color: white;
+  border: none;
+}
+
+.btn-icon-small.primary:hover {
+  background: #7c3aed;
 }
 
 .btn-manage-options {
