@@ -1499,14 +1499,20 @@ function renderProducts(productsToRender = null) {
   document.querySelectorAll('.edit-product').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const id = e.target.dataset.id || e.target.closest('.edit-product').dataset.id
-      openEditProductModal(id)
+      // Wrap with loader (although synchronous, provides visual feedback)
+      buttonLoader.execute(btn, async () => {
+        openEditProductModal(id)
+      })
     })
   })
 
   document.querySelectorAll('.manage-options').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const id = e.target.dataset.id || e.target.closest('.manage-options').dataset.id
-      openProductOptionsModal(id)
+      // Wrap with async loader for data fetching
+      buttonLoader.execute(btn, async () => {
+        await openProductOptionsModal(id)
+      })
     })
   })
 
@@ -1520,7 +1526,10 @@ function renderProducts(productsToRender = null) {
   document.querySelectorAll('.manage-discount').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const id = e.target.dataset.id || e.target.closest('.manage-discount').dataset.id
-      openDiscountModal(id)
+      // Wrap with async loader
+      buttonLoader.execute(btn, async () => {
+        await openDiscountModal(id)
+      })
     })
   })
 }

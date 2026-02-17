@@ -3441,6 +3441,12 @@ input:checked+.slider:before {
   gap: 1rem;
   border-bottom: 1px solid var(--color-border);
   margin-bottom: 1.5rem;
+  /* Fix overflow on mobile */
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
+  /* Ensure scrollbar doesn't overlay too tight if visible */
 }
 
 .products-tab-btn {
@@ -3458,6 +3464,8 @@ input:checked+.slider:before {
   transition: all 0.3s ease;
   margin-bottom: -1px;
   /* Overlap border */
+  flex-shrink: 0;
+  /* Prevent shrinking on mobile */
 }
 
 .products-tab-btn:hover {
@@ -3522,6 +3530,23 @@ input:checked+.slider:before {
   .daily-menus-grid {
     grid-template-columns: 1fr;
   }
+
+  .daily-menu-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .daily-menu-item .menu-info {
+    width: 100%;
+  }
+
+  .daily-menu-item .actions {
+    width: 100%;
+    justify-content: flex-end;
+    padding-top: 0.75rem;
+    border-top: 1px solid #f1f5f9;
+  }
 }
 
 .daily-menu-item.active {
@@ -3548,4 +3573,47 @@ input:checked+.slider:before {
 .status-badge.inactive {
   background-color: #f3f4f6;
   color: #6b7280;
+}
+
+/* ============================================
+   BUTTON LOADERS
+   ============================================ */
+.btn-loading {
+  position: relative;
+  cursor: wait !important;
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.btn-spinner {
+  animation: spin 1s linear infinite;
+  display: inline-block;
+  margin-right: 0.5rem;
+  font-size: 1.1em;
+  vertical-align: middle;
+}
+
+/* Ensure spinner replaces icon seamlessly */
+.btn-icon .btn-spinner {
+  margin-right: 0;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================
+   MOBILE MODAL FIXES
+   ============================================ */
+@media (max-width: 768px) {
+  #promotionModal .form-row {
+    flex-direction: column;
+    gap: 1rem;
+  }
 }
