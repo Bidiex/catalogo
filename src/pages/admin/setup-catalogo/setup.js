@@ -337,19 +337,17 @@ function validateAndPreview(data) {
         }
         previewData.push(item)
 
-        // Render in preview (first 5)
-        if (index < 5) {
-            const tr = document.createElement('tr')
-            if (!isValid) tr.className = 'row-error'
-            tr.innerHTML = `
-                <td>${category || '-'}</td>
-                <td>${name || '-'}</td>
-                <td>${price || '-'}</td>
-                <td>${imgStatus}</td>
-                <td>${isValid ? '<i class="fa-solid fa-check text-success"></i>' : '<i class="fa-solid fa-times text-danger"></i>'}</td>
-            `
-            tbody.appendChild(tr)
-        }
+        // Render in preview (All items)
+        const tr = document.createElement('tr')
+        if (!isValid) tr.className = 'row-error'
+        tr.innerHTML = `
+            <td>${category || '-'}</td>
+            <td>${name || '-'}</td>
+            <td>${price || '-'}</td>
+            <td>${imgStatus}</td>
+            <td>${isValid ? '<i class="fa-solid fa-check text-success"></i>' : '<i class="fa-solid fa-times text-danger"></i>'}</td>
+        `
+        tbody.appendChild(tr)
     })
 
     container.style.display = 'block'

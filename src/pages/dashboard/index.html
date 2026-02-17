@@ -52,10 +52,7 @@
           <i class="ri-motorbike-line"></i>
           <span>Domiciliarios</span>
         </a>
-        <a href="#" class="nav-item" data-section="categories">
-          <i class="ri-folder-line"></i>
-          <span>Categorías</span>
-        </a>
+
         <a href="#" class="nav-item" data-section="products">
           <i class="ri-shopping-bag-line"></i>
           <span>Productos</span>
@@ -973,56 +970,101 @@
           </section>
         </div>
 
-        <!-- Section: Categorías -->
-        <div id="section-categories" class="dashboard-section" style="display: none;">
-          <section class="card">
-            <div class="card-header">
-              <h2><i class="ri-folder-line"></i> Categorías</h2>
-              <button id="addCategoryBtn" class="btn-primary-small">
-                <i class="ri-add-line"></i> Agregar
-              </button>
-            </div>
-            <div class="card-content">
-              <!-- Search Bar -->
-              <div class="search-bar-container">
-                <div class="search-bar">
-                  <i class="ri-search-line"></i>
-                  <input type="text" id="searchCategoriesInput" placeholder="Buscar categorías..." />
-                  <button id="clearCategoriesSearch" class="search-clear" style="display: none;">
-                    <i class="ri-close-line"></i>
-                  </button>
-                </div>
-              </div>
-              <div id="categoriesList" class="categories-list">
-                <p class="empty-message">No hay categorías aún</p>
-              </div>
-            </div>
-          </section>
-        </div>
 
-        <!-- Section: Productos -->
+
+        <!-- Section: Productos (Tabs: Productos, Categorías, Menús) -->
         <div id="section-products" class="dashboard-section" style="display: none;">
           <section class="card">
-            <div class="card-header">
-              <h2><i class="ri-shopping-bag-line"></i> Productos</h2>
-              <button id="addProductBtn" class="btn-primary-small">
-                <i class="ri-add-line"></i> Agregar
+
+            <!-- Custom Tabs Header -->
+            <div class="products-tabs-header">
+              <button class="products-tab-btn active" data-tab="products">
+                <i class="ri-shopping-bag-line"></i> Productos
+              </button>
+              <button class="products-tab-btn" data-tab="categories">
+                <i class="ri-folder-line"></i> Categorías
+              </button>
+              <button class="products-tab-btn" data-tab="menus">
+                <i class="ri-calendar-event-line"></i> Menús del día
               </button>
             </div>
-            <div class="card-content">
-              <!-- Search Bar -->
-              <div class="search-bar-container">
-                <div class="search-bar">
-                  <i class="ri-search-line"></i>
-                  <input type="text" id="searchProductsInput" placeholder="Buscar productos..." />
-                  <button id="clearProductsSearch" class="search-clear" style="display: none;">
-                    <i class="ri-close-line"></i>
+
+            <div class="card-content" style="padding-top: 1.5rem;">
+
+              <!-- Tab Content: Productos -->
+              <div id="tab-products" class="products-tab-content active">
+                <div class="tab-header-actions"
+                  style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                  <h3 style="margin: 0; font-size: 1.1rem;">Gestionar Productos</h3>
+                  <button id="addProductBtn" class="btn-primary-small">
+                    <i class="ri-add-line"></i> Nuevo Producto
                   </button>
                 </div>
+
+                <!-- Search Bar -->
+                <div class="search-bar-container">
+                  <div class="search-bar">
+                    <i class="ri-search-line"></i>
+                    <input type="text" id="searchProductsInput" placeholder="Buscar productos..." />
+                    <button id="clearProductsSearch" class="search-clear" style="display: none;">
+                      <i class="ri-close-line"></i>
+                    </button>
+                  </div>
+                </div>
+                <div id="productsList" class="products-list">
+                  <p class="empty-message">No hay productos aún</p>
+                </div>
               </div>
-              <div id="productsList" class="products-list">
-                <p class="empty-message">No hay productos aún</p>
+
+              <!-- Tab Content: Categorías -->
+              <div id="tab-categories" class="products-tab-content" style="display: none;">
+                <div class="tab-header-actions"
+                  style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                  <h3 style="margin: 0; font-size: 1.1rem;">Gestionar Categorías</h3>
+                  <button id="addCategoryBtn" class="btn-primary-small">
+                    <i class="ri-add-line"></i> Nueva Categoría
+                  </button>
+                </div>
+
+                <div class="search-bar-container">
+                  <div class="search-bar">
+                    <i class="ri-search-line"></i>
+                    <input type="text" id="searchCategoriesInput" placeholder="Buscar categorías..." />
+                    <button id="clearCategoriesSearch" class="search-clear" style="display: none;">
+                      <i class="ri-close-line"></i>
+                    </button>
+                  </div>
+                </div>
+                <div id="categoriesList" class="categories-list">
+                  <p class="empty-message">No hay categorías aún</p>
+                </div>
               </div>
+
+              <!-- Tab Content: Menús del Día -->
+              <div id="tab-menus" class="products-tab-content" style="display: none;">
+                <div class="tab-header-actions"
+                  style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                  <h3 style="margin: 0; font-size: 1.1rem;">Menús del Día</h3>
+                  <button id="addDailyMenuBtn" class="btn-primary-small">
+                    <i class="ri-add-line"></i> Nuevo Menú
+                  </button>
+                </div>
+
+                <div class="info-alert"
+                  style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 1rem; margin-bottom: 1.5rem;">
+                  <p style="margin: 0; font-size: 0.9rem; color: #1e40af;">
+                    <i class="ri-information-line"></i> <strong>¿Cómo funciona?</strong>
+                    Crea diferentes menús (ej: Lunes, Martes, Especial) y activa solo uno a la vez.
+                    El menú activo aparecerá destacado al inicio de tu catálogo.
+                  </p>
+                </div>
+
+                <div id="dailyMenusList" class="daily-menus-grid">
+                  <!-- JS Generated -->
+                  <p class="empty-message">No hay menús creados</p>
+                </div>
+              </div>
+
             </div>
           </section>
         </div>
@@ -1489,9 +1531,65 @@
           <label for="categoryNameInput">Nombre de la categoría *</label>
           <input type="text" id="categoryNameInput" required>
         </div>
+        <div class="form-group">
+          <label class="switch-container">
+            <input type="checkbox" id="categoryActiveInput" checked>
+            <span class="switch-slider"></span>
+            <span class="switch-label">Categoría activa</span>
+          </label>
+        </div>
+
+
         <div class="modal-actions">
           <button type="button" class="btn-secondary" id="cancelCategoryBtn">Cancelar</button>
           <button type="submit" class="btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal para crear/editar menú del día -->
+  <div id="dailyMenuModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3 id="dailyMenuModalTitle">Nuevo Menú del Día</h3>
+        <button class="modal-close" id="closeDailyMenuModal">&times;</button>
+      </div>
+      <form id="dailyMenuForm" class="modal-form">
+
+        <div class="form-group">
+          <label for="dailyMenuNameInput">Nombre del Menú *</label>
+          <input type="text" id="dailyMenuNameInput" placeholder="Ej: Lunes, Especial Fin de Semana" required>
+        </div>
+
+        <div class="form-group">
+          <label class="switch-container">
+            <input type="checkbox" id="dailyMenuActiveInput">
+            <span class="switch-slider"></span>
+            <span class="switch-label">Activar menú ahora (desactivará otros)</span>
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label>Seleccionar Productos</label>
+          <div class="search-bar"
+            style="margin-bottom: 0.5rem; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="ri-search-line" style="color: #94a3b8;"></i>
+            <input type="text" id="searchMenuProductsInput" placeholder="Buscar productos..."
+              style="border: none; outline: none; width: 100%;">
+          </div>
+          <div id="menuProductsSelectionList" class="products-selection-list"
+            style="max-height: 250px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 0.5rem;">
+            <!-- JS will populate checkboxes here -->
+            <p class="empty-message">Cargando productos...</p>
+          </div>
+          <small>Selecciona los productos que aparecerán en este menú. El orden de selección será el orden de
+            visualización.</small>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="cancelDailyMenuBtn">Cancelar</button>
+          <button type="submit" class="btn-primary">Guardar Menú</button>
         </div>
       </form>
     </div>
