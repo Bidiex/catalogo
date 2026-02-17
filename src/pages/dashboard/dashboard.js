@@ -2684,8 +2684,8 @@ function createGroupModalHTML() {
         <div class="form-group">
           <label>Tipo de Selección</label>
           <select id="groupTypeInput" class="form-select">
-            <option value="checkbox">Selección Múltiple (Checkboxes)</option>
-            <option value="radio">Selección Única (Radio Buttons)</option>
+            <option value="checkbox">Selección Múltiple</option>
+            <option value="radio">Selección Única</option>
           </select>
         </div>
         <div class="form-grid" id="groupLimitsContainer">
