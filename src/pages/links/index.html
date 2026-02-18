@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enlaces - TraeGo</title>
+    <link rel="icon" type="image/svg+xml" href="/src/assets/icon_traego.svg" />
+    <link rel="stylesheet" href="/src/styles/global.css">
+    <link rel="stylesheet" href="./links-page.css">
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+        rel="stylesheet" />
+</head>
+
+<body>
+
+    <div id="loading" class="loading-screen">
+        <div class="spinner"></div>
+    </div>
+
+    <main class="links-page" id="linksPage" style="display: none;">
+        <!-- Header: Logo + Nombre -->
+        <header class="links-page__header">
+            <div class="links-page__logo-container">
+                <img id="businessLogo" class="links-page__logo" src="" alt="Logo" />
+            </div>
+            <h1 id="businessName" class="links-page__name"></h1>
+            <p id="businessDesc" class="links-page__desc"></p>
+        </header>
+
+        <!-- Enlaces -->
+        <section id="linksContainer" class="links-page__buttons">
+            <!-- Se inyectarán botones aquí -->
+        </section>
+
+        <!-- Footer -->
+        <footer class="links-page__footer">
+            <a href="https://traego.com" target="_blank" class="powered-by">
+                <span>Powered by</span>
+                <img src="/src/assets/logo_traego.svg" alt="TraeGo" />
+            </a>
+        </footer>
+    </main>
+
+    <div id="errorState" class="error-state" style="display: none;">
+        <span class="material-symbols-rounded icon">link_off</span>
+        <h2>Página no encontrada</h2>
+        <p>El enlace que buscas no existe o ha sido desactivado.</p>
+    </div>
+
+    <script type="module" src="./links-page.js"></script>
+</body>
+
+</html>

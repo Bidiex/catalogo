@@ -20,7 +20,9 @@ import { imageService } from '../../services/images.js'
 import { supportService } from '../../services/support.js'
 import { ordersService } from '../../services/orders.js'
 import { deliveryPersonsService } from '../../services/deliveryPersons.js'
+
 import { initAnalytics, updateAnalytics } from './analytics.js'
+import { initLinksEditor } from '../links/links-editor.js'
 import * as XLSX from 'xlsx'
 // ============================================
 // ESTADO GLOBAL
@@ -269,6 +271,18 @@ function initSidebarNavigation() {
 
       if (section === 'delivery-persons' && currentBusiness) {
         loadDeliveryPersons()
+      }
+
+      if (section === 'delivery-persons' && currentBusiness) {
+        loadDeliveryPersons()
+      }
+
+      if (section === 'links' && currentBusiness) {
+        // Pass slug for public url display
+        const slugDisplay = document.getElementById('editorSlugDisplay')
+        if (slugDisplay) slugDisplay.textContent = currentBusiness.slug
+
+        initLinksEditor(currentBusiness)
       }
 
       // Cambiar sección
@@ -790,7 +804,10 @@ function updatePageTitle(sectionName) {
     'promotions': 'Promociones',
     'delivery-persons': 'Gestión de Domiciliarios',
     'whatsapp': 'Mensaje de WhatsApp',
-    'support': 'Soporte y Ayuda'
+    'delivery-persons': 'Gestión de Domiciliarios',
+    'whatsapp': 'Mensaje de WhatsApp',
+    'support': 'Soporte y Ayuda',
+    'links': 'Centro de Enlaces'
   }
 
   pageTitle.textContent = titles[sectionName] || 'Dashboard'

@@ -1,0 +1,231 @@
+/* Base styles inherit from global.css but we ensure isolation */
+body {
+    background-color: #f8fafc;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.links-page {
+    width: 100%;
+    max-width: 680px;
+    /* Ancho típico de Linktree */
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-grow: 1;
+}
+
+/* Header */
+.links-page__header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    width: 100%;
+}
+
+.links-page__logo-container {
+    width: 96px;
+    height: 96px;
+    margin: 0 auto 1rem;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid #e2e8f0;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.links-page__logo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.links-page__name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 0.5rem 0;
+    line-height: 1.2;
+}
+
+.links-page__desc {
+    font-size: 0.95rem;
+    color: #64748b;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Container Buttons */
+.links-page__buttons {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    flex-grow: 1;
+}
+
+/* Button Component */
+.btn-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 1rem 1.5rem;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    position: relative;
+    min-height: 56px;
+    box-sizing: border-box;
+    text-align: center;
+    line-height: 1.2;
+    overflow-wrap: break-word;
+}
+
+.btn-link:hover {
+    transform: scale(1.02);
+}
+
+.btn-link:active {
+    transform: scale(0.98);
+}
+
+/* Styles Variations */
+/* Filled (Sólido) */
+.btn-link--filled {
+    background-color: var(--primary-color, #1e293b);
+    color: white;
+    border: none;
+}
+
+.btn-link--filled:hover {
+    opacity: 0.9;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Outlined (Borde) */
+.btn-link--outlined {
+    background-color: transparent;
+    color: var(--primary-color, #1e293b);
+    border: 2px solid var(--primary-color, #1e293b);
+}
+
+.btn-link--outlined:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+/* Shapes */
+.shape--rounded {
+    border-radius: 9999px;
+}
+
+.shape--semi-rounded {
+    border-radius: 12px;
+}
+
+.shape--square {
+    border-radius: 0;
+}
+
+/* Catalog Button Special Styling */
+.btn-link--catalog {
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    /* El botón catálogo siempre destacará un poco más si se desea, 
+     pero por ahora sigue el estilo global o filled por defecto */
+}
+
+/* Footer */
+.links-page__footer {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.powered-by {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.powered-by:hover {
+    opacity: 1;
+}
+
+.powered-by span {
+    font-size: 0.8rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.powered-by img {
+    height: 20px;
+    width: auto;
+}
+
+/* Loading & Error */
+.loading-screen {
+    position: fixed;
+    inset: 0;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #1e293b;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.error-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    text-align: center;
+    padding: 2rem;
+    color: #64748b;
+}
+
+.error-state .icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    color: #94a3b8;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .links-page {
+        padding: 1.5rem 1rem;
+    }
+}

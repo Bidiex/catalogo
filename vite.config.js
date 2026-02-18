@@ -20,6 +20,8 @@ export default defineConfig({
         'admin-business-detail': resolve(__dirname, 'src/pages/admin/business-detail/index.html'),
         'admin-setup-catalogo': resolve(__dirname, 'src/pages/admin/setup-catalogo/index.html'),
         'admin-support': resolve(__dirname, 'src/pages/admin/support/index.html'),
+
+        'links': resolve(__dirname, 'src/pages/links/index.html'),
         '404': resolve(__dirname, 'src/pages/404/index.html'),
       },
       output: {
@@ -59,7 +61,12 @@ export default defineConfig({
           }
           // Handle /c/:slug routes
           else if (req.url.startsWith('/c/') && !req.url.includes('.')) {
-            req.url = '/src/pages/catalog/index.html'
+            // Check if it is a links page request: /c/:slug/links
+            if (req.url.endsWith('/links')) {
+              req.url = '/src/pages/links/index.html'
+            } else {
+              req.url = '/src/pages/catalog/index.html'
+            }
           }
 
           next()
@@ -91,7 +98,16 @@ export default defineConfig({
           }
           // Handle /c/:slug routes
           else if (req.url.startsWith('/c/') && !req.url.includes('.')) {
-            req.url = '/catalog.html'
+            if (req.url.endsWith('/links')) {
+              req.url = '/src/pages/links/index.html' // In preview we might need to point to dist file? 
+              // Actually in preview server (npm run preview), we serve dist. 
+              // The rewrite input 'links' generates assets/..., but we need to map to the html file.
+              // Vite build output for 'links' input will probably be 'links.html' at root of dist based on moveFile logic below?
+              // Wait, the moveFile logic moves src/pages/X/index.html to dist/X.html usually.
+              req.url = '/links.html'
+            } else {
+              req.url = '/catalog.html'
+            }
           }
           // Handle query strings (e.g., /auth/callback?code=...)
           else {
@@ -132,7 +148,9 @@ export default defineConfig({
           moveFile(resolve(srcDir, 'admin/businesses/index.html'), resolve(distDir, 'admin-businesses.html'))
           moveFile(resolve(srcDir, 'admin/business-detail/index.html'), resolve(distDir, 'admin-business-detail.html'))
           moveFile(resolve(srcDir, 'admin/setup-catalogo/index.html'), resolve(distDir, 'admin-setup-catalogo.html'))
+
           moveFile(resolve(srcDir, 'admin/support/index.html'), resolve(distDir, 'admin-support.html'))
+          moveFile(resolve(srcDir, 'links/index.html'), resolve(distDir, 'links.html'))
           moveFile(resolve(srcDir, '404/index.html'), resolve(distDir, '404.html'))
 
           // Optional: Clean up src directory in dist if empty or no longer needed
