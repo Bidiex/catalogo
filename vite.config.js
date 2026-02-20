@@ -68,6 +68,10 @@ export default defineConfig({
               req.url = '/src/pages/catalog/index.html'
             }
           }
+          // Handle /l/:slug routes (Centro de Enlaces pública)
+          else if (req.url.startsWith('/l/') && !req.url.includes('.')) {
+            req.url = '/src/pages/links/index.html'
+          }
 
           next()
         })
@@ -99,15 +103,14 @@ export default defineConfig({
           // Handle /c/:slug routes
           else if (req.url.startsWith('/c/') && !req.url.includes('.')) {
             if (req.url.endsWith('/links')) {
-              req.url = '/src/pages/links/index.html' // In preview we might need to point to dist file? 
-              // Actually in preview server (npm run preview), we serve dist. 
-              // The rewrite input 'links' generates assets/..., but we need to map to the html file.
-              // Vite build output for 'links' input will probably be 'links.html' at root of dist based on moveFile logic below?
-              // Wait, the moveFile logic moves src/pages/X/index.html to dist/X.html usually.
               req.url = '/links.html'
             } else {
               req.url = '/catalog.html'
             }
+          }
+          // Handle /l/:slug routes (Centro de Enlaces pública)
+          else if (req.url.startsWith('/l/') && !req.url.includes('.')) {
+            req.url = '/links.html'
           }
           // Handle query strings (e.g., /auth/callback?code=...)
           else {

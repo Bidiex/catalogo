@@ -3,6 +3,7 @@ import { authService } from '../../services/auth.js'
 import { notify, confirm } from '../../utils/notifications.js'
 
 let currentState = {
+    business: null,
     businessId: null,
     pageId: null,
     items: [],
@@ -10,48 +11,86 @@ let currentState = {
     draggedItem: null
 }
 
-const UI = {
-    container: document.getElementById('links-editor-container'),
-    list: document.getElementById('linksListConfig'),
-    preview: document.getElementById('previewButtonsContainer'),
-    btnAdd: document.getElementById('addLinkBtn'),
-    btnAddBottom: document.getElementById('btnAddLinkBottom'),
-    copyBtn: document.getElementById('copyPublicLinkBtn'),
-    bgColorInput: document.getElementById('bgColorInput'),
-    toggleDesignBtn: document.getElementById('toggleDesignOptionsBtn'),
-    designContainer: document.getElementById('designOptionsContainer'),
-    arrow: document.getElementById('designOptionsArrow'),
-
-    // Modal Elements
-    modal: document.getElementById('linkModal'),
-    form: document.getElementById('linkForm'),
-    modalTitle: document.getElementById('linkModalTitle'),
-    closeBtn: document.getElementById('closeLinkModalBtn'),
-    cancelBtn: document.getElementById('cancelLinkBtn'),
-
-    // Form Inputs
-    inputId: document.getElementById('linkId'),
-    inputLabel: document.getElementById('linkLabel'),
-    inputUrl: document.getElementById('linkUrl'),
-    inputStyle: document.getElementById('linkButtonStyle'),
-    inputIsActive: document.getElementById('linkIsActive'),
-    styleOptions: document.querySelectorAll('.style-option')
-}
+let isInitialized = false
+let UI = {}
 
 // --- Initialization ---
 
-export async function initLinksEditor() {
+export async function initLinksEditor(businessData = null) {
     try {
-        const user = await authService.getCurrentUser()
-        if (!user || !user.business_id) return
+        // Always re-select UI elements to ensure we have valid references if the DOM was updated
+        // although links-editor structure is usually static in this project.
+        initUI()
 
-        currentState.businessId = user.business_id
+        // 2. Set Context
+        if (businessData) {
+            currentState.business = businessData
+            currentState.businessId = businessData.id
+        } else {
+            const user = await authService.getCurrentUser()
+            if (!user || !user.business_id) return
+            currentState.businessId = user.business_id
+            // Fetch business if not passed (though dashboard usually passes it)
+            // For now assume logic continues, loadData generally just needs ID
+        }
+
+        console.log('Initializing Links Editor for:', currentState.businessId)
+
+        // 3. Load Data
         await loadData()
+
+        // 4. Setup Listeners
+        // Setup Listeners
+        // We call this every time init is called (navigation), so we use a safe attach method
         setupEventListeners()
 
     } catch (error) {
         console.error('Error init links editor:', error)
         notify.error('Error al cargar el editor de enlaces')
+    }
+}
+
+function initUI() {
+    UI = {
+        container: document.getElementById('links-editor-container'),
+        list: document.getElementById('linksListConfig'),
+        preview: document.getElementById('previewButtonsContainer'),
+        btnAdd: document.getElementById('addLinkBtn'),
+        copyBtn: document.getElementById('copyPublicLinkBtn'),
+        slugDisplay: document.getElementById('editorSlugDisplay'),
+
+        // Preview Elements
+        previewLogo: document.getElementById('previewLogo'),
+        previewName: document.getElementById('previewName'),
+
+        // Background UI
+        bgBtn: document.getElementById('backgroundBtn'),
+        bgModal: document.getElementById('backgroundModal'),
+        bgForm: document.getElementById('backgroundForm'),
+        bgImageInput: document.getElementById('bg-image-input'),
+        bgImagePreview: document.getElementById('bg-image-preview'),
+        bgImageActions: document.getElementById('bg-image-actions'),
+        btnChangeBg: document.getElementById('btn-change-bg-image'),
+        btnRemoveBg: document.getElementById('btn-remove-bg-image'),
+        bgColorInput: document.getElementById('bg-color-input'),
+        bgColorPreview: document.getElementById('bg-color-preview-swatch'),
+        closeBgModalBtn: document.getElementById('closeBackgroundModalBtn'),
+        cancelBgBtn: document.getElementById('cancelBackgroundBtn'),
+
+        // Modal Elements (Link)
+        modal: document.getElementById('linkModal'),
+        form: document.getElementById('linkForm'),
+        modalTitle: document.getElementById('linkModalTitle'),
+        closeBtn: document.getElementById('closeLinkModalBtn'),
+        cancelBtn: document.getElementById('cancelLinkBtn'),
+
+        // Form Inputs (Link)
+        inputId: document.getElementById('linkId'),
+        inputLabel: document.getElementById('linkLabel'),
+        inputUrl: document.getElementById('linkUrl'),
+        inputStyle: document.getElementById('linkButtonStyle'),
+        inputIsActive: document.getElementById('linkIsActive'),
+        styleOptions: document.querySelectorAll('.style-option')
     }
 }
 
@@ -65,8 +104,8 @@ async function loadData() {
         currentState.pageId = page.id
         currentState.pageSettings = {
             background_color: page.background_color || '#f8fafc',
-            button_style_default: page.button_style_default || 'filled',
-            slug: page.slug
+            background_image_url: page.background_image_url || null,
+            button_style_default: page.button_style_default || 'filled'
         }
 
         // 2. Get Items
@@ -75,10 +114,6 @@ async function loadData() {
 
         // 3. Render
         render()
-        updatePreview() // Updates header info
-
-        // Init UI state
-        if (UI.bgColorInput) UI.bgColorInput.value = currentState.pageSettings.background_color
 
     } catch (error) {
         console.error('Error loading data:', error)
@@ -87,56 +122,56 @@ async function loadData() {
 }
 
 function setupEventListeners() {
-    // Modal Triggers
-    if (UI.btnAdd) UI.btnAdd.addEventListener('click', () => openModal())
-    if (UI.btnAddBottom) UI.btnAddBottom.addEventListener('click', () => openModal())
+    console.log('Setting up Link Editor Listeners...')
 
-    // Modal Actions
-    if (UI.closeBtn) UI.closeBtn.addEventListener('click', closeModal)
-    if (UI.cancelBtn) UI.cancelBtn.addEventListener('click', closeModal)
-    if (UI.form) UI.form.addEventListener('submit', handleFormSubmit)
+    // Simplest approach: Direct onclick assignment.
+    // This overwrites previous listeners and avoids duplication without cloning.
 
-    // Style Selection in Modal
+    if (UI.btnAdd) UI.btnAdd.onclick = () => openModal()
+
+    if (UI.bgBtn) UI.bgBtn.onclick = openBackgroundModal
+
+    if (UI.copyBtn) UI.copyBtn.onclick = processCopyLink
+
+    if (UI.closeBtn) UI.closeBtn.onclick = closeModal
+    if (UI.cancelBtn) UI.cancelBtn.onclick = closeModal
+    if (UI.form) UI.form.onsubmit = handleFormSubmit
+
+    if (UI.closeBgModalBtn) UI.closeBgModalBtn.onclick = closeBackgroundModal
+    if (UI.cancelBgBtn) UI.cancelBgBtn.onclick = closeBackgroundModal
+    if (UI.bgForm) UI.bgForm.onsubmit = handleBackgroundSubmit
+
+    // Style Selection
     if (UI.styleOptions) {
         UI.styleOptions.forEach(option => {
-            option.addEventListener('click', () => {
+            option.onclick = () => {
                 UI.styleOptions.forEach(opt => opt.classList.remove('selected'))
                 option.classList.add('selected')
                 if (UI.inputStyle) UI.inputStyle.value = option.dataset.style
-            })
+            }
         })
     }
 
-    // Background Color
-    if (UI.bgColorInput) {
-        UI.bgColorInput.addEventListener('input', (e) => {
-            currentState.pageSettings.background_color = e.target.value
-            savePageSettings() // Debounced or immediate? Let's do immediate for now or small debounce logic if needed
-            updatePreview()
-        })
+    // Background Image Handling
+    if (UI.bgImagePreview) {
+        UI.bgImagePreview.onclick = () => UI.bgImageInput && UI.bgImageInput.click()
+    }
+    if (UI.btnChangeBg) {
+        UI.btnChangeBg.onclick = () => UI.bgImageInput && UI.bgImageInput.click()
+    }
+    if (UI.bgImageInput) {
+        UI.bgImageInput.onchange = handleBgImageSelect
+    }
+    if (UI.btnRemoveBg) {
+        UI.btnRemoveBg.onclick = handleRemoveBgImage
     }
 
-    // Toggle Design Options
-    if (UI.toggleDesignBtn) {
-        UI.toggleDesignBtn.addEventListener('click', () => {
-            const isHidden = UI.designContainer.style.display === 'none'
-            UI.designContainer.style.display = isHidden ? 'block' : 'none'
-            UI.arrow.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)'
-        })
+    // Color swatch live preview
+    if (UI.bgColorInput && UI.bgColorPreview) {
+        UI.bgColorInput.oninput = () => {
+            UI.bgColorPreview.style.backgroundColor = UI.bgColorInput.value
+        }
     }
-
-    // Drag and Drop (Simple Sortable Implementation)
-    // Note: For a robust drag and drop, a library is better, but we'll stick to basic HTML5 API for now if needed, 
-    // or just buttons for moving up/down if simplier.
-    // Let's implement basic HTML5 Drag & Drop on the list container
-
-    /* 
-       Note: Complex D&D logic omitted for brevity in this specific task unless strictly required. 
-       If the user really needs reordering, we can add "Move Up/Down" buttons or basic D&D handlers later.
-       For now, we render the list in order.
-    */
-
-    if (UI.copyBtn) UI.copyBtn.addEventListener('click', copyPublicLink)
 }
 
 // --- Rendering ---
@@ -152,9 +187,6 @@ function renderList() {
 
     if (currentState.items.length === 0) {
         UI.list.innerHTML = `<div class="empty-state text-center p-4 text-gray-500">No hay enlaces creados.</div>`
-        if (UI.btnAddBottom) UI.btnAddBottom.style.display = 'none'
-    } else {
-        if (UI.btnAddBottom) UI.btnAddBottom.style.display = 'flex'
     }
 
     currentState.items.forEach(item => {
@@ -210,23 +242,44 @@ function renderPreview() {
     if (!UI.preview) return
     UI.preview.innerHTML = ''
 
+    // Update Header Info (Logo/Name)
+    if (UI.previewName && currentState.business) {
+        UI.previewName.textContent = currentState.business.name || 'Mi Negocio'
+    }
+    if (UI.previewLogo && currentState.business) {
+        if (currentState.business.logo_url) {
+            UI.previewLogo.src = currentState.business.logo_url
+            UI.previewLogo.style.display = 'block'
+        } else {
+            // Placeholder or Hide
+            UI.previewLogo.src = 'https://via.placeholder.com/80?text=Logo' // Or specific logic
+        }
+    }
+
     // Update container background
     const screen = UI.preview.closest('.mockup-screen')
     if (screen) {
-        screen.style.backgroundColor = currentState.pageSettings.background_color || '#f8fafc'
+        const { background_image_url, background_color } = currentState.pageSettings
+
+        if (background_image_url) {
+            screen.style.backgroundImage = `url('${background_image_url}')`
+            screen.style.backgroundSize = 'cover'
+            screen.style.backgroundPosition = 'center'
+            screen.style.backgroundRepeat = 'no-repeat'
+        } else {
+            const color = background_color || '#f8fafc'
+            screen.style.backgroundImage = `linear-gradient(180deg, ${color} 0%, ${adjustColorBrightness(color, -20)} 100%)`
+            screen.style.backgroundSize = 'auto'
+        }
     }
 
     currentState.items.forEach(item => {
-        if (!item.is_active) return // Don't show inactive in preview logic? Or show faded? Usually hide.
+        // En preview solo mostramos activos O si el usuario quiere ver todo?
+        if (!item.is_active) return
 
         const btn = document.createElement('a')
-        // const styleClass = getButtonStyleClass(item.button_style || 'filled') 
-        // We'll use the CSS classes we added: btn-link--filled, etc.
 
         let styleType = item.button_style || 'filled'
-        // Map old styles if necessary, or assume clean state
-
-        // Define classes based on selection
         let baseClass = 'btn-link'
         let modClass = 'btn-link--filled'
         let shapeClass = 'shape--semi-rounded'
@@ -235,11 +288,9 @@ function renderPreview() {
 
         if (styleType === 'rounded') shapeClass = 'shape--rounded'
         if (styleType === 'square') shapeClass = 'shape--square'
+        if (styleType === 'semi-rounded') shapeClass = 'shape--semi-rounded'
 
         btn.className = `${baseClass} ${modClass} ${shapeClass}`
-
-        // Apply dynamic color if needed (for now using CSS vars or fixed)
-        // btn.style.setProperty('--primary-color', '#1e293b') // Could be dynamic from business settings
 
         btn.href = item.url || '#'
         btn.target = '_blank'
@@ -249,7 +300,7 @@ function renderPreview() {
     })
 }
 
-// --- Modal Logic ---
+// --- Link Modal Logic ---
 
 function openModal(item = null) {
     if (!UI.modal) return
@@ -307,21 +358,19 @@ async function handleFormSubmit(e) {
         is_active: UI.inputIsActive ? UI.inputIsActive.checked : true
     }
 
-    if (!formData.label || !formData.url) {
+    if (!formData.label) {
         notify.error('Por favor completa los campos requeridos')
         return
     }
+    // URL valida para no-catalogo
+    // if (!isCatalog && !url) ... (logic handled by html required mostly, but good to check)
 
     const id = UI.inputId ? UI.inputId.value : ''
-
-    // Determine loading state if we had a button loader... 
-    // We'll just show toast for now
 
     try {
         if (id) {
             // Update
             const updated = await linksService.updateLinkItem(id, formData)
-            // Update local state
             const idx = currentState.items.findIndex(i => i.id === id)
             if (idx !== -1) currentState.items[idx] = updated
             notify.success('Enlace actualizado')
@@ -334,7 +383,7 @@ async function handleFormSubmit(e) {
         }
 
         closeModal()
-        render()
+        render() // Only update Preview here
 
     } catch (error) {
         console.error('Error saving link:', error)
@@ -364,36 +413,135 @@ async function deleteLink(id) {
     }
 }
 
-async function savePageSettings() {
-    // Simple save for settings
-    try {
-        await linksService.upsertLinkPage(currentState.businessId, currentState.pageSettings)
-    } catch (error) {
-        console.error('Error saving page settings:', error)
+// --- Background Modal Logic ---
+
+let tempBgFile = null
+let tempBgColor = '#f8fafc'
+
+function openBackgroundModal() {
+    if (!UI.bgModal) return
+
+    // Reset temp state
+    tempBgFile = null
+    tempBgColor = currentState.pageSettings.background_color || '#f8fafc'
+
+    if (UI.bgColorInput) UI.bgColorInput.value = tempBgColor
+    if (UI.bgColorPreview) UI.bgColorPreview.style.backgroundColor = tempBgColor
+
+    // Update UI Preview in Modal (not the real preview)
+    updateModalBgPreview(currentState.pageSettings.background_image_url)
+
+    UI.bgModal.style.display = 'flex'
+}
+
+function closeBackgroundModal() {
+    if (UI.bgModal) UI.bgModal.style.display = 'none'
+    if (UI.bgForm) UI.bgForm.reset()
+    tempBgFile = null
+}
+
+function handleBgImageSelect(e) {
+    const file = e.target.files[0]
+    if (file) {
+        tempBgFile = file
+        const reader = new FileReader()
+        reader.onload = (e) => updateModalBgPreview(e.target.result)
+        reader.readAsDataURL(file)
     }
 }
 
-// --- Helpers ---
+function handleRemoveBgImage() {
+    tempBgFile = 'DELETE' // Marker to delete
+    updateModalBgPreview(null)
+}
+
+function updateModalBgPreview(url) {
+    if (!UI.bgImagePreview) return
+
+    if (url) {
+        UI.bgImagePreview.innerHTML = `<img src="${url}" class="w-full h-full object-cover rounded-lg">`
+        if (UI.bgImageActions) UI.bgImageActions.style.display = 'flex'
+    } else {
+        UI.bgImagePreview.innerHTML = `
+            <i class="ri-image-add-line text-3xl text-gray-400"></i>
+            <p class="text-sm text-gray-500 mt-2">Click para subir imagen</p>
+        `
+        if (UI.bgImageActions) UI.bgImageActions.style.display = 'none'
+    }
+}
+
+async function handleBackgroundSubmit(e) {
+    e.preventDefault()
+
+    // Get color
+    const newColor = UI.bgColorInput ? UI.bgColorInput.value : '#f8fafc'
+
+    try {
+        let newImageUrl = currentState.pageSettings.background_image_url
+
+        // Handle Image Upload/Delete
+        if (tempBgFile === 'DELETE') {
+            newImageUrl = null
+        } else if (tempBgFile && typeof tempBgFile !== 'string') {
+            // Upload
+            notify.info('Subiendo imagen...')
+            const result = await linksService.uploadBackgroundImage(tempBgFile)
+            newImageUrl = result.url
+        }
+
+        // Save — solo enviamos los campos de fondo, nunca campos de identidad como slug
+        const bgPayload = {
+            background_color: newColor,
+            background_image_url: newImageUrl,
+            button_style_default: currentState.pageSettings.button_style_default || 'filled'
+        }
+
+        await linksService.upsertLinkPage(currentState.businessId, bgPayload)
+
+        // Actualizar el estado local con los valores guardados
+        currentState.pageSettings = {
+            ...currentState.pageSettings,
+            background_color: newColor,
+            background_image_url: newImageUrl
+        }
+        renderPreview()
+        closeBackgroundModal()
+        notify.success('Fondo actualizado')
+
+    } catch (error) {
+        console.error('Error saving background:', error)
+        notify.error('Error al guardar el fondo')
+    }
+}
+
 
 function updatePreview() {
-    // Also updates header info like logo and name
-    const logoEl = document.getElementById('previewLogo')
-    const nameEl = document.getElementById('previewName')
-
-    // We might need to grab this from a global store or DOM if not stored in currentState
-    // For now, let's try to assume they are updated elsewhere or grab from Dashboard DOM?
-    // Actually, in dashboard.js we usually load business info.
-    // Let's just update the background and list for now.
-
     renderPreview()
 }
 
-function copyPublicLink() {
-    const slug = currentState.pageSettings?.slug
+function processCopyLink() {
+    // El slug pertenece al negocio, no a la página de enlaces
+    const slug = currentState.business?.slug
     if (!slug) return notify.error('Aún no tienes un enlace generado')
 
     const url = `${window.location.origin}/l/${slug}`
     navigator.clipboard.writeText(url)
-        .then(() => notify.success('Enlace copiado al portapapeles'))
+        .then(() => notify.success('Enlace copiado: ' + url))
         .catch(() => notify.error('Error al copiar enlace'))
+}
+
+// Helper for darkening color
+function adjustColorBrightness(hex, percent) {
+    hex = hex.replace(/^\s*#|\s*$/g, '');
+    if (hex.length === 3) {
+        hex = hex.replace(/(.)/g, '$1$1');
+    }
+    var r = parseInt(hex.substr(0, 2), 16),
+        g = parseInt(hex.substr(2, 2), 16),
+        b = parseInt(hex.substr(4, 2), 16);
+
+    return '#' +
+        ((0 | (1 << 8) + r + (256 - r) * percent / 100).toString(16)).substr(1) +
+        ((0 | (1 << 8) + g + (256 - g) * percent / 100).toString(16)).substr(1) +
+        ((0 | (1 << 8) + b + (256 - b) * percent / 100).toString(16)).substr(1);
 }

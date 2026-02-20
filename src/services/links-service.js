@@ -90,6 +90,26 @@ export const linksService = {
     },
 
     /**
+     * Obtiene los ítems de una página de enlaces.
+     * @param {string} linkPageId
+     */
+    async getLinkItems(linkPageId) {
+        try {
+            const { data, error } = await supabase
+                .from('link_page_items')
+                .select('*')
+                .eq('link_page_id', linkPageId)
+                .order('position', { ascending: true })
+
+            if (error) throw error
+            return data || []
+        } catch (error) {
+            console.error('Error getting link items:', error)
+            throw error
+        }
+    },
+
+    /**
      * Añade un nuevo ítem a la página.
      * @param {string} linkPageId 
      * @param {Object} item - { label, url, position, ... }
@@ -221,7 +241,6 @@ export const linksService = {
                     position: 0,
                     is_active: true,
                     is_catalog_link: true,
-                    is_deletable: false,
                     is_deletable: false
                 })
             }
@@ -270,6 +289,54 @@ export const linksService = {
         } catch (error) {
             console.error('Error public links:', error)
             return null
+        }
+    },
+
+    /**
+     * Sube una imagen de fondo para la página de enlaces
+     * @param {File} file 
+     */
+    async uploadBackgroundImage(file) {
+        try {
+            // Validar archivo
+            if (!file) throw new Error('No se proporcionó archivo')
+
+            // Validar tipo
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+            if (!validTypes.includes(file.type)) {
+                throw new Error('Formato no válido. Usa JPG, PNG o WEBP')
+            }
+
+            // Validar tamaño (máx 5MB)
+            if (file.size > 5 * 1024 * 1024) throw new Error('La imagen es muy grande. Máximo 5MB')
+
+            const { data: { user }, error: userError } = await supabase.auth.getUser()
+            if (userError || !user) throw new Error('Usuario no autenticado')
+
+            const fileExt = file.name.split('.').pop()
+            const fileName = `bg-${Date.now()}.${fileExt}`
+            // Usaremos el bucket 'business-assets' si existe, o 'product-images' como fallback seguro por ahora
+            // La instrucción no especificó bucket, usaremos 'product-images' en carpeta 'backgrounds' para consistencia con permisos existentes probables
+            const filePath = `${user.id}/backgrounds/${fileName}`
+
+            const { data, error } = await supabase.storage
+                .from('product-images')
+                .upload(filePath, file, {
+                    cacheControl: '3600',
+                    upsert: false
+                })
+
+            if (error) throw error
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('product-images')
+                .getPublicUrl(filePath)
+
+            return { success: true, url: publicUrl }
+
+        } catch (error) {
+            console.error('Error uploading background:', error)
+            throw error
         }
     }
 }

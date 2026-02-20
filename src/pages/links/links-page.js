@@ -7,20 +7,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     try {
         // 1. Obtener slug de la URL
-        // La URL esperada es /c/:slug/links o similar.
-        // Vite reescribirá /:slug/links -> /src/pages/links/index.html
-        // Extraemos el slug del pathname
-        // Pathname ej: /mi-negocio/links
+        // Soportamos dos patrones:
+        //   /l/:slug          (Centro de Enlaces público)
+        //   /c/:slug/links    (ruta legacy)
         const pathParts = window.location.pathname.split('/').filter(Boolean)
 
-        // Asumimos que el slug es el primer segmento si estamos en raiz, o buscamos patrón
-        // Si la ruta es /:slug/links, el slug está en la posición 0 (o la penúltima)
-        let slug = pathParts[0]
+        let slug = null
 
-        // Ajuste por si estamos en /c/:slug/links o algo diferente
-        if (pathParts.includes('links')) {
+        if (pathParts[0] === 'l' && pathParts[1]) {
+            // Patrón: /l/:slug
+            slug = pathParts[1]
+        } else if (pathParts.includes('links')) {
+            // Patrón: /c/:slug/links
             const idx = pathParts.indexOf('links')
             if (idx > 0) slug = pathParts[idx - 1]
+        } else {
+            slug = pathParts[0]
         }
 
         if (!slug) {

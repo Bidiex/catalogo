@@ -169,72 +169,6 @@
               </div>
             </div>
 
-            <!-- Link Editor Modal -->
-            <div id="linkModal" class="modal-overlay" style="display: none;">
-              <div class="modal-container">
-                <div class="modal-header">
-                  <h2><i class="ri-link"></i> <span id="linkModalTitle">Editar Enlace</span></h2>
-                  <button id="closeLinkModalBtn" class="modal-close-btn">
-                    <i class="ri-close-line"></i>
-                  </button>
-                </div>
-                <div class="modal-content">
-                  <form id="linkForm" class="modal-form">
-                    <input type="hidden" id="linkId">
-
-                    <div class="form-group">
-                      <label for="linkLabel">Texto del Botón *</label>
-                      <input type="text" id="linkLabel" class="form-input" placeholder="Ej: Mi WhatsApp" required>
-                    </div>
-
-                    <div class="form-group">
-                      <label for="linkUrl">URL del Enlace *</label>
-                      <input type="url" id="linkUrl" class="form-input" placeholder="https://..." required>
-                    </div>
-
-                    <div class="form-group">
-                      <label>Estilo del Botón</label>
-                      <div class="style-selector-grid">
-                        <div class="style-option" data-style="filled">
-                          <div class="preview-btn-style btn-link--filled shape--semi-rounded">Relleno</div>
-                          <span>Relleno</span>
-                        </div>
-                        <div class="style-option" data-style="outlined">
-                          <div class="preview-btn-style btn-link--outlined shape--semi-rounded">Borde</div>
-                          <span>Borde</span>
-                        </div>
-                        <div class="style-option" data-style="rounded">
-                          <div class="preview-btn-style btn-link--filled shape--rounded">Redondo</div>
-                          <span>Redondo</span>
-                        </div>
-                        <div class="style-option" data-style="semi-rounded">
-                          <div class="preview-btn-style btn-link--filled shape--semi-rounded">Semi</div>
-                          <span>Semi</span>
-                        </div>
-                        <div class="style-option" data-style="square">
-                          <div class="preview-btn-style btn-link--filled shape--square">Cuad</div>
-                          <span>Cuadrado</span>
-                        </div>
-                      </div>
-                      <input type="hidden" id="linkButtonStyle" value="semi-rounded">
-                    </div>
-
-                    <div class="form-group">
-                      <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" id="linkIsActive" checked class="form-checkbox">
-                        <span>Visible en el perfil</span>
-                      </label>
-                    </div>
-
-                    <div class="modal-actions">
-                      <button type="button" id="cancelLinkBtn" class="btn-secondary">Cancelar</button>
-                      <button type="submit" id="saveLinkBtn" class="btn-primary">Guardar Enlace</button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            </div>
-
             <!-- Step 1: Business -->
             <div class="wizard-step" id="wizard-step-1">
               <div class="wizard-header">
@@ -728,11 +662,13 @@
         <!-- Section: Links Center -->
         <div id="section-links" class="dashboard-section" style="display: none;">
           <section class="card h-full">
-            <div class="card-header flex justify-between items-center">
-              <h2><i class="ri-link"></i> Centro de Enlaces</h2>
+            <div class="card-header flex justify-between items-center bg-white border-b border-gray-200">
+              <h2 class="flex items-center gap-2 text-xl font-bold text-slate-800"><i class="ri-link"></i> Centro de
+                Enlaces</h2>
               <div class="flex gap-2">
                 <span id="editorSlugDisplay" style="display: none;"></span> <!-- Hidden slug holder -->
-                <button id="copyPublicLinkBtn" class="btn-secondary-small">
+                <button id="copyPublicLinkBtn" class="btn-primary-small font-bold"
+                  style="background-color: #4CED17; color: #064e3b; border: none;">
                   <i class="ri-file-copy-line"></i> Copiar Enlace Público
                 </button>
               </div>
@@ -743,34 +679,19 @@
                 <!-- Columna Izquierda: Configuración -->
                 <div class="links-config-panel">
                   <div class="links-config-header">
-                    <h3>Configuración</h3>
-                    <button id="addLinkBtn" class="btn-primary-small">
-                      <i class="ri-add-line"></i> Añadir Enlace
-                    </button>
+                    <h3 class="text-lg font-semibold text-slate-700">Configuración</h3>
+                    <div class="flex gap-2">
+                      <button id="backgroundBtn" class="btn-secondary-small">
+                        <i class="ri-image-edit-line"></i> Fondo
+                      </button>
+                      <button id="addLinkBtn" class="btn-primary-small">
+                        <i class="ri-add-line"></i> Añadir Enlace
+                      </button>
+                    </div>
                   </div>
 
                   <div class="links-config-content">
-                    <div class="mb-6">
-                      <button id="toggleDesignOptionsBtn"
-                        class="w-full py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg flex items-center justify-between transition-colors">
-                        <span class="font-medium flex items-center gap-2"><i class="ri-palette-line"></i> Personalizar
-                          Diseño</span>
-                        <i class="ri-arrow-down-s-line transform transition-transform" id="designOptionsArrow"></i>
-                      </button>
-                    </div>
-
-                    <div id="designOptionsContainer" style="display: none;"
-                      class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                      <!-- Background Color Selector -->
-                      <div class="form-group">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Color de Fondo</label>
-                        <div class="flex items-center gap-3">
-                          <input type="color" id="bgColorInput"
-                            class="h-10 w-20 cursor-pointer rounded border border-gray-300 p-0" value="#f8fafc">
-                          <span class="text-xs text-gray-500">Haz clic para cambiar el color de fondo</span>
-                        </div>
-                      </div>
-                    </div>
+                    <!-- Removing old Design Options, moving to Modal -->
 
                     <!-- Links List -->
                     <div id="linksListConfig" class="links-list">
@@ -790,8 +711,10 @@
                     <div class="mockup-screen">
                       <div id="previewContainer" class="preview-content">
                         <!-- Header Preview -->
-                        <img id="previewLogo" class="preview-logo" src="" alt="">
-                        <h3 id="previewName" class="preview-name">Nombre Negocio</h3>
+                        <div class="preview-header relative flex flex-col items-center">
+                          <img id="previewLogo" class="preview-logo" src="" alt="">
+                          <h3 id="previewName" class="preview-name">Nombre Negocio</h3>
+                        </div>
 
                         <!-- Buttons Preview -->
                         <div id="previewButtonsContainer" class="preview-buttons">
@@ -804,6 +727,126 @@
               </div>
             </div>
           </section>
+        </div>
+
+        <!-- Link Editor Modal -->
+        <div id="linkModal" class="modal-overlay" style="display: none;">
+          <div class="modal-container">
+            <div class="modal-header">
+              <h2><i class="ri-link"></i> <span id="linkModalTitle">Editar Enlace</span></h2>
+              <button id="closeLinkModalBtn" class="modal-close-btn">
+                <i class="ri-close-line"></i>
+              </button>
+            </div>
+            <div class="modal-content">
+              <form id="linkForm" class="modal-form">
+                <input type="hidden" id="linkId">
+
+                <div class="form-group">
+                  <label for="linkLabel">Texto del Botón *</label>
+                  <input type="text" id="linkLabel" class="form-input" placeholder="Ej: Mi WhatsApp" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="linkUrl">URL del Enlace *</label>
+                  <input type="url" id="linkUrl" class="form-input" placeholder="https://..." required>
+                </div>
+
+                <div class="form-group">
+                  <label>Estilo del Botón</label>
+                  <div class="style-selector-grid">
+                    <div class="style-option" data-style="filled">
+                      <div class="preview-btn-style btn-link--filled shape--semi-rounded">Relleno</div>
+                      <span>Relleno</span>
+                    </div>
+                    <div class="style-option" data-style="outlined">
+                      <div class="preview-btn-style btn-link--outlined shape--semi-rounded">Borde</div>
+                      <span>Borde</span>
+                    </div>
+                    <div class="style-option" data-style="rounded">
+                      <div class="preview-btn-style btn-link--filled shape--rounded">Redondo</div>
+                      <span>Redondo</span>
+                    </div>
+                    <div class="style-option" data-style="semi-rounded">
+                      <div class="preview-btn-style btn-link--filled shape--semi-rounded">Semi</div>
+                      <span>Semi</span>
+                    </div>
+                    <div class="style-option" data-style="square">
+                      <div class="preview-btn-style btn-link--filled shape--square">Cuad</div>
+                      <span>Cuadrado</span>
+                    </div>
+                  </div>
+                  <input type="hidden" id="linkButtonStyle" value="semi-rounded">
+                </div>
+
+                <div class="form-group">
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="linkIsActive" checked class="form-checkbox">
+                    <span>Visible en el perfil</span>
+                  </label>
+                </div>
+
+                <div class="modal-actions">
+                  <button type="button" id="cancelLinkBtn" class="btn-secondary">Cancelar</button>
+                  <button type="submit" id="saveLinkBtn" class="btn-primary">Guardar Enlace</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Background Modal -->
+        <div id="backgroundModal" class="modal-overlay" style="display: none;">
+          <div class="modal-container">
+            <div class="modal-header">
+              <h2><i class="ri-image-edit-line"></i> Personalizar Fondo</h2>
+              <button id="closeBackgroundModalBtn" class="modal-close-btn">
+                <i class="ri-close-line"></i>
+              </button>
+            </div>
+            <div class="modal-content">
+              <form id="backgroundForm" class="modal-form">
+
+                <!-- Image Upload Section -->
+                <div class="form-group">
+                  <label>Imagen de Fondo</label>
+                  <div class="image-upload-container">
+                    <div class="image-preview" id="bg-image-preview">
+                      <i class="ri-image-add-line text-3xl text-gray-400"></i>
+                      <p class="text-sm text-gray-500 mt-2">Click para subir imagen</p>
+                    </div>
+                    <input type="file" id="bg-image-input" accept="image/jpeg,image/jpg,image/png,image/webp"
+                      style="display: none;">
+
+                    <div id="bg-image-actions" class="flex gap-2 mt-2" style="display: none;">
+                      <button type="button" id="btn-change-bg-image"
+                        class="btn-secondary-small text-xs">Cambiar</button>
+                      <button type="button" id="btn-remove-bg-image"
+                        class="btn-secondary-small danger text-xs">Eliminar</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Color Fallback -->
+                <div class="form-group">
+                  <label>O color de fondo (si no hay imagen)</label>
+                  <div class="bg-color-row">
+                    <input type="color" id="bg-color-input" value="#f8fafc">
+                    <div id="bg-color-preview-swatch"></div>
+                    <div class="bg-color-info">
+                      <span>Color sólido / Gradiente</span>
+                      <small>Se aplicará un gradiente vertical basado en este color</small>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="modal-actions">
+                  <button type="button" id="cancelBackgroundBtn" class="btn-secondary">Cancelar</button>
+                  <button type="submit" class="btn-primary">Guardar Cambios</button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
 
         <!-- Section: Mi Negocio -->
@@ -2431,6 +2474,82 @@
   </div>
 
   <!-- Reminder Modal -->
+  <!-- Modal para crear/editar enlace -->
+  <div id="linkModal" class="modal-overlay" style="display: none;">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h2 id="linkModalTitle">Nuevo Enlace</h2>
+        <button id="closeLinkModalBtn" class="modal-close-btn">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+      <div class="modal-content">
+        <form id="linkForm" class="modal-form">
+          <input type="hidden" id="linkId">
+
+          <div class="form-group">
+            <label for="linkLabel">Texto del Botón</label>
+            <input type="text" id="linkLabel" placeholder="Ej: Mi WhatsApp" required>
+          </div>
+
+          <div class="form-group">
+            <label for="linkUrl">URL de Destino</label>
+            <input type="url" id="linkUrl" placeholder="https://..." required>
+          </div>
+
+          <div class="form-group">
+            <label>Estilo del Botón</label>
+            <div class="style-options-grid"
+              style="display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 0.5rem; margin-top: 0.5rem;">
+              <div class="style-option selected" data-style="filled"
+                style="cursor: pointer; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 8px; text-align: center;">
+                <div class="preview-btn filled text-xs p-1 mb-1 bg-slate-800 text-white rounded">Relleno</div>
+                <span class="text-xs">Relleno</span>
+              </div>
+              <div class="style-option" data-style="outlined"
+                style="cursor: pointer; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 8px; text-align: center;">
+                <div class="preview-btn outlined text-xs p-1 mb-1 border border-slate-800 text-slate-800 rounded">Borde
+                </div>
+                <span class="text-xs">Borde</span>
+              </div>
+              <div class="style-option" data-style="rounded"
+                style="cursor: pointer; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 8px; text-align: center;">
+                <div class="preview-btn rounded text-xs p-1 mb-1 bg-slate-800 text-white rounded-full">Redondo</div>
+                <span class="text-xs">Redondo</span>
+              </div>
+              <div class="style-option" data-style="semi-rounded"
+                style="cursor: pointer; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 8px; text-align: center;">
+                <div class="preview-btn semi-rounded text-xs p-1 mb-1 bg-slate-800 text-white rounded-lg">Semi</div>
+                <span class="text-xs">Semi</span>
+              </div>
+              <div class="style-option" data-style="square"
+                style="cursor: pointer; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 8px; text-align: center;">
+                <div class="preview-btn square text-xs p-1 mb-1 bg-slate-800 text-white rounded-none">Cuadrado</div>
+                <span class="text-xs">Cuadrado</span>
+              </div>
+            </div>
+            <input type="hidden" id="linkButtonStyle" value="filled">
+          </div>
+
+          <div class="form-group">
+            <div class="flex items-center justify-between">
+              <label for="linkIsActive" class="mb-0">Enlace Activo</label>
+              <label class="switch">
+                <input type="checkbox" id="linkIsActive" checked>
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" id="cancelLinkBtn" class="btn-secondary">Cancelar</button>
+            <button type="submit" class="btn-primary">Guardar Enlace</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <div id="whatsappReminderModal" class="modal" style="display: none;">
     <div class="modal-content" style="max-width: 400px; text-align: center;">
       <div class="modal-header"
