@@ -23,6 +23,8 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    box-sizing: border-box;
+    width: 100%;
 }
 
 .links-config-header {
@@ -33,12 +35,16 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 0.75rem;
+    box-sizing: border-box;
+    width: 100%;
 }
 
 .links-config-content {
     padding: 1.5rem;
     overflow-y: auto;
     flex-grow: 1;
+    box-sizing: border-box;
+    width: 100%;
 }
 
 /* Links List */
@@ -99,6 +105,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+    min-width: 0;
 }
 
 .link-label {
@@ -113,7 +120,6 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 300px;
 }
 
 .link-meta {
@@ -507,7 +513,7 @@
     border-radius: 8px;
     border: none;
     background: #4ced17;
-    color: #064e3b;
+    color: #ffffff;
     font-weight: 600;
     cursor: pointer;
 }
@@ -556,8 +562,10 @@
 }
 
 .mockup-phone {
-    width: 300px;
-    height: 600px;
+    width: 390px;
+    height: 844px;
+    transform: scale(min(1, calc((100vh - 250px) / 844)));
+    transform-origin: top center;
     border: 12px solid #1e293b;
     border-radius: 36px;
     overflow: hidden;
@@ -879,21 +887,37 @@
    ===================== */
 @media (max-width: 640px) {
 
-    /* Fix 3: Config header — title on top, buttons in flex-row below */
+    /* Fix 3: Config header — title on top, buttons in 2x2 grid below */
     .links-config-header {
         flex-direction: column;
         align-items: flex-start;
+        padding: 1rem;
+    }
+
+    .links-config-content {
+        padding: 1rem;
     }
 
     .links-config-header h2 {
         width: 100%;
+        margin-bottom: 0.5rem;
     }
 
     .links-config-header .header-actions {
-        display: flex;
-        flex-direction: row;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
         gap: 0.5rem;
         width: 100%;
+    }
+
+    .links-config-header .header-actions button {
+        width: 100%;
+        justify-content: center;
+        padding: 0.5rem 0.25rem;
+        font-size: 0.8rem;
+        white-space: normal;
+        line-height: 1.2;
+        text-align: center;
     }
 
     /* Fix 4: Link item — wrap so action buttons don't overflow */
@@ -910,5 +934,31 @@
     .link-actions {
         flex-wrap: wrap;
         margin-left: auto;
+    }
+
+    /* Fix 5: Prevent Preview Phone from stretching container */
+    .preview-panel {
+        width: 100%;
+        padding: 1rem 0;
+        box-sizing: border-box;
+    }
+
+    .mockup-phone {
+        width: 100%;
+        max-width: 320px;
+        height: 600px;
+        transform: none;
+        border-width: 8px;
+        border-radius: 24px;
+        margin: 0 auto;
+    }
+
+    #previewName,
+    #previewDesc {
+        text-align: center;
+        margin-left: auto;
+        margin-right: auto;
+        width: 100%;
+        display: block;
     }
 }

@@ -42,10 +42,10 @@ export const dailyMenusService = {
         `)
                 .eq('business_id', businessId)
                 .eq('is_active', true)
-                .single()
+                .limit(1)
 
-            if (error && error.code !== 'PGRST116') throw error // PGRST116 is specific to .single() not found
-            return data // Returns null if no active menu found (and no error thrown for 116 if handled)
+            if (error) throw error
+            return data && data.length > 0 ? data[0] : null
         } catch (error) {
             console.error('Error getting active daily menu:', error)
             return null

@@ -668,7 +668,7 @@
               <div class="flex gap-2">
                 <span id="editorSlugDisplay" style="display: none;"></span> <!-- Hidden slug holder -->
                 <button id="copyPublicLinkBtn" class="btn-primary-small font-bold"
-                  style="background-color: #4CED17; color: #064e3b; border: none;">
+                  style="background-color: #4CED17; color: #ffffff; border: none;">
                   <i class="ri-file-copy-line"></i> Copiar Enlace Público
                 </button>
               </div>
@@ -683,6 +683,9 @@
                     <div class="header-actions">
                       <button id="backgroundBtn" class="btn-secondary-small">
                         <i class="ri-image-edit-line"></i> Fondo
+                      </button>
+                      <button id="textColorBtn" class="btn-secondary-small" title="Color del Nombre">
+                        <i class="ri-font-color"></i> Texto
                       </button>
                       <button id="addSocialBtn" class="btn-secondary-small">
                         <i class="ri-share-line"></i> Red Social
@@ -717,6 +720,8 @@
                         <div class="preview-header relative flex flex-col items-center">
                           <img id="previewLogo" class="preview-logo" src="" alt="">
                           <h3 id="previewName" class="preview-name">Nombre Negocio</h3>
+                          <p id="previewDesc" class="text-sm mt-1 max-w-[250px] text-center"
+                            style="line-height: 1.3; opacity: 0.9;"></p>
                         </div>
 
                         <!-- Buttons Preview -->
@@ -965,6 +970,40 @@
                 <div class="modal-actions">
                   <button type="button" id="cancelBackgroundBtn" class="btn-secondary">Cancelar</button>
                   <button type="submit" class="btn-primary">Guardar Cambios</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Text Color Modal -->
+        <div id="textColorModal" class="modal-overlay" style="display: none;">
+          <div class="modal-container">
+            <div class="modal-header">
+              <h2><i class="ri-font-color"></i> Color del Nombre</h2>
+              <button type="button" id="closeTextColorModalBtn" class="modal-close-btn">
+                <i class="ri-close-line"></i>
+              </button>
+            </div>
+            <div class="modal-content">
+              <form id="textColorForm" class="modal-form">
+                <div class="form-group">
+                  <label>Selecciona el color del texto para el nombre y la descripción de tu negocio</label>
+                  <div class="link-text-color-options">
+                    <button type="button" class="text-color-option" data-color="#0f172a" id="pageTextColorDark">
+                      <span class="text-color-swatch text-color-swatch--dark"></span>
+                      Oscuro
+                    </button>
+                    <button type="button" class="text-color-option" data-color="#ffffff" id="pageTextColorLight">
+                      <span class="text-color-swatch text-color-swatch--light"></span>
+                      Blanco
+                    </button>
+                  </div>
+                  <input type="hidden" id="pageTextColorInput" value="#0f172a">
+                </div>
+                <div class="modal-actions">
+                  <button type="button" id="cancelTextColorBtn" class="btn-secondary">Cancelar</button>
+                  <button type="submit" class="btn-primary">Guardar Color</button>
                 </div>
               </form>
             </div>

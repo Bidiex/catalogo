@@ -257,7 +257,7 @@ export const linksService = {
             // 1. Obtener business id por slug
             const { data: business, error: busError } = await supabase
                 .from('businesses')
-                .select('id, name, logo_url, slug')
+                .select('id, name, description, logo_url, slug')
                 .eq('slug', slug)
                 .maybeSingle()
 

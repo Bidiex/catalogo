@@ -1,5 +1,6 @@
 import { linksService } from '../../services/links-service.js'
 import { authService } from '../../services/auth.js'
+import { businessService } from '../../services/business.js'
 import { notify, confirm } from '../../utils/notifications.js'
 
 let currentState = {
@@ -30,8 +31,7 @@ export async function initLinksEditor(businessData = null) {
             const user = await authService.getCurrentUser()
             if (!user || !user.business_id) return
             currentState.businessId = user.business_id
-            // Fetch business if not passed (though dashboard usually passes it)
-            // For now assume logic continues, loadData generally just needs ID
+            currentState.business = await businessService.getMyBusiness()
         }
 
         console.log('Initializing Links Editor for:', currentState.businessId)
@@ -62,6 +62,7 @@ function initUI() {
         // Preview Elements
         previewLogo: document.getElementById('previewLogo'),
         previewName: document.getElementById('previewName'),
+        previewDesc: document.getElementById('previewDesc'),
 
         // Background UI
         bgBtn: document.getElementById('backgroundBtn'),
@@ -74,6 +75,15 @@ function initUI() {
         btnRemoveBg: document.getElementById('btn-remove-bg-image'),
         closeBgModalBtn: document.getElementById('closeBackgroundModalBtn'),
         cancelBgBtn: document.getElementById('cancelBackgroundBtn'),
+
+        // Text Color UI
+        textColorBtn: document.getElementById('textColorBtn'),
+        textColorModal: document.getElementById('textColorModal'),
+        textColorForm: document.getElementById('textColorForm'),
+        closeTextColorModalBtn: document.getElementById('closeTextColorModalBtn'),
+        cancelTextColorBtn: document.getElementById('cancelTextColorBtn'),
+        pageTextColorOptions: document.querySelectorAll('#textColorModal .text-color-option'),
+        pageTextColorInput: document.getElementById('pageTextColorInput'),
 
         // Modal Elements (Link)
         modal: document.getElementById('linkModal'),
@@ -88,13 +98,13 @@ function initUI() {
         inputUrl: document.getElementById('linkUrl'),
         inputStyle: document.getElementById('linkButtonStyle'),
         inputIsActive: document.getElementById('linkIsActive'),
-        styleOptions: document.querySelectorAll('.style-option'),
+        styleOptions: document.querySelectorAll('#linkModal .style-option'),
 
         // Color Inputs (Link)
         inputButtonColor: document.getElementById('linkButtonColor'),
         inputTextColor: document.getElementById('linkTextColor'),
-        buttonColorOptions: document.querySelectorAll('.link-color-option'),
-        textColorOptions: document.querySelectorAll('.text-color-option'),
+        buttonColorOptions: document.querySelectorAll('#linkModal .link-color-option'),
+        textColorOptions: document.querySelectorAll('#linkModal .text-color-option'),
 
         // Social Modal Elements
         btnAddSocial: document.getElementById('addSocialBtn'),
@@ -119,16 +129,23 @@ async function loadData() {
         // 1. Get or Create Page
         let page = await linksService.getLinkPage(currentState.businessId)
         if (!page) {
-            page = await linksService.createLinkPage(currentState.businessId)
+            page = await linksService.upsertLinkPage(currentState.businessId, { is_published: true })
         }
         currentState.pageId = page.id
         currentState.pageSettings = {
             background_color: page.background_color || '#f8fafc',
             background_image_url: page.background_image_url || null,
-            button_style_default: page.button_style_default || 'filled'
+            button_style_default: page.button_style_default || 'filled',
+            text_color: page.text_color || '#0f172a'
         }
 
-        // 2. Get Items
+        // 2. Ensure Catalog Link
+        if (currentState.business && currentState.business.slug) {
+            const catalogUrl = `https://traego.app/c/${currentState.business.slug}`
+            await linksService.initCatalogLink(page.id, catalogUrl)
+        }
+
+        // 3. Get Items
         const items = await linksService.getLinkItems(page.id)
         currentState.items = items.sort((a, b) => a.position - b.position)
 
@@ -160,6 +177,22 @@ function setupEventListeners() {
     if (UI.closeBgModalBtn) UI.closeBgModalBtn.onclick = closeBackgroundModal
     if (UI.cancelBgBtn) UI.cancelBgBtn.onclick = closeBackgroundModal
     if (UI.bgForm) UI.bgForm.onsubmit = handleBackgroundSubmit
+
+    if (UI.textColorBtn) UI.textColorBtn.onclick = openTextColorModal
+    if (UI.closeTextColorModalBtn) UI.closeTextColorModalBtn.onclick = closeTextColorModal
+    if (UI.cancelTextColorBtn) UI.cancelTextColorBtn.onclick = closeTextColorModal
+    if (UI.textColorForm) UI.textColorForm.onsubmit = handleTextColorSubmit
+
+    if (UI.pageTextColorOptions) {
+        UI.pageTextColorOptions.forEach(opt => {
+            opt.onclick = () => {
+                UI.pageTextColorOptions.forEach(o => o.classList.remove('selected'))
+                opt.classList.add('selected')
+                const inputEl = document.getElementById('pageTextColorInput')
+                if (inputEl) inputEl.value = opt.dataset.color
+            }
+        })
+    }
 
     // Style Selection
     if (UI.styleOptions) {
@@ -513,9 +546,18 @@ function renderPreview() {
     if (!UI.preview) return
     UI.preview.innerHTML = ''
 
-    // Update Header Info (Logo/Name)
+    // Update Header Info (Logo/Name/Desc)
     if (UI.previewName && currentState.business) {
         UI.previewName.textContent = currentState.business.name || 'Mi Negocio'
+        const tColor = currentState.pageSettings?.text_color || '#0f172a'
+        UI.previewName.style.color = tColor
+
+        // Attempt resolving desc via UI or nextElementSibling
+        const descEl = UI.previewDesc || UI.previewName.nextElementSibling
+        if (descEl && (descEl.id === 'previewDesc' || descEl.tagName === 'P')) {
+            descEl.textContent = currentState.business.description || ''
+            descEl.style.color = tColor
+        }
     }
     if (UI.previewLogo && currentState.business) {
         if (currentState.business.logo_url) {
@@ -622,10 +664,26 @@ function openModal(item = null) {
 
         // Handle Catalog Link restrictions
         if (item.is_catalog_link) {
-            if (UI.inputUrl) UI.inputUrl.disabled = true
+            if (UI.inputUrl) {
+                const group = UI.inputUrl.closest('.form-group')
+                if (group) group.style.display = 'none'
+            }
+            if (UI.inputIsActive) {
+                const toggle = UI.inputIsActive.closest('.link-toggle') || UI.inputIsActive.closest('.form-group')
+                if (toggle) toggle.style.display = 'none'
+            }
             if (UI.inputLabel) UI.inputLabel.focus()
         } else {
-            if (UI.inputUrl) UI.inputUrl.disabled = false
+            if (UI.inputUrl) {
+                const group = UI.inputUrl.closest('.form-group')
+                if (group) group.style.display = ''
+                UI.inputUrl.disabled = false
+            }
+            if (UI.inputIsActive) {
+                const toggle = UI.inputIsActive.closest('.link-toggle') || UI.inputIsActive.closest('.form-group')
+                if (toggle) toggle.style.display = ''
+                UI.inputIsActive.disabled = false
+            }
             if (UI.inputLabel) UI.inputLabel.focus()
         }
 
@@ -932,6 +990,46 @@ async function handleBackgroundSubmit(e) {
     }
 }
 
+
+// --- Text Color Modal Logic ---
+
+function openTextColorModal() {
+    if (!UI.textColorModal) return
+    const currentColor = currentState.pageSettings?.text_color || '#0f172a'
+    const inputEl = document.getElementById('pageTextColorInput');
+    if (inputEl) inputEl.value = currentColor
+
+    if (UI.pageTextColorOptions) {
+        UI.pageTextColorOptions.forEach(o => {
+            o.classList.toggle('selected', o.dataset.color === currentColor)
+        })
+    }
+    UI.textColorModal.style.display = 'flex'
+}
+
+function closeTextColorModal() {
+    if (UI.textColorModal) UI.textColorModal.style.display = 'none'
+}
+
+async function handleTextColorSubmit(e) {
+    e.preventDefault()
+    try {
+        const inputEl = document.getElementById('pageTextColorInput')
+        const newColor = inputEl ? inputEl.value : '#0f172a'
+        await linksService.upsertLinkPage(currentState.businessId, { text_color: newColor })
+
+        currentState.pageSettings = {
+            ...currentState.pageSettings,
+            text_color: newColor
+        }
+        renderPreview()
+        closeTextColorModal()
+        notify.success('Color del texto actualizado')
+    } catch (error) {
+        console.error('Error saving text color:', error)
+        notify.error('Error al guardar el color')
+    }
+}
 
 function updatePreview() {
     renderPreview()

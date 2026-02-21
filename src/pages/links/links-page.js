@@ -77,8 +77,14 @@ function renderPage({ business, page, items }) {
     }
 
     // Header
-    document.getElementById('businessName').textContent = business.name
-    document.getElementById('businessDesc').textContent = business.description || ''
+    const nameEl = document.getElementById('businessName')
+    const descEl = document.getElementById('businessDesc')
+    nameEl.textContent = business.name
+    descEl.textContent = business.description || ''
+
+    const tColor = page.text_color || '#0f172a'
+    nameEl.style.color = tColor
+    descEl.style.color = tColor
 
     const logoImg = document.getElementById('businessLogo')
     if (business.logo_url) {
