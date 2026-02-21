@@ -795,6 +795,22 @@
     justify-content: center;
 }
 
+/* Copy Link Button integrated */
+.btn-copy-link {
+    background-color: #4CED17;
+    color: #ffffff;
+    border: none;
+}
+
+.btn-copy-link:hover {
+    background-color: #3fca13;
+}
+
+/* Utilities */
+.hide-element {
+    display: none;
+}
+
 /* =========================================
    Link Color Palette (Button Color Picker)
    ========================================= */

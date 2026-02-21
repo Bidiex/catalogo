@@ -56,10 +56,32 @@
         </footer>
     </main>
 
-    <div id="errorState" class="error-state" style="display: none;">
-        <span class="material-symbols-rounded icon">link_off</span>
-        <h2>Página no encontrada</h2>
-        <p>El enlace que buscas no existe o ha sido desactivado.</p>
+    <div id="errorState" class="error-state unified-error-container" style="display: none;">
+        <div class="content">
+            <img src="/src/assets/avatar-404.webp" alt="Error" class="unified-error-avatar" />
+            <h2 class="unified-error-title">Enlaces no encontrados</h2>
+            <p class="unified-error-description">El enlace que buscas no existe o ha sido desactivado.</p>
+
+            <div class="unified-error-actions">
+                <button id="links-go-back-btn" class="unified-error-btn unified-error-btn-secondary"
+                    onclick="window.history.back()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 12H5" />
+                        <path d="M12 19l-7-7 7-7" />
+                    </svg>
+                    Volver atrás
+                </button>
+                <a href="/" class="unified-error-btn unified-error-btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                        <polyline points="9 22 9 12 15 12 15 22" />
+                    </svg>
+                    Ir al inicio
+                </a>
+            </div>
+        </div>
     </div>
 
     <script type="module" src="/src/pages/links/links-page.js"></script>

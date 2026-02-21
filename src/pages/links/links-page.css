@@ -31,6 +31,10 @@ body.has-bg-image {
         background-image: none;
     }
 
+    body.is-error-state {
+        background-color: #ffffff;
+    }
+
     /* The phone shell wrapper — rendered via JS-added .phone-frame class */
     .phone-frame {
         position: relative;

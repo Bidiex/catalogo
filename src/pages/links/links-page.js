@@ -37,9 +37,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         applyPhoneFrame(content, data.page)
 
     } catch (err) {
-        console.error('Error loading links page:', err)
+        if (err.message !== 'Page not found') {
+            console.error('Error loading links page:', err)
+        }
         loading.style.display = 'none'
         errorState.style.display = 'flex'
+        document.body.classList.add('is-error-state')
     }
 })
 
@@ -74,6 +77,13 @@ function renderPage({ business, page, items }) {
     if (page.background_image_url) {
         document.documentElement.style.setProperty('--page-bg-image', `url('${page.background_image_url}')`)
         document.body.classList.add('has-bg-image')
+    }
+
+    // Actualizar título y favicon
+    document.title = `Enlaces ${business.name}`
+    const favicon = document.querySelector('link[rel="icon"]')
+    if (favicon && business.logo_url) {
+        favicon.href = business.logo_url
     }
 
     // Header

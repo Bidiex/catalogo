@@ -221,7 +221,9 @@ async function init() {
       // Handled by showMaintenanceState
       return
     }
-    console.error('Error loading catalog:', error)
+    if (error.message !== 'Business not found') {
+      console.error('Error loading catalog:', error)
+    }
     showError()
   }
 }
@@ -232,9 +234,14 @@ async function loadBusiness(slug) {
       .from('businesses')
       .select('*')
       .eq('slug', slug)
-      .single()
+      .maybeSingle()
 
-    if (error) throw error
+    if (error) {
+      if (error.code === 'PGRST116') {
+        throw new Error('Business not found')
+      }
+      throw error
+    }
     if (!data) throw new Error('Business not found')
 
     currentBusiness = data
@@ -253,7 +260,9 @@ async function loadBusiness(slug) {
       // Handled by showMaintenanceState, just rethrow or ignore to stop flow
       throw error
     }
-    console.error('Error loading business:', error)
+    if (error.message !== 'Business not found') {
+      console.error('Error loading business:', error)
+    }
     throw error
   }
 }
@@ -781,6 +790,9 @@ function showError() {
   loadingState.style.display = 'none'
   errorState.style.display = 'flex'
   catalogContent.style.display = 'none'
+
+  const footer = document.querySelector('.catalog-footer')
+  if (footer) footer.style.display = 'none'
 }
 
 function showCatalog() {
