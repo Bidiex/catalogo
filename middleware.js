@@ -1,6 +1,7 @@
+// Solo ejecutar middleware en rutas de catálogo y centro de enlaces
 export const config = {
-    // Solo ejecutar middleware en rutas de catálogo
-    matcher: '/c/:path*',
+    // Ejecutar middleware en cualquier ruta (y luego filtramos en la función)
+    matcher: '/:path*',
 };
 
 export default function middleware(request) {
@@ -12,11 +13,11 @@ export default function middleware(request) {
 
     const isBot = botRegex.test(userAgent);
 
-    // Si es un bot y está intentando acceder a un catálogo
-    if (isBot && url.pathname.startsWith('/c/')) {
+    // Si es un bot y está intentando acceder a un catálogo o enlace
+    if (isBot && (url.pathname.startsWith('/c/') || url.pathname.startsWith('/l/'))) {
         // Extraer slug
         const parts = url.pathname.split('/');
-        // /c/SLUG -> ["", "c", "SLUG"]
+        // /c/SLUG o /l/SLUG -> ["", "c"|"l", "SLUG"]
         // Asegurarnos de obtener correctamente el slug
         const slug = parts[2];
 
