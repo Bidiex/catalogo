@@ -8,6 +8,85 @@ body {
     font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
+body.has-bg-image {
+    background-image: var(--page-bg-image);
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+}
+
+/* =============================================
+   Desktop Smartphone Frame (min-width: 768px)
+   ============================================= */
+@media (min-width: 768px) {
+    body {
+        background-color: #0f172a;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+    }
+
+    body.has-bg-image {
+        background-color: #0f172a;
+        background-image: none;
+    }
+
+    /* The phone shell wrapper — rendered via JS-added .phone-frame class */
+    .phone-frame {
+        position: relative;
+        height: 90vh;
+        max-height: 844px;
+        aspect-ratio: 390 / 844;
+        background: #ffffff;
+        border-radius: 44px;
+        box-shadow:
+            0 0 0 2px #374151,
+            0 0 0 6px #1f2937,
+            0 0 0 8px #111827,
+            0 30px 80px rgba(0, 0, 0, 0.6);
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+
+    /* Notch */
+    .phone-frame::before {
+        content: '';
+        position: absolute;
+        top: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 120px;
+        height: 30px;
+        background: #111827;
+        border-radius: 20px;
+        z-index: 10;
+    }
+
+    /* The links-page main sits inside the phone frame */
+    .phone-frame .links-page {
+        width: 100%;
+        max-width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 3.5rem 1.5rem 1.5rem;
+        overflow-y: auto;
+        box-sizing: border-box;
+        scrollbar-width: none;
+    }
+
+    .phone-frame .links-page::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Background image goes on the phone frame, not the body */
+    .phone-frame.has-bg-image {
+        background-image: var(--page-bg-image);
+        background-size: cover;
+        background-position: center;
+    }
+}
+
+
 .links-page {
     width: 100%;
     max-width: 680px;
@@ -17,6 +96,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     flex-grow: 1;
 }
 
@@ -139,14 +219,52 @@ body {
 .btn-link--catalog {
     font-weight: 700;
     letter-spacing: 0.02em;
-    /* El botón catálogo siempre destacará un poco más si se desea, 
-     pero por ahora sigue el estilo global o filled por defecto */
+}
+
+/* Per-item custom color overrides (set via JS CSS vars) */
+.btn-link--custom-color {
+    background-color: var(--btn-item-bg);
+    border-color: var(--btn-item-bg);
+}
+
+.btn-link--custom-text {
+    color: var(--btn-item-color);
+}
+
+/* Social Circles */
+.links-page__socials {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 2rem;
+    width: 100%;
+}
+
+.social-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-size: 1.5rem;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    background-color: var(--social-bg, #1e293b);
+    color: var(--social-color, #ffffff);
+}
+
+.social-circle:hover {
+    transform: scale(1.1);
+    opacity: 0.9;
 }
 
 /* Footer */
 .links-page__footer {
-    margin-top: 3rem;
-    padding-top: 1.5rem;
+    margin-top: auto;
+    padding-top: 2rem;
     display: flex;
     justify-content: center;
     width: 100%;
@@ -158,11 +276,7 @@ body {
     gap: 0.5rem;
     text-decoration: none;
     opacity: 0.6;
-    transition: opacity 0.2s;
-}
-
-.powered-by:hover {
-    opacity: 1;
+    pointer-events: none;
 }
 
 .powered-by span {
@@ -174,6 +288,11 @@ body {
 .powered-by img {
     height: 20px;
     width: auto;
+}
+
+.powered-by__icon {
+    height: 18px;
+    width: 18px;
 }
 
 /* Loading & Error */

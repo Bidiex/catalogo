@@ -31,6 +31,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
 }
 
 .links-config-content {
@@ -82,6 +84,16 @@
     color: #64748b;
 }
 
+.link-handle--hidden {
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.badge-fijo {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
 .link-item-info {
     flex-grow: 1;
     display: flex;
@@ -129,9 +141,108 @@
     color: #166534;
 }
 
-.badge-status.inactive {
-    background: #f1f5f9;
+/* Social Items in List */
+.social-list-divider {
+    font-size: 0.85rem;
+    font-weight: 600;
     color: #64748b;
+    margin: 1rem 0 0.5rem 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.social-link-item .link-item-info {
+    flex-direction: row;
+    align-items: center;
+}
+
+.social-link-item .link-label {
+    margin-right: auto;
+}
+
+.social-item-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+/* Social Network Modal Tiles */
+.social-network-selector {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.social-network-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #64748b;
+}
+
+.social-network-tile i {
+    font-size: 2rem;
+}
+
+.social-network-tile span {
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.social-network-tile:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+}
+
+.social-network-tile.selected {
+    border-color: #3b82f6;
+    color: #3b82f6;
+    background: #eff6ff;
+}
+
+/* Social Circles Preview */
+.preview-socials-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: 1.5rem;
+    width: 100%;
+}
+
+.preview-social-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.badge-status::before {
+    display: none;
+}
+
+.badge-status.inactive {
+    background: #fee2e2;
+    color: #991b1b;
 }
 
 .link-actions {
@@ -140,26 +251,93 @@
 }
 
 .btn-icon-action {
-    width: 32px;
-    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 0.45rem 0.65rem;
     border-radius: 6px;
-    border: 1px solid transparent;
-    background: transparent;
+    border: 1px solid #e2e8f0;
+    background: white;
     color: #64748b;
+    font-size: 1rem;
+    cursor: pointer;
     transition: all 0.2s;
 }
 
 .btn-icon-action:hover {
     background: #f1f5f9;
+    border-color: #94a3b8;
     color: #1e293b;
 }
 
-.btn-icon-action.danger:hover {
-    background: #fef2f2;
+.btn-icon-action.danger {
+    border-color: #fecaca;
     color: #ef4444;
+}
+
+.btn-icon-action.danger:hover {
+    background: #fee2e2;
+    border-color: #ef4444;
+    color: #dc2626;
+}
+
+/* Toggle Switch (link-is-active) */
+.link-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.link-toggle__label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.link-switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 26px;
+    flex-shrink: 0;
+}
+
+.link-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+
+.link-switch__track {
+    position: absolute;
+    inset: 0;
+    background-color: #cbd5e1;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.link-switch__track::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.link-switch input:checked+.link-switch__track {
+    background-color: #4ced17;
+}
+
+.link-switch input:checked+.link-switch__track::after {
+    transform: translateX(22px);
 }
 
 /* Modal Styles specific to Link Editor */
@@ -483,6 +661,17 @@
     border: none;
 }
 
+/* Neutral gray used in the style-selector preview (modal), not in the real preview phone) */
+.preview-btn-style.btn-link--filled {
+    background-color: #94a3b8;
+    color: white;
+}
+
+.preview-btn-style.btn-link--outlined {
+    border-color: #94a3b8;
+    color: #64748b;
+}
+
 .btn-link--filled:hover {
     opacity: 0.9;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -596,4 +785,130 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
+}
+
+/* =========================================
+   Link Color Palette (Button Color Picker)
+   ========================================= */
+.link-color-palette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.link-color-option {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2.5px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    flex-shrink: 0;
+    padding: 0;
+}
+
+.link-color-option:hover {
+    transform: scale(1.12);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.link-color-option.selected {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+    transform: scale(1.08);
+}
+
+/* =========================================
+   Text Color Options (Dark / Light)
+   ========================================= */
+.link-text-color-options {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.text-color-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.25rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #334155;
+    transition: border-color 0.15s ease, background 0.15s ease;
+    flex: 1;
+    justify-content: center;
+}
+
+.text-color-option:hover {
+    border-color: #94a3b8;
+    background: #f8fafc;
+}
+
+.text-color-option.selected {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    color: #1e40af;
+}
+
+.text-color-swatch {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.text-color-swatch--dark {
+    background-color: #0f172a;
+    border: 1px solid #e2e8f0;
+}
+
+.text-color-swatch--light {
+    background-color: #ffffff;
+    border: 1.5px solid #cbd5e1;
+}
+
+/* =====================
+   Mobile Responsive
+   ===================== */
+@media (max-width: 640px) {
+
+    /* Fix 3: Config header — title on top, buttons in flex-row below */
+    .links-config-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .links-config-header h2 {
+        width: 100%;
+    }
+
+    .links-config-header .header-actions {
+        display: flex;
+        flex-direction: row;
+        gap: 0.5rem;
+        width: 100%;
+    }
+
+    /* Fix 4: Link item — wrap so action buttons don't overflow */
+    .link-item {
+        flex-wrap: wrap;
+    }
+
+    .link-item-info {
+        min-width: 0;
+        flex-basis: calc(100% - 3.5rem);
+        /* leave room for handle */
+    }
+
+    .link-actions {
+        flex-wrap: wrap;
+        margin-left: auto;
+    }
 }

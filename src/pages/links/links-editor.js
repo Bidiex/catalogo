@@ -72,8 +72,6 @@ function initUI() {
         bgImageActions: document.getElementById('bg-image-actions'),
         btnChangeBg: document.getElementById('btn-change-bg-image'),
         btnRemoveBg: document.getElementById('btn-remove-bg-image'),
-        bgColorInput: document.getElementById('bg-color-input'),
-        bgColorPreview: document.getElementById('bg-color-preview-swatch'),
         closeBgModalBtn: document.getElementById('closeBackgroundModalBtn'),
         cancelBgBtn: document.getElementById('cancelBackgroundBtn'),
 
@@ -90,7 +88,29 @@ function initUI() {
         inputUrl: document.getElementById('linkUrl'),
         inputStyle: document.getElementById('linkButtonStyle'),
         inputIsActive: document.getElementById('linkIsActive'),
-        styleOptions: document.querySelectorAll('.style-option')
+        styleOptions: document.querySelectorAll('.style-option'),
+
+        // Color Inputs (Link)
+        inputButtonColor: document.getElementById('linkButtonColor'),
+        inputTextColor: document.getElementById('linkTextColor'),
+        buttonColorOptions: document.querySelectorAll('.link-color-option'),
+        textColorOptions: document.querySelectorAll('.text-color-option'),
+
+        // Social Modal Elements
+        btnAddSocial: document.getElementById('addSocialBtn'),
+        socialModal: document.getElementById('socialModal'),
+        socialForm: document.getElementById('socialForm'),
+        closeSocialBtn: document.getElementById('closeSocialModalBtn'),
+        cancelSocialBtn: document.getElementById('cancelSocialBtn'),
+        socialLinkId: document.getElementById('socialLinkId'),
+        socialNetwork: document.getElementById('socialNetwork'),
+        socialNetworkTiles: document.querySelectorAll('.social-network-tile'),
+        socialUrl: document.getElementById('socialUrl'),
+        socialButtonColor: document.getElementById('socialButtonColor'),
+        socialTextColor: document.getElementById('socialTextColor'),
+        socialColorOptions: document.querySelectorAll('#socialColorPalette .link-color-option'),
+        socialTextColorOptions: document.querySelectorAll('#socialModal .text-color-option'),
+        socialIsActive: document.getElementById('socialIsActive')
     }
 }
 
@@ -152,6 +172,29 @@ function setupEventListeners() {
         })
     }
 
+    // Button Color Palette Selection
+    if (UI.buttonColorOptions) {
+        UI.buttonColorOptions.forEach(option => {
+            option.style.backgroundColor = option.dataset.color
+            option.onclick = () => {
+                UI.buttonColorOptions.forEach(opt => opt.classList.remove('selected'))
+                option.classList.add('selected')
+                if (UI.inputButtonColor) UI.inputButtonColor.value = option.dataset.color
+            }
+        })
+    }
+
+    // Text Color Selection
+    if (UI.textColorOptions) {
+        UI.textColorOptions.forEach(option => {
+            option.onclick = () => {
+                UI.textColorOptions.forEach(opt => opt.classList.remove('selected'))
+                option.classList.add('selected')
+                if (UI.inputTextColor) UI.inputTextColor.value = option.dataset.color
+            }
+        })
+    }
+
     // Background Image Handling
     if (UI.bgImagePreview) {
         UI.bgImagePreview.onclick = () => UI.bgImageInput && UI.bgImageInput.click()
@@ -164,6 +207,58 @@ function setupEventListeners() {
     }
     if (UI.btnRemoveBg) {
         UI.btnRemoveBg.onclick = handleRemoveBgImage
+    }
+
+    // Social Modal
+    if (UI.btnAddSocial) UI.btnAddSocial.onclick = () => openSocialModal()
+    if (UI.closeSocialBtn) UI.closeSocialBtn.onclick = closeSocialModal
+    if (UI.cancelSocialBtn) UI.cancelSocialBtn.onclick = closeSocialModal
+    if (UI.socialForm) UI.socialForm.onsubmit = handleSocialSubmit
+
+    if (UI.socialNetworkTiles) {
+        UI.socialNetworkTiles.forEach(tile => {
+            tile.onclick = () => {
+                UI.socialNetworkTiles.forEach(t => t.classList.remove('selected'))
+                tile.classList.add('selected')
+                if (UI.socialNetwork) UI.socialNetwork.value = tile.dataset.network
+
+                // Auto-fill brand color
+                const brandColors = {
+                    facebook: '#1877f2',
+                    instagram: '#e1306c',
+                    youtube: '#ff0000',
+                    twitter: '#000000'
+                }
+                const brandColor = brandColors[tile.dataset.network]
+                if (brandColor && UI.socialButtonColor) {
+                    UI.socialButtonColor.value = brandColor
+                    UI.socialColorOptions.forEach(opt => {
+                        opt.classList.toggle('selected', opt.dataset.color === brandColor)
+                    })
+                }
+            }
+        })
+    }
+
+    if (UI.socialColorOptions) {
+        UI.socialColorOptions.forEach(opt => {
+            opt.style.backgroundColor = opt.dataset.color
+            opt.onclick = () => {
+                UI.socialColorOptions.forEach(o => o.classList.remove('selected'))
+                opt.classList.add('selected')
+                if (UI.socialButtonColor) UI.socialButtonColor.value = opt.dataset.color
+            }
+        })
+    }
+
+    if (UI.socialTextColorOptions) {
+        UI.socialTextColorOptions.forEach(opt => {
+            opt.onclick = () => {
+                UI.socialTextColorOptions.forEach(o => o.classList.remove('selected'))
+                opt.classList.add('selected')
+                if (UI.socialTextColor) UI.socialTextColor.value = opt.dataset.color
+            }
+        })
     }
 
     // Color swatch live preview
@@ -185,57 +280,233 @@ function renderList() {
     if (!UI.list) return
     UI.list.innerHTML = ''
 
-    if (currentState.items.length === 0) {
+    const regularItems = currentState.items.filter(i => i.item_type !== 'social')
+    const socialItems = currentState.items.filter(i => i.item_type === 'social')
+
+    if (regularItems.length === 0 && socialItems.length === 0) {
         UI.list.innerHTML = `<div class="empty-state text-center p-4 text-gray-500">No hay enlaces creados.</div>`
     }
 
-    currentState.items.forEach(item => {
-        const itemEl = document.createElement('div')
-        itemEl.className = 'link-item'
-        if (!item.is_active) itemEl.classList.add('opacity-75')
-
-        const isCatalog = item.is_catalog_link
-
-        itemEl.innerHTML = `
-            <div class="link-handle" ${isCatalog ? 'style="visibility:hidden"' : ''}>
-                <i class="ri-drag-move-2-line"></i>
-            </div>
-            <div class="link-item-info">
-                <div class="link-label">${item.label}</div>
-                <div class="link-url">${item.url}</div>
-                <div class="link-meta">
-                    <span class="link-badge badge-style">${item.button_style || 'Default'}</span>
-                    <span class="link-badge badge-status ${item.is_active ? '' : 'inactive'}">
-                        ${item.is_active ? 'Visible' : 'Oculto'}
-                    </span>
-                    ${isCatalog ? '<span class="link-badge" style="background:#e0f2fe; color:#0369a1">Fijo</span>' : ''}
-                </div>
-            </div>
-            <div class="link-actions">
-                ${!isCatalog ? `
-                    <button class="btn-icon-action edit-btn" title="Editar">
-                        <i class="ri-edit-line"></i>
-                    </button>
-                    <button class="btn-icon-action danger delete-btn" title="Eliminar">
-                        <i class="ri-delete-bin-line"></i>
-                    </button>
-                ` : `
-                   <button class="btn-icon-action edit-btn" title="Editar estilo">
-                        <i class="ri-edit-line"></i>
-                    </button>
-                `}
-            </div>
-        `
-
-        // Bind Events
-        const editBtn = itemEl.querySelector('.edit-btn')
-        if (editBtn) editBtn.addEventListener('click', () => openModal(item))
-
-        const deleteBtn = itemEl.querySelector('.delete-btn')
-        if (deleteBtn) deleteBtn.addEventListener('click', () => deleteLink(item.id))
-
-        UI.list.appendChild(itemEl)
+    regularItems.forEach(item => {
+        UI.list.appendChild(createLinkItemEl(item))
     })
+
+    if (socialItems.length > 0) {
+        const divider = document.createElement('div')
+        divider.className = 'social-list-divider'
+        divider.textContent = 'Redes Sociales'
+        UI.list.appendChild(divider)
+
+        socialItems.forEach(item => {
+            UI.list.appendChild(createSocialItemEl(item))
+        })
+    }
+
+    // Re-attach drag and drop on the list container
+    setupDragAndDrop()
+}
+
+function createLinkItemEl(item) {
+    const itemEl = document.createElement('div')
+    itemEl.className = 'link-item'
+    if (!item.is_active) itemEl.classList.add('opacity-75')
+
+    const isCatalog = item.is_catalog_link
+
+    itemEl.innerHTML = `
+        <div class="link-handle" ${isCatalog ? 'aria-hidden="true"' : ''}>
+            <i class="ri-drag-move-2-line"></i>
+        </div>
+        <div class="link-item-info">
+            <div class="link-label">${item.label}</div>
+            <div class="link-url">${item.url}</div>
+            <div class="link-meta">
+                <span class="link-badge badge-style">${item.button_style || 'Default'}</span>
+                <span class="link-badge badge-status ${item.is_active ? '' : 'inactive'}">
+                    ${item.is_active ? 'Visible' : 'Oculto'}
+                </span>
+                ${isCatalog ? '<span class="link-badge badge-fijo">Fijo</span>' : ''}
+            </div>
+        </div>
+        <div class="link-actions">
+            ${!isCatalog ? `
+                <button class="btn-icon-action edit-btn" title="Editar">
+                    <i class="ri-edit-line"></i>
+                </button>
+                <button class="btn-icon-action danger delete-btn" title="Eliminar">
+                    <i class="ri-delete-bin-line"></i>
+                </button>
+            ` : `
+               <button class="btn-icon-action edit-btn" title="Editar estilo">
+                    <i class="ri-edit-line"></i>
+                </button>
+            `}
+        </div>
+    `
+
+    const editBtn = itemEl.querySelector('.edit-btn')
+    if (editBtn) editBtn.addEventListener('click', () => openModal(item))
+
+    const deleteBtn = itemEl.querySelector('.delete-btn')
+    if (deleteBtn) deleteBtn.addEventListener('click', () => deleteLink(item.id))
+
+    if (!isCatalog) {
+        itemEl.dataset.itemId = item.id
+        itemEl.setAttribute('draggable', 'false')
+
+        const handle = itemEl.querySelector('.link-handle')
+        if (handle) {
+            handle.addEventListener('pointerdown', () => itemEl.setAttribute('draggable', 'true'))
+            handle.addEventListener('pointerup', () => itemEl.setAttribute('draggable', 'false'))
+        }
+        itemEl.addEventListener('dragstart', handleDragStart)
+        itemEl.addEventListener('dragend', handleDragEnd)
+    } else {
+        const handle = itemEl.querySelector('.link-handle')
+        if (handle) handle.classList.add('link-handle--hidden')
+    }
+
+    itemEl.addEventListener('dragover', handleDragOver)
+    itemEl.addEventListener('drop', handleDrop)
+    return itemEl
+}
+
+function createSocialItemEl(item) {
+    const NETWORK_ICONS = {
+        facebook: 'ri-facebook-fill',
+        instagram: 'ri-instagram-line',
+        youtube: 'ri-youtube-fill',
+        twitter: 'ri-twitter-x-line'
+    }
+    const NETWORK_LABELS = {
+        facebook: 'Facebook',
+        instagram: 'Instagram',
+        youtube: 'YouTube',
+        twitter: 'X / Twitter'
+    }
+
+    const itemEl = document.createElement('div')
+    itemEl.className = 'link-item social-link-item'
+    if (!item.is_active) itemEl.classList.add('opacity-75')
+
+    const icon = NETWORK_ICONS[item.social_network] || 'ri-share-line'
+    const label = NETWORK_LABELS[item.social_network] || item.social_network
+
+    itemEl.innerHTML = `
+        <div class="social-item-icon">
+            <i class="${icon}"></i>
+        </div>
+        <div class="link-item-info">
+            <div class="link-label">${label}</div>
+            <div class="link-url">${item.url}</div>
+            <div class="link-meta">
+                <span class="link-badge badge-status ${item.is_active ? '' : 'inactive'}">
+                    ${item.is_active ? 'Visible' : 'Oculto'}
+                </span>
+            </div>
+        </div>
+        <div class="link-actions">
+            <button class="btn-icon-action edit-btn" title="Editar">
+                <i class="ri-edit-line"></i>
+            </button>
+            <button class="btn-icon-action danger delete-btn" title="Eliminar">
+                <i class="ri-delete-bin-line"></i>
+            </button>
+        </div>
+    `
+
+    const editBtn = itemEl.querySelector('.edit-btn')
+    if (editBtn) editBtn.addEventListener('click', () => openSocialModal(item))
+
+    const deleteBtn = itemEl.querySelector('.delete-btn')
+    if (deleteBtn) deleteBtn.addEventListener('click', () => deleteLink(item.id))
+
+    return itemEl
+}
+
+function setupDragAndDrop() {
+    if (!UI.list) return
+    UI.list.addEventListener('dragover', handleDragOver)
+    UI.list.addEventListener('drop', handleDrop)
+}
+
+
+let draggedItem = null
+
+function handleDragStart(e) {
+    // e.target may be a child (icon), so we walk up to the .link-item
+    draggedItem = e.target.closest('.link-item')
+    if (!draggedItem) return
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', draggedItem.dataset.itemId)
+    // Defer adding the class so the browser can capture the drag image first
+    setTimeout(() => draggedItem.classList.add('dragging'), 0)
+}
+
+function handleDragEnd() {
+    if (draggedItem) {
+        draggedItem.classList.remove('dragging')
+        draggedItem.setAttribute('draggable', 'false')
+    }
+    draggedItem = null
+}
+
+function handleDragOver(e) {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+}
+
+function handleDrop(e) {
+    e.preventDefault()
+    if (!draggedItem) return
+
+    // Find the target .link-item (element we dropped onto)
+    const target = e.target.closest('.link-item')
+    if (!target || target === draggedItem) return
+
+    // Determine insertion: before or after the target based on mouse Y
+    const targetRect = target.getBoundingClientRect()
+    const insertBefore = e.clientY < targetRect.top + targetRect.height / 2
+
+    if (insertBefore) {
+        UI.list.insertBefore(draggedItem, target)
+    } else {
+        UI.list.insertBefore(draggedItem, target.nextSibling)
+    }
+
+    // Rebuild currentState.items order from the DOM
+    const newOrder = []
+    UI.list.querySelectorAll('.link-item[data-item-id]').forEach((el, index) => {
+        const id = el.dataset.itemId
+        const item = currentState.items.find(i => String(i.id) === String(id))
+        if (item) newOrder.push({ ...item, position: index })
+    })
+
+    // Include catalog items (non-draggable) at their DOM positions
+    const allItems = Array.from(UI.list.querySelectorAll('.link-item')).map((el, index) => {
+        const id = el.dataset.itemId
+        if (id) {
+            const item = currentState.items.find(i => String(i.id) === String(id))
+            return item ? { ...item, position: index } : null
+        }
+        // Catalog items don't have data-item-id; find them by exclusion
+        const catalogItem = currentState.items.find(
+            i => i.is_catalog_link && !newOrder.some(o => o.id === i.id)
+        )
+        return catalogItem ? { ...catalogItem, position: index } : null
+    }).filter(Boolean)
+
+    currentState.items = allItems.sort((a, b) => a.position - b.position)
+
+    // Persist new order (fire and forget — optimistic UI)
+    const positionUpdates = currentState.items.map((item, idx) => ({ id: item.id, position: idx }))
+    linksService.reorderItems(positionUpdates).catch(err => {
+        console.error('Error al guardar el orden de los enlaces:', err)
+        notify.error('No se pudo guardar el nuevo orden')
+    })
+
+    // Update the preview without re-rendering the list (avoids losing drag state)
+    renderPreview()
 }
 
 function renderPreview() {
@@ -259,7 +530,7 @@ function renderPreview() {
     // Update container background
     const screen = UI.preview.closest('.mockup-screen')
     if (screen) {
-        const { background_image_url, background_color } = currentState.pageSettings
+        const { background_image_url } = currentState.pageSettings || {}
 
         if (background_image_url) {
             screen.style.backgroundImage = `url('${background_image_url}')`
@@ -267,43 +538,76 @@ function renderPreview() {
             screen.style.backgroundPosition = 'center'
             screen.style.backgroundRepeat = 'no-repeat'
         } else {
-            const color = background_color || '#f8fafc'
-            screen.style.backgroundImage = `linear-gradient(180deg, ${color} 0%, ${adjustColorBrightness(color, -20)} 100%)`
-            screen.style.backgroundSize = 'auto'
+            screen.style.backgroundImage = ''
+            screen.style.backgroundColor = '#ffffff'
         }
     }
 
-    currentState.items.forEach(item => {
-        // En preview solo mostramos activos O si el usuario quiere ver todo?
-        if (!item.is_active) return
 
-        const btn = document.createElement('a')
+    // Render regular link buttons
+    currentState.items
+        .filter(i => i.item_type !== 'social' && i.is_active)
+        .forEach(item => {
+            const btn = document.createElement('a')
+            let styleType = item.button_style || 'filled'
+            let modClass = 'btn-link--filled'
+            let shapeClass = 'shape--semi-rounded'
 
-        let styleType = item.button_style || 'filled'
-        let baseClass = 'btn-link'
-        let modClass = 'btn-link--filled'
-        let shapeClass = 'shape--semi-rounded'
+            if (styleType === 'outlined') modClass = 'btn-link--outlined'
+            if (styleType === 'rounded') shapeClass = 'shape--rounded'
+            if (styleType === 'square') shapeClass = 'shape--square'
+            if (styleType === 'semi-rounded') shapeClass = 'shape--semi-rounded'
 
-        if (styleType === 'outlined') modClass = 'btn-link--outlined'
+            btn.className = `btn-link ${modClass} ${shapeClass}`
+            btn.href = item.url || '#'
+            btn.target = '_blank'
+            btn.textContent = item.label
 
-        if (styleType === 'rounded') shapeClass = 'shape--rounded'
-        if (styleType === 'square') shapeClass = 'shape--square'
-        if (styleType === 'semi-rounded') shapeClass = 'shape--semi-rounded'
+            if (item.button_color) btn.style.backgroundColor = item.button_color
+            if (item.text_color) btn.style.color = item.text_color
 
-        btn.className = `${baseClass} ${modClass} ${shapeClass}`
+            UI.preview.appendChild(btn)
+        })
 
-        btn.href = item.url || '#'
-        btn.target = '_blank'
-        btn.textContent = item.label
+    // Render social circles below regular links
+    const activeSocials = currentState.items.filter(i => i.item_type === 'social' && i.is_active)
+    if (activeSocials.length > 0) {
+        const socialsRow = document.createElement('div')
+        socialsRow.className = 'preview-socials-row'
 
-        UI.preview.appendChild(btn)
-    })
+        const NETWORK_ICONS = {
+            facebook: 'ri-facebook-fill',
+            instagram: 'ri-instagram-line',
+            youtube: 'ri-youtube-fill',
+            twitter: 'ri-twitter-x-line'
+        }
+
+        activeSocials.forEach(item => {
+            const circle = document.createElement('a')
+            circle.href = item.url || '#'
+            circle.target = '_blank'
+            circle.className = 'preview-social-circle'
+            circle.title = item.social_network
+            circle.style.backgroundColor = item.button_color || '#1e293b'
+            circle.style.color = item.text_color || '#ffffff'
+
+            const icon = NETWORK_ICONS[item.social_network] || 'ri-share-line'
+            circle.innerHTML = `<i class="${icon}"></i>`
+            socialsRow.appendChild(circle)
+        })
+
+        UI.preview.appendChild(socialsRow)
+    }
 }
+
 
 // --- Link Modal Logic ---
 
 function openModal(item = null) {
     if (!UI.modal) return
+
+    const defaultButtonColor = '#1e293b'
+    const defaultTextColor = '#ffffff'
 
     if (item) {
         // Edit Mode
@@ -313,6 +617,8 @@ function openModal(item = null) {
         if (UI.inputUrl) UI.inputUrl.value = item.url
         if (UI.inputStyle) UI.inputStyle.value = item.button_style || 'semi-rounded'
         if (UI.inputIsActive) UI.inputIsActive.checked = item.is_active
+        if (UI.inputButtonColor) UI.inputButtonColor.value = item.button_color || defaultButtonColor
+        if (UI.inputTextColor) UI.inputTextColor.value = item.text_color || defaultTextColor
 
         // Handle Catalog Link restrictions
         if (item.is_catalog_link) {
@@ -331,12 +637,30 @@ function openModal(item = null) {
         if (UI.inputStyle) UI.inputStyle.value = 'semi-rounded'
         if (UI.inputIsActive) UI.inputIsActive.checked = true
         if (UI.inputUrl) UI.inputUrl.disabled = false
+        if (UI.inputButtonColor) UI.inputButtonColor.value = defaultButtonColor
+        if (UI.inputTextColor) UI.inputTextColor.value = defaultTextColor
     }
 
     // Update Style Selection UI
     if (UI.styleOptions && UI.inputStyle) {
         UI.styleOptions.forEach(opt => {
             opt.classList.toggle('selected', opt.dataset.style === UI.inputStyle.value)
+        })
+    }
+
+    // Update Button Color Selection UI
+    if (UI.buttonColorOptions && UI.inputButtonColor) {
+        const currentColor = UI.inputButtonColor.value
+        UI.buttonColorOptions.forEach(opt => {
+            opt.classList.toggle('selected', opt.dataset.color === currentColor)
+        })
+    }
+
+    // Update Text Color Selection UI
+    if (UI.textColorOptions && UI.inputTextColor) {
+        const currentTextColor = UI.inputTextColor.value
+        UI.textColorOptions.forEach(opt => {
+            opt.classList.toggle('selected', opt.dataset.color === currentTextColor)
         })
     }
 
@@ -355,6 +679,8 @@ async function handleFormSubmit(e) {
         label: UI.inputLabel ? UI.inputLabel.value.trim() : '',
         url: UI.inputUrl ? UI.inputUrl.value.trim() : '',
         button_style: UI.inputStyle ? UI.inputStyle.value : 'filled',
+        button_color: UI.inputButtonColor ? UI.inputButtonColor.value : '#1e293b',
+        text_color: UI.inputTextColor ? UI.inputTextColor.value : '#ffffff',
         is_active: UI.inputIsActive ? UI.inputIsActive.checked : true
     }
 
@@ -413,6 +739,116 @@ async function deleteLink(id) {
     }
 }
 
+// --- Social Modal Logic ---
+
+function openSocialModal(item = null) {
+    if (!UI.socialModal) return
+
+    // Reset form
+    if (UI.socialForm) UI.socialForm.reset()
+    if (UI.socialLinkId) UI.socialLinkId.value = ''
+    if (UI.socialIsActive) UI.socialIsActive.checked = true
+
+    // Reset tile selection
+    if (UI.socialNetworkTiles) {
+        UI.socialNetworkTiles.forEach(t => t.classList.remove('selected'))
+    }
+
+    const defaultColor = '#1e293b'
+    const defaultTextColor = '#ffffff'
+
+    if (item) {
+        // Edit mode
+        if (UI.socialLinkId) UI.socialLinkId.value = item.id
+        if (UI.socialUrl) UI.socialUrl.value = item.url || ''
+        if (UI.socialIsActive) UI.socialIsActive.checked = item.is_active
+        if (UI.socialButtonColor) UI.socialButtonColor.value = item.button_color || defaultColor
+        if (UI.socialTextColor) UI.socialTextColor.value = item.text_color || defaultTextColor
+
+        // Select correct network tile
+        if (UI.socialNetworkTiles && item.social_network) {
+            UI.socialNetworkTiles.forEach(t => {
+                if (t.dataset.network === item.social_network) t.classList.add('selected')
+            })
+            if (UI.socialNetwork) UI.socialNetwork.value = item.social_network
+        }
+
+        // Sync color palettes
+        const bgColor = item.button_color || defaultColor
+        const txtColor = item.text_color || defaultTextColor
+        if (UI.socialColorOptions) {
+            UI.socialColorOptions.forEach(o => o.classList.toggle('selected', o.dataset.color === bgColor))
+        }
+        if (UI.socialTextColorOptions) {
+            UI.socialTextColorOptions.forEach(o => o.classList.toggle('selected', o.dataset.color === txtColor))
+        }
+    } else {
+        // Create mode — preset colors
+        if (UI.socialButtonColor) UI.socialButtonColor.value = defaultColor
+        if (UI.socialTextColor) UI.socialTextColor.value = defaultTextColor
+        if (UI.socialColorOptions) {
+            UI.socialColorOptions.forEach(o => o.classList.toggle('selected', o.dataset.color === defaultColor))
+        }
+        if (UI.socialTextColorOptions) {
+            UI.socialTextColorOptions.forEach(o => o.classList.toggle('selected', o.dataset.color === defaultTextColor))
+        }
+    }
+
+    UI.socialModal.style.display = 'flex'
+}
+
+function closeSocialModal() {
+    if (UI.socialModal) UI.socialModal.style.display = 'none'
+    if (UI.socialForm) UI.socialForm.reset()
+}
+
+async function handleSocialSubmit(e) {
+    e.preventDefault()
+
+    const network = UI.socialNetwork ? UI.socialNetwork.value : ''
+    const url = UI.socialUrl ? UI.socialUrl.value.trim() : ''
+
+    if (!network) {
+        notify.error('Selecciona una red social')
+        return
+    }
+    if (!url) {
+        notify.error('Ingresa la URL del perfil')
+        return
+    }
+
+    const formData = {
+        label: network,
+        url,
+        item_type: 'social',
+        social_network: network,
+        button_color: UI.socialButtonColor ? UI.socialButtonColor.value : '#1e293b',
+        text_color: UI.socialTextColor ? UI.socialTextColor.value : '#ffffff',
+        is_active: UI.socialIsActive ? UI.socialIsActive.checked : true
+    }
+
+    const id = UI.socialLinkId ? UI.socialLinkId.value : ''
+
+    try {
+        if (id) {
+            const updated = await linksService.updateLinkItem(id, formData)
+            const idx = currentState.items.findIndex(i => i.id === id)
+            if (idx !== -1) currentState.items[idx] = updated
+            notify.success('Red social actualizada')
+        } else {
+            formData.position = currentState.items.length
+            const created = await linksService.addLinkItem(currentState.pageId, formData)
+            currentState.items.push(created)
+            notify.success('Red social añadida')
+        }
+        closeSocialModal()
+        render()
+    } catch (error) {
+        console.error('Error saving social link:', error)
+        notify.error('Error al guardar la red social')
+    }
+}
+
 // --- Background Modal Logic ---
 
 let tempBgFile = null
@@ -420,17 +856,8 @@ let tempBgColor = '#f8fafc'
 
 function openBackgroundModal() {
     if (!UI.bgModal) return
-
-    // Reset temp state
     tempBgFile = null
-    tempBgColor = currentState.pageSettings.background_color || '#f8fafc'
-
-    if (UI.bgColorInput) UI.bgColorInput.value = tempBgColor
-    if (UI.bgColorPreview) UI.bgColorPreview.style.backgroundColor = tempBgColor
-
-    // Update UI Preview in Modal (not the real preview)
-    updateModalBgPreview(currentState.pageSettings.background_image_url)
-
+    updateModalBgPreview(currentState.pageSettings?.background_image_url || null)
     UI.bgModal.style.display = 'flex'
 }
 
@@ -473,35 +900,26 @@ function updateModalBgPreview(url) {
 async function handleBackgroundSubmit(e) {
     e.preventDefault()
 
-    // Get color
-    const newColor = UI.bgColorInput ? UI.bgColorInput.value : '#f8fafc'
-
     try {
-        let newImageUrl = currentState.pageSettings.background_image_url
+        let newImageUrl = currentState.pageSettings?.background_image_url || null
 
-        // Handle Image Upload/Delete
         if (tempBgFile === 'DELETE') {
             newImageUrl = null
         } else if (tempBgFile && typeof tempBgFile !== 'string') {
-            // Upload
             notify.info('Subiendo imagen...')
             const result = await linksService.uploadBackgroundImage(tempBgFile)
             newImageUrl = result.url
         }
 
-        // Save — solo enviamos los campos de fondo, nunca campos de identidad como slug
         const bgPayload = {
-            background_color: newColor,
             background_image_url: newImageUrl,
-            button_style_default: currentState.pageSettings.button_style_default || 'filled'
+            button_style_default: currentState.pageSettings?.button_style_default || 'filled'
         }
 
         await linksService.upsertLinkPage(currentState.businessId, bgPayload)
 
-        // Actualizar el estado local con los valores guardados
         currentState.pageSettings = {
             ...currentState.pageSettings,
-            background_color: newColor,
             background_image_url: newImageUrl
         }
         renderPreview()

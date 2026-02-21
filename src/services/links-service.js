@@ -293,35 +293,75 @@ export const linksService = {
     },
 
     /**
-     * Sube una imagen de fondo para la página de enlaces
-     * @param {File} file 
+     * Comprime una imagen usando canvas antes de subirla.
+     * @param {File} file
+     * @returns {Promise<Blob>} Blob comprimido
+     */
+    async compressImage(file) {
+        return new Promise((resolve, reject) => {
+            const img = new Image()
+            const url = URL.createObjectURL(file)
+
+            img.onload = () => {
+                URL.revokeObjectURL(url)
+                const MAX_PX = 1600
+                let { width, height } = img
+
+                // Escalar proporcionalmente si supera el máximo
+                if (width > MAX_PX || height > MAX_PX) {
+                    if (width > height) {
+                        height = Math.round((height * MAX_PX) / width)
+                        width = MAX_PX
+                    } else {
+                        width = Math.round((width * MAX_PX) / height)
+                        height = MAX_PX
+                    }
+                }
+
+                const canvas = document.createElement('canvas')
+                canvas.width = width
+                canvas.height = height
+                const ctx = canvas.getContext('2d')
+                ctx.drawImage(img, 0, 0, width, height)
+                canvas.toBlob(
+                    blob => blob ? resolve(blob) : reject(new Error('Error al comprimir imagen')),
+                    'image/jpeg',
+                    0.85
+                )
+            }
+
+            img.onerror = () => reject(new Error('No se pudo leer la imagen'))
+            img.src = url
+        })
+    },
+
+    /**
+     * Sube una imagen de fondo para la página de enlaces.
+     * La imagen se comprime en el cliente antes de subir.
+     * @param {File} file
      */
     async uploadBackgroundImage(file) {
         try {
-            // Validar archivo
             if (!file) throw new Error('No se proporcionó archivo')
 
-            // Validar tipo
             const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
             if (!validTypes.includes(file.type)) {
                 throw new Error('Formato no válido. Usa JPG, PNG o WEBP')
             }
 
-            // Validar tamaño (máx 5MB)
-            if (file.size > 5 * 1024 * 1024) throw new Error('La imagen es muy grande. Máximo 5MB')
+            // Comprimir antes de subir (sin importar el tamaño original)
+            const compressed = await this.compressImage(file)
 
             const { data: { user }, error: userError } = await supabase.auth.getUser()
             if (userError || !user) throw new Error('Usuario no autenticado')
 
-            const fileExt = file.name.split('.').pop()
-            const fileName = `bg-${Date.now()}.${fileExt}`
-            // Usaremos el bucket 'business-assets' si existe, o 'product-images' como fallback seguro por ahora
-            // La instrucción no especificó bucket, usaremos 'product-images' en carpeta 'backgrounds' para consistencia con permisos existentes probables
+            const fileName = `bg-${Date.now()}.jpg`
             const filePath = `${user.id}/backgrounds/${fileName}`
 
-            const { data, error } = await supabase.storage
+            const { error } = await supabase.storage
                 .from('product-images')
-                .upload(filePath, file, {
+                .upload(filePath, compressed, {
+                    contentType: 'image/jpeg',
                     cacheControl: '3600',
                     upsert: false
                 })
