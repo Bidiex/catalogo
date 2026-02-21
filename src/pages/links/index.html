@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enlaces - TraeGo</title>
+    <link rel="icon" type="image/svg+xml" href="/src/assets/icon_traego.svg" />
+    <link rel="stylesheet" href="/src/styles/global.css">
+    <link rel="stylesheet" href="/src/pages/links/links-page.css">
+    <!-- Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+        rel="stylesheet" />
+</head>
+
+<body>
+
+    <div id="loading" class="loading-screen">
+        <div class="spinner-container">
+            <div class="spinner"></div>
+            <img src="/src/assets/icon_traego.svg" alt="Cargando..." class="spinner-icon">
+        </div>
+    </div>
+
+    <main class="links-page" id="linksPage" style="display: none;">
+        <!-- Header: Logo + Nombre -->
+        <header class="links-page__header">
+            <div class="links-page__logo-container">
+                <img id="businessLogo" class="links-page__logo" src="" alt="Logo" />
+            </div>
+            <h1 id="businessName" class="links-page__name"></h1>
+            <p id="businessDesc" class="links-page__desc"></p>
+        </header>
+
+        <!-- Enlaces -->
+        <section id="linksContainer" class="links-page__buttons">
+            <!-- Se inyectarán botones aquí -->
+        </section>
+
+        <!-- Redes Sociales (debajo de los enlaces normales) -->
+        <section id="socialsContainer" class="links-page__socials">
+            <!-- Se inyectarán círculos de redes sociales aquí -->
+        </section>
+
+        <footer class="links-page__footer">
+            <a href="https://traego.com" target="_blank" class="powered-by">
+                <span>Tecnología</span>
+                <img src="/src/assets/icon_traego.svg" alt="TraeGo icon" class="powered-by__icon">
+                <img src="/src/assets/logo_traego.svg" alt="TraeGo" class="powered-by__logo">
+            </a>
+        </footer>
+    </main>
+
+    <div id="errorState" class="error-state unified-error-container" style="display: none;">
+        <div class="content">
+            <img src="/src/assets/avatar-404.webp" alt="Error" class="unified-error-avatar" />
+            <h2 class="unified-error-title">Enlaces no encontrados</h2>
+            <p class="unified-error-description">El enlace que buscas no existe o ha sido desactivado.</p>
+
+            <div class="unified-error-actions">
+                <button id="links-go-back-btn" class="unified-error-btn unified-error-btn-secondary"
+                    onclick="window.history.back()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 12H5" />
+                        <path d="M12 19l-7-7 7-7" />
+                    </svg>
+                    Volver atrás
+                </button>
+                <a href="/" class="unified-error-btn unified-error-btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                        <polyline points="9 22 9 12 15 12 15 22" />
+                    </svg>
+                    Ir al inicio
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/src/pages/links/links-page.js"></script>
+</body>
+
+</html>

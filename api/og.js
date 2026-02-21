@@ -37,12 +37,11 @@ export default async function handler(request) {
             .single();
 
         if (error || !business) {
-            // Si no existe el negocio, devolver metadatos genéricos o 404
             return generateResponse({
                 title: 'Catálogo Digital - TraeGo',
                 description: 'Haz tus pedidos fácil y rápido.',
-                image: `${siteUrl}/src/assets/logo_traego.png`, // Fallback image
-                url: `${siteUrl}/c/${slug}`
+                image: `${siteUrl}/hero-og.webp`, // Fallback image
+                url: `${siteUrl}${url.pathname}`
             });
         }
 
@@ -52,14 +51,20 @@ export default async function handler(request) {
 
         // Asegurar que la URL de la imagen sea absoluta si empieza con /
         if (imageUrl && !imageUrl.startsWith('http')) {
-            // Asumimos que si no tiene http, es relativa a supabase storage o al sitio
-            // pero normalmente en Supabase vienen completas si es bucket, o relativas.
-            // Ajustar según estructura real de datos. Por seguridad, usaremos un placeholder si falla.
+            // Asumimos que es relativo al proyecto local (ej. supabase storage path)
+            // Si es un res.cloudinary o bucket supabase pero sin http, forzamos https://
+            if (imageUrl.startsWith('//')) {
+                imageUrl = `https:${imageUrl}`;
+            } else if (imageUrl.startsWith('/')) {
+                imageUrl = `${siteUrl}${imageUrl}`;
+            } else {
+                imageUrl = `${siteUrl}/${imageUrl}`;
+            }
         }
 
-        // Fallback final de imagen
+        // Fallback final de imagen (imagen estática en public)
         if (!imageUrl) {
-            imageUrl = `${siteUrl}/src/assets/hero_img.webp`;
+            imageUrl = `${siteUrl}/hero-og.webp`;
         }
 
         // Retornar HTML
@@ -67,7 +72,7 @@ export default async function handler(request) {
             title: `${business.name} - Catálogo Digital`,
             description: business.description || 'Mira nuestro menú y haz tu pedido por WhatsApp.',
             image: imageUrl,
-            url: `${siteUrl}/c/${slug}`
+            url: `${siteUrl}${url.pathname}`
         });
 
     } catch (err) {

@@ -57,6 +57,14 @@
             "destination": "/catalog.html"
         },
         {
+            "source": "/l/:slug",
+            "destination": "/links.html"
+        },
+        {
+            "source": "/c/:slug/links",
+            "destination": "/links.html"
+        },
+        {
             "source": "/(.*)",
             "destination": "/404.html"
         }

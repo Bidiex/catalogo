@@ -1,0 +1,375 @@
+/* Base styles inherit from global.css but we ensure isolation */
+body {
+    background-color: #f8fafc;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+body.has-bg-image {
+    background-image: var(--page-bg-image);
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+}
+
+/* =============================================
+   Desktop Smartphone Frame (min-width: 768px)
+   ============================================= */
+@media (min-width: 768px) {
+    body {
+        background-color: #0f172a;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+    }
+
+    body.has-bg-image {
+        background-color: #0f172a;
+        background-image: none;
+    }
+
+    body.is-error-state {
+        background-color: #ffffff;
+    }
+
+    /* The phone shell wrapper — rendered via JS-added .phone-frame class */
+    .phone-frame {
+        position: relative;
+        width: 390px;
+        height: 844px;
+        transform: scale(min(1, calc((100vh - 80px) / 844)));
+        transform-origin: center center;
+        background: #ffffff;
+        border-radius: 44px;
+        box-shadow:
+            0 0 0 2px #374151,
+            0 0 0 6px #1f2937,
+            0 0 0 8px #111827,
+            0 30px 80px rgba(0, 0, 0, 0.6);
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+
+    /* Notch */
+    .phone-frame::before {
+        content: '';
+        position: absolute;
+        top: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 120px;
+        height: 30px;
+        background: #111827;
+        border-radius: 20px;
+        z-index: 10;
+    }
+
+    /* The links-page main sits inside the phone frame */
+    .phone-frame .links-page {
+        width: 100%;
+        max-width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 3.5rem 1.5rem 1.5rem;
+        overflow-y: auto;
+        box-sizing: border-box;
+        scrollbar-width: none;
+    }
+
+    .phone-frame .links-page::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Background image goes on the phone frame, not the body */
+    .phone-frame.has-bg-image {
+        background-image: var(--page-bg-image);
+        background-size: cover;
+        background-position: center;
+    }
+}
+
+
+.links-page {
+    width: 100%;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 3.5rem 1.5rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    flex-grow: 1;
+}
+
+/* Header */
+.links-page__header {
+    text-align: center;
+    margin-top: 1.5rem;
+    margin-bottom: 2.5rem;
+    width: 100%;
+}
+
+.links-page__logo-container {
+    width: 96px;
+    height: 96px;
+    margin: 0 auto 1rem;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid #e2e8f0;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.links-page__logo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.links-page__name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 0.5rem 0;
+    line-height: 1.2;
+}
+
+.links-page__desc {
+    font-size: 0.95rem;
+    color: #64748b;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Container Buttons */
+.links-page__buttons {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Button Component */
+.btn-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 1rem 1.5rem;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    position: relative;
+    min-height: 56px;
+    box-sizing: border-box;
+    text-align: center;
+    line-height: 1.2;
+    overflow-wrap: break-word;
+}
+
+.btn-link:hover {
+    transform: scale(1.02);
+}
+
+.btn-link:active {
+    transform: scale(0.98);
+}
+
+/* Styles Variations */
+/* Filled (Sólido) */
+.btn-link--filled {
+    background-color: var(--primary-color, #1e293b);
+    color: white;
+    border: none;
+}
+
+.btn-link--filled:hover {
+    opacity: 0.9;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Outlined (Borde) */
+.btn-link--outlined {
+    background-color: transparent;
+    color: var(--primary-color, #1e293b);
+    border: 2px solid var(--primary-color, #1e293b);
+}
+
+.btn-link--outlined:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+/* Shapes */
+.shape--rounded {
+    border-radius: 9999px;
+}
+
+.shape--semi-rounded {
+    border-radius: 12px;
+}
+
+.shape--square {
+    border-radius: 0;
+}
+
+/* Catalog Button Special Styling */
+.btn-link--catalog {
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+/* Per-item custom color overrides (set via JS CSS vars) */
+.btn-link--custom-color {
+    background-color: var(--btn-item-bg);
+    border-color: var(--btn-item-bg);
+}
+
+.btn-link--custom-text {
+    color: var(--btn-item-color);
+}
+
+/* Social Circles */
+.links-page__socials {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+    width: 100%;
+}
+
+.social-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-size: 1.5rem;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    background-color: var(--social-bg, #1e293b);
+    color: var(--social-color, #ffffff);
+}
+
+.social-circle:hover {
+    transform: scale(1.1);
+    opacity: 0.9;
+}
+
+/* Footer */
+.links-page__footer {
+    margin-top: auto;
+    padding-top: 3rem;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.powered-by {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    text-decoration: none;
+    pointer-events: none;
+    background: #ffffff;
+    padding: 0.5rem 1.25rem;
+    border-radius: 20px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+}
+
+.powered-by span {
+    font-size: 0.8rem;
+    color: #64748b;
+    font-weight: 600;
+    margin-right: 0.25rem;
+}
+
+.powered-by__logo {
+    height: 18px;
+    width: auto;
+}
+
+.powered-by__icon {
+    height: 24px;
+    width: 24px;
+    margin-right: -0.2rem;
+}
+
+/* Loading & Error */
+.loading-screen {
+    position: fixed;
+    inset: 0;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+}
+
+.spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid #f1f5f9;
+    border-top: 4px solid #4CED17;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    position: relative;
+}
+
+.spinner-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.spinner-icon {
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+}
+
+.error-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    text-align: center;
+    padding: 2rem;
+    color: #64748b;
+}
+
+.error-state .icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    color: #94a3b8;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .links-page {
+        padding: 1.5rem 1rem;
+    }
+}

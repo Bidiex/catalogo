@@ -20,7 +20,9 @@ import { imageService } from '../../services/images.js'
 import { supportService } from '../../services/support.js'
 import { ordersService } from '../../services/orders.js'
 import { deliveryPersonsService } from '../../services/deliveryPersons.js'
+
 import { initAnalytics, updateAnalytics } from './analytics.js'
+import { initLinksEditor } from '../links/links-editor.js'
 import * as XLSX from 'xlsx'
 // ============================================
 // ESTADO GLOBAL
@@ -269,6 +271,18 @@ function initSidebarNavigation() {
 
       if (section === 'delivery-persons' && currentBusiness) {
         loadDeliveryPersons()
+      }
+
+      if (section === 'delivery-persons' && currentBusiness) {
+        loadDeliveryPersons()
+      }
+
+      if (section === 'links' && currentBusiness) {
+        // Pass slug for public url display
+        const slugDisplay = document.getElementById('editorSlugDisplay')
+        if (slugDisplay) slugDisplay.textContent = currentBusiness.slug
+
+        initLinksEditor(currentBusiness)
       }
 
       // Cambiar sección
@@ -790,7 +804,10 @@ function updatePageTitle(sectionName) {
     'promotions': 'Promociones',
     'delivery-persons': 'Gestión de Domiciliarios',
     'whatsapp': 'Mensaje de WhatsApp',
-    'support': 'Soporte y Ayuda'
+    'delivery-persons': 'Gestión de Domiciliarios',
+    'whatsapp': 'Mensaje de WhatsApp',
+    'support': 'Soporte y Ayuda',
+    'links': 'Centro de Enlaces'
   }
 
   pageTitle.textContent = titles[sectionName] || 'Dashboard'
@@ -1499,14 +1516,20 @@ function renderProducts(productsToRender = null) {
   document.querySelectorAll('.edit-product').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const id = e.target.dataset.id || e.target.closest('.edit-product').dataset.id
-      openEditProductModal(id)
+      // Wrap with loader (although synchronous, provides visual feedback)
+      buttonLoader.execute(btn, async () => {
+        openEditProductModal(id)
+      })
     })
   })
 
   document.querySelectorAll('.manage-options').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const id = e.target.dataset.id || e.target.closest('.manage-options').dataset.id
-      openProductOptionsModal(id)
+      // Wrap with async loader for data fetching
+      buttonLoader.execute(btn, async () => {
+        await openProductOptionsModal(id)
+      })
     })
   })
 
@@ -1520,7 +1543,10 @@ function renderProducts(productsToRender = null) {
   document.querySelectorAll('.manage-discount').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const id = e.target.dataset.id || e.target.closest('.manage-discount').dataset.id
-      openDiscountModal(id)
+      // Wrap with async loader
+      buttonLoader.execute(btn, async () => {
+        await openDiscountModal(id)
+      })
     })
   })
 }

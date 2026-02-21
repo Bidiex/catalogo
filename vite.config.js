@@ -20,6 +20,8 @@ export default defineConfig({
         'admin-business-detail': resolve(__dirname, 'src/pages/admin/business-detail/index.html'),
         'admin-setup-catalogo': resolve(__dirname, 'src/pages/admin/setup-catalogo/index.html'),
         'admin-support': resolve(__dirname, 'src/pages/admin/support/index.html'),
+
+        'links': resolve(__dirname, 'src/pages/links/index.html'),
         '404': resolve(__dirname, 'src/pages/404/index.html'),
       },
       output: {
@@ -59,7 +61,16 @@ export default defineConfig({
           }
           // Handle /c/:slug routes
           else if (req.url.startsWith('/c/') && !req.url.includes('.')) {
-            req.url = '/src/pages/catalog/index.html'
+            // Check if it is a links page request: /c/:slug/links
+            if (req.url.endsWith('/links')) {
+              req.url = '/src/pages/links/index.html'
+            } else {
+              req.url = '/src/pages/catalog/index.html'
+            }
+          }
+          // Handle /l/:slug routes (Centro de Enlaces pública)
+          else if (req.url.startsWith('/l/') && !req.url.includes('.')) {
+            req.url = '/src/pages/links/index.html'
           }
 
           next()
@@ -91,7 +102,15 @@ export default defineConfig({
           }
           // Handle /c/:slug routes
           else if (req.url.startsWith('/c/') && !req.url.includes('.')) {
-            req.url = '/catalog.html'
+            if (req.url.endsWith('/links')) {
+              req.url = '/links.html'
+            } else {
+              req.url = '/catalog.html'
+            }
+          }
+          // Handle /l/:slug routes (Centro de Enlaces pública)
+          else if (req.url.startsWith('/l/') && !req.url.includes('.')) {
+            req.url = '/links.html'
           }
           // Handle query strings (e.g., /auth/callback?code=...)
           else {
@@ -132,7 +151,9 @@ export default defineConfig({
           moveFile(resolve(srcDir, 'admin/businesses/index.html'), resolve(distDir, 'admin-businesses.html'))
           moveFile(resolve(srcDir, 'admin/business-detail/index.html'), resolve(distDir, 'admin-business-detail.html'))
           moveFile(resolve(srcDir, 'admin/setup-catalogo/index.html'), resolve(distDir, 'admin-setup-catalogo.html'))
+
           moveFile(resolve(srcDir, 'admin/support/index.html'), resolve(distDir, 'admin-support.html'))
+          moveFile(resolve(srcDir, 'links/index.html'), resolve(distDir, 'links.html'))
           moveFile(resolve(srcDir, '404/index.html'), resolve(distDir, '404.html'))
 
           // Optional: Clean up src directory in dist if empty or no longer needed

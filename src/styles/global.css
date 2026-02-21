@@ -1,8 +1,9 @@
 /* Remix Icon CDN */
 @import url('https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css');
 
-/* Google Fonts - Inter */
+/* Google Fonts - Inter & Plus Jakarta Sans */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 /* Reset básico */
 * {
@@ -631,4 +632,99 @@ button[type="submit"]:disabled {
   height: 20px;
   width: auto;
   object-fit: contain;
+}
+
+/* ============================================
+   UNIFIED ERROR PAGES (404, Catalog Not Found, Links Not Found)
+   ============================================ */
+
+.unified-error-container {
+  width: 100%;
+  max-width: 600px;
+  padding: 2rem;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2rem;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.unified-error-avatar {
+  width: 100%;
+  max-width: 250px;
+  height: auto;
+  margin: 0 auto 1.5rem auto;
+  display: block;
+  -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+}
+
+.unified-error-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: var(--color-text, #0f172a);
+  line-height: 1.1;
+}
+
+@media (min-width: 768px) {
+  .unified-error-title {
+    font-size: 3.5rem;
+  }
+}
+
+.unified-error-description {
+  font-size: 1.125rem;
+  color: #596780;
+  line-height: 1.6;
+  margin-bottom: 2.5rem;
+}
+
+.unified-error-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+}
+
+.unified-error-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 2rem;
+  border-radius: 9999px;
+  font-weight: 700;
+  font-size: 1rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.unified-error-btn-primary {
+  background-color: var(--color-primary, #4ced17);
+  color: #000;
+  box-shadow: 0 4px 14px rgba(76, 237, 23, 0.3);
+}
+
+.unified-error-btn-primary:hover {
+  transform: translateY(-2px);
+  background-color: var(--primary-hover, #36a514);
+  color: white;
+}
+
+.unified-error-btn-secondary {
+  background-color: white;
+  color: var(--color-text, #0f172a);
+  border: 1px solid var(--color-border, #e2e8f0);
+}
+
+.unified-error-btn-secondary:hover {
+  border-color: var(--color-text, #0f172a);
+  background-color: var(--bg-light, #f6f7f8);
 }
