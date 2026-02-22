@@ -157,6 +157,50 @@
     </div>
   </section>
 
+  <!-- Metrics Section -->
+  <section class="metrics-section" id="metrics">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">El crecimiento de TraeGo en números</h2>
+        <p class="section-subtitle">Únete los negocios que ya están vendiendo más cada día.</p>
+      </div>
+      <div class="metrics-wrapper">
+        <div class="metrics-cards">
+          <!-- Metric 1: Negocios -->
+          <div class="metric-card metric-card-green">
+            <div class="metric-info">
+              <span class="metric-label">Negocios Registrados</span>
+              <span class="metric-sublabel">En todo TraeGo</span>
+            </div>
+            <div class="metric-value" id="metric-business">-</div>
+          </div>
+
+          <!-- Metric 2: Productos -->
+          <div class="metric-card metric-card-yellow">
+            <div class="metric-info">
+              <span class="metric-label">Productos Creados</span>
+              <span class="metric-sublabel">Catálogo en crecimiento</span>
+            </div>
+            <div class="metric-value" id="metric-products">-</div>
+          </div>
+
+          <!-- Metric 3: Pedidos -->
+          <div class="metric-card metric-card-orange">
+            <div class="metric-info">
+              <span class="metric-label">Pedidos Completados</span>
+              <span class="metric-sublabel">A través de WhatsApp</span>
+            </div>
+            <div class="metric-value" id="metric-orders">-</div>
+          </div>
+        </div>
+
+        <div class="metrics-image-container">
+          <img src="/src/assets/avatar-landing-2.webp" alt="Métricas TraeGo" class="metrics-image" loading="lazy">
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Pricing Section -->
   <section class="pricing-section" id="pricing">
     <div class="container">
@@ -184,6 +228,17 @@
             <li class="feature-item">
               <span class="material-symbols-rounded text-primary">check_circle</span>
               <span>Hasta 300 pedidos/mes</span>
+            </li>
+            <li class="feature-item">
+              <span class="material-symbols-rounded text-primary">check_circle</span>
+              <span class="feature-text-with-tooltip">
+                Página de enlaces
+                <div class="tooltip-container">
+                  <span class="badge-new">Nuevo</span>
+                  <div class="tooltip-text">Crea una página digital con todos tus enlaces importantes en un solo lugar.
+                  </div>
+                </div>
+              </span>
             </li>
             <li class="feature-item">
               <span class="material-symbols-rounded text-primary">check_circle</span>
@@ -223,7 +278,7 @@
             </li>
           </ul>
           <a class="btn-pricing primary" href="/login?mode=register">Comenzar Gratis</a>
-          <a class="btn-pricing"
+          <a class="btn-pricing btn-plus"
             href="https://wa.me/573180779665?text=Hola,%20me%20interesa%20contratar%20el%20Plan%20Plus"
             target="_blank">Contratar Plus</a>
         </div>
@@ -253,13 +308,52 @@
             </li>
             <li class="feature-item">
               <span class="material-symbols-rounded text-primary">check_circle</span>
+              <span class="feature-text-with-tooltip">
+                Productos sugeridos en el pedido
+                <div class="tooltip-container">
+                  <span class="badge-new">Nuevo</span>
+                  <div class="tooltip-text">Aumenta tus ventas sugiriendo productos relacionados antes de finalizar el
+                    pedido.</div>
+                </div>
+              </span>
+            </li>
+            <li class="feature-item">
+              <span class="material-symbols-rounded text-primary">check_circle</span>
+              <span class="feature-text-with-tooltip">
+                Seguimiento del pedido para el cliente
+                <div class="tooltip-container">
+                  <span class="badge-new">Nuevo</span>
+                  <div class="tooltip-text">Tus clientes podrán ver el estado de su pedido en tiempo real mediante un
+                    enlace.</div>
+                </div>
+              </span>
+            </li>
+            <li class="feature-item">
+              <span class="material-symbols-rounded text-primary">check_circle</span>
               <span>Soporte Prioritario</span>
             </li>
           </ul>
           <a class="btn-pricing primary" href="/login?mode=register">Comenzar Gratis</a>
-          <a class="btn-pricing "
+          <a class="btn-pricing btn-pro"
             href="https://wa.me/573180779665?text=Hola,%20me%20interesa%20contratar%20el%20Plan%20Pro"
             target="_blank">Contratar Pro</a>
+        </div>
+
+        <!-- Plan Premium (Coming Soon) -->
+        <div class="pricing-card premium">
+          <div class="mb-8">
+            <h3 class="plan-name">Plan Premium</h3>
+            <p class="plan-desc">Para negocios líderes.</p>
+          </div>
+          <div class="mb-8">
+            <span class="plan-price">Próximamente</span>
+          </div>
+          <div class="premium-expectation">
+            <p>Estamos diseñando la herramienta definitiva para negocios que quiran ser líderes en su sector.</p>
+          </div>
+          <div class="premium-image-container">
+            <img src="./src/assets/avatar-premium.webp" alt="Premium Plan Preview" class="premium-image" loading="lazy">
+          </div>
         </div>
       </div>
     </div>

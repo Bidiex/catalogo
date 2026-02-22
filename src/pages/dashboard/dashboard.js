@@ -1094,7 +1094,8 @@ async function updatePlanUsageUI() {
   if (planBadge) {
     planBadge.textContent = planInfo.label
     planBadge.className = `badge badge-${planType}` // CSS class needed or inline style adjustment
-    planBadge.style.background = planType === 'pro' ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : '#3b82f6'
+    planBadge.style.background = planType === 'pro' ? '#5170ff' : '#8c52ff'
+    planBadge.style.color = '#ffffff'
   }
 
   if (planDaysRemaining) {

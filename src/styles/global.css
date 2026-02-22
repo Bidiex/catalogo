@@ -765,7 +765,7 @@ button[type="submit"]:disabled {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: linear-gradient(135deg, #111921 0%, #1a2632 100%);
+  background: #5170ff;
   color: white;
   padding: 0.5rem 1rem;
   border-radius: var(--radius-full);
@@ -775,13 +775,13 @@ button[type="submit"]:disabled {
   align-items: center;
   gap: 0.5rem;
   z-index: 10;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(81, 112, 255, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.1);
   pointer-events: none;
 }
 
 .feature-lock-badge i {
-  color: #fbbf24;
+  color: #ffffff;
 }
 
 /* Upgrade Modal Styles */
@@ -824,7 +824,7 @@ button[type="submit"]:disabled {
 }
 
 .upgrade-modal-header {
-  background: linear-gradient(135deg, #111921 0%, #1a2632 100%);
+  background: #5170ff;
   padding: 2rem;
   text-align: center;
   position: relative;
@@ -834,14 +834,14 @@ button[type="submit"]:disabled {
 .upgrade-modal-icon {
   width: 64px;
   height: 64px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 1rem;
   font-size: 2rem;
-  color: #fbbf24;
+  color: #ffffff;
 }
 
 .upgrade-modal-title {
@@ -899,7 +899,7 @@ button[type="submit"]:disabled {
 }
 
 .btn-upgrade-action {
-  background: linear-gradient(135deg, #111921 0%, #1a2632 100%);
+  background: #5170ff;
   color: white;
   border: none;
   padding: 1rem 2rem;
@@ -911,13 +911,14 @@ button[type="submit"]:disabled {
   justify-content: center;
   gap: 0.5rem;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
   text-decoration: none;
 }
 
 .btn-upgrade-action:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(17, 25, 33, 0.3);
+  background-color: #4160e0;
+  box-shadow: 0 10px 15px -3px rgba(81, 112, 255, 0.3);
   color: white;
 }
 
