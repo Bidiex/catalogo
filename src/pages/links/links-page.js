@@ -161,6 +161,11 @@ function renderPage({ business, page, items }) {
             btn.classList.add('btn-link--catalog')
         }
 
+        // Registrar clic localmente sin interrumpir navegación
+        btn.addEventListener('click', () => {
+            if (item.id) linksService.incrementLinkClick(item.id)
+        })
+
         container.appendChild(btn)
     })
 
@@ -191,6 +196,12 @@ function renderPage({ business, page, items }) {
 
             const iconClass = NETWORK_ICONS[item.social_network] || 'ri-share-line'
             circle.innerHTML = `<i class="${iconClass}"></i>`
+
+            // Registrar clic localmente sin interrumpir navegación
+            circle.addEventListener('click', () => {
+                if (item.id) linksService.incrementLinkClick(item.id)
+            })
+
             socialsContainer.appendChild(circle)
         })
     }

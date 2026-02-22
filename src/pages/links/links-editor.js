@@ -359,6 +359,9 @@ function createLinkItemEl(item) {
                     ${item.is_active ? 'Visible' : 'Oculto'}
                 </span>
                 ${isCatalog ? '<span class="link-badge badge-fijo">Fijo</span>' : ''}
+                <span class="link-badge" title="Clics">
+                    <i class="ri-mouse-line"></i> ${item.clicks || 0}
+                </span>
             </div>
         </div>
         <div class="link-actions">
@@ -435,6 +438,9 @@ function createSocialItemEl(item) {
             <div class="link-meta">
                 <span class="link-badge badge-status ${item.is_active ? '' : 'inactive'}">
                     ${item.is_active ? 'Visible' : 'Oculto'}
+                </span>
+                <span class="link-badge" title="Clics">
+                    <i class="ri-mouse-line"></i> ${item.clicks || 0}
                 </span>
             </div>
         </div>
