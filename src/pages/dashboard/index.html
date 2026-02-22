@@ -1342,6 +1342,10 @@
               <button class="products-tab-btn" data-tab="menus">
                 <i class="ri-calendar-event-line"></i> Menús del día
               </button>
+              <button class="products-tab-btn" data-tab="suggestions" data-feature="order-suggestions">
+                <i class="ri-magic-line"></i> Sugerencias <span class="feature-lock-badge"><i
+                    class="ri-vip-crown-fill"></i></span>
+              </button>
             </div>
 
             <div class="card-content" style="padding-top: 1.5rem;">
@@ -1417,6 +1421,26 @@
                 <div id="dailyMenusList" class="daily-menus-grid">
                   <!-- JS Generated -->
                   <p class="empty-message">No hay menús creados</p>
+                </div>
+              </div>
+
+              <!-- Tab Content: Sugerencias (Pro Feature) -->
+              <div id="tab-suggestions" class="products-tab-content" style="display: none;">
+                <div class="tab-header-actions"
+                  style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                  <div>
+                    <h3 style="margin: 0; font-size: 1.1rem;">Sugerencias en el Checkout</h3>
+                    <p style="margin: 0; font-size: 0.85rem; color: #64748b;">Selecciona hasta 3 productos para sugerir
+                      a tus clientes al finalizar su pedido.</p>
+                  </div>
+                  <button id="saveSuggestionsBtn" class="btn-primary-small">
+                    <i class="ri-save-line"></i> Guardar Sugerencias
+                  </button>
+                </div>
+
+                <div class="suggestions-grid" id="suggestionsGrid"
+                  style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                  <!-- Se llenará vía JS con checkboxes para seleccionar productos -->
                 </div>
               </div>
 

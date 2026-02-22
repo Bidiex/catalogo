@@ -1,5 +1,8 @@
 import { authService } from '../../services/auth.js'
 import { generateOrderInvoice } from '../../utils/invoiceGenerator.js'
+import { planService } from '../../services/plan.js'
+import { featureLocker } from '../../utils/featureLocker.js'
+import { upgradeModal } from '../../components/upgradeModal.js'
 
 import { businessService } from '../../services/business.js'
 import { categoryService } from '../../services/categories.js'
@@ -215,6 +218,10 @@ async function init() {
 
     // Cargar negocio
     await loadBusiness()
+
+    // Inicializar sistema de planes y bloqueo UI
+    planService.init(currentBusiness)
+    featureLocker.applyFeatureLocks()
 
     // Show Reminder Modal - Only on fresh login, not on page refresh
     const reminderModal = document.getElementById('whatsappReminderModal')
@@ -5196,9 +5203,11 @@ function renderOrders() {
 
   // Filter
   const filtered = orders.filter(order => {
+    const orderRef = order.order_token ? order.order_token.split('-')[0].toUpperCase() : order.id.slice(0, 8).toUpperCase()
     const matchesSearch =
       (order.customer_name?.toLowerCase().includes(searchTerm)) ||
       (order.customer_phone?.includes(searchTerm)) ||
+      (orderRef.toLowerCase().includes(searchTerm)) ||
       (order.id.slice(0, 8).includes(searchTerm))
 
     const matchesStatus = statusTerm === 'all' || order.status === statusTerm
@@ -5225,10 +5234,12 @@ function renderOrders() {
     if (mosaicGrid) mosaicGrid.style.display = 'none'
 
     if (tableBody) {
-      tableBody.innerHTML = filtered.map(order => `
+      tableBody.innerHTML = filtered.map(order => {
+        const orderRef = order.order_token ? order.order_token.split('-')[0].toUpperCase() : order.id.slice(0, 8).toUpperCase()
+        return `
         <tr>
           <td>
-            <div style="font-weight: 600; font-family: monospace;">#${order.id.slice(0, 8)}</div>
+            <div style="font-weight: 600; font-family: monospace;">#${orderRef}</div>
             <div style="font-size: 0.8rem; color: #6b7280;">${new Date(order.created_at).toLocaleDateString()} ${new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
           </td>
           <td>
@@ -5251,35 +5262,35 @@ function renderOrders() {
               <i class="ri-eye-line"></i>
             </button>
             ${order.status === 'pending' ?
-          `<button class="btn-icon success" onclick="window.verifyOrder('${order.id}')" title="Verificar">
+            `<button class="btn-icon success" onclick="window.verifyOrder('${order.id}')" title="Verificar">
                 <i class="ri-check-line"></i>
               </button>
               <button class="btn-icon danger" onclick="window.cancelOrder('${order.id}')" title="Cancelar Pedido">
                 <i class="ri-close-line"></i>
               </button>` : ''
-        }
+          }
             ${order.status === 'verified' ?
-          `<button class="btn-icon" style="color: #7e22ce;" onclick="window.openAssignOrderModal('${order.id}', '${order.id.slice(0, 8)}')" title="Despachar Pedido">
+            `<button class="btn-icon" style="color: #7e22ce;" onclick="window.openAssignOrderModal('${order.id}', '${order.id.slice(0, 8)}')" title="Despachar Pedido">
                 <i class="ri-motorbike-fill"></i>
               </button>
               <button class="btn-icon danger" onclick="window.cancelOrder('${order.id}')" title="Cancelar Pedido">
                 <i class="ri-close-line"></i>
               </button>` : ''
-        }
+          }
             ${order.status === 'dispatched' ?
-          `<button class="btn-icon" style="color: #2563eb;" onclick="window.completeOrder('${order.id}')" title="Completar Pedido">
+            `<button class="btn-icon" style="color: #2563eb;" onclick="window.completeOrder('${order.id}')" title="Completar Pedido">
                 <i class="ri-flag-line"></i>
               </button>
               <button class="btn-icon danger" onclick="window.cancelOrder('${order.id}')" title="Cancelar Pedido">
                 <i class="ri-close-line"></i>
               </button>` : ''
-        }
+          }
             <button class="btn-icon" onclick="window.printOrderInvoice('${order.id}')" title="Imprimir Factura">
               <i class="ri-printer-line"></i>
             </button>
           </td>
         </tr>
-      `).join('')
+      `}).join('')
     }
 
   } else {
@@ -5288,10 +5299,12 @@ function renderOrders() {
     if (tableResp) tableResp.style.display = 'none'
     if (mosaicGrid) {
       mosaicGrid.style.display = 'grid'
-      mosaicGrid.innerHTML = filtered.map(order => `
+      mosaicGrid.innerHTML = filtered.map(order => {
+        const orderRef = order.order_token ? order.order_token.split('-')[0].toUpperCase() : order.id.slice(0, 8).toUpperCase()
+        return `
         <div class="card" style="padding: 1rem; border: 1px solid #e5e7eb; box-shadow: none;">
           <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-             <span style="font-weight: 600; font-family: monospace;">#${order.id.slice(0, 8)}</span>
+             <span style="font-weight: 600; font-family: monospace;">#${orderRef}</span>
              <div style="display: flex; gap: 0.5rem; align-items: center;">
                 ${getOrderStatusBadge(order.status)}
                 <button class="btn-icon" onclick="window.printOrderInvoice('${order.id}')" title="Imprimir Factura" style="padding: 0.25rem 0.5rem; min-width: auto;">
@@ -5306,26 +5319,27 @@ function renderOrders() {
           <div style="display: flex; gap: 0.5rem; border-top: 1px solid #f3f4f6; padding-top: 0.75rem;">
             <button class="btn-secondary-small" style="flex: 1; justify-content: center; align-items: center;" onclick="window.viewOrderDetails('${order.id}')">Ver Detalle</button>
             ${order.status === 'pending' ?
-          `<button class="btn-primary-small" style="flex: 1; justify-content: center; align-items: center;" onclick="window.verifyOrder('${order.id}')">Verificar</button>
+            `<button class="btn-primary-small" style="flex: 1; justify-content: center; align-items: center;" onclick="window.verifyOrder('${order.id}')">Verificar</button>
              <button class="btn-secondary-small danger" style="flex: 0 0 36px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="window.cancelOrder('${order.id}')" title="Cancelar">
                 <i class="ri-close-line"></i>
              </button>` : ''
-        }
+          }
             ${order.status === 'verified' ?
-          `<button class="btn-primary-small" style="flex: 1; background: #7e22ce; justify-content: center; align-items: center;" onclick="window.openAssignOrderModal('${order.id}', '${order.id.slice(0, 8)}')">Despachar</button>
+            `<button class="btn-primary-small" style="flex: 1; background: #7e22ce; justify-content: center; align-items: center;" onclick="window.openAssignOrderModal('${order.id}', '${order.id.slice(0, 8)}')">Despachar</button>
              <button class="btn-secondary-small danger" style="flex: 0 0 36px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="window.cancelOrder('${order.id}')" title="Cancelar">
                 <i class="ri-close-line"></i>
              </button>` : ''
-        }
+          }
             ${order.status === 'dispatched' ?
-          `<button class="btn-primary-small" style="flex: 1; background: #2563eb; justify-content: center; align-items: center;" onclick="window.completeOrder('${order.id}')">Completar</button>
+            `<button class="btn-primary-small" style="flex: 1; background: #2563eb; justify-content: center; align-items: center;" onclick="window.completeOrder('${order.id}')">Completar</button>
              <button class="btn-secondary-small danger" style="flex: 0 0 36px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="window.cancelOrder('${order.id}')" title="Cancelar">
                 <i class="ri-close-line"></i>
              </button>` : ''
-        }
+          }
           </div>
         </div>
-      `).join('')
+        `
+      }).join('')
     }
   }
 }
@@ -5340,7 +5354,7 @@ function getOrderStatusBadge(status) {
   }
   const s = styles[status] || styles.pending
   return `<span style="background: ${s.bg}; color: ${s.color}; padding: 2px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
-    <i class="${s.icon}"></i> ${s.text}
+        <i class="${s.icon}"></i> ${s.text}
   </span>`
 }
 
@@ -5370,39 +5384,39 @@ window.viewOrderDetails = async (orderId) => {
           const selections = group.selections.map(s => {
             return parseFloat(s.price) > 0 ? `${s.name} (+$${parseFloat(s.price).toLocaleString()})` : s.name
           }).join(', ')
-          return `<div style="font-size: 0.8rem; color: #6b7280; margin-top: 2px;"><strong>${group.name}:</strong> ${selections}</div>`
+          return `< div style = "font-size: 0.8rem; color: #6b7280; margin-top: 2px;" > <strong>${group.name}:</strong> ${selections}</div > `
         }).join('')
       }
 
       // 2. Comentarios Rápidos (Múltiples - Nuevo)
       if (item.options?.quickComments && item.options.quickComments.length > 0) {
         optionsHtml += item.options.quickComments.map(c =>
-          `<div style="font-size: 0.8rem; color: #6b7280; margin-top: 2px;">Nota: ${c.name}</div>`
+          `< div style = "font-size: 0.8rem; color: #6b7280; margin-top: 2px;" > Nota: ${c.name}</div > `
         ).join('')
       }
       // Fallback: Comentario Rápido Único (Legacy)
       else if (item.options?.quickComment) {
-        optionsHtml += `<div style="font-size: 0.8rem; color: #6b7280; margin-top: 2px;">Nota: ${item.options.quickComment.name}</div>`
+        optionsHtml += `< div style = "font-size: 0.8rem; color: #6b7280; margin-top: 2px;" > Nota: ${item.options.quickComment.name}</div > `
       }
 
       // 3. Acompañantes (Legacy)
       if (item.options?.sides && item.options.sides.length > 0) {
-        optionsHtml += `<div style="font-size: 0.8rem; color: #6b7280; margin-top: 2px;">+ ${item.options.sides.map(s => s.name).join(', ')}</div>`
+        optionsHtml += `< div style = "font-size: 0.8rem; color: #6b7280; margin-top: 2px;" > + ${item.options.sides.map(s => s.name).join(', ')}</div > `
       }
 
       return `
-      <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #eee; padding: 0.5rem 0;">
+        < div style = "display: flex; justify-content: space-between; border-bottom: 1px dashed #eee; padding: 0.5rem 0;" >
         <div>
           <div style="font-weight: 500;">${item.quantity}x ${item.product_name}</div>
           ${item.options?.size ? `<div style="font-size: 0.8rem; color: #6b7280;">Tamaño: ${item.options.size.name}</div>` : ''}
           ${optionsHtml}
         </div>
         <div style="font-weight: 600;">$${parseFloat(item.total_price).toLocaleString()}</div>
-      </div>
-    `}).join('')
+      </div >
+        `}).join('')
 
     content.innerHTML = `
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+        < div style = "display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;" >
          <div>
             <label style="font-size: 0.8rem; color: #6b7280; display: block;">Cliente</label>
             <div style="font-weight: 600;">${orderData.customer_name}</div>
@@ -5424,8 +5438,9 @@ window.viewOrderDetails = async (orderId) => {
          <div style="grid-column: 1 / -1; background: #fffbeb; padding: 0.75rem; border-radius: 6px;">
             <label style="font-size: 0.8rem; color: #92400e; display: block; font-weight: 600;">Observaciones:</label>
             <div style="color: #92400e;">${orderData.order_notes}</div>
-         </div>` : ''}
-      </div>
+         </div>` : ''
+      }
+      </div >
 
       <h4 style="border-bottom: 2px solid #f3f4f6; padding-bottom: 0.5rem; margin-bottom: 1rem;">Productos</h4>
       <div style="margin-bottom: 1.5rem;">
@@ -5449,34 +5464,34 @@ window.viewOrderDetails = async (orderId) => {
             Método de Pago: <strong>${orderData.payment_method}</strong>
          </div>
       </div>
-    `
+      `
 
     // Setup action actions
     if (orderData.status === 'pending') {
       content.innerHTML += `
-        <div style="display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
+        < div style = "display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;" >
           <button class="btn-secondary danger" style="flex: 1;" onclick="window.cancelOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">Cancelar Pedido</button>
           <button id="verifyOrderBtn" class="btn-primary" style="flex: 1;" onclick="window.verifyOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">Verificar Pedido</button>
-        </div>
-      `
+        </div >
+        `
     } else if (orderData.status === 'verified') {
       content.innerHTML += `
-         <div style="display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
+        < div style = "display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;" >
             <button class="btn-secondary danger" style="flex: 1;" onclick="window.cancelOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">Cancelar Pedido</button>
             <button class="btn-primary" style="flex: 1; background: #7e22ce;" onclick="window.openAssignOrderModal('${orderId}', '${orderId.slice(0, 8)}'); document.getElementById('orderDetailsModal').style.display='none'">
               <i class="ri-motorbike-fill"></i> Despachar
             </button>
-         </div>
-      `
+         </div >
+        `
     } else if (orderData.status === 'dispatched') {
       content.innerHTML += `
-         <div style="display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
+        < div style = "display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;" >
             <button class="btn-secondary danger" style="flex: 1;" onclick="window.cancelOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">Cancelar Pedido</button>
             <button class="btn-primary" style="flex: 1; background: #2563eb;" onclick="window.completeOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">
               <i class="ri-flag-line"></i> Completar
             </button>
-         </div>
-      `
+         </div >
+        `
     }
 
     // Common Action: Internal Notes
@@ -5488,18 +5503,18 @@ window.viewOrderDetails = async (orderId) => {
       notesSection.style.paddingTop = '1rem'
       notesSection.style.borderTop = '1px dashed #e5e7eb'
       notesSection.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        < div style = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;" >
                 <h4 style="font-size: 0.9rem; color: #374151; display: flex; align-items: center; gap: 0.5rem; margin: 0;">
                     <i class="ri-sticky-note-line"></i> Notas Internas (Privado)
                 </h4>
                 <button class="btn-secondary-small" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="window.editInternalNotes('${orderId}')">
                     <i class="ri-edit-line"></i> ${orderData.internal_notes ? 'Editar' : 'Agregar'}
                 </button>
-            </div>
-            <div id="internalNotesDisplay-${orderId}" style="background: #eff6ff; padding: 0.75rem; border-radius: 6px; font-size: 0.9rem; color: #1e40af; min-height: 40px;">
-                ${orderData.internal_notes || '<span style="color: #94a3b8; font-style: italic;">Sin notas internas...</span>'}
-            </div>
-        `
+            </div >
+        <div id="internalNotesDisplay-${orderId}" style="background: #eff6ff; padding: 0.75rem; border-radius: 6px; font-size: 0.9rem; color: #1e40af; min-height: 40px;">
+          ${orderData.internal_notes || '<span style="color: #94a3b8; font-style: italic;">Sin notas internas...</span>'}
+        </div>
+      `
       content.appendChild(notesSection)
     }
 
@@ -5511,13 +5526,13 @@ window.viewOrderDetails = async (orderId) => {
 
     // Use a container for better spacing if needed, fitting the "SaaS look"
     deleteSection.innerHTML = `
-        <button class="btn-secondary danger" style="width: 100%; justify-content: center; padding: 0.75rem;" onclick="window.deleteOrder('${orderId}', true)">
-            <i class="ri-delete-bin-line"></i> Eliminar Pedido del Historial
-        </button>
+        < button class="btn-secondary danger" style = "width: 100%; justify-content: center; padding: 0.75rem;" onclick = "window.deleteOrder('${orderId}', true)" >
+          <i class="ri-delete-bin-line"></i> Eliminar Pedido del Historial
+        </button >
         <p style="margin-top: 0.5rem; font-size: 0.75rem; color: #9ca3af; text-align: center;">
-            Esta acción elimina el registro permanentemente.
+          Esta acción elimina el registro permanentemente.
         </p>
-    `
+      `
     content.appendChild(deleteSection)
 
   } catch (error) {
@@ -5542,16 +5557,16 @@ window.editInternalNotes = async (orderId) => {
   modal.className = 'confirm-modal' // Reuse confirm modal styles
   modal.style.zIndex = '9999' // Above details modal
   modal.innerHTML = `
-        <div class="confirm-overlay"></div>
-        <div class="confirm-content" style="width: 100%; max-width: 400px;">
+        < div class="confirm-overlay" ></div >
+          <div class="confirm-content" style="width: 100%; max-width: 400px;">
             <h3 class="confirm-title" style="margin-bottom: 1rem;">Notas Internas</h3>
             <textarea id="noteInput" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; min-height: 100px; font-family: inherit; margin-bottom: 1rem; resize: vertical;" placeholder="Escribe aquí observaciones privadas del pedido...">${currentText}</textarea>
             <div class="confirm-actions">
-                <button class="btn-confirm-cancel" id="cancelNote">Cancelar</button>
-                <button class="btn-confirm-ok" id="saveNote">Guardar Nota</button>
+              <button class="btn-confirm-cancel" id="cancelNote">Cancelar</button>
+              <button class="btn-confirm-ok" id="saveNote">Guardar Nota</button>
             </div>
-        </div>
-    `
+          </div>
+      `
   document.body.appendChild(modal)
 
   // Animation
@@ -5584,7 +5599,7 @@ window.editInternalNotes = async (orderId) => {
       order.internal_notes = newNote
 
       // Update UI in Details Modal if open
-      const displayEl = document.getElementById(`internalNotesDisplay-${orderId}`)
+      const displayEl = document.getElementById(`internalNotesDisplay - ${orderId} `)
       if (displayEl) {
         displayEl.innerHTML = newNote || '<span style="color: #94a3b8; font-style: italic;">Sin notas internas...</span>'
       }
@@ -6058,25 +6073,25 @@ function renderDeliveryPersonsTable(list) {
       const statusText = dp.is_active ? 'Activo' : 'Inactivo'
 
       tr.innerHTML = `
-        <td><span class="delivery-code">${dp.unique_code}</span></td>
-        <td><strong>${dp.name}</strong></td>
-        <td><span class="badge-vehicle ${dp.vehicle_type}">${dp.vehicle_type.replace('_', ' ')}</span></td>
-        <td><span class="badge-status ${statusClass}">${statusText}</span></td>
-        <td>${dp.total_deliveries || 0}</td>
-        <td>
-          <div class="action-buttons">
-            <button class="btn-icon" onclick="viewDeliveryDetail('${dp.id}')" title="Ver detalles">
-              <i class="ri-eye-line"></i>
-            </button>
-            <button class="btn-icon" onclick="editDeliveryPerson('${dp.id}')" title="Editar">
-              <i class="ri-pencil-line"></i>
-            </button>
-            <button class="btn-icon danger" onclick="deleteDeliveryPerson('${dp.id}')" title="Eliminar">
-              <i class="ri-delete-bin-line"></i>
-            </button>
-          </div>
-        </td>
-      `
+              <td><span class="delivery-code">${dp.unique_code}</span></td>
+              <td><strong>${dp.name}</strong></td>
+              <td><span class="badge-vehicle ${dp.vehicle_type}">${dp.vehicle_type.replace('_', ' ')}</span></td>
+              <td><span class="badge-status ${statusClass}">${statusText}</span></td>
+              <td>${dp.total_deliveries || 0}</td>
+              <td>
+                <div class="action-buttons">
+                  <button class="btn-icon" onclick="viewDeliveryDetail('${dp.id}')" title="Ver detalles">
+                    <i class="ri-eye-line"></i>
+                  </button>
+                  <button class="btn-icon" onclick="editDeliveryPerson('${dp.id}')" title="Editar">
+                    <i class="ri-pencil-line"></i>
+                  </button>
+                  <button class="btn-icon danger" onclick="deleteDeliveryPerson('${dp.id}')" title="Eliminar">
+                    <i class="ri-delete-bin-line"></i>
+                  </button>
+                </div>
+              </td>
+              `
       tbody.appendChild(tr)
     })
   }
@@ -6273,12 +6288,12 @@ function renderAssignmentList(list) {
   nullDiv.className = 'assignment-option'
   nullDiv.onclick = () => selectAssignmentOption(null, nullDiv)
   nullDiv.innerHTML = `
-        <div class="assignment-info">
-            <h4>Sin asignar</h4>
-            <p>Despachar sin domiciliario específico</p>
-        </div>
-        <i class="ri-user-unfollow-line"></i>
-    `
+              <div class="assignment-info">
+                <h4>Sin asignar</h4>
+                <p>Despachar sin domiciliario específico</p>
+              </div>
+              <i class="ri-user-unfollow-line"></i>
+              `
   listContainer.appendChild(nullDiv)
 
   // Filter active persons
@@ -6289,12 +6304,12 @@ function renderAssignmentList(list) {
     div.className = 'assignment-option'
     div.onclick = () => selectAssignmentOption(p.id, div)
     div.innerHTML = `
-             <div class="assignment-info">
+              <div class="assignment-info">
                 <h4>${p.name}</h4>
                 <p><strong>${p.unique_code}</strong> • ${p.vehicle_type.replace('_', ' ')}</p>
-            </div>
-            <i class="ri-motorbike-line"></i>
-        `
+              </div>
+              <i class="ri-motorbike-line"></i>
+              `
     listContainer.appendChild(div)
   })
 }
@@ -6389,9 +6404,115 @@ function initProductsTabs() {
         loadDailyMenus()
       } else if (tabId === 'products') {
         loadProducts()
+      } else if (tabId === 'suggestions') {
+        loadSuggestions()
       }
     })
   })
+
+  // ============================================
+  // SUGGESTIONS LOGIC (PRO FEATURE)
+  // ============================================
+  let currentSuggestions = []
+
+  async function loadSuggestions() {
+    const grid = document.getElementById('suggestionsGrid')
+    if (!grid) return
+
+    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center;"><div class="spinner"></div><p>Cargando productos...</p></div>'
+
+    try {
+      const { data: allProducts, error: prodErr } = await supabase
+        .from('products')
+        .select('id, name, price, image_url, is_active')
+        .eq('business_id', currentBusiness.id)
+        .eq('is_active', true)
+        .order('name')
+
+      if (prodErr) throw prodErr
+
+      let checkedIds = []
+      if (currentBusiness.checkout_suggestions) {
+        checkedIds = currentBusiness.checkout_suggestions
+      }
+      currentSuggestions = [...checkedIds]
+
+      if (!allProducts || allProducts.length === 0) {
+        grid.innerHTML = '<p class="empty-message" style="grid-column: 1/-1;">No hay productos activos para sugerir.</p>'
+        return
+      }
+
+      grid.innerHTML = allProducts.map(p => `
+              <div class="suggestion-card" style="display:flex; align-items:center; gap:1rem; padding:1rem; border:1px solid var(--color-border); border-radius:var(--radius-md); background:var(--surface-light); transition:all 0.2s; cursor:pointer;" onclick="toggleSuggestion('${p.id}')">
+                <input type="checkbox" id="chk-sug-${p.id}" value="${p.id}" ${checkedIds.includes(p.id) ? 'checked' : ''} style="width:20px; height:20px; accent-color:var(--color-primary); pointer-events:none;">
+                  <img src="${p.image_url || '/src/assets/placeholder-food.webp'}" alt="${p.name}" style="width:50px; height:50px; object-fit:cover; border-radius:var(--radius-sm);">
+                    <div style="flex:1;">
+                      <h4 style="margin:0; font-size:0.95rem; font-weight:600; color:var(--text-color);">${p.name}</h4>
+                      <p style="margin:0; color:var(--text-muted); font-size:0.85rem;">$${parseFloat(p.price).toLocaleString('es-CO')}</p>
+                    </div>
+                  </div>
+                  `).join('')
+
+      const btnSave = document.getElementById('saveSuggestionsBtn')
+      if (btnSave) {
+        btnSave.onclick = saveSuggestions
+      }
+
+    } catch (error) {
+      console.error('Error cargando sugerencias:', error)
+      grid.innerHTML = '<p class="empty-message text-red-500" style="grid-column: 1/-1;">Error al cargar sugerencias. Intenta nuevamente.</p>'
+    }
+  }
+
+  window.toggleSuggestion = function (prodId) {
+    const chk = document.getElementById(`chk-sug-${prodId}`)
+    if (!chk) return
+
+    if (!chk.checked) {
+      const checkedCount = document.querySelectorAll('#suggestionsGrid input[type="checkbox"]:checked').length
+      if (checkedCount >= 3) {
+        notify.warning('Solo puedes seleccionar un máximo de 3 sugerencias.')
+        return
+      }
+      chk.checked = true
+    } else {
+      chk.checked = false
+    }
+  }
+
+  async function saveSuggestions() {
+    const checkedInputs = document.querySelectorAll('#suggestionsGrid input[type="checkbox"]:checked')
+    const selectedIds = Array.from(checkedInputs).map(inp => inp.value)
+
+    if (selectedIds.length > 3) {
+      notify.warning('Solo puedes seleccionar un máximo de 3 sugerencias.')
+      return
+    }
+
+    const btn = document.getElementById('saveSuggestionsBtn')
+    const originalText = btn.innerHTML
+    btn.innerHTML = '<i class="ri-loader-4-line spinner-icon" style="animation: spin 1s linear infinite;"></i> Guardando...'
+    btn.disabled = true
+
+    try {
+      const { error } = await supabase
+        .from('businesses')
+        .update({ checkout_suggestions: selectedIds })
+        .eq('id', currentBusiness.id)
+
+      if (error) throw error
+
+      currentBusiness.checkout_suggestions = selectedIds
+      notify.success('Sugerencias guardadas correctamente')
+
+    } catch (error) {
+      console.error('Error guardando sugerencias:', error)
+      notify.error('Error al guardar sugerencias')
+    } finally {
+      btn.innerHTML = originalText
+      btn.disabled = false
+    }
+  }
 
   // Init Daily Menu UI
   initDailyMenuUI()
@@ -6511,24 +6632,24 @@ function renderDailyMenusList() {
     const productCount = menu.daily_menu_items ? menu.daily_menu_items.length : 0
 
     el.innerHTML = `
-      <div class="menu-info">
-        <h4>
-          ${menu.name}
-          ${statusBadge}
-        </h4>
-        <p>
-          ${productCount} productos
-        </p>
-      </div>
-      <div class="actions" style="display: flex; gap: 0.5rem;">
-        <button class="btn-icon edit-menu-btn" title="Editar">
-          <i class="ri-edit-line"></i> <span>Editar</span>
-        </button>
-        <button class="btn-icon danger delete-menu-btn" title="Eliminar">
-          <i class="ri-delete-bin-line"></i> <span>Eliminar</span>
-        </button>
-      </div>
-    `
+                  <div class="menu-info">
+                    <h4>
+                      ${menu.name}
+                      ${statusBadge}
+                    </h4>
+                    <p>
+                      ${productCount} productos
+                    </p>
+                  </div>
+                  <div class="actions" style="display: flex; gap: 0.5rem;">
+                    <button class="btn-icon edit-menu-btn" title="Editar">
+                      <i class="ri-edit-line"></i> <span>Editar</span>
+                    </button>
+                    <button class="btn-icon danger delete-menu-btn" title="Eliminar">
+                      <i class="ri-delete-bin-line"></i> <span>Eliminar</span>
+                    </button>
+                  </div>
+                  `
 
     // Event Listeners
     el.querySelector('.edit-menu-btn').addEventListener('click', () => openDailyMenuModal(menu))
@@ -6593,14 +6714,14 @@ function renderMenuProductSelection(search = '') {
     div.style.borderBottom = '1px solid #f1f5f9'
 
     div.innerHTML = `
-       <label style="display: flex; align-items: center; width: 100%; cursor: pointer;">
-         <input type="checkbox" value="${product.id}" ${isChecked ? 'checked' : ''} style="margin-right: 0.75rem; transform: scale(1.1);">
-         <div style="flex: 1;">
-           <div style="font-weight: 500; font-size: 0.9rem;">${product.name}</div>
-           <div style="font-size: 0.8rem; color: #64748b;">$${parseFloat(product.price).toLocaleString()}</div>
-         </div>
-       </label>
-     `
+                  <label style="display: flex; align-items: center; width: 100%; cursor: pointer;">
+                    <input type="checkbox" value="${product.id}" ${isChecked ? 'checked' : ''} style="margin-right: 0.75rem; transform: scale(1.1);">
+                      <div style="flex: 1;">
+                        <div style="font-weight: 500; font-size: 0.9rem;">${product.name}</div>
+                        <div style="font-size: 0.8rem; color: #64748b;">$${parseFloat(product.price).toLocaleString()}</div>
+                      </div>
+                  </label>
+                  `
 
     const checkbox = div.querySelector('input')
     checkbox.addEventListener('change', (e) => {

@@ -162,6 +162,9 @@ async function init() {
     // Cargar carrito del localStorage
     updateCartUI()
 
+    // Inicializar Seguimiento de Pedidos (Pro Feature)
+    initOrderTracking()
+
     initCatalogSearch()
 
     showCatalog()
@@ -1334,6 +1337,7 @@ function initCatalogSearch() {
 // ============================================
 // PRODUCT MODAL
 // ============================================
+window.openProductModal = openProductModal // NEW: Expose globally for inline onclick
 async function openProductModal(productId) {
   // Trackear visualización del producto
   if (currentBusiness) {
@@ -2019,6 +2023,50 @@ function renderCartItems() {
       renderCartItems()
     })
   })
+
+  // Renderizar sugerencias si aplica
+  renderCheckoutSuggestions()
+}
+
+function renderCheckoutSuggestions() {
+  const suggestionsContainer = document.getElementById('cartSuggestions')
+  const suggestionsScroller = document.getElementById('cartSuggestionsScroller')
+  if (!suggestionsContainer || !suggestionsScroller) return
+
+  if (!currentBusiness?.checkout_suggestions || currentBusiness.checkout_suggestions.length === 0) {
+    suggestionsContainer.style.display = 'none'
+    return
+  }
+
+  // Filtrar productos sugeridos que no estén ya en el carrito
+  const cartItems = cart.get(currentBusiness.id) || []
+  const cartProductIds = cartItems.map(item => item.id)
+
+  const suggestedProducts = products.filter(p =>
+    currentBusiness.checkout_suggestions.includes(p.id) &&
+    !cartProductIds.includes(p.id) &&
+    p.is_active
+  )
+
+  if (suggestedProducts.length === 0) {
+    suggestionsContainer.style.display = 'none'
+    return
+  }
+
+  suggestionsScroller.innerHTML = suggestedProducts.map(p => `
+    <div class="suggestion-item" style="min-width: 140px; background: white; border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; display: flex; flex-direction: column; cursor: pointer; scroll-snap-align: start; box-shadow: 0 1px 3px rgba(0,0,0,0.05);" onclick="window.openProductModal('${p.id}')">
+      <img src="${p.image_url || '/src/assets/placeholder-food.webp'}" alt="${p.name}" style="width: 100%; height: 90px; object-fit: cover;">
+      <div style="padding: 0.5rem; display: flex; flex-direction: column; flex: 1;">
+        <h4 style="margin: 0; font-size: 0.8rem; font-weight: 600; line-height: 1.2; flex:1; color: var(--color-text);">${p.name}</h4>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+          <span style="font-size: 0.8rem; color: var(--color-primary); font-weight: 700;">$${parseFloat(p.price).toLocaleString('es-CO')}</span>
+          <button style="background: var(--color-primary); color: white; border: none; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.1);"><i class="ri-add-line" style="font-size: 0.9rem;"></i></button>
+        </div>
+      </div>
+    </div>
+  `).join('')
+
+  suggestionsContainer.style.display = 'block'
 }
 
 // Abrir/cerrar carrito
@@ -2116,6 +2164,9 @@ checkoutForm.addEventListener('submit', async (e) => {
         }, 0)
         const totalAmount = productsTotal + deliveryPrice
 
+        // Generar token para seguimiento (Pro feature)
+        const orderToken = crypto.randomUUID()
+
         // Preparar datos de la orden
         const orderData = {
           business_id: currentBusiness.id,
@@ -2127,7 +2178,8 @@ checkoutForm.addEventListener('submit', async (e) => {
           delivery_price: deliveryPrice,
           total_amount: totalAmount,
           payment_method: clientData.metodo_pago,
-          channel: 'whatsapp'
+          channel: 'whatsapp',
+          order_token: orderToken
         }
 
         // Preparar items
@@ -2168,7 +2220,17 @@ checkoutForm.addEventListener('submit', async (e) => {
         // Crear orden en BD
         notify.info('Registrando pedido...', 1000)
         await ordersService.createOrder(orderData, orderItems)
+
+        // Guardar para seguimiento local
+        saveOrderToTracking(currentBusiness.id, orderToken, totalAmount)
+
+        // Pasar el token al envío de WhatsApp
+        await sendWhatsAppOrder(clientData, orderToken)
+      } else {
+        await sendWhatsAppOrder(clientData, null)
       }
+    } else {
+      await sendWhatsAppOrder(clientData, null)
     }
   } catch (error) {
     console.error('Error saving order to DB:', error)
@@ -2176,13 +2238,37 @@ checkoutForm.addEventListener('submit', async (e) => {
     notify.error(`Error al registrar pedido: ${error.message || error.details || 'Error desconocido'}`)
     // OPCIONAL: Detener el flujo si queremos que NO vaya a WhatsApp si falla la BD
     // return 
-  }
-  // ------------------------------------------
 
-  await sendWhatsAppOrder(clientData)
+    // Si falla la BD, enviar sin token para no bloquear la venta
+    await sendWhatsAppOrder(clientData, null)
+  }
 })
 
-async function sendWhatsAppOrder(clientData) {
+// Helper para guardar pedido localmente para tracking
+function saveOrderToTracking(businessId, orderToken, total) {
+  try {
+    const trackingKey = `traego_orders_${businessId}`
+    const existingOrders = JSON.parse(localStorage.getItem(trackingKey) || '[]')
+
+    // Evitar duplicados si ocurre algún error de repetición
+    if (!existingOrders.find(o => o.token === orderToken)) {
+      existingOrders.push({
+        token: orderToken,
+        date: new Date().toISOString(),
+        status: 'pending',
+        total: total
+      })
+
+      // Mantener máximo los últimos 10 pedidos
+      if (existingOrders.length > 10) existingOrders.shift()
+      localStorage.setItem(trackingKey, JSON.stringify(existingOrders))
+    }
+  } catch (e) {
+    console.error('Error saving tracking info:', e)
+  }
+}
+
+async function sendWhatsAppOrder(clientData, orderToken) {
   if (!currentBusiness) return
   const cartItems = cart.get(currentBusiness.id)
   if (cartItems.length === 0) return
@@ -2315,6 +2401,12 @@ Método de pago: {metodo_pago}
     // Agregar observaciones si existen
     if (clientData.observaciones) {
       message += `\n\nObservaciones: ${clientData.observaciones}`
+    }
+
+    // Agregar referencia de tracking si existe (Pro feature)
+    if (orderToken) {
+      const ref = orderToken.split('-')[0].toUpperCase()
+      message += `\n\nRef: #${ref}`
     }
 
     // Codificar y abrir WhatsApp
@@ -2532,10 +2624,15 @@ btnWhatsapp.addEventListener('click', async () => {
     // (mejor fallar abierto que cerrado para el cliente)
   }
 
+  openRealCheckoutForm()
+})
+
+function openRealCheckoutForm() {
   // Poblar métodos de pago dinámicamente
   populatePaymentMethods()
 
-  // Abrir modal
+  // Cerrar carrito y abrir modal checkout
+  cartPanel.style.display = 'none'
   checkoutModal.style.display = 'flex'
 
   // Cargar datos guardados
@@ -2545,7 +2642,7 @@ btnWhatsapp.addEventListener('click', async () => {
   setTimeout(() => {
     document.getElementById('clientName').focus()
   }, 100)
-})
+}
 
 // Modal de negocio cerrado
 function showClosedModal() {
@@ -3217,4 +3314,285 @@ function cleanOldCarts() {
   } catch (error) {
     console.error('Error cleaning old carts:', error)
   }
+}
+
+// ============================================
+// ORDER TRACKING LOGIC (PRO FEATURE)
+// ============================================
+const trackingModal = document.getElementById('trackingModal')
+const trackingModalOverlay = document.getElementById('trackingModalOverlay')
+const trackingModalClose = document.getElementById('trackingModalClose')
+const headerTrackOrderBtn = document.getElementById('headerTrackOrderBtn')
+const trackingBody = document.getElementById('trackingBody')
+let trackingSubscription = null
+
+function initOrderTracking() {
+  if (!currentBusiness) return
+
+  const trackingKey = `traego_orders_${currentBusiness.id}`
+  const existingOrders = JSON.parse(localStorage.getItem(trackingKey) || '[]')
+
+  if (currentBusiness.plan_type === 'pro' && existingOrders.length > 0 && headerTrackOrderBtn) {
+    headerTrackOrderBtn.style.display = 'flex'
+  }
+
+  if (headerTrackOrderBtn) {
+    headerTrackOrderBtn.addEventListener('click', openTrackingModal)
+  }
+
+  if (trackingModalClose) trackingModalClose.addEventListener('click', closeTrackingModal)
+  if (trackingModalOverlay) trackingModalOverlay.addEventListener('click', closeTrackingModal)
+
+  // Chequear pedidos activos en progreso para mostar badge en header
+  if (currentBusiness.plan_type === 'pro' && existingOrders.length > 0) {
+    checkActiveOrder()
+    subscribeToTrackingUpdates() // Keep listening for changes while on the catalog
+  }
+}
+
+async function checkActiveOrder() {
+  if (!currentBusiness) return;
+  const trackingKey = `traego_orders_${currentBusiness.id}`;
+  const existingOrders = JSON.parse(localStorage.getItem(trackingKey) || '[]');
+
+  if (existingOrders.length === 0) {
+    removeActiveOrderBadge();
+    return;
+  }
+
+  existingOrders.sort((a, b) => new Date(b.date) - new Date(a.date));
+  const tokens = existingOrders.map(o => o.token);
+
+  try {
+    const { data: dbOrders, error } = await supabase
+      .from('orders')
+      .select('status, order_token')
+      .in('order_token', tokens.slice(0, 3));
+
+    if (error) return;
+
+    if (dbOrders && dbOrders.length > 0) {
+      const activeOrder = dbOrders.find(o => ['pending', 'verified', 'dispatched'].includes(o.status));
+      if (activeOrder) {
+        renderActiveOrderBadge(activeOrder.status);
+      } else {
+        removeActiveOrderBadge();
+      }
+    }
+  } catch (e) { console.warn("Could not fetch active order status", e); }
+}
+
+function renderActiveOrderBadge(status) {
+  let badge = document.getElementById('activeOrderBadge');
+  if (!badge) {
+    const headerContent = document.querySelector('.header-content');
+    if (headerContent) {
+      badge = document.createElement('div');
+      badge.id = 'activeOrderBadge';
+      badge.className = 'business-status-badge';
+      // User wanted: white background, shadow, clear visibility
+      badge.style.marginTop = '0.4rem';
+      badge.style.cursor = 'pointer';
+      badge.style.background = 'white';
+      badge.style.boxShadow = '0 2px 8px rgba(0,0,0,0.12)';
+      badge.style.border = '1px solid #eee';
+
+      badge.onclick = () => { if (typeof openTrackingModal === 'function') openTrackingModal() };
+
+      const statusBadge = document.getElementById('businessStatusBadge');
+      if (statusBadge && statusBadge.nextSibling) {
+        headerContent.insertBefore(badge, statusBadge.nextSibling);
+      } else {
+        headerContent.appendChild(badge);
+      }
+    }
+  }
+
+  const statusMap = {
+    'pending': { text: 'Por confirmar', color: '#f59e0b', icon: 'ri-time-line' },
+    'verified': { text: 'Recibido', color: '#8b5cf6', icon: 'ri-check-double-line' },
+    'dispatched': { text: 'En camino', color: '#3b82f6', icon: 'ri-motorbike-line' }
+  };
+
+  const st = statusMap[status] || statusMap['pending'];
+
+  if (badge) {
+    // Keep text/icon color dynamic based on status but background remains white
+    badge.style.color = st.color;
+    badge.innerHTML = `
+      <i class="${st.icon}" style="font-size: 1.1rem;"></i>
+      <span style="font-weight: 600;">Pedido ${st.text}</span>
+    `;
+    badge.style.display = 'inline-flex';
+  }
+}
+
+function removeActiveOrderBadge() {
+  const badge = document.getElementById('activeOrderBadge');
+  if (badge) {
+    badge.style.display = 'none';
+  }
+}
+
+async function openTrackingModal() {
+  if (trackingModal) trackingModal.style.display = 'flex'
+  await renderTrackingOrders()
+  // Ensure subscription is active just in case
+  subscribeToTrackingUpdates()
+}
+
+function closeTrackingModal() {
+  if (trackingModal) trackingModal.style.display = 'none'
+  // Removed `supabase.removeChannel(trackingSubscription)` so badge can update in background
+}
+
+async function renderTrackingOrders() {
+  const trackingKey = `traego_orders_${currentBusiness.id}`
+  let localOrders = JSON.parse(localStorage.getItem(trackingKey) || '[]')
+
+  if (localOrders.length === 0) {
+    trackingBody.innerHTML = `
+      <div class="empty-state" style="text-align: center; padding: 2rem 0; color: var(--text-muted);">
+        <i class="ri-shopping-bag-3-line" style="font-size: 3rem; opacity: 0.5; margin-bottom: 1rem; display: block;"></i>
+        <p>No tienes pedidos recientes.</p>
+      </div>`
+    return
+  }
+
+  // Sort by date desc
+  localOrders.sort((a, b) => new Date(b.date) - new Date(a.date))
+
+  const tokens = localOrders.map(o => o.token)
+
+  trackingBody.innerHTML = '<div style="text-align:center; padding:2rem;"><div class="btn-spinner" style="border:3px solid #f3f4f6; border-top-color:var(--color-primary); border-radius:50%; width:24px; height:24px; animation:spin 1s linear infinite; margin: 0 auto 1rem;"></div><p style="color:var(--text-muted);">Cargando estado...</p></div>'
+
+  try {
+    const { data: dbOrders, error } = await supabase
+      .from('orders')
+      .select('order_token, status, created_at, customer_name, total_amount')
+      .in('order_token', tokens)
+
+    if (error) throw error
+
+    if (!dbOrders || dbOrders.length === 0) {
+      trackingBody.innerHTML = '<p style="text-align:center; color:var(--text-muted);">No se encontraron los pedidos en el sistema.</p>'
+      return
+    }
+
+    const statusMap = {
+      'pending': { text: 'Por confrmar', color: '#f59e0b', icon: 'ri-time-line' },
+      'verified': { text: 'Recibido', color: '#8b5cf6', icon: 'ri-check-double-line' },
+      'dispatched': { text: 'En camino', color: '#3b82f6', icon: 'ri-motorbike-line' },
+      'completed': { text: 'Entregado', color: '#10b981', icon: 'ri-flag-line' },
+      'cancelled': { text: 'Cancelado', color: '#ef4444', icon: 'ri-close-circle-line' }
+    }
+
+    let html = '<div style="display:flex; flex-direction:column; gap:1rem;">'
+
+    dbOrders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).forEach(order => {
+      const ref = order.order_token.split('-')[0].toUpperCase()
+      const stDetails = statusMap[order.status] || statusMap['pending']
+      const dateStr = new Date(order.created_at).toLocaleString('es-CO', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+
+      const localO = localOrders.find(o => o.token === order.order_token)
+      if (localO) {
+        localO.status = order.status
+      }
+
+      html += `
+        <div class="tracking-item" id="track-${order.order_token}" style="border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1rem; background: var(--surface-light);">
+          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+            <div>
+              <span style="font-weight: 600; font-size: 1.1rem; color: var(--color-text);">Ref: #${ref}</span>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">${dateStr}</div>
+            </div>
+            <div style="font-weight: 700; color: var(--color-text);">$${parseFloat(order.total_amount).toLocaleString('es-CO')}</div>
+          </div>
+          
+          <div class="tracking-status" data-status="${order.status}" style="margin-top: 1rem;">
+            <div style="display: flex; justify-content: space-between; position: relative;">
+               <div style="position: absolute; top: 12px; left: 10%; right: 10%; height: 2px; background: #e2e8f0; z-index: 1;">
+               <div class="tracking-progress-fill" style="position: absolute; top:0; left:0; height:100%; background: ${stDetails.color}; width: ${getProgressWidth(order.status)}; transition: width 0.5s ease;"></div>
+               </div>
+               
+               ${renderTrackingStep('pending', order.status, 'ri-time-line', 'Por confrmar')}
+               ${renderTrackingStep('verified', order.status, 'ri-check-double-line', 'Recibido')}
+               ${renderTrackingStep('dispatched', order.status, 'ri-motorbike-line', 'En camino')}
+               ${renderTrackingStep('completed', order.status, 'ri-flag-line', 'Entregado')}
+            </div>
+            ${order.status === 'cancelled' ? `
+              <div style="margin-top: 1rem; padding: 0.5rem; background: #fee2e2; color: #dc2626; border-radius: 0.25rem; text-align: center; font-weight: 600; font-size: 0.9rem;">
+                <i class="ri-close-circle-line"></i> Este pedido fue cancelado
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `
+    })
+
+    html += '</div>'
+    trackingBody.innerHTML = html
+
+    localStorage.setItem(trackingKey, JSON.stringify(localOrders))
+
+  } catch (error) {
+    console.error('Error fetching tracking data:', error)
+    trackingBody.innerHTML = '<p style="text-align:center; color:#ef4444;">Error al cargar estado de los pedidos.</p>'
+  }
+}
+
+function getProgressWidth(status) {
+  if (status === 'pending') return '0%';
+  if (status === 'verified') return '50%';
+  if (status === 'dispatched' || status === 'completed') return '100%';
+  return '0%';
+}
+
+function renderTrackingStep(stepStatus, currentStatus, icon, label) {
+  const levels = { 'pending': 1, 'verified': 2, 'dispatched': 3, 'completed': 4, 'cancelled': -1 }
+  const currentLvl = levels[currentStatus] || 1
+  const stepLvl = levels[stepStatus]
+
+  let color = '#9ca3af'
+  let bg = '#f3f4f6'
+  let borderColor = '#e2e8f0'
+
+  if (currentStatus === 'cancelled') {
+  } else if (currentLvl >= stepLvl) {
+    color = 'white'
+    bg = 'var(--color-primary)'
+    borderColor = 'var(--color-primary)'
+  }
+
+  return `
+    <div style="display: flex; flex-direction: column; align-items: center; z-index: 2; gap: 0.25rem; background: var(--surface-light); padding: 0 0.25rem;">
+      <div style="width: 24px; height: 24px; border-radius: 50%; background: ${bg}; border: 2px solid ${borderColor}; display: flex; align-items: center; justify-content: center; color: ${color}; font-size: 0.9rem; transition: all 0.3s ease;">
+        <i class="${icon}"></i>
+      </div>
+      <span style="font-size: 0.7rem; font-weight: 500; color: ${currentLvl >= stepLvl ? 'var(--color-text)' : 'var(--text-muted)'};">${label}</span>
+    </div>
+  `
+}
+
+function subscribeToTrackingUpdates() {
+  if (trackingSubscription) return
+
+  const trackingKey = `traego_orders_${currentBusiness.id}`
+  const localOrders = JSON.parse(localStorage.getItem(trackingKey) || '[]')
+  if (localOrders.length === 0) return
+
+  const tokens = localOrders.map(o => o.token)
+
+  trackingSubscription = supabase.channel('public:orders')
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `business_id=eq.${currentBusiness.id}` }, payload => {
+      if (tokens.includes(payload.new.order_token)) {
+        // Actualizar UI del tracking modal si está abierto
+        if (trackingModal.style.display === 'flex') {
+          renderTrackingOrders()
+        }
+        // Actualizar el Badge del Header y esconderlo si ya no aplica
+        checkActiveOrder()
+      }
+    })
+    .subscribe()
 }

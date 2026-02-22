@@ -38,12 +38,19 @@ El proyecto está construido con un enfoque moderno y ligero, priorizando el ren
 5.  **Marketing & Fidelización**:
     - Creación de cupones de descuento y promociones.
     - Menús especiales por día.
+6.  **Centro de Enlaces (Link Center)**:
+    - Creación de páginas "Multilink" tipo Linktree totalmente personalizables.
+    - Edición intuitiva de enlaces, apariencia (colores, fondos) e íconos sociales mediante modales.
+    - Previsualización en tiempo real.
 
 ### 🛒 Para el Cliente Final (Catálogo Público)
 1.  **Experiencia de Usuario Fluida**: Interfaz tipo "App" que funciona en el navegador sin descargas.
 2.  **Carrito de Compras Dinámico**: Adición fácil de productos y cálculo automático de totales.
 3.  **Checkout a WhatsApp**: Al finalizar el pedido, se genera un mensaje pre-formateado con todo el detalle para enviar al WhatsApp del negocio con un solo clic.
 4.  **Búsqueda y Filtrado**: Encontrar productos por categorías o nombre rápidamente.
+5.  **Páginas Multilink Personalizadas**: Acceso rápido al catálogo, WhatsApp y redes sociales del negocio desde un único enlace optimizado.
+6.  **SEO y Compartibilidad**: Uso de metadatos Open Graph para previsualizaciones ricas (imágenes, títulos) al compartir enlaces en redes y WhatsApp.
+7.  **Páginas de Error Amigables**: Experiencia unificada y consistente en escenarios de "Catálogo no encontrado" o "Error 404".
 
 ## Estructura del Proyecto
 El código sigue una arquitectura modular dentro de `src/`:
