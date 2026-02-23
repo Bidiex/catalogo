@@ -320,7 +320,10 @@ function renderList() {
         UI.list.innerHTML = `<div class="empty-state text-center p-4 text-gray-500">No hay enlaces creados.</div>`
     }
 
-    regularItems.forEach(item => {
+    const sortedRegular = [...regularItems].sort((a, b) =>
+        (b.is_catalog_link ? 1 : 0) - (a.is_catalog_link ? 1 : 0)
+    )
+    sortedRegular.forEach(item => {
         UI.list.appendChild(createLinkItemEl(item))
     })
 
@@ -465,8 +468,8 @@ function createSocialItemEl(item) {
 
 function setupDragAndDrop() {
     if (!UI.list) return
-    UI.list.addEventListener('dragover', handleDragOver)
-    UI.list.addEventListener('drop', handleDrop)
+    UI.list.ondragover = handleDragOver
+    UI.list.ondrop = handleDrop
 }
 
 
@@ -592,9 +595,10 @@ function renderPreview() {
     }
 
 
-    // Render regular link buttons
-    currentState.items
+    // Render regular link buttons (catalog link always first)
+    ;[...currentState.items]
         .filter(i => i.item_type !== 'social' && i.is_active)
+        .sort((a, b) => (b.is_catalog_link ? 1 : 0) - (a.is_catalog_link ? 1 : 0))
         .forEach(item => {
             const btn = document.createElement('a')
             let styleType = item.button_style || 'filled'
@@ -700,7 +704,15 @@ function openModal(item = null) {
         if (UI.inputId) UI.inputId.value = ''
         if (UI.inputStyle) UI.inputStyle.value = 'semi-rounded'
         if (UI.inputIsActive) UI.inputIsActive.checked = true
-        if (UI.inputUrl) UI.inputUrl.disabled = false
+        if (UI.inputUrl) {
+            const group = UI.inputUrl.closest('.form-group')
+            if (group) group.style.display = ''
+            UI.inputUrl.disabled = false
+        }
+        if (UI.inputIsActive) {
+            const toggle = UI.inputIsActive.closest('.link-toggle') || UI.inputIsActive.closest('.form-group')
+            if (toggle) toggle.style.display = ''
+        }
         if (UI.inputButtonColor) UI.inputButtonColor.value = defaultButtonColor
         if (UI.inputTextColor) UI.inputTextColor.value = defaultTextColor
     }
