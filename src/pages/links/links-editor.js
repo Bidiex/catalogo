@@ -401,6 +401,8 @@ function createLinkItemEl(item) {
         itemEl.addEventListener('dragstart', handleDragStart)
         itemEl.addEventListener('dragend', handleDragEnd)
     } else {
+        // Mark catalog item in DOM so handleDrop can identify it
+        itemEl.dataset.isCatalog = 'true'
         const handle = itemEl.querySelector('.link-handle')
         if (handle) handle.classList.add('link-handle--hidden')
     }
@@ -510,35 +512,44 @@ function handleDrop(e) {
     const targetRect = target.getBoundingClientRect()
     const insertBefore = e.clientY < targetRect.top + targetRect.height / 2
 
+    // The catalog link is always first and immovable — never allow inserting before it
+    if (target.dataset.isCatalog && insertBefore) return
+
     if (insertBefore) {
         UI.list.insertBefore(draggedItem, target)
     } else {
         UI.list.insertBefore(draggedItem, target.nextSibling)
     }
 
-    // Rebuild currentState.items order from the DOM
-    const newOrder = []
-    UI.list.querySelectorAll('.link-item[data-item-id]').forEach((el, index) => {
-        const id = el.dataset.itemId
-        const item = currentState.items.find(i => String(i.id) === String(id))
-        if (item) newOrder.push({ ...item, position: index })
-    })
-
-    // Include catalog items (non-draggable) at their DOM positions
-    const allItems = Array.from(UI.list.querySelectorAll('.link-item')).map((el, index) => {
+    // Rebuild currentState.items order from the DOM (single pass, no duplicates)
+    // Social items are not draggable and have no data-item-id, so we handle them separately
+    const seenIds = new Set()
+    const reorderedItems = Array.from(UI.list.querySelectorAll('.link-item')).reduce((acc, el, index) => {
         const id = el.dataset.itemId
         if (id) {
-            const item = currentState.items.find(i => String(i.id) === String(id))
-            return item ? { ...item, position: index } : null
+            // Regular draggable item
+            if (!seenIds.has(id)) {
+                const item = currentState.items.find(i => String(i.id) === String(id))
+                if (item) {
+                    seenIds.add(id)
+                    acc.push({ ...item, position: index })
+                }
+            }
+        } else {
+            // Catalog item (no data-item-id, not social)
+            const catalogItem = currentState.items.find(i => i.is_catalog_link && !seenIds.has(String(i.id)))
+            if (catalogItem) {
+                seenIds.add(String(catalogItem.id))
+                acc.push({ ...catalogItem, position: index })
+            }
         }
-        // Catalog items don't have data-item-id; find them by exclusion
-        const catalogItem = currentState.items.find(
-            i => i.is_catalog_link && !newOrder.some(o => o.id === i.id)
-        )
-        return catalogItem ? { ...catalogItem, position: index } : null
-    }).filter(Boolean)
+        return acc
+    }, [])
 
-    currentState.items = allItems.sort((a, b) => a.position - b.position)
+    // Preserve social items unchanged (they are not draggable and not in the DOM traversal above)
+    const socialItems = currentState.items.filter(i => i.item_type === 'social')
+
+    currentState.items = [...reorderedItems, ...socialItems].sort((a, b) => a.position - b.position)
 
     // Persist new order (fire and forget — optimistic UI)
     const positionUpdates = currentState.items.map((item, idx) => ({ id: item.id, position: idx }))
