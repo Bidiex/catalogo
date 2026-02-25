@@ -5558,7 +5558,7 @@ window.editInternalNotes = async (orderId) => {
   modal.className = 'confirm-modal' // Reuse confirm modal styles
   modal.style.zIndex = '9999' // Above details modal
   modal.innerHTML = `
-        < div class="confirm-overlay" ></div >
+        <div class="confirm-overlay"></div>
           <div class="confirm-content" style="width: 100%; max-width: 400px;">
             <h3 class="confirm-title" style="margin-bottom: 1rem;">Notas Internas</h3>
             <textarea id="noteInput" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; min-height: 100px; font-family: inherit; margin-bottom: 1rem; resize: vertical;" placeholder="Escribe aquí observaciones privadas del pedido...">${currentText}</textarea>
@@ -5600,7 +5600,7 @@ window.editInternalNotes = async (orderId) => {
       order.internal_notes = newNote
 
       // Update UI in Details Modal if open
-      const displayEl = document.getElementById(`internalNotesDisplay - ${orderId} `)
+      const displayEl = document.getElementById(`internalNotesDisplay-${orderId}`)
       if (displayEl) {
         displayEl.innerHTML = newNote || '<span style="color: #94a3b8; font-style: italic;">Sin notas internas...</span>'
       }
@@ -5794,7 +5794,7 @@ function showOwnerOrdersLimitModal() {
   modal.id = 'ownerOrdersLimitModal'
   modal.className = 'confirm-modal'
   modal.innerHTML = `
-        < div class="confirm-overlay" ></div >
+        <div class="confirm-overlay"></div>
           <div class="confirm-content">
             <div class="confirm-icon confirm-icon-warning">
               <i class="ri-error-warning-line"></i>
