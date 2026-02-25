@@ -5385,39 +5385,39 @@ window.viewOrderDetails = async (orderId) => {
           const selections = group.selections.map(s => {
             return parseFloat(s.price) > 0 ? `${s.name} (+$${parseFloat(s.price).toLocaleString()})` : s.name
           }).join(', ')
-          return `< div style = "font-size: 0.8rem; color: #6b7280; margin-top: 2px;" > <strong>${group.name}:</strong> ${selections}</div > `
+          return `<div style="font-size: 0.8rem; color: #6b7280; margin-top: 2px;"><strong>${group.name}:</strong> ${selections}</div>`
         }).join('')
       }
 
       // 2. Comentarios Rápidos (Múltiples - Nuevo)
       if (item.options?.quickComments && item.options.quickComments.length > 0) {
         optionsHtml += item.options.quickComments.map(c =>
-          `< div style = "font-size: 0.8rem; color: #6b7280; margin-top: 2px;" > Nota: ${c.name}</div > `
+          `<div style="font-size: 0.8rem; color: #6b7280; margin-top: 2px;">Nota: ${c.name}</div>`
         ).join('')
       }
       // Fallback: Comentario Rápido Único (Legacy)
       else if (item.options?.quickComment) {
-        optionsHtml += `< div style = "font-size: 0.8rem; color: #6b7280; margin-top: 2px;" > Nota: ${item.options.quickComment.name}</div > `
+        optionsHtml += `<div style="font-size: 0.8rem; color: #6b7280; margin-top: 2px;">Nota: ${item.options.quickComment.name}</div>`
       }
 
       // 3. Acompañantes (Legacy)
       if (item.options?.sides && item.options.sides.length > 0) {
-        optionsHtml += `< div style = "font-size: 0.8rem; color: #6b7280; margin-top: 2px;" > + ${item.options.sides.map(s => s.name).join(', ')}</div > `
+        optionsHtml += `<div style="font-size: 0.8rem; color: #6b7280; margin-top: 2px;">+ ${item.options.sides.map(s => s.name).join(', ')}</div>`
       }
 
       return `
-        < div style = "display: flex; justify-content: space-between; border-bottom: 1px dashed #eee; padding: 0.5rem 0;" >
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #eee; padding: 0.5rem 0;">
         <div>
           <div style="font-weight: 500;">${item.quantity}x ${item.product_name}</div>
           ${item.options?.size ? `<div style="font-size: 0.8rem; color: #6b7280;">Tamaño: ${item.options.size.name}</div>` : ''}
           ${optionsHtml}
         </div>
         <div style="font-weight: 600;">$${parseFloat(item.total_price).toLocaleString()}</div>
-      </div >
+      </div>
         `}).join('')
 
     content.innerHTML = `
-        < div style = "display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;" >
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
          <div>
             <label style="font-size: 0.8rem; color: #6b7280; display: block;">Cliente</label>
             <div style="font-weight: 600;">${orderData.customer_name}</div>
@@ -5441,7 +5441,7 @@ window.viewOrderDetails = async (orderId) => {
             <div style="color: #92400e;">${orderData.order_notes}</div>
          </div>` : ''
       }
-      </div >
+      </div>
 
       <h4 style="border-bottom: 2px solid #f3f4f6; padding-bottom: 0.5rem; margin-bottom: 1rem;">Productos</h4>
       <div style="margin-bottom: 1.5rem;">
@@ -5470,28 +5470,28 @@ window.viewOrderDetails = async (orderId) => {
     // Setup action actions
     if (orderData.status === 'pending') {
       content.innerHTML += `
-        < div style = "display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;" >
+        <div style="display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
           <button class="btn-secondary danger" style="flex: 1;" onclick="window.cancelOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">Cancelar Pedido</button>
           <button id="verifyOrderBtn" class="btn-primary" style="flex: 1;" onclick="window.verifyOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">Verificar Pedido</button>
-        </div >
+        </div>
         `
     } else if (orderData.status === 'verified') {
       content.innerHTML += `
-        < div style = "display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;" >
+        <div style="display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
             <button class="btn-secondary danger" style="flex: 1;" onclick="window.cancelOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">Cancelar Pedido</button>
             <button class="btn-primary" style="flex: 1; background: #7e22ce;" onclick="window.openAssignOrderModal('${orderId}', '${orderId.slice(0, 8)}'); document.getElementById('orderDetailsModal').style.display='none'">
               <i class="ri-motorbike-fill"></i> Despachar
             </button>
-         </div >
+         </div>
         `
     } else if (orderData.status === 'dispatched') {
       content.innerHTML += `
-        < div style = "display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;" >
+        <div style="display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
             <button class="btn-secondary danger" style="flex: 1;" onclick="window.cancelOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">Cancelar Pedido</button>
             <button class="btn-primary" style="flex: 1; background: #2563eb;" onclick="window.completeOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">
               <i class="ri-flag-line"></i> Completar
             </button>
-         </div >
+         </div>
         `
     }
 
@@ -5504,14 +5504,14 @@ window.viewOrderDetails = async (orderId) => {
       notesSection.style.paddingTop = '1rem'
       notesSection.style.borderTop = '1px dashed #e5e7eb'
       notesSection.innerHTML = `
-        < div style = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;" >
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                 <h4 style="font-size: 0.9rem; color: #374151; display: flex; align-items: center; gap: 0.5rem; margin: 0;">
                     <i class="ri-sticky-note-line"></i> Notas Internas (Privado)
                 </h4>
                 <button class="btn-secondary-small" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="window.editInternalNotes('${orderId}')">
                     <i class="ri-edit-line"></i> ${orderData.internal_notes ? 'Editar' : 'Agregar'}
                 </button>
-            </div >
+            </div>
         <div id="internalNotesDisplay-${orderId}" style="background: #eff6ff; padding: 0.75rem; border-radius: 6px; font-size: 0.9rem; color: #1e40af; min-height: 40px;">
           ${orderData.internal_notes || '<span style="color: #94a3b8; font-style: italic;">Sin notas internas...</span>'}
         </div>
@@ -5527,9 +5527,9 @@ window.viewOrderDetails = async (orderId) => {
 
     // Use a container for better spacing if needed, fitting the "SaaS look"
     deleteSection.innerHTML = `
-        < button class="btn-secondary danger" style = "width: 100%; justify-content: center; padding: 0.75rem;" onclick = "window.deleteOrder('${orderId}', true)" >
+        <button class="btn-secondary danger" style="width: 100%; justify-content: center; padding: 0.75rem;" onclick="window.deleteOrder('${orderId}', true)">
           <i class="ri-delete-bin-line"></i> Eliminar Pedido del Historial
-        </button >
+        </button>
         <p style="margin-top: 0.5rem; font-size: 0.75rem; color: #9ca3af; text-align: center;">
           Esta acción elimina el registro permanentemente.
         </p>
