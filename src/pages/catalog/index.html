@@ -124,9 +124,15 @@
                 style="display: none; width: 60px; height: 60px; border-radius: 50%; overflow: hidden; flex-shrink: 0; background-color: white;">
               </div>
               <h1 id="businessName">Cargando...</h1>
-              <button id="headerShareBtn" class="header-share-btn" aria-label="Compartir catálogo">
-                <i class="ri-share-forward-line"></i>
-              </button>
+              <div style="display: flex; gap: 0.5rem;">
+                <button id="headerTrackOrderBtn" class="header-share-btn" aria-label="Seguir mis pedidos"
+                  style="display: none;" title="Seguir mis pedidos">
+                  <i class="ri-motorbike-line"></i>
+                </button>
+                <button id="headerShareBtn" class="header-share-btn" aria-label="Compartir catálogo">
+                  <i class="ri-share-forward-line"></i>
+                </button>
+              </div>
             </div>
 
             <div class="header-bottom-row">
@@ -221,6 +227,17 @@
 
         <div class="cart-body" id="cartBody">
           <p class="empty-cart-message">El carrito está vacío</p>
+        </div>
+
+        <div class="cart-suggestions" id="cartSuggestions"
+          style="display: none; padding: 1rem 1.5rem; background: #f8fafc; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border);">
+          <h3 style="font-size: 0.95rem; margin-bottom: 0.75rem; color: var(--color-text); font-weight: 600;">
+            <i class="ri-magic-line" style="color: var(--color-primary); margin-right: 4px;"></i> Te sugerimos sumar:
+          </h3>
+          <div class="suggestions-scroller" id="cartSuggestionsScroller"
+            style="display: flex; gap: 0.75rem; overflow-x: auto; padding-bottom: 0.5rem; scroll-snap-type: x mandatory;">
+            <!-- Vía JS -->
+          </div>
         </div>
 
         <div class="cart-footer" id="cartFooter" style="display: none;">
@@ -365,6 +382,7 @@
     </div>
   </div>
 
+
   <!-- Checkout Modal -->
   <div class="checkout-modal" id="checkoutModal" style="display: none;">
     <div class="checkout-modal-overlay" id="checkoutModalOverlay"></div>
@@ -437,6 +455,27 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Order Tracking Modal -->
+  <div class="checkout-modal" id="trackingModal" style="display: none;">
+    <div class="checkout-modal-overlay" id="trackingModalOverlay"></div>
+    <div class="checkout-modal-content" style="max-height: 90vh; display: flex; flex-direction: column;">
+      <div class="checkout-modal-header" style="flex-shrink: 0;">
+        <h2><i class="ri-motorbike-line"></i> Mis Pedidos</h2>
+        <button class="checkout-modal-close" id="trackingModalClose">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+
+      <div class="tracking-body" id="trackingBody" style="padding: 1.5rem; overflow-y: auto; flex: 1;">
+        <div class="empty-state" style="text-align: center; padding: 2rem 0; color: var(--text-muted);">
+          <i class="ri-shopping-bag-3-line"
+            style="font-size: 3rem; opacity: 0.5; margin-bottom: 1rem; display: block;"></i>
+          <p>No tienes pedidos recientes.</p>
+        </div>
+      </div>
     </div>
   </div>
 

@@ -107,7 +107,9 @@ function renderPage({ business, page, items }) {
     const pageButtonStyle = page.button_style || 'semi-rounded'
 
     // Separar ítems regulares de los de redes sociales
-    const regularItems = items.filter(item => item.is_active !== false && item.item_type !== 'social')
+    const regularItems = items
+        .filter(item => item.is_active !== false && item.item_type !== 'social')
+        .sort((a, b) => (b.is_catalog_link ? 1 : 0) - (a.is_catalog_link ? 1 : 0))
     const socialItems = items.filter(item => item.is_active !== false && item.item_type === 'social')
 
     // Render regular link buttons
@@ -161,6 +163,11 @@ function renderPage({ business, page, items }) {
             btn.classList.add('btn-link--catalog')
         }
 
+        // Registrar clic localmente sin interrumpir navegación
+        btn.addEventListener('click', () => {
+            if (item.id) linksService.incrementLinkClick(item.id)
+        })
+
         container.appendChild(btn)
     })
 
@@ -191,6 +198,12 @@ function renderPage({ business, page, items }) {
 
             const iconClass = NETWORK_ICONS[item.social_network] || 'ri-share-line'
             circle.innerHTML = `<i class="${iconClass}"></i>`
+
+            // Registrar clic localmente sin interrumpir navegación
+            circle.addEventListener('click', () => {
+                if (item.id) linksService.incrementLinkClick(item.id)
+            })
+
             socialsContainer.appendChild(circle)
         })
     }

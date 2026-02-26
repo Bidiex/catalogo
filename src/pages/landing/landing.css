@@ -583,6 +583,119 @@ body {
     font-size: 0.95rem;
 }
 
+/* Metrics Section */
+.metrics-section {
+    padding: 3.5rem 0;
+    background-color: var(--bg-light);
+}
+
+.metrics-wrapper {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 1rem;
+    align-items: center;
+    max-width: 65rem;
+    margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+    .metrics-wrapper {
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+    }
+}
+
+.metrics-cards {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 400px;
+    border-radius: var(--radius-2xl);
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+}
+
+.metric-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem 2rem;
+    color: #0f172a;
+    transition: transform 0.3s;
+}
+
+.metric-card:hover {
+    z-index: 10;
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+.metric-card:hover .metric-value {
+    transform: scale(1.15);
+}
+
+.metric-card-green {
+    background-color: var(--primary);
+    /* Soft top corners are handled by the parent's overflow hidden, but adding extra radius on hover overrides it seamlessly */
+}
+
+.metric-card-yellow {
+    background-color: rgba(76, 237, 23, 0.6);
+    /* Verde con opacidad baja progresiva */
+}
+
+.metric-card-orange {
+    background-color: rgba(76, 237, 23, 0.3);
+    /* Verde con opacidad más baja */
+}
+
+.metric-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.metric-label {
+    font-size: 1.125rem;
+    font-weight: 700;
+}
+
+.metric-sublabel {
+    font-size: 0.875rem;
+    opacity: 0.8;
+}
+
+.metric-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    letter-spacing: -0.05em;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: right center;
+}
+
+.metrics-image-container {
+    width: 100%;
+    max-width: 250px;
+    display: flex;
+    justify-content: center;
+}
+
+@media (min-width: 768px) {
+    .metrics-image-container {
+        max-width: 400px;
+    }
+}
+
+.metrics-image {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    filter: drop-shadow(0 20px 25px rgba(0, 0, 0, 0.1));
+    mask-image: linear-gradient(black 70%, transparent);
+    -webkit-mask-image: linear-gradient(black 70%, transparent);
+}
+
 /* Pricing Section */
 .pricing-section {
     padding: 3.5rem 0;
@@ -592,13 +705,20 @@ body {
 .pricing-grid {
     display: grid;
     gap: 1.5rem;
-    max-width: 50rem;
+    max-width: 75rem;
+    /* Expanded for 3 cards */
     margin: 0 auto;
 }
 
 @media (min-width: 768px) {
     .pricing-grid {
         grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .pricing-grid {
+        grid-template-columns: repeat(3, 1fr);
     }
 }
 
@@ -629,13 +749,67 @@ body {
     left: 50%;
     transform: translateX(-50%);
     background-color: var(--primary);
-    color: #000;
+    color: #fff;
     padding: 0.25rem 1rem;
     border-radius: 9999px;
     font-size: 0.75rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+}
+
+/* Premium Expectation Card */
+.pricing-card.premium {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border-color: var(--primary);
+    color: #ffffff;
+    box-shadow: 0 10px 30px rgba(76, 237, 23, 0.15);
+    display: flex;
+    flex-direction: column;
+}
+
+.pricing-card.premium .plan-name,
+.pricing-card.premium .plan-price {
+    color: var(--primary);
+}
+
+.pricing-card.premium .plan-desc {
+    color: #ffffff;
+}
+
+.premium-expectation {
+    color: #ffffff;
+    line-height: 1.6;
+    flex-grow: 1;
+    margin-bottom: 2rem;
+    font-size: 0.95rem;
+}
+
+.premium-expectation p.mt-4 {
+    margin-top: 1rem;
+}
+
+.premium-expectation strong {
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.premium-image-container {
+    margin-top: auto;
+    text-align: center;
+    width: 100%;
+    margin-bottom: -2rem;
+}
+
+.premium-image {
+    max-width: 100%;
+    height: auto;
+    max-height: 450px;
+    object-fit: contain;
+    object-position: bottom;
+    display: block;
+    margin: 0 auto;
+    border-radius: 0 0 calc(var(--radius-2xl) - 2px) calc(var(--radius-2xl) - 2px);
 }
 
 .plan-name {
@@ -685,6 +859,73 @@ body {
     font-size: 1.25rem;
 }
 
+/* Tooltips & Badges */
+.feature-text-with-tooltip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    position: relative;
+}
+
+.tooltip-container {
+    display: inline-flex;
+    align-items: center;
+    cursor: help;
+}
+
+.badge-new {
+    background: var(--primary);
+    color: white;
+    font-size: 0.70rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 5px rgba(76, 237, 23, 0.3);
+}
+
+.tooltip-text {
+    visibility: hidden;
+    opacity: 0;
+    width: max-content;
+    max-width: 220px;
+    background-color: #0f172a;
+    color: #fff;
+    text-align: center;
+    border-radius: 8px;
+    padding: 8px 12px;
+    position: absolute;
+    z-index: 100;
+    bottom: 120%;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    font-size: 0.8rem;
+    font-weight: 500;
+    line-height: 1.4;
+    transition: opacity 0.3s, transform 0.3s, visibility 0.3s;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+}
+
+.tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #0f172a transparent transparent transparent;
+}
+
+.tooltip-container:hover .tooltip-text,
+.tooltip-container:active .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
 .btn-pricing {
     width: 100%;
     padding: 0.875rem;
@@ -718,6 +959,31 @@ body {
     border-color: var(--primary-dark);
     color: white;
 }
+
+/* Custom Plan Buttons */
+.btn-plus {
+    border-color: #8c52ff;
+    color: #8c52ff;
+}
+
+.btn-plus:hover {
+    background-color: #8c52ff;
+    border-color: #8c52ff;
+    color: white;
+}
+
+.btn-pro {
+    border-color: #5170ff;
+    color: #5170ff;
+}
+
+.btn-pro:hover {
+    background-color: #5170ff;
+    border-color: #5170ff;
+    color: white;
+}
+
+
 
 /* FAQ */
 .faq-section {

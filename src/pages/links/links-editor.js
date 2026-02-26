@@ -320,7 +320,10 @@ function renderList() {
         UI.list.innerHTML = `<div class="empty-state text-center p-4 text-gray-500">No hay enlaces creados.</div>`
     }
 
-    regularItems.forEach(item => {
+    const sortedRegular = [...regularItems].sort((a, b) =>
+        (b.is_catalog_link ? 1 : 0) - (a.is_catalog_link ? 1 : 0)
+    )
+    sortedRegular.forEach(item => {
         UI.list.appendChild(createLinkItemEl(item))
     })
 
@@ -359,6 +362,9 @@ function createLinkItemEl(item) {
                     ${item.is_active ? 'Visible' : 'Oculto'}
                 </span>
                 ${isCatalog ? '<span class="link-badge badge-fijo">Fijo</span>' : ''}
+                <span class="link-badge" title="Clics">
+                    <i class="ri-mouse-line"></i> ${item.clicks || 0}
+                </span>
             </div>
         </div>
         <div class="link-actions">
@@ -395,6 +401,8 @@ function createLinkItemEl(item) {
         itemEl.addEventListener('dragstart', handleDragStart)
         itemEl.addEventListener('dragend', handleDragEnd)
     } else {
+        // Mark catalog item in DOM so handleDrop can identify it
+        itemEl.dataset.isCatalog = 'true'
         const handle = itemEl.querySelector('.link-handle')
         if (handle) handle.classList.add('link-handle--hidden')
     }
@@ -436,6 +444,9 @@ function createSocialItemEl(item) {
                 <span class="link-badge badge-status ${item.is_active ? '' : 'inactive'}">
                     ${item.is_active ? 'Visible' : 'Oculto'}
                 </span>
+                <span class="link-badge" title="Clics">
+                    <i class="ri-mouse-line"></i> ${item.clicks || 0}
+                </span>
             </div>
         </div>
         <div class="link-actions">
@@ -459,8 +470,8 @@ function createSocialItemEl(item) {
 
 function setupDragAndDrop() {
     if (!UI.list) return
-    UI.list.addEventListener('dragover', handleDragOver)
-    UI.list.addEventListener('drop', handleDrop)
+    UI.list.ondragover = handleDragOver
+    UI.list.ondrop = handleDrop
 }
 
 
@@ -501,35 +512,44 @@ function handleDrop(e) {
     const targetRect = target.getBoundingClientRect()
     const insertBefore = e.clientY < targetRect.top + targetRect.height / 2
 
+    // The catalog link is always first and immovable — never allow inserting before it
+    if (target.dataset.isCatalog && insertBefore) return
+
     if (insertBefore) {
         UI.list.insertBefore(draggedItem, target)
     } else {
         UI.list.insertBefore(draggedItem, target.nextSibling)
     }
 
-    // Rebuild currentState.items order from the DOM
-    const newOrder = []
-    UI.list.querySelectorAll('.link-item[data-item-id]').forEach((el, index) => {
-        const id = el.dataset.itemId
-        const item = currentState.items.find(i => String(i.id) === String(id))
-        if (item) newOrder.push({ ...item, position: index })
-    })
-
-    // Include catalog items (non-draggable) at their DOM positions
-    const allItems = Array.from(UI.list.querySelectorAll('.link-item')).map((el, index) => {
+    // Rebuild currentState.items order from the DOM (single pass, no duplicates)
+    // Social items are not draggable and have no data-item-id, so we handle them separately
+    const seenIds = new Set()
+    const reorderedItems = Array.from(UI.list.querySelectorAll('.link-item')).reduce((acc, el, index) => {
         const id = el.dataset.itemId
         if (id) {
-            const item = currentState.items.find(i => String(i.id) === String(id))
-            return item ? { ...item, position: index } : null
+            // Regular draggable item
+            if (!seenIds.has(id)) {
+                const item = currentState.items.find(i => String(i.id) === String(id))
+                if (item) {
+                    seenIds.add(id)
+                    acc.push({ ...item, position: index })
+                }
+            }
+        } else {
+            // Catalog item (no data-item-id, not social)
+            const catalogItem = currentState.items.find(i => i.is_catalog_link && !seenIds.has(String(i.id)))
+            if (catalogItem) {
+                seenIds.add(String(catalogItem.id))
+                acc.push({ ...catalogItem, position: index })
+            }
         }
-        // Catalog items don't have data-item-id; find them by exclusion
-        const catalogItem = currentState.items.find(
-            i => i.is_catalog_link && !newOrder.some(o => o.id === i.id)
-        )
-        return catalogItem ? { ...catalogItem, position: index } : null
-    }).filter(Boolean)
+        return acc
+    }, [])
 
-    currentState.items = allItems.sort((a, b) => a.position - b.position)
+    // Preserve social items unchanged (they are not draggable and not in the DOM traversal above)
+    const socialItems = currentState.items.filter(i => i.item_type === 'social')
+
+    currentState.items = [...reorderedItems, ...socialItems].sort((a, b) => a.position - b.position)
 
     // Persist new order (fire and forget — optimistic UI)
     const positionUpdates = currentState.items.map((item, idx) => ({ id: item.id, position: idx }))
@@ -586,9 +606,10 @@ function renderPreview() {
     }
 
 
-    // Render regular link buttons
-    currentState.items
+    // Render regular link buttons (catalog link always first)
+    ;[...currentState.items]
         .filter(i => i.item_type !== 'social' && i.is_active)
+        .sort((a, b) => (b.is_catalog_link ? 1 : 0) - (a.is_catalog_link ? 1 : 0))
         .forEach(item => {
             const btn = document.createElement('a')
             let styleType = item.button_style || 'filled'
@@ -694,7 +715,15 @@ function openModal(item = null) {
         if (UI.inputId) UI.inputId.value = ''
         if (UI.inputStyle) UI.inputStyle.value = 'semi-rounded'
         if (UI.inputIsActive) UI.inputIsActive.checked = true
-        if (UI.inputUrl) UI.inputUrl.disabled = false
+        if (UI.inputUrl) {
+            const group = UI.inputUrl.closest('.form-group')
+            if (group) group.style.display = ''
+            UI.inputUrl.disabled = false
+        }
+        if (UI.inputIsActive) {
+            const toggle = UI.inputIsActive.closest('.link-toggle') || UI.inputIsActive.closest('.form-group')
+            if (toggle) toggle.style.display = ''
+        }
         if (UI.inputButtonColor) UI.inputButtonColor.value = defaultButtonColor
         if (UI.inputTextColor) UI.inputTextColor.value = defaultTextColor
     }

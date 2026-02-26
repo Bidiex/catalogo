@@ -250,6 +250,35 @@ export const linksService = {
     },
 
     /**
+     * Incrementa recursivamente el contador de clicks en un enlace
+     * @param {string} itemId 
+     */
+    async incrementLinkClick(itemId) {
+        try {
+            const { data, error: readError } = await supabase
+                .from('link_page_items')
+                .select('clicks')
+                .eq('id', itemId)
+                .single()
+
+            if (readError) throw readError
+
+            const newClicks = (data.clicks || 0) + 1
+
+            const { error: updateError } = await supabase
+                .from('link_page_items')
+                .update({ clicks: newClicks })
+                .eq('id', itemId)
+
+            if (updateError) throw updateError
+            return newClicks
+        } catch (error) {
+            console.error('Error incrementing click:', error)
+            // No arrojamos el error para no interrumpir el flujo del usuario público
+        }
+    },
+
+    /**
      * Obtiene la data pública de links por slug
      */
     async getPublicLinksBySlug(slug) {
