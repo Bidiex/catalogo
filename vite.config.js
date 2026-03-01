@@ -22,6 +22,7 @@ export default defineConfig({
         'admin-support': resolve(__dirname, 'src/pages/admin/support/index.html'),
 
         'links': resolve(__dirname, 'src/pages/links/index.html'),
+        'delivery': resolve(__dirname, 'src/pages/delivery/index.html'),
         '404': resolve(__dirname, 'src/pages/404/index.html'),
       },
       output: {
@@ -72,6 +73,10 @@ export default defineConfig({
           else if (req.url.startsWith('/l/') && !req.url.includes('.')) {
             req.url = '/src/pages/links/index.html'
           }
+          // Handle /d/:slug routes (UI Domiciliarios)
+          else if (req.url.startsWith('/d/') && !req.url.includes('.')) {
+            req.url = '/src/pages/delivery/index.html'
+          }
 
           next()
         })
@@ -111,6 +116,10 @@ export default defineConfig({
           // Handle /l/:slug routes (Centro de Enlaces pública)
           else if (req.url.startsWith('/l/') && !req.url.includes('.')) {
             req.url = '/links.html'
+          }
+          // Handle /d/:slug routes (UI Domiciliarios)
+          else if (req.url.startsWith('/d/') && !req.url.includes('.')) {
+            req.url = '/delivery.html'
           }
           // Handle query strings (e.g., /auth/callback?code=...)
           else {
@@ -154,6 +163,7 @@ export default defineConfig({
 
           moveFile(resolve(srcDir, 'admin/support/index.html'), resolve(distDir, 'admin-support.html'))
           moveFile(resolve(srcDir, 'links/index.html'), resolve(distDir, 'links.html'))
+          moveFile(resolve(srcDir, 'delivery/index.html'), resolve(distDir, 'delivery.html'))
           moveFile(resolve(srcDir, '404/index.html'), resolve(distDir, '404.html'))
 
           // Optional: Clean up src directory in dist if empty or no longer needed

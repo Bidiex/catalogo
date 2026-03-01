@@ -1067,6 +1067,8 @@ function getOrderStatusLabel(status) {
   const labels = {
     'pending': 'Pendiente',
     'verified': 'Verificado',
+    'ready': 'Para llevar',
+    'dispatched': 'Despachado',
     'completed': 'Completado',
     'cancelled': 'Cancelado'
   }
@@ -5271,6 +5273,14 @@ function renderOrders() {
               </button>` : ''
           }
             ${order.status === 'verified' ?
+            `<button class="btn-icon" style="color: #b45309;" onclick="window.markAsReady('${order.id}')" title="Para llevar">
+                <i class="ri-shopping-bag-3-line"></i>
+              </button>
+              <button class="btn-icon danger" onclick="window.cancelOrder('${order.id}')" title="Cancelar Pedido">
+                <i class="ri-close-line"></i>
+              </button>` : ''
+          }
+            ${order.status === 'ready' ?
             `<button class="btn-icon" style="color: #7e22ce;" onclick="window.openAssignOrderModal('${order.id}', '${order.id.slice(0, 8)}')" title="Despachar Pedido">
                 <i class="ri-motorbike-fill"></i>
               </button>
@@ -5326,6 +5336,12 @@ function renderOrders() {
              </button>` : ''
           }
             ${order.status === 'verified' ?
+            `<button class="btn-primary-small" style="flex: 1; background: #b45309; justify-content: center; align-items: center;" onclick="window.markAsReady('${order.id}')">Para llevar</button>
+             <button class="btn-secondary-small danger" style="flex: 0 0 36px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="window.cancelOrder('${order.id}')" title="Cancelar">
+                <i class="ri-close-line"></i>
+             </button>` : ''
+          }
+            ${order.status === 'ready' ?
             `<button class="btn-primary-small" style="flex: 1; background: #7e22ce; justify-content: center; align-items: center;" onclick="window.openAssignOrderModal('${order.id}', '${order.id.slice(0, 8)}')">Despachar</button>
              <button class="btn-secondary-small danger" style="flex: 0 0 36px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="window.cancelOrder('${order.id}')" title="Cancelar">
                 <i class="ri-close-line"></i>
@@ -5349,6 +5365,7 @@ function getOrderStatusBadge(status) {
   const styles = {
     pending: { bg: '#fff7ed', color: '#c2410c', text: 'Pendiente', icon: 'ri-time-line' },
     verified: { bg: '#f0fdf4', color: '#15803d', text: 'Verificado', icon: 'ri-check-double-line' },
+    ready: { bg: '#fef3c7', color: '#b45309', text: 'Para llevar', icon: 'ri-shopping-bag-3-line' },
     dispatched: { bg: '#f3e8ff', color: '#7e22ce', text: 'Despachado', icon: 'ri-motorbike-fill' },
     completed: { bg: '#eff6ff', color: '#1d4ed8', text: 'Completado', icon: 'ri-flag-line' },
     cancelled: { bg: '#fef2f2', color: '#b91c1c', text: 'Cancelado', icon: 'ri-close-circle-line' }
@@ -5479,14 +5496,39 @@ window.viewOrderDetails = async (orderId) => {
       content.innerHTML += `
         <div style="display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
             <button class="btn-secondary danger" style="flex: 1;" onclick="window.cancelOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">Cancelar Pedido</button>
+            <button class="btn-primary" style="flex: 1; background: #b45309;" onclick="window.markAsReady('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">
+              <i class="ri-shopping-bag-3-line"></i> Para llevar
+            </button>
+         </div>
+        `
+    } else if (orderData.status === 'ready') {
+      content.innerHTML += `
+        <div style="display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
+            <button class="btn-secondary danger" style="flex: 1;" onclick="window.cancelOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">Cancelar Pedido</button>
             <button class="btn-primary" style="flex: 1; background: #7e22ce;" onclick="window.openAssignOrderModal('${orderId}', '${orderId.slice(0, 8)}'); document.getElementById('orderDetailsModal').style.display='none'">
               <i class="ri-motorbike-fill"></i> Despachar
             </button>
          </div>
         `
     } else if (orderData.status === 'dispatched') {
+      let deliveryPersonSection = ''
+      if (orderData.delivery_person_id) {
+        const dp = deliveryPersons.find(p => p.id === orderData.delivery_person_id)
+        const dpName = dp ? dp.name : 'Domiciliario asignado'
+        deliveryPersonSection = `
+          <div style="margin-top: 1.5rem; padding: 0.75rem 1rem; background: #f5f3ff; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <i class="ri-motorbike-fill" style="color: #7e22ce;"></i>
+              <span style="font-weight: 600; color: #581c87;">${dpName}</span>
+            </div>
+            <button class="btn-secondary-small" onclick="window.openReassignModal('${orderId}', '${orderData.delivery_person_id}'); document.getElementById('orderDetailsModal').style.display='none'">
+              <i class="ri-user-shared-line"></i> Reasignar
+            </button>
+          </div>`
+      }
       content.innerHTML += `
-        <div style="display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
+        ${deliveryPersonSection}
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
             <button class="btn-secondary danger" style="flex: 1;" onclick="window.cancelOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">Cancelar Pedido</button>
             <button class="btn-primary" style="flex: 1; background: #2563eb;" onclick="window.completeOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">
               <i class="ri-flag-line"></i> Completar
@@ -5685,6 +5727,52 @@ window.completeOrder = async (orderId) => {
     console.error('Error completing order:', error)
     notify.updateLoading(loadingToast, 'Error al completar el pedido', 'error')
   }
+}
+
+window.markAsReady = async (orderId) => {
+  const confirmed = await confirm.show({
+    title: '¿Marcar como "Para llevar"?',
+    message: 'El pedido quedará listo para que un domiciliario lo tome.',
+    type: 'info',
+    confirmText: 'Para llevar'
+  })
+  if (!confirmed) return
+
+  const loadingToast = notify.loading('Actualizando pedido...')
+  try {
+    const { error } = await ordersService.updateStatus(orderId, 'ready')
+    if (error) throw error
+
+    notify.updateLoading(loadingToast, 'Pedido marcado como "Para llevar"', 'success')
+    loadOrders()
+  } catch (error) {
+    console.error('Error marking order as ready:', error)
+    notify.updateLoading(loadingToast, 'Error al actualizar el pedido', 'error')
+  }
+}
+
+window.openReassignModal = async (orderId, currentDeliveryPersonId) => {
+  orderToAssignId = orderId
+  selectedDeliveryPersonId = null
+
+  const modal = document.getElementById('assignOrderModal')
+  const title = modal.querySelector('h3') || modal.querySelector('.modal-title')
+  if (title) title.textContent = 'Reasignar Domiciliario'
+  document.getElementById('assignOrderNumber').textContent = `#${orderId.slice(0, 8)}`
+
+  if (!deliveryPersons || deliveryPersons.length === 0) {
+    try {
+      const data = await deliveryPersonsService.getAll(currentBusiness.id)
+      deliveryPersons = data || []
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const filteredList = deliveryPersons.filter(p => p.id !== currentDeliveryPersonId)
+  renderAssignmentList(filteredList)
+
+  modal.style.display = 'flex'
 }
 
 window.cancelOrder = async (orderId) => {
@@ -6366,6 +6454,7 @@ function getTranslatedStatus(status) {
   const map = {
     'pending': 'Pendiente',
     'verified': 'Verificado',
+    'ready': 'Para llevar',
     'dispatched': 'Despachado',
     'completed': 'Completado',
     'cancelled': 'Cancelado'

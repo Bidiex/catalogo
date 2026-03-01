@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TraeGo — Domiciliarios</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css">
+  <link rel="stylesheet" href="/src/pages/delivery/delivery.css">
+</head>
+
+<body>
+
+  <!-- ============================================================ -->
+  <!-- LOADING SCREEN                                               -->
+  <!-- ============================================================ -->
+  <div id="loadingScreen" class="loading-screen">
+    <div class="loading-spinner-container">
+      <div class="loading-logo">
+        <img src="/src/assets/icon_traego.svg" alt="TraeGo" />
+      </div>
+      <div class="loading-spinner-ring"></div>
+    </div>
+    <p>Cargando...</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- NOT FOUND SCREEN                                             -->
+  <!-- ============================================================ -->
+  <div id="notFoundScreen" class="fullscreen-state hidden">
+    <i class="ri-store-3-line"></i>
+    <h2>Negocio no encontrado</h2>
+    <p>El enlace que usaste no corresponde a ningún negocio activo.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- LOGIN SCREEN                                                 -->
+  <!-- ============================================================ -->
+  <div id="loginScreen" class="login-screen hidden">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="login-business-logo" id="loginBusinessLogo">
+          <i class="ri-store-3-line"></i>
+        </div>
+        <h1 id="loginBusinessName">Nombre del Negocio</h1>
+        <p>Portal de Domiciliarios</p>
+      </div>
+
+      <form id="loginForm" class="login-form" novalidate>
+        <div class="form-group">
+          <label for="deliveryCode">Código de acceso</label>
+          <div class="input-with-icon">
+            <i class="ri-shield-keyhole-line"></i>
+            <input type="text" id="deliveryCode" placeholder="Ej: DP-XXXXXX" autocomplete="off"
+              autocapitalize="characters" spellcheck="false">
+          </div>
+          <span class="field-error hidden" id="codeError"></span>
+        </div>
+
+        <button type="submit" class="btn-login" id="loginBtn">
+          <span class="btn-text">Ingresar</span>
+          <div class="btn-spinner hidden" id="loginSpinner"></div>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- MAIN APP (post-login)                                        -->
+  <!-- ============================================================ -->
+  <div id="appScreen" class="app-screen hidden">
+
+    <!-- Top Header -->
+    <header class="app-header">
+      <div class="app-header-left">
+        <div class="app-business-logo" id="appBusinessLogo">
+          <i class="ri-store-3-line"></i>
+        </div>
+        <span class="app-business-name" id="appBusinessName"></span>
+      </div>
+      <div class="app-header-right">
+        <button class="btn-logout" id="logoutBtn" title="Cerrar sesión">
+          <i class="ri-logout-box-r-line"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Bottom Nav (mobile) / Sidebar (desktop) -->
+    <nav class="bottom-nav" id="bottomNav">
+      <button class="nav-btn active" data-section="pending" id="navPending">
+        <i class="ri-inbox-2-line"></i>
+        <span>Disponibles</span>
+        <span class="nav-badge hidden" id="pendingBadge"></span>
+      </button>
+      <button class="nav-btn" data-section="mine" id="navMine">
+        <i class="ri-motorbike-line"></i>
+        <span>Mis Pedidos</span>
+        <span class="nav-badge hidden" id="mineBadge"></span>
+      </button>
+      <button class="nav-btn" data-section="metrics" id="navMetrics">
+        <i class="ri-bar-chart-grouped-line"></i>
+        <span>Métricas</span>
+      </button>
+    </nav>
+
+    <!-- Content Area -->
+    <main class="app-main">
+
+      <!-- Section A: Pedidos disponibles (status=ready, sin asignar) -->
+      <section class="app-section active" id="section-pending">
+        <div class="section-header">
+          <h2><i class="ri-inbox-2-line"></i> Pedidos disponibles</h2>
+          <p class="section-subtitle">Pedidos listos para llevar. Toma uno para comenzar.</p>
+        </div>
+        <div id="pendingOrdersList" class="orders-list">
+          <div class="empty-state" id="pendingEmpty">
+            <i class="ri-inbox-2-line"></i>
+            <p>No hay pedidos disponibles</p>
+            <span>Cuando el negocio prepare pedidos para llevar, aparecerán aquí</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section B: Mis pedidos (status=dispatched, asignado a mí) -->
+      <section class="app-section" id="section-mine">
+        <div class="section-header">
+          <h2><i class="ri-motorbike-line"></i> Mis pedidos activos</h2>
+          <p class="section-subtitle">Pedidos que tienes en camino.</p>
+        </div>
+        <div id="myOrdersList" class="orders-list">
+          <div class="empty-state" id="mineEmpty">
+            <i class="ri-motorbike-line"></i>
+            <p>Sin pedidos activos</p>
+            <span>Toma un pedido disponible para verlo aquí</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section C: Métricas -->
+      <section class="app-section" id="section-metrics">
+        <div class="section-header">
+          <h2><i class="ri-bar-chart-grouped-line"></i> Mis métricas</h2>
+        </div>
+
+        <div class="metrics-filter">
+          <button class="filter-pill active" data-range="today" id="filterToday">Hoy</button>
+          <button class="filter-pill" data-range="week" id="filterWeek">Esta semana</button>
+          <button class="filter-pill" data-range="month" id="filterMonth">Este mes</button>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-icon completed">
+              <i class="ri-flag-line"></i>
+            </div>
+            <div class="metric-info">
+              <span class="metric-value" id="metricCompleted">–</span>
+              <span class="metric-label">Entregas completadas</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon dispatched">
+              <i class="ri-timer-2-line"></i>
+            </div>
+            <div class="metric-info">
+              <span class="metric-value" id="metricAvgTime">–</span>
+              <span class="metric-label">Tiempo promedio</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="completed-orders-section">
+          <h3>Historial reciente</h3>
+          <div id="completedOrdersList" class="orders-list">
+            <div class="empty-state" id="completedEmpty">
+              <i class="ri-history-line"></i>
+              <p>Sin entregas aún</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- CONFIRM MODAL                                                -->
+  <!-- ============================================================ -->
+  <div id="confirmModal" class="confirm-modal hidden">
+    <div class="confirm-overlay" id="confirmOverlay"></div>
+    <div class="confirm-card">
+      <div class="confirm-icon" id="confirmIcon">
+        <i class="ri-information-line"></i>
+      </div>
+      <h3 id="confirmTitle">¿Confirmar acción?</h3>
+      <p id="confirmMessage">Esta acción no se puede deshacer.</p>
+      <div class="confirm-actions">
+        <button class="btn-confirm-cancel" id="confirmCancel">Cancelar</button>
+        <button class="btn-confirm-ok" id="confirmOk">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script type="module" src="/src/pages/delivery/delivery.js"></script>
+</body>
+
+</html>

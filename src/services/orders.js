@@ -285,5 +285,84 @@ export const ordersService = {
             console.error('ordersService.deleteOrder error:', error)
             throw error
         }
+    },
+
+    /**
+     * Delivery person takes a ready order (atomic — detects race conditions)
+     * @param {string} orderId
+     * @param {string} deliveryPersonId
+     * @param {string} businessId
+     * @returns {{ taken: boolean }} taken=false means someone else got there first
+     */
+    async takeOrder(orderId, deliveryPersonId, businessId) {
+        try {
+            const { data, error } = await supabase
+                .from('orders')
+                .update({
+                    status: 'dispatched',
+                    delivery_person_id: deliveryPersonId
+                })
+                .eq('id', orderId)
+                .eq('business_id', businessId)
+                .eq('status', 'ready')
+                .is('delivery_person_id', null)
+                .select('id')
+
+            if (error) throw error
+            return { taken: data && data.length > 0 }
+        } catch (error) {
+            console.error('ordersService.takeOrder error:', error)
+            throw error
+        }
+    },
+
+    /**
+     * Delivery person marks an order as completed
+     * @param {string} orderId
+     * @param {string} deliveryPersonId
+     * @param {string} businessId
+     */
+    async completeOrderDelivery(orderId, deliveryPersonId, businessId) {
+        try {
+            const { data, error } = await supabase
+                .from('orders')
+                .update({ status: 'completed' })
+                .eq('id', orderId)
+                .eq('business_id', businessId)
+                .eq('delivery_person_id', deliveryPersonId)
+                .eq('status', 'dispatched')
+                .select('id')
+
+            if (error) throw error
+            return data
+        } catch (error) {
+            console.error('ordersService.completeOrderDelivery error:', error)
+            throw error
+        }
+    },
+
+    /**
+     * Reassign an order to a different delivery person (admin action)
+     * Does NOT change the status — order stays as 'dispatched'
+     * @param {string} orderId
+     * @param {string} newDeliveryPersonId
+     * @param {string} businessId
+     */
+    async reassignDeliveryPerson(orderId, newDeliveryPersonId, businessId) {
+        try {
+            const { data, error } = await supabase
+                .from('orders')
+                .update({ delivery_person_id: newDeliveryPersonId })
+                .eq('id', orderId)
+                .eq('business_id', businessId)
+                .select()
+                .single()
+
+            if (error) throw error
+            return data
+        } catch (error) {
+            console.error('ordersService.reassignDeliveryPerson error:', error)
+            throw error
+        }
     }
 }

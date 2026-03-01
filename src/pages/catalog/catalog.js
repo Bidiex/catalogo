@@ -3372,7 +3372,7 @@ async function checkActiveOrder() {
     if (error) return;
 
     if (dbOrders && dbOrders.length > 0) {
-      const activeOrder = dbOrders.find(o => ['pending', 'verified', 'dispatched'].includes(o.status));
+      const activeOrder = dbOrders.find(o => ['pending', 'verified', 'ready', 'dispatched'].includes(o.status));
       if (activeOrder) {
         renderActiveOrderBadge(activeOrder.status);
       } else {
@@ -3411,6 +3411,7 @@ function renderActiveOrderBadge(status) {
   const statusMap = {
     'pending': { text: 'Por confirmar', color: '#f59e0b', icon: 'ri-time-line' },
     'verified': { text: 'Recibido', color: '#8b5cf6', icon: 'ri-check-double-line' },
+    'ready': { text: 'Recibido', color: '#8b5cf6', icon: 'ri-check-double-line' },
     'dispatched': { text: 'En camino', color: '#3b82f6', icon: 'ri-motorbike-line' }
   };
 
@@ -3480,8 +3481,9 @@ async function renderTrackingOrders() {
     }
 
     const statusMap = {
-      'pending': { text: 'Por confrmar', color: '#f59e0b', icon: 'ri-time-line' },
+      'pending': { text: 'Por confirmar', color: '#f59e0b', icon: 'ri-time-line' },
       'verified': { text: 'Recibido', color: '#8b5cf6', icon: 'ri-check-double-line' },
+      'ready': { text: 'Recibido', color: '#8b5cf6', icon: 'ri-check-double-line' },
       'dispatched': { text: 'En camino', color: '#3b82f6', icon: 'ri-motorbike-line' },
       'completed': { text: 'Entregado', color: '#10b981', icon: 'ri-flag-line' },
       'cancelled': { text: 'Cancelado', color: '#ef4444', icon: 'ri-close-circle-line' }
@@ -3543,13 +3545,13 @@ async function renderTrackingOrders() {
 
 function getProgressWidth(status) {
   if (status === 'pending') return '0%';
-  if (status === 'verified') return '50%';
+  if (status === 'verified' || status === 'ready') return '50%';
   if (status === 'dispatched' || status === 'completed') return '100%';
   return '0%';
 }
 
 function renderTrackingStep(stepStatus, currentStatus, icon, label) {
-  const levels = { 'pending': 1, 'verified': 2, 'dispatched': 3, 'completed': 4, 'cancelled': -1 }
+  const levels = { 'pending': 1, 'verified': 2, 'ready': 2, 'dispatched': 3, 'completed': 4, 'cancelled': -1 }
   const currentLvl = levels[currentStatus] || 1
   const stepLvl = levels[stepStatus]
 
