@@ -28,18 +28,82 @@ const appScreen = document.getElementById('appScreen')
 
 const loginForm = document.getElementById('loginForm')
 const deliveryCodeInput = document.getElementById('deliveryCode')
+const otpInputs = document.querySelectorAll('.otp-char')
 const loginBtn = document.getElementById('loginBtn')
 const loginSpinner = document.getElementById('loginSpinner')
 const codeError = document.getElementById('codeError')
 const loginBusinessName = document.getElementById('loginBusinessName')
 const loginBusinessLogo = document.getElementById('loginBusinessLogo')
 
+// Setup OTP logic
+otpInputs.forEach((input, index) => {
+    input.addEventListener('input', (e) => {
+        let val = e.data || input.value;
+        if (val) {
+            input.value = val.charAt(val.length - 1).toUpperCase();
+        }
+        updateHiddenCode();
+        if (input.value && index < otpInputs.length - 1) {
+            otpInputs[index + 1].focus();
+        }
+    });
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace') {
+            if (!input.value && index > 0) {
+                e.preventDefault();
+                otpInputs[index - 1].focus();
+                otpInputs[index - 1].value = '';
+                updateHiddenCode();
+            } else {
+                updateHiddenCode();
+            }
+        } else if (e.key === 'ArrowLeft' && index > 0) {
+            e.preventDefault();
+            otpInputs[index - 1].focus();
+        } else if (e.key === 'ArrowRight' && index < otpInputs.length - 1) {
+            e.preventDefault();
+            otpInputs[index + 1].focus();
+        }
+    });
+
+    input.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const pasteData = (e.clipboardData || window.clipboardData).getData('text').trim().toUpperCase();
+        const cleanData = pasteData.replace(/^DP-?/, '');
+        let arr = cleanData.split('');
+        otpInputs.forEach((inp, i) => {
+            if (arr[i]) {
+                inp.value = arr[i];
+            }
+        });
+        updateHiddenCode();
+        const nextEmpty = Array.from(otpInputs).findIndex(inp => !inp.value);
+        if (nextEmpty !== -1) {
+            otpInputs[nextEmpty].focus();
+        } else {
+            otpInputs[otpInputs.length - 1].focus();
+        }
+    });
+});
+
+function updateHiddenCode() {
+    const codeStr = Array.from(otpInputs).map(i => i.value).join('');
+    if (codeStr.length === 6) {
+        deliveryCodeInput.value = 'DP-' + codeStr;
+    } else {
+        deliveryCodeInput.value = '';
+    }
+}
+
 const appBusinessName = document.getElementById('appBusinessName')
+const appDeliveryPerson = document.getElementById('appDeliveryPerson')
 const appBusinessLogo = document.getElementById('appBusinessLogo')
 const logoutBtn = document.getElementById('logoutBtn')
 
 const pendingOrdersList = document.getElementById('pendingOrdersList')
 const pendingEmpty = document.getElementById('pendingEmpty')
+const pendingOrdersBadge = document.getElementById('pendingOrdersBadge')
 const myOrdersList = document.getElementById('myOrdersList')
 const mineEmpty = document.getElementById('mineEmpty')
 const completedOrdersList = document.getElementById('completedOrdersList')
@@ -131,7 +195,13 @@ function showNotFound() {
 function showLogin() {
     loadingScreen.classList.add('hidden')
     loginScreen.classList.remove('hidden')
-    setTimeout(() => deliveryCodeInput.focus(), 100)
+    setTimeout(() => {
+        if (otpInputs && otpInputs.length > 0) {
+            otpInputs[0].focus()
+        } else {
+            deliveryCodeInput.focus()
+        }
+    }, 100)
 }
 
 function showApp() {
@@ -139,6 +209,7 @@ function showApp() {
     loginScreen.classList.add('hidden')
     appScreen.classList.remove('hidden')
     appBusinessName.textContent = currentBusiness.name
+    appDeliveryPerson.textContent = 'Hola, ' + (currentDeliveryPerson.name.split(' ')[0])
     renderAppLogo(appBusinessLogo)
 
     // Load all data
@@ -250,7 +321,13 @@ loginForm.addEventListener('submit', async (e) => {
     if (!dp) {
         setLoginLoading(false)
         showCodeError('Código inválido o domiciliario inactivo. Revisa el código e intenta de nuevo.')
-        deliveryCodeInput.select()
+        if (otpInputs && otpInputs.length > 0) {
+            otpInputs.forEach(i => i.value = '')
+            updateHiddenCode()
+            otpInputs[0].focus()
+        } else {
+            deliveryCodeInput.select()
+        }
         return
     }
 
@@ -269,8 +346,15 @@ logoutBtn.addEventListener('click', () => {
     appScreen.classList.add('hidden')
     loginScreen.classList.remove('hidden')
     deliveryCodeInput.value = ''
+    if (otpInputs) otpInputs.forEach(i => i.value = '')
     clearCodeError()
-    setTimeout(() => deliveryCodeInput.focus(), 100)
+    setTimeout(() => {
+        if (otpInputs && otpInputs.length > 0) {
+            otpInputs[0].focus()
+        } else {
+            deliveryCodeInput.focus()
+        }
+    }, 100)
 })
 
 function setLoginLoading(loading) {
@@ -348,10 +432,13 @@ function renderPendingOrders() {
 
     if (pendingOrders.length === 0) {
         pendingEmpty.classList.remove('hidden')
+        pendingOrdersBadge.classList.add('hidden')
         return
     }
 
     pendingEmpty.classList.add('hidden')
+    pendingOrdersBadge.textContent = `${pendingOrders.length} ${pendingOrders.length === 1 ? 'nuevo' : 'nuevos'}`
+    pendingOrdersBadge.classList.remove('hidden')
 
     pendingOrders.forEach(order => {
         const card = buildOrderCard(order, 'pending')
@@ -415,13 +502,19 @@ function buildOrderCard(order, type) {
     const ts = type === 'mine' ? order.dispatched_at : order.ready_at
     const elapsed = formatElapsed(ts || order.created_at)
 
-    // Check if order is pending and elapsed time > 20 mins
-    if (type === 'pending' && (ts || order.created_at)) {
-        const orderTime = new Date(ts || order.created_at)
-        const diffMins = Math.floor((new Date() - orderTime) / 60000)
-        if (diffMins > 20) {
-            card.classList.add('delayed')
-        }
+    // Format elapsed time dynamically based on the amount of minutes for semantic colors
+    let orderTime = new Date(ts || order.created_at)
+    let diffMins = Math.floor((new Date() - orderTime) / 60000)
+    let elapsedClass = 'elapsed-good'
+    if (diffMins >= 20) {
+        elapsedClass = 'elapsed-danger'
+    } else if (diffMins >= 10) {
+        elapsedClass = 'elapsed-amber'
+    }
+
+    // Check if order is pending and elapsed time > 20 mins to append delayed border
+    if (type === 'pending' && diffMins > 20) {
+        card.classList.add('delayed')
     }
 
     const header = document.createElement('div')
@@ -429,7 +522,7 @@ function buildOrderCard(order, type) {
     header.innerHTML = `
     <div>
       <div class="order-ref">#${ref}</div>
-      <div class="order-elapsed">${elapsed}</div>
+      <div class="order-elapsed ${elapsedClass}"><i class="ri-time-line"></i> ${elapsed}</div>
     </div>
     ${type === 'pending'
             ? '<span class="order-status-badge ready"><i class="ri-shopping-bag-3-line"></i> Para llevar</span>'
@@ -447,24 +540,23 @@ function buildOrderCard(order, type) {
     const waNumber = phone.replace(/\D/g, '')
     const waLink = `https://wa.me/57${waNumber}?text=${waMsg}`
 
+    const phoneRowHTML = type === 'mine' ? `
+    <div class="order-info-row phone-row">
+      <div class="phone-info">
+        <span class="phone-number"><i class="ri-phone-line"></i> ${phone}</span>
+        <div class="phone-actions">
+          <a href="tel:${phone}" class="btn-phone-call">Llamar</a>
+          <a href="${waLink}" target="_blank" rel="noopener" class="btn-phone-whatsapp">WhatsApp</a>
+        </div>
+      </div>
+    </div>` : '';
+
     body.innerHTML = `
     <div class="order-info-row">
       <i class="ri-user-3-line"></i>
       <span>${order.customer_name}</span>
     </div>
-    <div class="order-info-row phone-row">
-    <div class="phone-info">
-        <span class="phone-number"><i class="ri-phone-line"></i> ${phone}</span>
-        <div class="phone-actions">
-          <a href="tel:${phone}" class="btn-phone-call">
-            Llamar
-          </a>
-          <a href="${waLink}" target="_blank" rel="noopener" class="btn-phone-whatsapp">
-            WhatsApp
-          </a>
-        </div>
-      </div>
-    </div>
+    ${phoneRowHTML}
     <div class="order-info-row">
       <i class="ri-map-pin-2-line"></i>
       <span>${order.customer_address}${order.customer_neighborhood ? `, ${order.customer_neighborhood}` : ''}</span>

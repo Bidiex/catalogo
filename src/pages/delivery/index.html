@@ -43,22 +43,45 @@
   <div id="loginScreen" class="login-screen hidden">
     <div class="login-card">
       <div class="login-header">
-        <div class="login-business-logo" id="loginBusinessLogo">
-          <i class="ri-store-3-line"></i>
+        <div class="login-avatar-container">
+          <img class="login-avatar" src="/src/assets/avatar-bike.webp" alt="Avatar Delivery" />
         </div>
-        <h1 id="loginBusinessName">Nombre del Negocio</h1>
-        <p>Portal de Domiciliarios</p>
+        <div class="traego-brand-header">
+          <img src="/src/assets/icon_traego.svg" alt="TraeGo Icon" class="traego-brand-icon" />
+          <img src="/src/assets/logo_traego.svg" alt="TraeGo Logo" class="traego-brand-logo" />
+        </div>
+        <h1 class="platform-title">Plataforma de Domiciliarios</h1>
+        <div class="business-info-row">
+          <div class="login-business-logo" id="loginBusinessLogo">
+            <i class="ri-store-3-line"></i>
+          </div>
+          <h2 id="loginBusinessName" class="business-name-secondary">Nombre del Negocio</h2>
+        </div>
       </div>
 
       <form id="loginForm" class="login-form" novalidate>
         <div class="form-group">
-          <label for="deliveryCode">Código de acceso</label>
-          <div class="input-with-icon">
-            <i class="ri-shield-keyhole-line"></i>
-            <input type="text" id="deliveryCode" placeholder="Ej: DP-XXXXXX" autocomplete="off"
-              autocapitalize="characters" spellcheck="false">
+          <label class="code-instruction">Por favor digita tu código de identificación de 6 dígitos luego de DP</label>
+          <div class="otp-input-container">
+            <div class="otp-inputs" id="otpInputs">
+              <input type="text" maxlength="1" class="otp-char" autocomplete="off" autocapitalize="characters"
+                spellcheck="false" inputmode="text">
+              <input type="text" maxlength="1" class="otp-char" autocomplete="off" autocapitalize="characters"
+                spellcheck="false" inputmode="text">
+              <input type="text" maxlength="1" class="otp-char" autocomplete="off" autocapitalize="characters"
+                spellcheck="false" inputmode="text">
+              <input type="text" maxlength="1" class="otp-char" autocomplete="off" autocapitalize="characters"
+                spellcheck="false" inputmode="text">
+              <input type="text" maxlength="1" class="otp-char" autocomplete="off" autocapitalize="characters"
+                spellcheck="false" inputmode="text">
+              <input type="text" maxlength="1" class="otp-char" autocomplete="off" autocapitalize="characters"
+                spellcheck="false" inputmode="text">
+            </div>
           </div>
+          <input type="hidden" id="deliveryCode" name="deliveryCode">
           <span class="field-error hidden" id="codeError"></span>
+          <p class="login-disclaimer">Si no recuerdas o necesitas ayuda con tu código único, contacta al administrador.
+          </p>
         </div>
 
         <button type="submit" class="btn-login" id="loginBtn">
@@ -80,7 +103,10 @@
         <div class="app-business-logo" id="appBusinessLogo">
           <i class="ri-store-3-line"></i>
         </div>
-        <span class="app-business-name" id="appBusinessName"></span>
+        <div class="app-header-texts">
+          <span class="app-business-name" id="appBusinessName"></span>
+          <span class="app-delivery-person" id="appDeliveryPerson"></span>
+        </div>
       </div>
       <div class="app-header-right">
         <button class="btn-logout" id="logoutBtn" title="Cerrar sesión">
@@ -113,7 +139,10 @@
       <!-- Section A: Pedidos disponibles (status=ready, sin asignar) -->
       <section class="app-section active" id="section-pending">
         <div class="section-header">
-          <h2><i class="ri-inbox-2-line"></i> Pedidos disponibles</h2>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <h2><i class="ri-inbox-2-line"></i> Pedidos disponibles</h2>
+            <span id="pendingOrdersBadge" class="new-orders-badge hidden">0 nuevos</span>
+          </div>
           <p class="section-subtitle">Pedidos listos para llevar. Toma uno para comenzar.</p>
         </div>
         <div id="pendingOrdersList" class="orders-list">
