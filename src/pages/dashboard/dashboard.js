@@ -23,6 +23,7 @@ import { imageService } from '../../services/images.js'
 import { supportService } from '../../services/support.js'
 import { ordersService } from '../../services/orders.js'
 import { deliveryPersonsService } from '../../services/deliveryPersons.js'
+import { businessSidesService } from '../../services/businessSidesService.js'
 
 import { initAnalytics, updateAnalytics } from './analytics.js'
 import { initLinksEditor } from '../links/links-editor.js'
@@ -2405,11 +2406,11 @@ const optionsProductName = document.getElementById('optionsProductName')
 
 // NEW: Containers for Groups
 const quickCommentsListDashboard = document.getElementById('quickCommentsListDashboard')
-const sidesListDashboard = document.getElementById('sidesListDashboard') // We might keep using this for sides or similar
+const sidesListDashboard = document.getElementById('sidesListDashboard') // may be null now
 
 // Buttons
 const addQuickCommentBtn = document.getElementById('addQuickCommentBtn') // Will be "Agregar Grupo"
-const addSideBtn = document.getElementById('addSideBtn')
+const addSideBtn = document.getElementById('addSideBtn') // May be null
 
 // Option Modal
 const optionModal = document.getElementById('optionModal')
@@ -2454,21 +2455,21 @@ async function openProductOptionsModal(productId) {
     openGroupModal()
   }
 
-  // Restore Side button
+  // Restore Side button (Removed/Hidden)
   const oldSideBtn = document.getElementById('addSideBtn')
-  const newSideBtn = oldSideBtn.cloneNode(true)
-  oldSideBtn.parentNode.replaceChild(newSideBtn, oldSideBtn)
-
-  newSideBtn.style.display = 'block'
-  newSideBtn.textContent = 'Agregar Acompañante'
-  newSideBtn.onclick = (e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    openOptionModal('side')
+  if (oldSideBtn) {
+    const newSideBtn = oldSideBtn.cloneNode(true)
+    oldSideBtn.parentNode.replaceChild(newSideBtn, oldSideBtn)
+    newSideBtn.style.display = 'none'
   }
 
   await loadProductOptions(productId)
   renderProductOptionsDashboard()
+
+  // New logic for global sides
+  if (window.loadSidesInProductModal) {
+    await window.loadSidesInProductModal(productId)
+  }
 
   // Load and render product sizes
   await loadProductSizes(productId)
@@ -2482,16 +2483,9 @@ let productSides = [] // New array for sides
 async function loadProductOptions(productId) {
   try {
     const data = await productOptionsService.getGroupsByProduct(productId)
-    productOptionGroups = data
+    productOptionGroups = data || []
 
-    // Fetch all options to separate Sides and Ungrouped Comments
-    const allOptions = await productOptionsService.getByProduct(productId)
-
-    // Filter Sides: Assuming type is 'side'
-    productSides = allOptions.filter(opt => opt.type === 'side')
-
-    // Filter Ungrouped Comments: type is 'quick_comment' (or null) AND group_id is null
-    ungroupedOptions = allOptions.filter(opt => (opt.type === 'quick_comment' || !opt.type) && !opt.group_id)
+    allGlobalQuickCommentGroups = await productOptionsService.getGroupsByBusiness(currentBusiness.id)
 
   } catch (error) {
     console.error('Error loading product options:', error)
@@ -2502,146 +2496,50 @@ async function loadProductOptions(productId) {
 }
 
 function renderProductOptionsDashboard() {
-  quickCommentsListDashboard.innerHTML = ''
+  const qcContainer = document.getElementById('availableQuickCommentsForProduct')
+  if (qcContainer) qcContainer.innerHTML = ''
 
-  // Clean sides list if it exists (it should, based on HTML view)
-  if (sidesListDashboard) sidesListDashboard.innerHTML = ''
+  if (allGlobalQuickCommentGroups.length === 0) {
+    if (qcContainer) qcContainer.innerHTML = '<p class="empty-message">No hay grupos de comentarios creados en el catálogo.</p>'
+  } else {
+    allGlobalQuickCommentGroups.forEach(group => {
+      const isAssigned = productOptionGroups.some(g => g.id === group.id)
 
-  // ============================
-  // RENDER GROUPS
-  // ============================
-  if (productOptionGroups.length > 0) {
-    productOptionGroups.forEach(group => {
-      const groupEl = document.createElement('div')
-      groupEl.className = 'option-group-item'
-      groupEl.style.cssText = 'border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 1rem; padding: 1rem; background: #f9fafb;'
-
-      const typeLabel = group.type === 'radio' ? 'Selección Única (Radio)' : 'Selección Múltiple (Checkbox)'
-      const limitsLabel = group.type === 'checkbox' && group.max_selections > 0
-        ? `(Máx. ${group.max_selections})`
-        : ''
-
-      groupEl.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
-          <div>
-            <h4 style="margin: 0; font-weight: 600; color: #374151;">${group.name}</h4>
-            <span style="font-size: 0.75rem; color: #6b7280;">${typeLabel} ${limitsLabel}</span>
-          </div>
-          <div style="display: flex; gap: 0.5rem;">
-            <button class="btn-icon-small edit-group" data-id="${group.id}">Editar</button>
-            <button class="btn-icon-small danger delete-group" data-id="${group.id}">Eliminar</button>
-            <button class="btn-icon-small primary add-option-to-group" data-group-id="${group.id}" style="margin-left: 0.5rem;">+ Opción</button>
-          </div>
-        </div>
-        <div class="group-options-list">
-          ${group.options && group.options.length > 0 ? '' : '<p style="color: #9ca3af; font-size: 0.85rem; font-style: italic;">Sin opciones</p>'}
+      const div = document.createElement('label')
+      div.style.cssText = 'display: flex; align-items: center; padding: 0.5rem; border: 1px solid #eee; border-radius: 6px; margin-bottom: 0.5rem; cursor: pointer; background: white;'
+      div.innerHTML = `
+        <input type="checkbox" class="qc-assign-toggle" data-group-id="${group.id}" ${isAssigned ? 'checked' : ''} style="margin-right: 0.75rem; transform: scale(1.1);">
+        <div style="flex: 1;">
+          <div style="font-weight: 500;">${group.name}</div>
+          <div style="font-size: 0.8rem; color: #64748b;">(${group.options ? group.options.length : 0} opciones)</div>
         </div>
       `
 
-      // Render Options inside Group
-      const optionsContainer = groupEl.querySelector('.group-options-list')
-      if (group.options && group.options.length > 0) {
-        group.options.forEach(opt => {
-          const optEl = document.createElement('div')
-          optEl.className = 'option-item'
-          optEl.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: white; border: 1px solid #eee; border-radius: 6px; margin-bottom: 0.25rem;'
-          optEl.innerHTML = `
-            <div class="option-item-info">
-              <span class="option-item-name" style="font-weight: 500;">${opt.name}</span>
-              ${parseFloat(opt.price) > 0 ? `<span class="option-item-price" style="margin-left: 0.5rem; color: #059669; font-size: 0.85rem;">+$${parseFloat(opt.price).toLocaleString()}</span>` : ''}
-            </div>
-            <div class="option-item-actions">
-              <button class="btn-icon-small edit-option" data-id="${opt.id}" data-group-id="${group.id}">Editar</button>
-              <button class="btn-icon-small danger delete-option" data-id="${opt.id}">Eliminar</button>
-            </div>
-          `
-          optionsContainer.appendChild(optEl)
-        })
-      }
-
-      quickCommentsListDashboard.appendChild(groupEl)
-    })
-  }
-
-  // ============================
-  // RENDER UNGROUPED (Legacy)
-  // ============================
-  if (ungroupedOptions.length > 0) {
-    const ungroupedEl = document.createElement('div')
-    ungroupedEl.className = 'option-group-item'
-    ungroupedEl.style.cssText = 'border: 1px dashed #9ca3af; border-radius: 8px; margin-bottom: 1rem; padding: 1rem; background: #fff;'
-
-    ungroupedEl.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
-        <div>
-          <h4 style="margin: 0; font-weight: 600; color: #6b7280;">Opciones Generales (Sin Grupo)</h4>
-        </div>
-      </div>
-      <div class="group-options-list"></div>
-    `
-    const optionsContainer = ungroupedEl.querySelector('.group-options-list')
-    ungroupedOptions.forEach(opt => {
-      const optEl = document.createElement('div')
-      optEl.className = 'option-item'
-      optEl.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: #f9fafb; border: 1px solid #eee; border-radius: 6px; margin-bottom: 0.25rem;'
-      optEl.innerHTML = `
-        <div class="option-item-info">
-          <span class="option-item-name" style="font-weight: 500;">${opt.name}</span>
-          ${parseFloat(opt.price) > 0 ? `<span class="option-item-price" style="margin-left: 0.5rem; color: #059669; font-size: 0.85rem;">+$${parseFloat(opt.price).toLocaleString()}</span>` : ''}
-        </div>
-        <div class="option-item-actions">
-          <button class="btn-icon-small edit-option" data-id="${opt.id}" data-group-id="">Editar</button>
-          <button class="btn-icon-small danger delete-option" data-id="${opt.id}">Eliminar</button>
-        </div>
-      `
-      optionsContainer.appendChild(optEl)
-    })
-
-    quickCommentsListDashboard.appendChild(ungroupedEl)
-  }
-
-  if (productOptionGroups.length === 0 && ungroupedOptions.length === 0) {
-    quickCommentsListDashboard.innerHTML = '<p class="empty-message" style="padding: 2rem; text-align: center; color: #9ca3af;">No hay grupos de opciones configurados. <br>Crea un grupo para empezar.</p>'
-  }
-
-  // ============================
-  // RENDER SIDES (Acompañantes)
-  // ============================
-  if (sidesListDashboard) {
-    if (productSides.length > 0) {
-      // Check if we need a container or just list items
-      // Using simpler styling for sides
-      const sidesContainer = document.createElement('div')
-      sidesContainer.className = 'sides-container'
-      // Header for Sides REMOVED to avoid duplication
-      // sidesContainer.innerHTML = '<h4>Acompañantes</h4>' 
-
-      productSides.forEach(opt => {
-        const optEl = document.createElement('div')
-        optEl.className = 'option-item side-item'
-        // styles moved to CSS .side-item
-        optEl.innerHTML = `
-            <div class="option-item-info">
-              <span class="option-item-name" style="font-weight: 500;">${opt.name}</span>
-              ${parseFloat(opt.price) > 0 ? `<span class="option-item-price" style="margin-left: 0.5rem; color: #d97706; font-size: 0.85rem;">+$${parseFloat(opt.price).toLocaleString()}</span>` : ''}
-            </div>
-            <div class="option-item-actions">
-              <button class="btn-icon-small edit-option-side" data-id="${opt.id}">Editar</button>
-              <button class="btn-icon-small danger delete-option-side" data-id="${opt.id}">Eliminar</button>
-            </div>
-          `
-        sidesContainer.appendChild(optEl)
+      const checkbox = div.querySelector('.qc-assign-toggle')
+      checkbox.addEventListener('change', async (e) => {
+        const isChecked = e.target.checked
+        checkbox.disabled = true
+        try {
+          if (isChecked) {
+            await productOptionsService.assignGroupToProduct(currentProductForOptions.id, group.id)
+            notify.success('Grupo asignado')
+          } else {
+            await productOptionsService.unassignGroupFromProduct(currentProductForOptions.id, group.id)
+            notify.success('Grupo desasignado')
+          }
+          productOptionGroups = await productOptionsService.getGroupsByProduct(currentProductForOptions.id)
+        } catch (error) {
+          console.error(error)
+          notify.error('Error al actualizar asignación')
+          e.target.checked = !isChecked
+        } finally {
+          checkbox.disabled = false
+        }
       })
 
-      sidesListDashboard.appendChild(sidesContainer)
-      sidesListDashboard.style.display = 'block'
-    } else {
-      sidesListDashboard.innerHTML = '<p style="color: #9ca3af; font-size: 0.85rem; padding: 1rem; text-align: center;">Sin acompañantes</p>'
-      sidesListDashboard.style.display = 'block'
-    }
+      if (qcContainer) qcContainer.appendChild(div)
+    })
   }
-
-  attachOptionEventListeners()
 }
 
 function attachOptionEventListeners() {
@@ -2702,13 +2600,11 @@ function attachOptionEventListeners() {
 closeProductOptionsModal.addEventListener('click', () => {
   productOptionsModal.style.display = 'none'
   currentProductForOptions = null
-  addSideBtn.style.display = 'block' // Restore
 })
 
 closeProductOptionsBtn.addEventListener('click', () => {
   productOptionsModal.style.display = 'none'
   currentProductForOptions = null
-  addSideBtn.style.display = 'block' // Restore
 })
 
 // ============================================
@@ -2927,8 +2823,8 @@ function openOptionModal(type, optionId = null, groupId = null) {
     optionPriceInput.value = 0
   }
 
-  // Siempre mostrar precio (ahora todas pueden tener precio)
-  optionPriceGroup.style.display = 'flex'
+  // Siempre mostrar precio (ahora todas pueden tener precio, EXCEPTO quick_comment)
+  optionPriceGroup.style.display = type === 'quick_comment' ? 'none' : 'flex'
 
   optionModal.style.display = 'flex'
 }
@@ -2985,14 +2881,12 @@ optionForm.addEventListener('submit', async (e) => {
         await loadPromotionOptions(currentPromotionForOptions.id)
         renderPromotionOptionsDashboard()
 
-      } else if (currentProductForOptions) {
-        // PRODUCT OPTIONS (Groups & Sides)
-
-        // Determine type: use editingOptionType if set (e.g. 'side'), otherwise default to 'quick_comment'
+      } else if (currentProductForOptions || editingOptionType === 'quick_comment') {
+        // PRODUCT OPTIONS (Groups & Sides) OR GLOBAL QUICK COMMENTS
         const typeToSave = editingOptionType || 'quick_comment'
 
         const optionData = {
-          product_id: currentProductForOptions.id,
+          product_id: (currentProductForOptions && typeToSave !== 'quick_comment') ? currentProductForOptions.id : null,
           type: typeToSave,
           name,
           price,
@@ -3007,17 +2901,22 @@ optionForm.addEventListener('submit', async (e) => {
           await productOptionsService.update(editingOption.id, optionData)
           notify.success('Opción actualizada')
         } else {
-          // Calculate new display order if possible, otherwise DB handles it or it's 0
-          // Ideally we fetch max order, but for now 0 or append
-          // If we have local list, we can use it.
-          // For now, let's just save.
           await productOptionsService.create(optionData)
           notify.success('Opción creada')
         }
 
         closeOptionModalFn()
-        await loadProductOptions(currentProductForOptions.id)
-        renderProductOptionsDashboard()
+
+        if (typeToSave === 'quick_comment') {
+          if (window.loadGlobalQuickComments) await window.loadGlobalQuickComments();
+          if (currentProductForOptions && document.getElementById('productOptionsModal').style.display === 'flex') {
+            await loadProductOptions(currentProductForOptions.id)
+            renderProductOptionsDashboard()
+          }
+        } else if (currentProductForOptions) {
+          await loadProductOptions(currentProductForOptions.id)
+          renderProductOptionsDashboard()
+        }
       }
 
     } catch (error) {
@@ -3573,28 +3472,32 @@ function renderPromotionOptionsDashboard() {
 // const addSideBtn = document.getElementById('addSideBtn')
 
 // Store original listeners
-const originalAddCommentListener = addQuickCommentBtn.onclick
-const originalAddSideListener = addSideBtn.onclick
+const originalAddCommentListener = addQuickCommentBtn ? addQuickCommentBtn.onclick : null
+const originalAddSideListener = addSideBtn ? addSideBtn.onclick : null
 
 // Replace with dynamic listeners
-addQuickCommentBtn.onclick = null
-addSideBtn.onclick = null
+if (addQuickCommentBtn) addQuickCommentBtn.onclick = null
+if (addSideBtn) addSideBtn.onclick = null
 
-addQuickCommentBtn.addEventListener('click', () => {
-  if (currentPromotionForOptions) {
-    openPromotionOptionEditModal(null, 'quick_comment')
-  } else if (currentProductForOptions) {
-    openOptionModal('quick_comment')
-  }
-})
+if (addQuickCommentBtn) {
+  addQuickCommentBtn.addEventListener('click', () => {
+    if (currentPromotionForOptions) {
+      openPromotionOptionEditModal(null, 'quick_comment')
+    } else if (currentProductForOptions) {
+      openOptionModal('quick_comment')
+    }
+  })
+}
 
-addSideBtn.addEventListener('click', () => {
-  if (currentPromotionForOptions) {
-    openPromotionOptionEditModal(null, 'side')
-  } else if (currentProductForOptions) {
-    openOptionModal('side')
-  }
-})
+if (addSideBtn) {
+  addSideBtn.addEventListener('click', () => {
+    if (currentPromotionForOptions) {
+      openPromotionOptionEditModal(null, 'side')
+    } else if (currentProductForOptions) {
+      openOptionModal('side')
+    }
+  })
+}
 
 let editingPromotionOption = null
 let editingPromotionOptionType = null
@@ -4378,7 +4281,7 @@ function initWhatsAppEditor() {
   const emojiPicker = document.getElementById('emojiPicker')
   const emojiGrid = document.getElementById('emojiGrid')
   const emojiTabs = document.querySelectorAll('.emoji-tab')
-  const textarea = whatsappTemplateInput
+  const textarea = document.getElementById('whatsappTemplateInput')
 
   // Formatting Buttons
   document.querySelectorAll('.toolbar-btn[data-format]').forEach(btn => {
@@ -6496,9 +6399,51 @@ function initProductsTabs() {
         loadProducts()
       } else if (tabId === 'suggestions') {
         loadSuggestions()
+      } else if (tabId === 'quick-comments') {
+        if (window.loadGlobalQuickComments) window.loadGlobalQuickComments()
       }
     })
   })
+
+  // ============================================
+  // TABS HEADER SCROLL LOGIC
+  // ============================================
+  const header = document.getElementById('productsTabsHeader')
+  const leftArrow = document.querySelector('.products-tabs-arrow.left-arrow')
+  const rightArrow = document.querySelector('.products-tabs-arrow.right-arrow')
+
+  function updateTabsArrows() {
+    if (!header || !leftArrow || !rightArrow) return
+
+    // Check if scrollable
+    if (header.scrollWidth > header.clientWidth) {
+      // It is scrollable
+      leftArrow.style.display = header.scrollLeft > 0 ? 'flex' : 'none'
+      // Use Math.ceil to avoid fractional pixel issues
+      rightArrow.style.display = Math.ceil(header.scrollLeft + header.clientWidth) < header.scrollWidth ? 'flex' : 'none'
+    } else {
+      // Not scrollable
+      leftArrow.style.display = 'none'
+      rightArrow.style.display = 'none'
+    }
+  }
+
+  if (header && leftArrow && rightArrow) {
+    header.addEventListener('scroll', updateTabsArrows)
+    window.addEventListener('resize', updateTabsArrows)
+
+    // Initial check
+    updateTabsArrows()
+    setTimeout(updateTabsArrows, 100) // Re-check after potential font/layout load
+
+    leftArrow.addEventListener('click', () => {
+      header.scrollBy({ left: -200, behavior: 'smooth' })
+    })
+
+    rightArrow.addEventListener('click', () => {
+      header.scrollBy({ left: 200, behavior: 'smooth' })
+    })
+  }
 
   // ============================================
   // SUGGESTIONS LOGIC (PRO FEATURE)
@@ -6891,3 +6836,399 @@ async function confirmDeleteDailyMenu(id) {
     }
   }
 }
+
+// ============================================
+// GLOBAL SIDES MANAGEMENT (ACOMPAÑANTES)
+// ============================================
+
+window.loadGlobalSides = async () => {
+  const container = document.getElementById('globalSidesListContainer');
+  if (!container) return;
+  if (!currentBusiness) return;
+
+  container.innerHTML = '<p class="empty-message">Cargando...</p>';
+  try {
+    const sides = await businessSidesService.getByBusiness(currentBusiness.id);
+    if (sides.length === 0) {
+      container.innerHTML = '<p class="empty-message">No hay acompañantes creados aún.</p>';
+      return;
+    }
+
+    container.innerHTML = sides.map(side => `
+      <div class="option-item side-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: white; border: 1px solid #eee; border-radius: 6px; margin-bottom: 0.25rem;">
+        <div class="option-item-info">
+          <span class="option-item-name" style="font-weight: 500;">${side.name}</span>
+          ${side.price > 0 ? `<span class="option-item-price" style="margin-left: 0.5rem; color: #d97706; font-size: 0.85rem;">+$${parseFloat(side.price).toLocaleString()}</span>` : '<span class="option-item-price" style="margin-left: 0.5rem; color: #10b981; font-size: 0.85rem;">Sin cargo</span>'}
+        </div>
+        <div class="option-item-actions">
+          <button type="button" onclick="window.openEditGlobalSideModal('${side.id}')" class="btn-icon-small edit-option-side">Editar</button>
+          <button type="button" onclick="window.deleteGlobalSide('${side.id}')" class="btn-icon-small danger delete-option-side" style="margin-left: 0.5rem;">Eliminar</button>
+        </div>
+      </div>
+    `).join('');
+  } catch (err) {
+    container.innerHTML = `<p class="error empty-message" style="color: red;">Error al cargar acompañantes: ${err.message}</p>`;
+  }
+}
+
+window.openCreateGlobalSideModal = () => {
+  document.getElementById('globalSideModalTitle').textContent = 'Nuevo Acompañante';
+  document.getElementById('globalSideName').value = '';
+  document.getElementById('globalSidePrice').value = '0';
+  document.getElementById('globalSideIdInput').value = '';
+  document.getElementById('globalSideModal').style.display = 'flex';
+}
+
+window.openEditGlobalSideModal = async (sideId) => {
+  try {
+    const sides = await businessSidesService.getByBusiness(currentBusiness.id);
+    const side = sides.find(s => s.id === sideId);
+    if (!side) return;
+    document.getElementById('globalSideModalTitle').textContent = 'Editar Acompañante';
+    document.getElementById('globalSideName').value = side.name;
+    document.getElementById('globalSidePrice').value = side.price;
+    document.getElementById('globalSideIdInput').value = side.id;
+    document.getElementById('globalSideModal').style.display = 'flex';
+  } catch (err) {
+    notify.error('Error al abrir el acompañante');
+  }
+}
+
+window.closeGlobalSideModal = () => {
+  document.getElementById('globalSideModal').style.display = 'none';
+}
+
+window.deleteGlobalSide = async (sideId) => {
+  const confirmed = await confirm.show({
+    title: '¿Eliminar este acompañante?',
+    message: 'Se desvinculará de todos los productos y ya no se podrá seleccionar.',
+    confirmText: 'Eliminar',
+    cancelText: 'Cancelar',
+    type: 'danger'
+  });
+  if (!confirmed) return;
+  try {
+    await businessSidesService.delete(sideId);
+    await window.loadGlobalSides();
+    notify.success('Acompañante eliminado');
+  } catch (err) {
+    notify.error(`Error: ${err.message}`);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const addBtn = document.getElementById('addGlobalSideBtn');
+  if (addBtn) addBtn.addEventListener('click', window.openCreateGlobalSideModal);
+
+  const closeBtn = document.getElementById('closeGlobalSideModal');
+  if (closeBtn) closeBtn.addEventListener('click', window.closeGlobalSideModal);
+
+  const cancelBtn = document.getElementById('cancelGlobalSideBtn');
+  if (cancelBtn) cancelBtn.addEventListener('click', window.closeGlobalSideModal);
+
+  const form = document.getElementById('globalSideForm');
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('globalSideIdInput').value;
+      const name = document.getElementById('globalSideName').value;
+      const price = parseFloat(document.getElementById('globalSidePrice').value) || 0;
+
+      const submitBtn = document.getElementById('saveGlobalSideBtn');
+      await buttonLoader.execute(submitBtn, async () => {
+        try {
+          if (id) {
+            await businessSidesService.update(id, { name, price });
+            notify.success('Acompañante actualizado');
+          } else {
+            await businessSidesService.create(currentBusiness.id, { name, price });
+            notify.success('Acompañante creado');
+          }
+          window.closeGlobalSideModal();
+          await window.loadGlobalSides();
+        } catch (err) {
+          notify.error(`Error: ${err.message}`);
+        }
+      });
+    });
+  }
+
+  const tabBtns = document.querySelectorAll('.products-tab-btn');
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      if (e.target.closest('button').dataset.tab === 'sides') {
+        window.loadGlobalSides();
+      }
+    });
+  });
+});
+
+// ============================================
+// LINKING SIDES TO PRODUCTS LOGIC
+// ============================================
+
+window.loadSidesInProductModal = async (productId) => {
+  const container = document.getElementById('availableSidesForProduct');
+  if (!container) return;
+
+  container.innerHTML = '<p class="empty-message">Cargando...</p>';
+  try {
+    const allSides = await businessSidesService.getByBusiness(currentBusiness.id);
+    const linkedSides = await businessSidesService.getByProduct(productId);
+    const linkedSideIds = linkedSides.map(ls => ls.side_id);
+
+    if (allSides.length === 0) {
+      container.innerHTML = '<p class="empty-message">No hay acompañantes en el catálogo. Ve a la pestaña Acompañantes para crearlos.</p>';
+      return;
+    }
+
+    container.innerHTML = allSides.map(side => {
+      const isLinked = linkedSideIds.includes(side.id);
+      const linkedRecord = linkedSides.find(ls => ls.side_id === side.id);
+      const productOptionId = linkedRecord ? linkedRecord.id : '';
+
+      return `
+        <label style="display: flex; align-items: center; padding: 0.5rem; border: 1px solid #eee; border-radius: 6px; margin-bottom: 0.5rem; cursor: pointer; background: white;">
+          <input type="checkbox" 
+            onchange="window.toggleSideLink(this, '${productId}', '${side.id}', '${side.name.replace(/'/g, "\\'")}', ${side.price})" 
+            ${isLinked ? 'checked' : ''} 
+            data-product-option-id="${productOptionId}"
+            style="margin-right: 0.75rem; transform: scale(1.1);"
+          />
+          <div style="flex: 1;">
+            <div style="font-weight: 500;">${side.name}</div>
+            <div style="font-size: 0.8rem; color: #64748b;">${side.price > 0 ? `+$${side.price}` : 'Sin costo'}</div>
+          </div>
+        </label>
+      `;
+    }).join('');
+  } catch (err) {
+    container.innerHTML = `<p class="error empty-message">Error: ${err.message}</p>`;
+  }
+}
+
+window.toggleSideLink = async (checkbox, productId, sideId, sideName, sidePrice) => {
+  const isChecked = checkbox.checked;
+  checkbox.disabled = true;
+  try {
+    if (isChecked) {
+      const newOption = await businessSidesService.linkToProduct(productId, { id: sideId, name: sideName, price: sidePrice });
+      checkbox.dataset.productOptionId = newOption.id;
+      notify.success('Acompañante agregado al producto');
+    } else {
+      const productOptionId = checkbox.dataset.productOptionId;
+      if (productOptionId) {
+        await businessSidesService.unlinkFromProduct(productOptionId);
+        checkbox.dataset.productOptionId = '';
+        notify.success('Acompañante removido del producto');
+      }
+    }
+  } catch (err) {
+    notify.error(`Error: ${err.message}`);
+    checkbox.checked = !isChecked;
+  } finally {
+    checkbox.disabled = false;
+  }
+}
+
+// ============================================
+// GLOBAL QUICK COMMENTS LOGIC
+// ============================================
+
+window.loadGlobalQuickComments = async () => {
+  const container = document.getElementById('globalQuickCommentsListContainer')
+  if (!container) return
+
+  container.innerHTML = '<p class="empty-message">Cargando...</p>'
+
+  try {
+    const groups = await productOptionsService.getGroupsByBusiness(currentBusiness.id)
+
+    if (groups.length === 0) {
+      container.innerHTML = '<p class="empty-message">No hay grupos de comentarios creados. Haz clic en "Nuevo Grupo" para empezar.</p>'
+      return
+    }
+
+    container.innerHTML = groups.map(group => {
+      const typeLabel = group.type === 'radio' ? 'Selección Única (Radio)' : 'Selección Múltiple (Checkbox)'
+      const limitsLabel = group.type === 'checkbox' && group.max_selections > 0
+        ? `(Máx. ${group.max_selections})`
+        : ''
+
+      const optionsHtml = group.options && group.options.length > 0
+        ? group.options.map(opt => `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: white; border: 1px solid #eee; border-radius: 6px; margin-bottom: 0.25rem;">
+              <span style="font-weight: 500;">${opt.name}</span>
+              <div>
+                <button class="btn-icon-small" onclick="window.editGlobalQuickCommentOption('${opt.id}', '${group.id}')" title="Editar Opción"><i class="ri-edit-line"></i></button>
+                <button class="btn-icon-small danger" onclick="window.deleteGlobalQuickCommentOption('${opt.id}', '${group.id}')" title="Eliminar Opción"><i class="ri-delete-bin-line"></i></button>
+              </div>
+            </div>
+          `).join('')
+        : '<p style="color: #9ca3af; font-size: 0.85rem; font-style: italic;">Sin opciones</p>'
+
+      return `
+        <div style="border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 1rem; padding: 1rem; background: #f9fafb;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
+            <div>
+              <h4 style="margin: 0; font-weight: 600; color: #374151;">${group.name} ${group.catalog_name ? `<span style="font-size: 0.8rem; color: #6b7280; font-weight: normal;">(Catálogo: ${group.catalog_name})</span>` : ''}</h4>
+              <span style="font-size: 0.75rem; color: #6b7280;">${typeLabel} ${limitsLabel}</span>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="btn-icon-small" onclick="window.openGlobalQuickCommentGroupModal('${group.id}')">Editar Grupo</button>
+              <button class="btn-icon-small danger" onclick="window.deleteGlobalQuickCommentGroup('${group.id}')">Eliminar Grupo</button>
+              <button class="btn-icon-small primary" onclick="window.addGlobalQuickCommentOption('${group.id}')" style="margin-left: 0.5rem;">+ Opción</button>
+            </div>
+          </div>
+          <div>${optionsHtml}</div>
+        </div>
+      `
+    }).join('')
+  } catch (error) {
+    console.error(error)
+    container.innerHTML = '<p class="empty-message error">Error al cargar grupos</p>'
+  }
+}
+
+let editingGlobalQuickCommentGroupId = null
+
+window.openGlobalQuickCommentGroupModal = async (groupId = null) => {
+  editingGlobalQuickCommentGroupId = groupId
+  const form = document.getElementById('globalQuickCommentGroupForm')
+  form.reset()
+
+  if (groupId) {
+    document.getElementById('globalQuickCommentGroupModalTitle').textContent = 'Editar Grupo'
+    try {
+      const groups = await productOptionsService.getGroupsByBusiness(currentBusiness.id)
+      const group = groups.find(g => g.id === groupId)
+      if (group) {
+        document.getElementById('globalQuickCommentGroupIdInput').value = group.id
+        document.getElementById('globalQuickCommentGroupName').value = group.name
+        document.getElementById('globalQuickCommentGroupCatalogName').value = group.catalog_name || ''
+        document.getElementById('globalQuickCommentGroupType').value = group.type || 'checkbox'
+        document.getElementById('globalQuickCommentGroupMin').value = group.min_selections || 0
+        document.getElementById('globalQuickCommentGroupMax').value = group.max_selections || 0
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  } else {
+    document.getElementById('globalQuickCommentGroupModalTitle').textContent = 'Nuevo Grupo'
+    document.getElementById('globalQuickCommentGroupType').value = 'checkbox'
+  }
+
+  document.getElementById('globalQuickCommentGroupModal').style.display = 'flex'
+}
+
+window.closeGlobalQuickCommentGroupModal = () => {
+  document.getElementById('globalQuickCommentGroupModal').style.display = 'none'
+  editingGlobalQuickCommentGroupId = null
+}
+
+const closeGlobalQuickCommentGroupBtn = document.getElementById('closeGlobalQuickCommentGroupModal')
+if (closeGlobalQuickCommentGroupBtn) closeGlobalQuickCommentGroupBtn.addEventListener('click', window.closeGlobalQuickCommentGroupModal)
+
+const cancelGlobalQuickCommentGroupBtn = document.getElementById('cancelGlobalQuickCommentGroupBtn')
+if (cancelGlobalQuickCommentGroupBtn) cancelGlobalQuickCommentGroupBtn.addEventListener('click', window.closeGlobalQuickCommentGroupModal)
+
+const addGlobalQuickCommentGroupBtn = document.getElementById('addGlobalQuickCommentGroupBtn')
+if (addGlobalQuickCommentGroupBtn) addGlobalQuickCommentGroupBtn.addEventListener('click', () => window.openGlobalQuickCommentGroupModal())
+
+const globalQuickCommentGroupForm = document.getElementById('globalQuickCommentGroupForm')
+if (globalQuickCommentGroupForm) {
+  globalQuickCommentGroupForm.addEventListener('submit', async (e) => {
+    e.preventDefault()
+
+    const originalSubmitBtn = e.submitter || document.getElementById('saveGlobalQuickCommentGroupBtn')
+
+    await buttonLoader.execute(originalSubmitBtn, async () => {
+      try {
+        const gId = document.getElementById('globalQuickCommentGroupIdInput').value
+        const name = document.getElementById('globalQuickCommentGroupName').value
+        const catalogName = document.getElementById('globalQuickCommentGroupCatalogName').value
+        const type = document.getElementById('globalQuickCommentGroupType').value
+        const minSelections = parseInt(document.getElementById('globalQuickCommentGroupMin').value) || 0
+        const maxSelections = parseInt(document.getElementById('globalQuickCommentGroupMax').value) || 0
+
+        const data = {
+          name,
+          catalog_name: catalogName,
+          type,
+          min_selections: minSelections,
+          max_selections: maxSelections,
+          business_id: currentBusiness.id
+        }
+
+        if (editingGlobalQuickCommentGroupId || gId) {
+          await productOptionsService.updateGroup(gId, data)
+          notify.success('Grupo actualizado')
+        } else {
+          await productOptionsService.createGroup(data)
+          notify.success('Grupo creado')
+        }
+
+        window.closeGlobalQuickCommentGroupModal()
+        window.loadGlobalQuickComments()
+
+      } catch (error) {
+        console.error(error)
+        notify.error('Error al guardar grupo')
+      }
+    }, 'Guardando...')
+  })
+}
+
+window.deleteGlobalQuickCommentGroup = async (groupId) => {
+  const confirmed = await confirm.show({
+    title: 'Eliminar Grupo',
+    message: '¿Estás seguro? Se eliminarán todas las opciones de este grupo y ya no aparecerá en tus productos.',
+    confirmText: 'Sí, eliminar',
+    type: 'danger'
+  })
+  if (confirmed) {
+    try {
+      await productOptionsService.deleteGroup(groupId)
+      notify.success('Grupo eliminado')
+      window.loadGlobalQuickComments()
+    } catch (e) {
+      console.error(e)
+      notify.error('Error al eliminar grupo')
+    }
+  }
+}
+
+window.addGlobalQuickCommentOption = (groupId) => {
+  openOptionModal('quick_comment', null, groupId)
+}
+
+window.editGlobalQuickCommentOption = (optionId, groupId) => {
+  openOptionModal('quick_comment', optionId, groupId)
+}
+
+window.deleteGlobalQuickCommentOption = async (optionId, groupId) => {
+  const confirmed = await confirm.show({
+    title: 'Eliminar Opción',
+    message: '¿Estás seguro? Esta opción se eliminará del grupo.',
+    confirmText: 'Sí, eliminar',
+    type: 'danger'
+  })
+  if (confirmed) {
+    try {
+      await productOptionsService.deleteOption(optionId, groupId)
+      notify.success('Opción eliminada')
+      window.loadGlobalQuickComments()
+      // If we are also on a product options modal, reload it
+      const modal = document.getElementById('productOptionsModal')
+      if (modal && modal.style.display === 'flex' && window.currentProductForOptions) {
+        await window.loadProductOptions(window.currentProductForOptions.id)
+        window.renderProductOptionsDashboard()
+      }
+    } catch (e) {
+      console.error(e)
+      notify.error('Error al eliminar opción')
+    }
+  }
+}
+
+

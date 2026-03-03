@@ -1576,10 +1576,11 @@ function renderProductOptions() {
     const requiredBadge = group.min_selections > 0 ? `<span style="color:red; font-size: 0.8rem; margin-left: 0.25rem;">* Obligatorio</span>` : ''
     const limitsLabel = group.type === 'checkbox' && group.max_selections > 0 ? `<span style="color:#6b7280; font-size: 0.8rem;">(Máx. ${group.max_selections})</span>` : ''
     const subtitle = group.type === 'radio' ? 'Selecciona una opción' : `Selecciona opciones ${limitsLabel}`
+    const groupNameDisplay = group.catalog_name || group.name
 
     groupEl.innerHTML = `
       <div style="margin-bottom: 0.5rem;">
-        <h4 style="font-size: 1rem; font-weight: 600; color: #374151; margin: 0;">${group.name} ${requiredBadge}</h4>
+        <h4 style="font-size: 1rem; font-weight: 600; color: #374151; margin: 0;">${groupNameDisplay} ${requiredBadge}</h4>
         <p style="font-size: 0.85rem; color: #9ca3af; margin: 0;">${subtitle}</p>
       </div>
       <div class="group-options-list" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
