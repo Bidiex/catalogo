@@ -3438,6 +3438,12 @@ input:checked+.slider:before {
   font-size: 0.85rem;
 }
 
+#section-products>section {
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
 /* ============================================
    PRODUCT TABS STYLES
    ============================================ */
@@ -3489,20 +3495,25 @@ input:checked+.slider:before {
   gap: 1rem;
   border-bottom: 1px solid var(--color-border);
   margin-bottom: 0;
-  /* Prevent horizontal scrolling on desktop */
-  overflow-x: hidden;
+  /* Permit horizontal scrolling normally, avoiding parent expansion */
+  overflow-x: auto;
   white-space: nowrap;
   -webkit-overflow-scrolling: touch;
   padding-bottom: 4px;
   /* Ensure scrollbar doesn't overlay too tight if visible */
   scrollbar-width: none;
   /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
   scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
 }
 
 .products-tabs-header::-webkit-scrollbar {
   display: none;
   /* Chrome, Safari, Opera */
+  width: 0;
+  height: 0;
 }
 
 /* Mobile specific styling for tabs */
@@ -3535,16 +3546,7 @@ input:checked+.slider:before {
   /* Overlap border */
   flex-shrink: 0;
   /* Prevent shrinking on mobile */
-}
-
-@media (min-width: 769px) {
-  .products-tab-btn {
-    /* Exactamente 4 tabs en pantalla, considerando gaps */
-    flex: 0 0 calc((100% - 3rem) / 4);
-    justify-content: center;
-    overflow: hidden;
-    white-space: nowrap;
-  }
+  scroll-snap-align: start;
 }
 
 .products-tab-btn:hover {
