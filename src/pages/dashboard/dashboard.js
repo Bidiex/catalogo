@@ -3753,6 +3753,14 @@ productImageInput.addEventListener('change', async (e) => {
   const file = e.target.files[0]
   if (!file) return
 
+  // Validar peso de imagen (Máximo 2MB)
+  const maxSizeInBytes = 2 * 1024 * 1024; // 2MB
+  if (file.size > maxSizeInBytes) {
+    e.target.value = ''; // Limpiar el input
+    notify.error('La imagen de producto supera el límite de 2MB.');
+    return;
+  }
+
   let loadingToast = null
 
   try {
@@ -3822,7 +3830,7 @@ removeImageBtn.addEventListener('click', async () => {
     productImagePreview.innerHTML = `
       <i class="ri-image-line"></i>
       <p>Click para seleccionar imagen</p>
-      <small>JPG, PNG o WEBP (máx. 5MB)</small>
+      <small>JPG, PNG o WEBP (máx. 2MB)</small>
     `
     productImagePreview.classList.remove('has-image')
 
@@ -3844,7 +3852,7 @@ function resetProductImageUpload() {
   productImagePreview.innerHTML = `
     <i class="ri-image-line"></i>
     <p>Click para seleccionar imagen</p>
-    <small>JPG, PNG o WEBP (máx. 5MB)</small>
+    <small>JPG, PNG o WEBP (máx. 2MB)</small>
   `
   productImagePreview.classList.remove('has-image')
   currentProductImage = null
