@@ -221,6 +221,8 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-width: 0;
+  /* Crucial for preventing horizontal flex overflow */
 }
 
 /* Top Header Bar */
@@ -291,6 +293,8 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  min-width: 0;
+  /* Prevents children from expanding this layout */
 }
 
 /* Dashboard Sections */
@@ -3447,14 +3451,37 @@ input:checked+.slider:before {
 /* ============================================
    PRODUCT TABS STYLES
    ============================================ */
-.products-tabs-container {
+.products-tabs-header {
   display: flex;
   align-items: center;
   position: relative;
   width: 100%;
   max-width: 100%;
-  min-width: 0;
   margin-bottom: 1.5rem;
+  /* do NOT set overflow here */
+}
+
+.products-tabs-scroll {
+  flex: 1;
+  min-width: 0;
+  /* THIS IS THE KEY FIX */
+  display: flex;
+  gap: 1rem;
+  border-bottom: 1px solid var(--color-border);
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+}
+
+.products-tabs-scroll::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .products-tabs-arrow {
@@ -3471,7 +3498,14 @@ input:checked+.slider:before {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   z-index: 2;
   flex-shrink: 0;
-  transition: all 0.2s ease;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s, color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.products-tabs-arrow.is-visible {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .products-tabs-arrow:hover {
@@ -3480,52 +3514,18 @@ input:checked+.slider:before {
   background: var(--bg-light);
 }
 
-.products-tabs-arrow.left-arrow {
+.products-tabs-arrow--left {
   margin-right: 0.5rem;
 }
 
-.products-tabs-arrow.right-arrow {
+.products-tabs-arrow--right {
   margin-left: 0.5rem;
 }
 
-.products-tabs-header {
-  display: flex;
-  flex: 1;
-  min-width: 0;
-  gap: 1rem;
-  border-bottom: 1px solid var(--color-border);
-  margin-bottom: 0;
-  /* Permit horizontal scrolling normally, avoiding parent expansion */
-  overflow-x: auto;
-  white-space: nowrap;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 4px;
-  /* Ensure scrollbar doesn't overlay too tight if visible */
-  scrollbar-width: none;
-  /* Firefox */
-  -ms-overflow-style: none;
-  /* IE and Edge */
-  scroll-behavior: smooth;
-  scroll-snap-type: x mandatory;
-}
-
-.products-tabs-header::-webkit-scrollbar {
-  display: none;
-  /* Chrome, Safari, Opera */
-  width: 0;
-  height: 0;
-}
-
 /* Mobile specific styling for tabs */
-@media (max-width: 768px) {
-  .products-tabs-header {
-    overflow-x: auto;
-    /* Allow touch scrolling on mobile */
-  }
-
+@media (max-width: 640px) {
   .products-tabs-arrow {
     display: none !important;
-    /* Hide arrows on mobile */
   }
 }
 
@@ -3697,4 +3697,29 @@ input:checked+.slider:before {
     flex-direction: column;
     gap: 1rem;
   }
+}
+
+/* ============================================
+   PRODUCT OPTIONS MODAL SEARCH & SCROLL
+   ============================================ */
+.modal-search-bar {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: white;
+}
+
+.modal-search-bar input {
+  border: none;
+  outline: none;
+  width: 100%;
+}
+
+#availableQuickCommentsForProduct,
+#availableSidesForProduct {
+  max-height: 250px;
+  overflow-y: auto;
 }

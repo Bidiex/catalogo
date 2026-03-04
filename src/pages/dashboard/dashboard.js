@@ -2443,16 +2443,18 @@ async function openProductOptionsModal(productId) {
   // Update Button Text
   // Replace the button to remove old listeners
   const oldBtn = document.getElementById('addQuickCommentBtn')
-  const newBtn = oldBtn.cloneNode(true)
-  oldBtn.parentNode.replaceChild(newBtn, oldBtn)
+  if (oldBtn) {
+    const newBtn = oldBtn.cloneNode(true)
+    oldBtn.parentNode.replaceChild(newBtn, oldBtn)
 
-  // Update Button Text and Click Handler
-  newBtn.textContent = 'Nuevo Grupo'
-  newBtn.onclick = (e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    console.log('Opening Group Modal...')
-    openGroupModal()
+    // Update Button Text and Click Handler
+    newBtn.textContent = 'Nuevo Grupo'
+    newBtn.onclick = (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      console.log('Opening Group Modal...')
+      openGroupModal()
+    }
   }
 
   // Restore Side button (Removed/Hidden)
@@ -2479,6 +2481,7 @@ async function openProductOptionsModal(productId) {
 }
 
 let productSides = [] // New array for sides
+let allGlobalQuickCommentGroups = [] // Added to fix ReferenceError
 
 async function loadProductOptions(productId) {
   try {
@@ -2606,6 +2609,46 @@ closeProductOptionsBtn.addEventListener('click', () => {
   productOptionsModal.style.display = 'none'
   currentProductForOptions = null
 })
+
+// Search filter logic for Comentarios Rápidos
+const searchQuickCommentsInput = document.getElementById('searchQuickCommentsInput')
+if (searchQuickCommentsInput) {
+  searchQuickCommentsInput.addEventListener('input', (e) => {
+    const term = e.target.value.toLowerCase()
+    const container = document.getElementById('availableQuickCommentsForProduct')
+    if (container) {
+      const labels = container.querySelectorAll('label')
+      labels.forEach(label => {
+        const textArea = label.querySelector('div')?.textContent || label.textContent || ''
+        if (textArea.toLowerCase().includes(term)) {
+          label.style.display = 'flex'
+        } else {
+          label.style.display = 'none'
+        }
+      })
+    }
+  })
+}
+
+// Search filter logic for Acompañantes
+const searchSidesInput = document.getElementById('searchSidesInput')
+if (searchSidesInput) {
+  searchSidesInput.addEventListener('input', (e) => {
+    const term = e.target.value.toLowerCase()
+    const container = document.getElementById('availableSidesForProduct')
+    if (container) {
+      const labels = container.querySelectorAll('label')
+      labels.forEach(label => {
+        const textArea = label.querySelector('div')?.textContent || label.textContent || ''
+        if (textArea.toLowerCase().includes(term)) {
+          label.style.display = 'flex'
+        } else {
+          label.style.display = 'none'
+        }
+      })
+    }
+  })
+}
 
 // ============================================
 // GROUP MODAL MANAGEMENT
@@ -6409,41 +6452,48 @@ function initProductsTabs() {
   // TABS HEADER SCROLL LOGIC
   // ============================================
   const header = document.getElementById('productsTabsHeader')
-  const leftArrow = document.querySelector('.products-tabs-arrow.left-arrow')
-  const rightArrow = document.querySelector('.products-tabs-arrow.right-arrow')
+  const scrollEl = document.querySelector('.products-tabs-scroll')
+  const leftArrow = document.querySelector('.products-tabs-arrow--left')
+  const rightArrow = document.querySelector('.products-tabs-arrow--right')
 
-  function updateTabsArrows() {
-    if (!header || !leftArrow || !rightArrow) return
+  function updateArrows() {
+    if (!scrollEl || !leftArrow || !rightArrow) return
 
-    // Check if scrollable
-    if (header.scrollWidth > header.clientWidth) {
-      // It is scrollable
-      leftArrow.style.display = header.scrollLeft > 0 ? 'flex' : 'none'
-      // Use Math.ceil to avoid fractional pixel issues
-      rightArrow.style.display = Math.ceil(header.scrollLeft + header.clientWidth) < header.scrollWidth ? 'flex' : 'none'
-    } else {
-      // Not scrollable
-      leftArrow.style.display = 'none'
-      rightArrow.style.display = 'none'
-    }
+    // Allow 4px leeway to avoid floating point issues
+    const atStart = scrollEl.scrollLeft <= 4
+    const atEnd = scrollEl.scrollLeft >= scrollEl.scrollWidth - scrollEl.clientWidth - 4
+    const hasOverflow = scrollEl.scrollWidth > scrollEl.clientWidth + 4
+
+    leftArrow.classList.toggle('is-visible', hasOverflow && !atStart)
+    rightArrow.classList.toggle('is-visible', hasOverflow && !atEnd)
   }
 
-  if (header && leftArrow && rightArrow) {
-    header.addEventListener('scroll', updateTabsArrows)
-    window.addEventListener('resize', updateTabsArrows)
+  if (scrollEl && leftArrow && rightArrow) {
+    scrollEl.addEventListener('scroll', updateArrows, { passive: true })
 
-    // Initial check
-    updateTabsArrows()
-    setTimeout(updateTabsArrows, 100) // Re-check after potential font/layout load
+    const ro = new ResizeObserver(() => updateArrows())
+    ro.observe(scrollEl)
+
+    // Check initially and periodically when fonts/images load
+    updateArrows()
+    setTimeout(updateArrows, 150)
 
     leftArrow.addEventListener('click', () => {
-      header.scrollBy({ left: -200, behavior: 'smooth' })
+      // scroll by ~55% of visible width
+      scrollEl.scrollBy({ left: -(scrollEl.clientWidth * 0.55), behavior: 'smooth' })
     })
 
     rightArrow.addEventListener('click', () => {
-      header.scrollBy({ left: 200, behavior: 'smooth' })
+      scrollEl.scrollBy({ left: scrollEl.clientWidth * 0.55, behavior: 'smooth' })
     })
   }
+
+  // Handle active tab scroll into view
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
+    })
+  })
 
   // ============================================
   // SUGGESTIONS LOGIC (PRO FEATURE)
@@ -7058,7 +7108,7 @@ window.loadGlobalQuickComments = async () => {
       const optionsHtml = group.options && group.options.length > 0
         ? group.options.map(opt => `
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: white; border: 1px solid #eee; border-radius: 6px; margin-bottom: 0.25rem;">
-              <span style="font-weight: 500;">${opt.name}</span>
+              <span class="option-item-name" style="font-weight: 500;">${opt.name}</span>
               <div>
                 <button class="btn-icon-small" onclick="window.editGlobalQuickCommentOption('${opt.id}', '${group.id}')" title="Editar Opción"><i class="ri-edit-line"></i></button>
                 <button class="btn-icon-small danger" onclick="window.deleteGlobalQuickCommentOption('${opt.id}', '${group.id}')" title="Eliminar Opción"><i class="ri-delete-bin-line"></i></button>
@@ -7075,9 +7125,9 @@ window.loadGlobalQuickComments = async () => {
               <span style="font-size: 0.75rem; color: #6b7280;">${typeLabel} ${limitsLabel}</span>
             </div>
             <div style="display: flex; gap: 0.5rem;">
-              <button class="btn-icon-small" onclick="window.openGlobalQuickCommentGroupModal('${group.id}')">Editar Grupo</button>
-              <button class="btn-icon-small danger" onclick="window.deleteGlobalQuickCommentGroup('${group.id}')">Eliminar Grupo</button>
-              <button class="btn-icon-small primary" onclick="window.addGlobalQuickCommentOption('${group.id}')" style="margin-left: 0.5rem;">+ Opción</button>
+              <button class="btn-icon-small" onclick="window.openGlobalQuickCommentGroupModal('${group.id}')">Editar</button>
+              <button class="btn-icon-small danger" onclick="window.deleteGlobalQuickCommentGroup('${group.id}')">Eliminar</button>
+              <button class="btn-icon-small primary" onclick="window.addGlobalQuickCommentOption('${group.id}')" style="margin-left: 0.5rem;">Opción</button>
             </div>
           </div>
           <div>${optionsHtml}</div>

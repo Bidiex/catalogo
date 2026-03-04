@@ -1332,12 +1332,14 @@
           <section class="card">
 
             <!-- Custom Tabs Header with Scroll Arrows -->
-            <div class="products-tabs-container">
-              <button class="products-tabs-arrow left-arrow" style="display: none;">
+            <div class="products-tabs-header" id="productsTabsHeader">
+              <!-- LEFT ARROW (desktop only) -->
+              <button class="products-tabs-arrow products-tabs-arrow--left" aria-label="Scroll left">
                 <i class="ri-arrow-left-s-line"></i>
               </button>
 
-              <div class="products-tabs-header" id="productsTabsHeader">
+              <!-- SCROLLABLE STRIP -->
+              <div class="products-tabs-scroll">
                 <button class="products-tab-btn active" data-tab="products">
                   <i class="ri-shopping-bag-line"></i> Productos
                 </button>
@@ -1348,7 +1350,7 @@
                   <i class="ri-restaurant-line"></i> Acompañantes
                 </button>
                 <button class="products-tab-btn" data-tab="quick-comments">
-                  <i class="ri-chat-plus-line"></i> Comentarios Rápidos
+                  <i class="ri-chat-ai-line"></i> Comentarios Rápidos
                 </button>
                 <button class="products-tab-btn" data-tab="menus">
                   <i class="ri-calendar-event-line"></i> Menús del día
@@ -1359,7 +1361,8 @@
                 </button>
               </div>
 
-              <button class="products-tabs-arrow right-arrow" style="display: none;">
+              <!-- RIGHT ARROW (desktop only) -->
+              <button class="products-tabs-arrow products-tabs-arrow--right" aria-label="Scroll right">
                 <i class="ri-arrow-right-s-line"></i>
               </button>
             </div>
@@ -2195,8 +2198,13 @@
 
         <!-- Quick Comments Section -->
         <div class="options-section" id="productQuickCommentsSection">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 1rem;">
             <h4 style="font-size: 1rem; font-weight: 600;">Comentarios Rápidos</h4>
+            <div class="modal-search-bar" style="flex: 1; max-width: 250px;">
+              <i class="ri-search-line" style="color: #94a3b8;"></i>
+              <input type="text" id="searchQuickCommentsInput" placeholder="Buscar grupo...">
+            </div>
           </div>
           <p style="color: #666; font-size: 0.85rem; margin-bottom: 1rem;">Selecciona los grupos de comentarios rápidos
             del catálogo que aplican a este producto.</p>
@@ -2209,8 +2217,13 @@
 
         <!-- Sides Section -->
         <div class="options-section" style="margin-top: 2rem;" id="productSidesSection">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 1rem;">
             <h4 style="font-size: 1rem; font-weight: 600;">Acompañantes</h4>
+            <div class="modal-search-bar" style="flex: 1; max-width: 250px;">
+              <i class="ri-search-line" style="color: #94a3b8;"></i>
+              <input type="text" id="searchSidesInput" placeholder="Buscar acompañante...">
+            </div>
           </div>
           <p style="color: #666; font-size: 0.85rem; margin-bottom: 1rem;">Selecciona los acompañantes del catálogo del
             negocio que aplican a este producto.</p>
