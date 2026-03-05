@@ -5,6 +5,7 @@
 // =============================================================================
 
 import { supabase } from '../../config/supabase.js'
+import gsap from 'gsap'
 
 // ============================================================
 // STATE
@@ -156,7 +157,7 @@ async function resolveBusiness(slug) {
     try {
         const { data, error } = await supabase
             .from('businesses')
-            .select('id, name, logo_url, slug, primary_color')
+            .select('id, name, logo_url, slug, primary_color, whatsapp_number')
             .eq('slug', slug)
             .single()
 
@@ -195,6 +196,13 @@ function showNotFound() {
 function showLogin() {
     loadingScreen.classList.add('hidden')
     loginScreen.classList.remove('hidden')
+
+    // Animate floating items if not animated yet
+    if (!window.loginAnimationsStarted) {
+        window.loginAnimationsStarted = true;
+        initLoginAnimations();
+    }
+
     setTimeout(() => {
         if (otpInputs && otpInputs.length > 0) {
             otpInputs[0].focus()
@@ -202,6 +210,50 @@ function showLogin() {
             deliveryCodeInput.focus()
         }
     }, 100)
+}
+
+function initLoginAnimations() {
+    // Bike: floats and moves slightly on X
+    gsap.to('.floating-bike', {
+        y: -15,
+        x: 10,
+        rotation: 2,
+        duration: 3,
+        yoyo: true,
+        repeat: -1,
+        ease: 'sine.inOut'
+    })
+
+    // Backpack: floats vertically
+    gsap.to('.floating-backpack', {
+        y: -20,
+        rotation: -3,
+        duration: 3.5,
+        yoyo: true,
+        repeat: -1,
+        ease: 'sine.inOut'
+    })
+
+    // Bag: floats and shrinks/grows slightly
+    gsap.to('.floating-bag', {
+        y: -12,
+        rotation: 4,
+        scale: 1.05,
+        duration: 2.8,
+        yoyo: true,
+        repeat: -1,
+        ease: 'sine.inOut'
+    })
+
+    // Helmet: floats up and down
+    gsap.to('.floating-helmet', {
+        y: -10,
+        rotation: -5,
+        duration: 2.5,
+        yoyo: true,
+        repeat: -1,
+        ease: 'sine.inOut'
+    })
 }
 
 function showApp() {
@@ -227,6 +279,17 @@ function renderBusinessInfo(business) {
     if (business.logo_url) {
         renderLogoInEl(loginBusinessLogo, business.logo_url)
     }
+
+    // Update support link
+    const supportLink = document.getElementById('supportLink')
+    if (supportLink && business.whatsapp_number) {
+        const waNumber = business.whatsapp_number.replace(/\D/g, '')
+        const msg = encodeURIComponent(`Hola, necesito ayuda con mi código de domiciliario en TraeGo.`)
+        supportLink.href = `https://wa.me/57${waNumber}?text=${msg}`
+    } else if (supportLink) {
+        supportLink.removeAttribute('href')
+    }
+
     // Apply brand color from business settings
     applyBrandColor(business.primary_color)
 }

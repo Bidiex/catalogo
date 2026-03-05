@@ -37,20 +37,41 @@
     <p>El enlace que usaste no corresponde a ningún negocio activo.</p>
   </div>
 
+  <!-- DEKSTOP WARNING -->
+  <div id="desktopWarning" class="desktop-warning">
+    <i class="ri-smartphone-line"></i>
+    <h2>Vista no disponible en PC</h2>
+    <p>La plataforma de domiciliarios está optimizada para dispositivos móviles (o tablets). Por favor, accede desde uno
+      de ellos para continuar.</p>
+  </div>
+
   <!-- ============================================================ -->
   <!-- LOGIN SCREEN                                                 -->
   <!-- ============================================================ -->
   <div id="loginScreen" class="login-screen hidden">
+
+    <!-- VISUAL ENVIRONMENT -->
+    <div class="login-visual-env">
+      <div class="traego-brand-header">
+        <img src="/src/assets/icon_traego.svg" alt="TraeGo Icon" class="traego-brand-icon" />
+        <img src="/src/assets/logo_traego.svg" alt="TraeGo Logo" class="traego-brand-logo" />
+        <img src="/src/assets/helment.webp" class="floating-item floating-helmet" alt="" />
+      </div>
+
+      <h1 class="platform-title">Plataforma de<br>domiciliarios</h1>
+
+      <!-- Floating items -->
+      <img src="/src/assets/paper-bag.webp" class="floating-item floating-bag" alt="" />
+      <img src="/src/assets/backpack.webp" class="floating-item floating-backpack" alt="" />
+      <img src="/src/assets/bike.webp" class="floating-item floating-bike" alt="" />
+
+      <!-- Avatar -->
+      <img src="/src/assets/avatar-bike.webp" class="login-avatar-main" alt="Avatar Domiciliario" />
+    </div>
+
+    <!-- BOTTOM SHEET CARD -->
     <div class="login-card">
       <div class="login-header">
-        <div class="login-avatar-container">
-          <img class="login-avatar" src="/src/assets/avatar-bike.webp" alt="Avatar Delivery" />
-        </div>
-        <div class="traego-brand-header">
-          <img src="/src/assets/icon_traego.svg" alt="TraeGo Icon" class="traego-brand-icon" />
-          <img src="/src/assets/logo_traego.svg" alt="TraeGo Logo" class="traego-brand-logo" />
-        </div>
-        <h1 class="platform-title">Plataforma de Domiciliarios</h1>
         <div class="business-info-row">
           <div class="login-business-logo" id="loginBusinessLogo">
             <i class="ri-store-3-line"></i>
@@ -61,7 +82,7 @@
 
       <form id="loginForm" class="login-form" novalidate>
         <div class="form-group">
-          <label class="code-instruction">Por favor digita tu código de identificación de 6 dígitos luego de DP</label>
+          <label class="code-instruction">Ingresa tu código de 6 dígitos</label>
           <div class="otp-input-container">
             <div class="otp-inputs" id="otpInputs">
               <input type="text" maxlength="1" class="otp-char" autocomplete="off" autocapitalize="characters"
@@ -80,15 +101,21 @@
           </div>
           <input type="hidden" id="deliveryCode" name="deliveryCode">
           <span class="field-error hidden" id="codeError"></span>
-          <p class="login-disclaimer">Si no recuerdas o necesitas ayuda con tu código único, contacta al administrador.
-          </p>
         </div>
 
         <button type="submit" class="btn-login" id="loginBtn">
           <span class="btn-text">Ingresar</span>
           <div class="btn-spinner hidden" id="loginSpinner"></div>
         </button>
+
+        <a href="#" class="login-disclaimer" id="supportLink" target="_blank">
+          ¿Necesitas ayuda con tu código único? contacta a tu administrador <i class="ri-whatsapp-line"></i>
+        </a>
       </form>
+
+      <footer class="login-footer">
+        &copy; 2026 TraeGo. Todos los derechos reservados.
+      </footer>
     </div>
   </div>
 
