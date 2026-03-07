@@ -30,7 +30,9 @@ const appScreen = document.getElementById('appScreen')
 const loginForm = document.getElementById('loginForm')
 const deliveryCodeInput = document.getElementById('deliveryCode')
 const otpInputs = document.querySelectorAll('.otp-char')
-const loginBtn = document.getElementById('loginBtn')
+const startLoginBtn = document.getElementById('startLoginBtn')
+const loginModal = document.getElementById('loginModal')
+const closeLoginModal = document.getElementById('closeLoginModal')
 const loginSpinner = document.getElementById('loginSpinner')
 const codeError = document.getElementById('codeError')
 const loginBusinessName = document.getElementById('loginBusinessName')
@@ -92,6 +94,8 @@ function updateHiddenCode() {
     const codeStr = Array.from(otpInputs).map(i => i.value).join('');
     if (codeStr.length === 6) {
         deliveryCodeInput.value = 'DP-' + codeStr;
+        // Auto-Validar OTP
+        processLogin(deliveryCodeInput.value);
     } else {
         deliveryCodeInput.value = '';
     }
@@ -196,20 +200,13 @@ function showNotFound() {
 function showLogin() {
     loadingScreen.classList.add('hidden')
     loginScreen.classList.remove('hidden')
+    loginModal.classList.add('hidden') // Modal está oculto inicialmente
 
     // Animate floating items if not animated yet
     if (!window.loginAnimationsStarted) {
         window.loginAnimationsStarted = true;
         initLoginAnimations();
     }
-
-    setTimeout(() => {
-        if (otpInputs && otpInputs.length > 0) {
-            otpInputs[0].focus()
-        } else {
-            deliveryCodeInput.focus()
-        }
-    }, 100)
 }
 
 function initLoginAnimations() {
@@ -368,13 +365,36 @@ function clearSession() {
 // ============================================================
 // LOGIN
 // ============================================================
-loginForm.addEventListener('submit', async (e) => {
+// ============================================================
+// LOGIN OVERLAY & AUTO VALIDATE
+// ============================================================
+
+// Apertura del modal
+startLoginBtn?.addEventListener('click', () => {
+    loginModal.classList.remove('hidden')
+    setTimeout(() => {
+        // Enfoque automático al primer input al abrir
+        if (otpInputs && otpInputs.length > 0) {
+            otpInputs.forEach(i => i.value = '') // reset previous
+            updateHiddenCode()
+            otpInputs[0].focus()
+        }
+    }, 100)
+})
+
+// Cierre del modal clickeando el fondo desenfocado
+closeLoginModal?.addEventListener('click', () => {
+    loginModal.classList.add('hidden')
+    clearCodeError()
+})
+
+// Evitar submit natural manual por enter en caso de usar numpad
+loginForm.addEventListener('submit', (e) => {
     e.preventDefault()
-    const code = deliveryCodeInput.value.trim()
-    if (!code) {
-        showCodeError('Ingresa tu código de acceso')
-        return
-    }
+})
+
+async function processLogin(code) {
+    if (!code) return;
 
     setLoginLoading(true)
     clearCodeError()
@@ -383,11 +403,11 @@ loginForm.addEventListener('submit', async (e) => {
 
     if (!dp) {
         setLoginLoading(false)
-        showCodeError('Código inválido o domiciliario inactivo. Revisa el código e intenta de nuevo.')
+        showCodeError('Código inválido o domiciliario inactivo.')
         if (otpInputs && otpInputs.length > 0) {
             otpInputs.forEach(i => i.value = '')
             updateHiddenCode()
-            otpInputs[0].focus()
+            otpInputs[0].focus() // Refocus immediately
         } else {
             deliveryCodeInput.select()
         }
@@ -397,8 +417,9 @@ loginForm.addEventListener('submit', async (e) => {
     currentDeliveryPerson = dp
     saveSession(dp.unique_code, currentBusiness.id)
     setLoginLoading(false)
+    loginModal.classList.add('hidden') // Ocultar Modal antes de montar app
     showApp()
-})
+}
 
 logoutBtn.addEventListener('click', () => {
     // Stop realtime
@@ -422,12 +443,10 @@ logoutBtn.addEventListener('click', () => {
 
 function setLoginLoading(loading) {
     if (loading) {
-        loginBtn.disabled = true
-        loginBtn.querySelector('.btn-text').classList.add('hidden')
+        otpInputs.forEach(i => i.disabled = true)
         loginSpinner.classList.remove('hidden')
     } else {
-        loginBtn.disabled = false
-        loginBtn.querySelector('.btn-text').classList.remove('hidden')
+        otpInputs.forEach(i => i.disabled = false)
         loginSpinner.classList.add('hidden')
     }
 }
@@ -458,6 +477,21 @@ function switchSection(sectionId) {
 
     document.getElementById(`section-${sectionId}`)?.classList.add('active')
     document.querySelector(`.nav-btn[data-section="${sectionId}"]`)?.classList.add('active')
+
+    const headerTitle = document.getElementById('appHeaderTitle')
+    const headerBadge = document.getElementById('pendingOrdersBadge')
+    if (headerTitle) {
+        if (sectionId === 'pending') {
+            headerTitle.textContent = 'Pedidos disponibles'
+            if (pendingOrders.length > 0) headerBadge?.classList.remove('hidden')
+        } else if (sectionId === 'mine') {
+            headerTitle.textContent = 'Mis pedidos activos'
+            headerBadge?.classList.add('hidden')
+        } else if (sectionId === 'metrics') {
+            headerTitle.textContent = 'Mis métricas'
+            headerBadge?.classList.add('hidden')
+        }
+    }
 
     if (sectionId === 'metrics') {
         loadMetrics('today')
@@ -501,7 +535,11 @@ function renderPendingOrders() {
 
     pendingEmpty.classList.add('hidden')
     pendingOrdersBadge.textContent = `${pendingOrders.length} ${pendingOrders.length === 1 ? 'nuevo' : 'nuevos'}`
-    pendingOrdersBadge.classList.remove('hidden')
+    if (document.getElementById('section-pending')?.classList.contains('active')) {
+        pendingOrdersBadge.classList.remove('hidden')
+    } else {
+        pendingOrdersBadge.classList.add('hidden')
+    }
 
     pendingOrders.forEach(order => {
         const card = buildOrderCard(order, 'pending')

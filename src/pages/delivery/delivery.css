@@ -216,6 +216,7 @@ body {
 
 .login-screen {
   min-height: 100dvh;
+  max-height: 100dvh;
   display: flex !important;
   flex-direction: column;
   background-image: url('/src/assets/background-delivery-platform.webp');
@@ -223,13 +224,14 @@ body {
   background-position: center bottom;
   background-repeat: no-repeat;
   background-color: var(--color-primary);
+  overflow: hidden;
 }
 
 .login-screen.hidden {
   display: none !important;
 }
 
-/* Visual Environment (Top Half) */
+/* Visual Environment */
 .login-visual-env {
   flex: 1;
   width: 100%;
@@ -237,8 +239,30 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  /* Volver a centrar todo dinámicamente */
   overflow: hidden;
-  padding-top: 2.5rem;
+  padding: 3rem 1rem 1rem 1rem;
+}
+
+.login-env-header {
+  flex: 0 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.login-avatar-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  margin: 0 auto;
 }
 
 .traego-brand-header {
@@ -246,16 +270,14 @@ body {
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
-  margin-bottom: 1rem;
+  gap: 0.2rem;
   z-index: 10;
   position: relative;
-  /* Prevent absolute child from shifting flex layout */
 }
 
 .traego-brand-icon {
-  width: 28px;
-  height: 28px;
+  width: 38px;
+  height: 38px;
   object-fit: contain;
 }
 
@@ -266,75 +288,153 @@ body {
 }
 
 .platform-title {
-  font-size: clamp(1.6rem, 7vw, 2.2rem);
+  font-size: clamp(1.6rem, 25vw, 2.5rem);
   font-weight: 700;
   color: #ffffff;
   text-align: center;
   line-height: 1.1;
   z-index: 10;
   letter-spacing: -0.02em;
+  margin-top: 1rem;
 }
 
 /* Floating Items */
 .floating-item {
   position: absolute;
   object-fit: contain;
-  z-index: 5;
+  z-index: 20;
   filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.15));
 }
 
 .floating-helmet {
-  width: clamp(65px, 18vw, 90px);
-}
-
-/* For the helmet inside the flex header */
-.traego-brand-header .floating-helmet {
-  position: absolute;
-  top: -20px;
-  right: -55px;
-  /* Pulls it out to the right without affecting center */
-}
-
-.floating-bag {
-  width: clamp(80px, 22vw, 110px);
-  top: 30%;
-  left: 10%;
-}
-
-.floating-backpack {
-  width: clamp(100px, 28vw, 140px);
-  top: 25%;
+  width: clamp(70px, 28vw, 140px);
+  top: 0;
   right: 5%;
 }
 
+.floating-bag {
+  width: clamp(65px, 28vw, 125px);
+  top: 55%;
+  left: -5%;
+}
+
+.floating-backpack {
+  width: clamp(75px, 25vw, 150px);
+  bottom: 5%;
+  right: -5%;
+}
+
 .floating-bike {
-  width: clamp(120px, 35vw, 180px);
+  width: clamp(85px, 28vw, 180px);
   top: 15%;
-  left: -20px;
-  /* coming from outside */
+  left: 5%;
 }
 
 .login-avatar-main {
-  position: absolute;
-  bottom: 0px;
-  width: 85%;
-  max-width: 320px;
+  position: relative;
+  width: 100%;
+  height: auto;
   z-index: 8;
   object-fit: contain;
-  /* Fade out the wheels a bit if needed like the previous avatar */
+  margin-bottom: -10%;
 }
 
-/* Bottom Sheet Card */
-.login-card {
-  background: var(--bg-card);
-  border-radius: 30px 30px 0 0;
-  padding: 2.5rem 1.75rem;
+/* Initial Login Button Container */
+.login-initial-action {
+  position: relative;
   width: 100%;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 1.5rem 2rem 1.5rem;
+  gap: 1.5rem;
+  z-index: 50;
+  margin-top: 1.5rem;
+  /* Ajustado para acompañar la subida general */
+}
+
+.btn-login-initial {
+  width: 100%;
+  max-width: 350px;
+  background-color: #5f6ef2;
+  /* Azure Button based on Wireframe */
+  color: #ffffff;
+  border: none;
+  border-radius: 16px;
+  padding: 1.25rem 2rem;
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(95, 110, 242, 0.3);
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.btn-login-initial:active {
+  transform: scale(0.97);
+}
+
+/* Modal Overlay & Card Refactor */
+.login-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.login-modal.hidden {
+  display: none !important;
+}
+
+.login-modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.login-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background: var(--bg-card);
+  border-radius: 24px;
+  padding: 2.25rem 1.75rem;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
   position: relative;
   z-index: 20;
-  margin-top: auto;
-  /* Push to bottom */
+  margin: auto;
+  animation: slideUpModal 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUpModal {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @media (max-width: 480px) {
@@ -428,8 +528,8 @@ body {
 }
 
 .otp-char {
-  width: 40px;
-  height: 50px;
+  width: 50px;
+  height: 60px;
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: 1.5rem;
@@ -480,46 +580,44 @@ body {
   font-weight: 500;
 }
 
-.btn-login {
-  width: 100%;
-  padding: 0.875rem;
-  background: var(--color-primary);
-  color: var(--color-primary-text);
-  border: none;
-  border-radius: var(--radius-sm);
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
+.login-auto-spinner {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  transition: opacity 0.2s, transform 0.1s;
+  gap: 0.75rem;
+  padding: 1rem;
+  background-color: #5f6ef2;
+  border-radius: 12px;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 1rem;
+  box-shadow: 0 6px 16px rgba(95, 110, 242, 0.25);
   margin-top: 0.5rem;
 }
 
-.btn-login:active {
-  transform: scale(0.98);
-}
-
-.btn-login:disabled {
-  opacity: 0.6;
-  pointer-events: none;
-}
-
 .btn-spinner {
-  width: 18px;
-  height: 18px;
-  border: 2.5px solid rgba(255, 255, 255, 0.4);
-  border-top-color: white;
+  width: 22px;
+  height: 22px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
   border-radius: 50%;
-  animation: spin 0.7s linear infinite;
+  animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
   to {
     transform: rotate(360deg);
   }
+}
+
+.login-footer {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: center;
+  line-height: 1.35;
+  text-decoration: none;
+  font-weight: 500;
+  z-index: 10;
 }
 
 /* ============================================================ */
@@ -529,6 +627,7 @@ body {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
+  background-color: #f0f2f5;
 }
 
 /* Header */
@@ -536,20 +635,43 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
-  height: var(--header-height);
   background: var(--bg-card);
-  border-bottom: 1px solid var(--border);
+  border-radius: 0 0 30px 30px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1.25rem 1rem 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.app-header-main {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 1rem;
-  gap: 0.5rem;
+  width: 100%;
+}
+
+.app-header-title-container {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  text-align: center;
+  justify-content: center;
+  border-top: 1px solid var(--border);
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+
+.app-header-title-container h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-secondary);
 }
 
 .app-header-left {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.8rem;
   min-width: 0;
 }
 
@@ -557,19 +679,19 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 0.1rem;
+  gap: 0.2rem;
 }
 
 .app-business-logo {
-  width: 36px;
-  height: 36px;
+  width: 48px;
+  height: 48px;
   background: var(--color-primary-light);
-  border-radius: 10px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--color-primary-text);
-  font-size: 1.1rem;
+  font-size: 1.5rem;
   flex-shrink: 0;
   overflow: hidden;
 }
@@ -582,23 +704,23 @@ body {
 
 .app-business-name {
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 1.25rem;
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 130px;
+  max-width: 180px;
   line-height: 1.2;
 }
 
 .app-delivery-person {
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   color: var(--text-secondary);
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 130px;
+  max-width: 180px;
   line-height: 1.2;
 }
 
@@ -634,8 +756,8 @@ body {
 /* Main content */
 .app-main {
   flex: 1;
-  padding: 1rem;
-  padding-bottom: calc(var(--bottom-nav-height) + 1rem);
+  padding: 0.5rem 1rem;
+  padding-bottom: calc(var(--bottom-nav-height) + 2rem);
   overflow-y: auto;
 }
 
@@ -647,13 +769,14 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  height: var(--bottom-nav-height);
+  height: calc(var(--bottom-nav-height) + 15px);
   background: var(--bg-card);
-  border-top: 1px solid var(--border);
+  border-radius: 30px 30px 0 0;
   display: flex;
   align-items: center;
   z-index: 100;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+  padding-bottom: env(safe-area-inset-bottom, 5px);
 }
 
 .nav-btn {
