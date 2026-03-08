@@ -25,6 +25,7 @@ import { ordersService } from '../../services/orders.js'
 import { deliveryPersonsService } from '../../services/deliveryPersons.js'
 import { businessSidesService } from '../../services/businessSidesService.js'
 import { taxesService } from '../../services/taxes.js'
+import { deliveryPhotoService } from '../../services/deliveryPhotoService.js'
 
 import { initAnalytics, updateAnalytics } from './analytics.js'
 import { initLinksEditor } from '../links/links-editor.js'
@@ -5441,6 +5442,20 @@ window.viewOrderDetails = async (orderId) => {
       }
       </div>
 
+      <div id="deliveryPhotoContainer-${orderId}" style="display: none; grid-column: 1 / -1; margin-bottom: 1.5rem; background: #f0fdf4; padding: 0.75rem; border-radius: 6px; border-left: 4px solid #16a34a;">
+         <label style="font-size: 0.8rem; color: #16a34a; display: block; font-weight: 600; margin-bottom: 0.5rem;">
+            <i class="ri-camera-lens-fill"></i> Foto de Entrega Disponible:
+         </label>
+         <div style="display: flex; gap: 1rem; align-items: center;">
+             <div style="flex: 1;">
+                 <p style="font-size: 0.85rem; color: #15803d; margin: 0 0 0.5rem 0;">El domiciliario adjuntó una foto como evidencia.</p>
+                 <a id="deliveryPhotoLink-${orderId}" href="#" target="_blank" class="btn-secondary-small" style="font-size: 0.8rem; display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; border-color: #bbf7d0; color: #16a34a; background: white;">
+                    <i class="ri-external-link-line"></i> Ver imagen a tamaño completo
+                 </a>
+             </div>
+         </div>
+      </div>
+
       <h4 style="border-bottom: 2px solid #f3f4f6; padding-bottom: 0.5rem; margin-bottom: 1rem;">Productos</h4>
       <div style="margin-bottom: 1.5rem;">
         ${itemsHtml}
@@ -5587,6 +5602,21 @@ window.viewOrderDetails = async (orderId) => {
       content.appendChild(notesSection)
     }
 
+    // Fetch Signed Photo URL if delivery_photo_url exists
+    if (orderData.delivery_photo_url) {
+      deliveryPhotoService.getSignedPhotoUrl(orderData.delivery_photo_url)
+        .then(res => {
+          const photoContainer = document.getElementById(`deliveryPhotoContainer-${orderId}`);
+          const photoLink = document.getElementById(`deliveryPhotoLink-${orderId}`);
+
+          if (res.signedUrl && photoContainer && photoLink) {
+            photoLink.href = res.signedUrl;
+            photoContainer.style.display = 'block';
+          }
+        })
+        .catch(err => console.error('Error fetching signed photo url:', err));
+    }
+
     // Add Delete/Cancel Button at the bottom for all orders
     const deleteSection = document.createElement('div')
     deleteSection.style.marginTop = '2rem'
@@ -5607,7 +5637,8 @@ window.viewOrderDetails = async (orderId) => {
   } catch (error) {
     console.error('Error details:', error)
     notify.error('Error al cargar detalles')
-    if (modal) modal.style.display = 'none'
+    const errorModal = document.getElementById('orderDetailsModal')
+    if (errorModal) errorModal.style.display = 'none'
   }
 }
 

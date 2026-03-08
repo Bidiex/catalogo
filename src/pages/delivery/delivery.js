@@ -5,11 +5,14 @@
 // =============================================================================
 
 import { supabase } from '../../config/supabase.js'
+import { optimizeImage } from '../../utils/imageOptimizer.js'
+import { deliveryPhotoService } from '../../services/deliveryPhotoService.js'
 import gsap from 'gsap'
 
 // ============================================================
 // STATE
 // ============================================================
+window.deliveryPhotosToUpload = window.deliveryPhotosToUpload || {}; // State map para fotos de entrega (Blob/Error)
 let currentBusiness = null
 let currentDeliveryPerson = null
 let pendingOrders = []
@@ -686,6 +689,86 @@ function buildOrderCard(order, type) {
     <div class="order-amount">$${parseFloat(order.total_amount).toLocaleString('es-CO')}</div>
   `
 
+    // PHOTO CAPTURE SECTION FOR DISPATCHED ORDERS (MINE)
+    if (type === 'mine') {
+        const photoSection = document.createElement('div');
+        photoSection.className = 'delivery-photo-section';
+
+        photoSection.innerHTML = `
+            <input
+              type="file"
+              id="photo-input-${order.id}"
+              accept="image/*"
+              capture="environment"
+              class="visually-hidden"
+            />
+            <button type="button" id="btn-take-photo-${order.id}" class="btn-take-photo">
+              <i class="ri-camera-line"></i> Foto de entrega
+            </button>
+            <div id="photo-preview-container-${order.id}" class="photo-preview hidden">
+              <img id="photo-preview-${order.id}" src="" alt="Vista previa de entrega" />
+              <button type="button" id="btn-remove-photo-${order.id}" aria-label="Eliminar foto" class="btn-remove-photo">✕</button>
+            </div>
+            <p id="photo-status-${order.id}" class="photo-status hidden" aria-live="polite"></p>
+        `;
+
+        body.appendChild(photoSection);
+
+        // Attach logic after appending to memory DOM
+        const input = photoSection.querySelector(`#photo-input-${order.id}`);
+        const btnTake = photoSection.querySelector(`#btn-take-photo-${order.id}`);
+        const previewContainer = photoSection.querySelector(`#photo-preview-container-${order.id}`);
+        const imgPreview = photoSection.querySelector(`#photo-preview-${order.id}`);
+        const btnRemove = photoSection.querySelector(`#btn-remove-photo-${order.id}`);
+        const photoStatus = photoSection.querySelector(`#photo-status-${order.id}`);
+
+        btnTake.addEventListener('click', () => {
+            input.click();
+        });
+
+        btnRemove.addEventListener('click', () => {
+            input.value = '';
+            delete window.deliveryPhotosToUpload[order.id];
+            imgPreview.src = '';
+            previewContainer.classList.add('hidden');
+            btnTake.classList.remove('hidden');
+            photoStatus.classList.add('hidden');
+            photoStatus.textContent = '';
+        });
+
+        input.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            btnTake.classList.add('hidden');
+            previewContainer.classList.add('hidden');
+            photoStatus.classList.remove('hidden');
+            photoStatus.innerHTML = '<div class="btn-spinner" style="border-color:var(--color-primary); border-top-color:transparent; width:16px; height:16px; display:inline-block; margin-right:4px; vertical-align:middle;"></div> Optimizando imagen...';
+            photoStatus.style.color = 'var(--text-secondary)';
+
+            try {
+                const blob = await optimizeImage(file);
+                window.deliveryPhotosToUpload[order.id] = blob; // Save to global state map
+
+                const mbSize = (blob.size / (1024 * 1024)).toFixed(2);
+
+                imgPreview.src = URL.createObjectURL(blob);
+                previewContainer.classList.remove('hidden');
+
+                photoStatus.innerHTML = '<i class="ri-check-line" style="color:var(--color-success)"></i> Foto lista &middot; ' + mbSize + ' MB';
+                photoStatus.style.color = 'var(--text-muted)';
+            } catch (err) {
+                console.error('Error optimizando foto:', err);
+                delete window.deliveryPhotosToUpload[order.id];
+                input.value = '';
+
+                btnTake.classList.remove('hidden');
+                photoStatus.innerHTML = '<i class="ri-error-warning-line" style="color:var(--color-danger)"></i> ' + (err.message || 'Error al procesar.');
+                photoStatus.style.color = 'var(--color-danger)';
+            }
+        });
+    }
+
     const actions = document.createElement('div')
     actions.className = 'order-card-actions'
 
@@ -770,7 +853,27 @@ async function handleCompleteOrder(orderId, card, btn) {
     if (!confirmed) return
 
     btn.disabled = true
-    btn.innerHTML = '<div class="btn-spinner"></div>'
+
+    // Check if there is a photo to upload
+    const photoBlob = window.deliveryPhotosToUpload[orderId];
+
+    if (photoBlob) {
+        btn.innerHTML = '<div class="btn-spinner"></div> Subiendo...'
+        const resUpload = await deliveryPhotoService.uploadDeliveryPhoto(currentBusiness.id, orderId, photoBlob);
+
+        if (resUpload.error) {
+            console.error('Error subiendo foto:', resUpload.error);
+            showToast('Error al subir evidencia. Guardando entrega sin foto...', 'info');
+            // Continúa aunque falle, como se especificó
+        } else if (resUpload.path) {
+            const resPath = await deliveryPhotoService.saveDeliveryPhotoPath(orderId, resUpload.path, currentDeliveryPerson.id);
+            if (resPath.error) {
+                console.error('Error guardando path RPC:', resPath.error);
+            }
+        }
+    } else {
+        btn.innerHTML = '<div class="btn-spinner"></div>'
+    }
 
     try {
         const { data, error } = await supabase.rpc('delivery_complete_order', {
@@ -781,6 +884,7 @@ async function handleCompleteOrder(orderId, card, btn) {
         if (error || !data) throw new Error('No se pudo completar el pedido o ya fue completado.');
 
         showToast('¡Pedido entregado exitosamente!', 'success')
+        delete window.deliveryPhotosToUpload[orderId]; // Limpiar state
         card.style.opacity = '0.5'
         card.style.pointerEvents = 'none'
     } catch (err) {
