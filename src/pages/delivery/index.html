@@ -273,6 +273,32 @@
     </div>
   </div>
 
+  <!-- ============================================================ -->
+  <!-- DELIVERY NOTE MODAL                                          -->
+  <!-- ============================================================ -->
+  <div id="deliveryNoteModal" class="confirm-modal hidden">
+    <div class="confirm-overlay" id="noteOverlay"></div>
+    <div class="confirm-card">
+      <div class="confirm-icon">
+        <i class="ri-sticky-note-line"></i>
+      </div>
+      <h3>Nota del Domiciliario</h3>
+      <p>Añade una nota o novedad para este pedido (ej: Dirección incorrecta, cliente no responde).</p>
+
+      <div class="form-group" style="text-align: left; margin-top: 1rem;">
+        <textarea id="deliveryNoteInput" rows="3"
+          style="width: 100%; height: auto; max-width: none; font-size: 1rem; font-family: inherit; font-weight: normal; text-transform: none; text-align: left; padding: 0.75rem; border-radius: 12px; aspect-ratio: auto;"
+          placeholder="Escribe tu nota aquí..." spellcheck="false"></textarea>
+      </div>
+
+      <div class="confirm-actions" style="margin-top: 1.5rem;">
+        <button class="btn-confirm-cancel" id="noteCancel">Cancelar</button>
+        <button class="btn-confirm-ok" id="noteSave" style="background-color: var(--color-blue); color: white;">Guardar
+          Nota</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Container -->
   <div id="toastContainer" class="toast-container"></div>
 

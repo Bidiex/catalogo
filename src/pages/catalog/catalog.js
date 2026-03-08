@@ -1,6 +1,7 @@
 import { supabase } from '../../config/supabase.js'
 import { cart } from '../../utils/cart.js'
 import { notify } from '../../utils/notifications.js'
+import { taxesService } from '../../services/taxes.js'
 import { promotionsService } from '../../services/promotions.js'
 import { dailyMenusService } from '../../services/dailyMenus.js'
 import { promotionOptionsService } from '../../services/promotionOptions.js'
@@ -32,6 +33,10 @@ let selectedSize = null
 let currentSearchQuery = ''
 let currentCategoryFilter = 'all'
 let activeDailyMenu = null
+
+// Taxes State
+let catalogInvoiceTaxes = []
+let catalogProductTaxes = []
 
 // Promotions State
 let promotions = []
@@ -368,6 +373,16 @@ async function loadCatalogData() {
     } catch (error) {
       console.error('Error loading discounts:', error)
       // Continue without discounts if error
+    }
+
+    // Cargar impuestos
+    try {
+      catalogInvoiceTaxes = await taxesService.getInvoiceTaxes(currentBusiness.id)
+      catalogProductTaxes = await taxesService.getAllProductTaxes(currentBusiness.id)
+    } catch (error) {
+      console.error('Error loading taxes:', error)
+      catalogInvoiceTaxes = []
+      catalogProductTaxes = []
     }
 
     // Cargar tamaños de productos
@@ -1954,41 +1969,124 @@ function renderCartItems() {
     `
   }).join('')
 
-  // Total
-  // Total
-  let total = cart.getTotal(currentBusiness.id)
+  // Total base de productos (sin impuestos ni domicilio)
+  let baseTotal = cart.getTotal(currentBusiness.id)
+
+  // Calcular impuestos de productos
+  let productTaxesTotal = 0
+  let productTaxDetails = []
+
+  cartItems.forEach(item => {
+    const itemTaxes = catalogProductTaxes.filter(t => t.product_id === item.id && t.is_active)
+
+    // Calcular el precio base del item incluyendo opciones (similar a cart.getTotal internally)
+    let itemPrice = parseFloat(item.price)
+    if (item.options?.sides) {
+      itemPrice += item.options.sides.reduce((s, side) => s + parseFloat(side.price), 0)
+    }
+    if (item.options?.groups) {
+      item.options.groups.forEach(group => {
+        if (group.selections) {
+          itemPrice += group.selections.reduce((s, sel) => s + parseFloat(sel.price), 0)
+        }
+      })
+    }
+
+    const itemSubtotal = itemPrice * item.quantity
+
+    itemTaxes.forEach(tax => {
+      const taxAmount = itemSubtotal * (parseFloat(tax.rate) / 100)
+      productTaxesTotal += taxAmount
+      productTaxDetails.push({ name: tax.name, amount: taxAmount })
+    })
+  })
+
+  let subtotalWithProductTaxes = baseTotal + productTaxesTotal
+
+  // Calcular impuestos de factura (sobre el subtotal + impuestos de producto)
+  let invoiceTaxesTotal = 0
+  let invoiceTaxesApplied = []
+
+  catalogInvoiceTaxes.forEach(tax => {
+    if (tax.is_active) {
+      const taxAmount = subtotalWithProductTaxes * (parseFloat(tax.rate) / 100)
+      invoiceTaxesTotal += taxAmount
+      invoiceTaxesApplied.push({ name: tax.name, rate: tax.rate, amount: taxAmount })
+    }
+  })
 
   // Manejo del precio de domicilio
   const deliveryPrice = parseFloat(currentBusiness.delivery_price) || 0
 
-  // Buscar o crear fila de domicilio
-  let deliveryRow = document.getElementById('cartDeliveryRow')
+  const finalTotal = subtotalWithProductTaxes + invoiceTaxesTotal + deliveryPrice
 
-  if (deliveryPrice > 0) {
-    if (!deliveryRow) {
-      deliveryRow = document.createElement('div')
-      deliveryRow.id = 'cartDeliveryRow'
-      deliveryRow.className = 'cart-delivery-row'
-      deliveryRow.style.cssText = 'display: flex; justify-content: space-between; padding: 0.5rem 0; font-size: 0.9rem; color: #666; border-bottom: 1px dashed #eee; margin-bottom: 0.5rem;'
-
-      const cartFooter = document.getElementById('cartFooter')
-      const cartTotal = cartFooter.querySelector('.cart-total')
-      cartFooter.insertBefore(deliveryRow, cartTotal)
-    }
-
-    deliveryRow.innerHTML = `
-      <span><i class="ri-e-bike-2-fill"></i> Domicilio:</span>
-      <span>$${deliveryPrice.toLocaleString()}</span>
-    `
-    deliveryRow.style.display = 'flex'
-
-    // Sumar domicilio al total
-    total += deliveryPrice
-  } else if (deliveryRow) {
-    deliveryRow.style.display = 'none'
+  // Construir Desglose en el DOM
+  let breakdownContainer = document.getElementById('cartBreakdownContainer')
+  if (!breakdownContainer) {
+    breakdownContainer = document.createElement('div')
+    breakdownContainer.id = 'cartBreakdownContainer'
+    breakdownContainer.style.cssText = 'border-bottom: 1px dashed #eee; margin-bottom: 0.5rem; padding-bottom: 0.5rem;'
+    const cartFooter = document.getElementById('cartFooter')
+    const cartTotal = cartFooter.querySelector('.cart-total')
+    cartFooter.insertBefore(breakdownContainer, cartTotal)
   }
 
-  cartTotalAmount.textContent = `$${total.toLocaleString()}`
+  let breakdownHTML = ''
+
+  if (productTaxesTotal > 0 || invoiceTaxesTotal > 0) {
+    breakdownHTML += `
+      <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; font-size: 0.9rem; color: #666;">
+        <span>Subtotal (sin imp.):</span>
+        <span>$${Math.round(baseTotal).toLocaleString()}</span>
+      </div>
+    `
+
+    // Agrupar impuestos de producto por nombre
+    const groupedProductTaxes = productTaxDetails.reduce((acc, curr) => {
+      acc[curr.name] = (acc[curr.name] || 0) + curr.amount;
+      return acc;
+    }, {})
+
+    for (const [name, amount] of Object.entries(groupedProductTaxes)) {
+      breakdownHTML += `
+        <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; font-size: 0.85rem; color: #666;">
+          <span>${name} (Prod.):</span>
+          <span>$${Math.round(amount).toLocaleString()}</span>
+        </div>
+      `
+    }
+
+    invoiceTaxesApplied.forEach(tax => {
+      breakdownHTML += `
+        <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; font-size: 0.85rem; color: #666;">
+          <span>${tax.name} (${tax.rate}%):</span>
+          <span>$${Math.round(tax.amount).toLocaleString()}</span>
+        </div>
+      `
+    })
+  }
+
+  if (deliveryPrice > 0) {
+    breakdownHTML += `
+      <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; font-size: 0.9rem; color: #666;">
+        <span><i class="ri-e-bike-2-fill"></i> Domicilio:</span>
+        <span>$${deliveryPrice.toLocaleString()}</span>
+      </div>
+    `
+  }
+
+  if (breakdownHTML) {
+    breakdownContainer.innerHTML = breakdownHTML
+    breakdownContainer.style.display = 'block'
+  } else {
+    breakdownContainer.style.display = 'none'
+  }
+
+  // Limpiar viejo deliveryRow si existe
+  const oldDeliveryRow = document.getElementById('cartDeliveryRow')
+  if (oldDeliveryRow) oldDeliveryRow.remove()
+
+  cartTotalAmount.textContent = `$${Math.round(finalTotal).toLocaleString()}`
   cartFooter.style.display = 'block'
 
   // Event listeners
@@ -2154,16 +2252,41 @@ checkoutForm.addEventListener('submit', async (e) => {
       const cartItems = cart.get(currentBusiness.id)
 
       if (cartItems.length > 0) {
-        // Calcular totales
+        // Calcular totales incluyendo impuestos
         const deliveryPrice = parseFloat(currentBusiness.delivery_price) || 0
+
+        let productTaxesTotal = 0
         const productsTotal = cartItems.reduce((sum, item) => {
           let price = parseFloat(item.price)
           if (item.options?.sides) {
             price += item.options.sides.reduce((s, side) => s + parseFloat(side.price), 0)
           }
-          return sum + (price * item.quantity)
+          if (item.options?.groups) {
+            item.options.groups.forEach(group => {
+              if (group.selections) {
+                price += group.selections.reduce((s, sel) => s + parseFloat(sel.price), 0)
+              }
+            })
+          }
+
+          const itemSubtotal = price * item.quantity
+          const itemTaxes = catalogProductTaxes.filter(t => t.product_id === item.id && t.is_active)
+          itemTaxes.forEach(tax => {
+            productTaxesTotal += itemSubtotal * (parseFloat(tax.rate) / 100)
+          })
+
+          return sum + itemSubtotal
         }, 0)
-        const totalAmount = productsTotal + deliveryPrice
+
+        const subtotalWithProductTaxes = productsTotal + productTaxesTotal
+
+        let invoiceTaxesTotal = 0
+        const activeInvoiceTaxes = catalogInvoiceTaxes.filter(t => t.is_active)
+        activeInvoiceTaxes.forEach(tax => {
+          invoiceTaxesTotal += subtotalWithProductTaxes * (parseFloat(tax.rate) / 100)
+        })
+
+        const totalAmount = subtotalWithProductTaxes + invoiceTaxesTotal + deliveryPrice
 
         // Generar token para seguimiento (Pro feature)
         const orderToken = crypto.randomUUID()
@@ -2184,7 +2307,7 @@ checkoutForm.addEventListener('submit', async (e) => {
         }
 
         // Preparar items
-        const orderItems = cartItems.map(item => {
+        const orderItems = cartItems.map((item, index) => {
           let unitPrice = parseFloat(item.price)
 
           // Incluir precio de acompañantes (Legacy)
@@ -2205,6 +2328,17 @@ checkoutForm.addEventListener('submit', async (e) => {
           const options = { ...(item.options || {}) }
           if (item.is_promotion) {
             options.promotion_id = item.id
+          }
+
+          // Store product taxes for this item
+          const itemTaxes = catalogProductTaxes.filter(t => t.product_id === item.id && t.is_active)
+          if (itemTaxes.length > 0) {
+            options.applied_product_taxes = itemTaxes.map(t => ({ name: t.name, rate: t.rate }))
+          }
+
+          // Store invoice taxes globally in the first item's options as a hack to avoid DB schema migration
+          if (index === 0 && activeInvoiceTaxes.length > 0) {
+            options.applied_invoice_taxes = activeInvoiceTaxes.map(t => ({ name: t.name, rate: t.rate }))
           }
 
           return {
@@ -2352,14 +2486,15 @@ Método de pago: {metodo_pago}
       return line
     })
 
-    // Calcular total
+    // Calcular total base de productos
+    let productTaxesTotal = 0
+    let productTaxDetails = []
+
     const productsTotal = cartItems.reduce((sum, item) => {
       let price = parseFloat(item.price)
-      // Add sides price
       if (item.options?.sides) {
         price += item.options.sides.reduce((s, side) => s + parseFloat(side.price), 0)
       }
-      // Add groups price
       if (item.options?.groups) {
         item.options.groups.forEach(group => {
           if (group.selections) {
@@ -2367,18 +2502,63 @@ Método de pago: {metodo_pago}
           }
         })
       }
-      return sum + (price * item.quantity)
+
+      const itemSubtotal = price * item.quantity
+
+      const itemTaxes = catalogProductTaxes.filter(t => t.product_id === item.id && t.is_active)
+      itemTaxes.forEach(tax => {
+        const taxAmount = itemSubtotal * (parseFloat(tax.rate) / 100)
+        productTaxesTotal += taxAmount
+        productTaxDetails.push({ name: tax.name, amount: taxAmount })
+      })
+
+      return sum + itemSubtotal
     }, 0)
 
-    const deliveryPrice = parseFloat(currentBusiness.delivery_price) || 0
-    const total = productsTotal + deliveryPrice
+    const subtotalWithProductTaxes = productsTotal + productTaxesTotal
 
-    const productsListStr = productsList.join('\n')
+    let invoiceTaxesTotal = 0
+    let invoiceTaxesApplied = []
+
+    catalogInvoiceTaxes.forEach(tax => {
+      if (tax.is_active) {
+        const taxAmount = subtotalWithProductTaxes * (parseFloat(tax.rate) / 100)
+        invoiceTaxesTotal += taxAmount
+        invoiceTaxesApplied.push({ name: tax.name, rate: tax.rate, amount: taxAmount })
+      }
+    })
+
+    const deliveryPrice = parseFloat(currentBusiness.delivery_price) || 0
+    const finalTotal = subtotalWithProductTaxes + invoiceTaxesTotal + deliveryPrice
+
+    let productsListStr = productsList.join('\n')
+
+    // Add taxes to products string if any
+    let taxLines = []
+    if (productTaxesTotal > 0) {
+      // Combine
+      const groupedProductTaxes = productTaxDetails.reduce((acc, curr) => {
+        acc[curr.name] = (acc[curr.name] || 0) + curr.amount;
+        return acc;
+      }, {})
+      for (const [name, amount] of Object.entries(groupedProductTaxes)) {
+        taxLines.push(`▪️ ${name} (Prod.): $${Math.round(amount).toLocaleString('es-CO')}`)
+      }
+    }
+    if (invoiceTaxesTotal > 0) {
+      invoiceTaxesApplied.forEach(tax => {
+        taxLines.push(`▪️ ${tax.name} (${tax.rate}%): $${Math.round(tax.amount).toLocaleString('es-CO')}`)
+      })
+    }
+
+    if (taxLines.length > 0) {
+      productsListStr += `\n\nDesglose de Impuestos:\n${taxLines.join('\n')}`
+    }
 
     // Reemplazar variables en la plantilla
     let message = template
       .replace('{productos}', productsListStr)
-      .replace('{total}', `$${total.toLocaleString('es-CO')}`)
+      .replace('{total}', `$${Math.round(finalTotal).toLocaleString('es-CO')}`)
       .replace('{nombre}', clientData.nombre)
       .replace('{telefono}', clientData.telefono)
       .replace('{metodo_pago}', clientData.metodo_pago)
@@ -2387,7 +2567,7 @@ Método de pago: {metodo_pago}
     // Si la plantilla no tiene el token {valor de domicilio} y hay domicilio, lo agregamos al final de los productos
     if (deliveryPrice > 0 && !template.includes('{valor de domicilio}')) {
       message = message.replace(productsListStr, `${productsListStr}\n🚚 Domicilio: $${deliveryPrice.toLocaleString('es-CO')}`)
-    } // Reemplazo directo si existe el token
+    }
 
     // Lógica inteligente para dirección y barrio:
     // Si la plantilla YA incluía {barrio}, reemplazamos ambos tokens por separado

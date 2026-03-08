@@ -307,25 +307,25 @@ body {
 }
 
 .floating-helmet {
-  width: clamp(70px, 28vw, 140px);
+  width: clamp(70px, 30vw, 170px);
   top: 0;
   right: 5%;
 }
 
 .floating-bag {
-  width: clamp(65px, 28vw, 125px);
+  width: clamp(65px, 30vw, 155px);
   top: 55%;
   left: -5%;
 }
 
 .floating-backpack {
-  width: clamp(75px, 25vw, 150px);
+  width: clamp(75px, 27vw, 180px);
   bottom: 5%;
   right: -5%;
 }
 
 .floating-bike {
-  width: clamp(85px, 28vw, 180px);
+  width: clamp(85px, 30vw, 200px);
   top: 15%;
   left: 5%;
 }
@@ -518,21 +518,26 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
   margin: 0.5rem 0;
+  width: 100%;
 }
 
 .otp-inputs {
   display: flex;
   gap: 0.4rem;
+  width: 100%;
+  justify-content: center;
 }
 
 .otp-char {
-  width: 50px;
-  height: 60px;
+  flex: 1;
+  min-width: 0;
+  max-width: 50px;
+  aspect-ratio: 5 / 6;
+  height: auto;
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
-  font-size: 1.5rem;
+  font-size: clamp(1.2rem, 5vw, 1.5rem);
   font-weight: 700;
   text-align: center;
   font-family: monospace;
@@ -660,6 +665,7 @@ body {
   border-top: 1px solid var(--border);
   margin-top: 1rem;
   padding-top: 1rem;
+  gap: 0.5rem;
 }
 
 .app-header-title-container h2 {
@@ -1621,4 +1627,102 @@ body {
     padding: 1.5rem;
     padding-bottom: 1.5rem;
   }
+}
+
+/* ============================================================ */
+/* DROPDOWN MENU (ORDER CARD)                                  */
+/* ============================================================ */
+.order-card-header .header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  position: relative;
+}
+
+.btn-card-options {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: var(--shadow-card);
+}
+
+.btn-card-options:active {
+  background: var(--bg-app);
+  transform: scale(0.95);
+}
+
+.card-dropdown-menu {
+  position: absolute;
+  top: 110%;
+  right: 0;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--border);
+  min-width: 180px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem;
+  transform-origin: top right;
+  animation: scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.card-dropdown-menu.hidden {
+  display: none !important;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.dropdown-item:active {
+  background: var(--bg-app);
+}
+
+.dropdown-item i {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+}
+
+.dropdown-item.danger {
+  color: var(--color-danger);
+}
+
+.dropdown-item.danger i {
+  color: var(--color-danger);
 }

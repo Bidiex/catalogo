@@ -1197,6 +1197,25 @@
           <!-- Grid Container for Payment & Hours -->
           <div class="business-settings-grid">
 
+            <!-- Invoice Taxes Section -->
+            <section class="card" style="height: 100%;">
+              <div class="card-header">
+                <h2><i class="ri-percent-line"></i> Impuestos de la Factura</h2>
+                <button id="addInvoiceTaxBtn" class="btn-primary-small">
+                  <i class="ri-add-line"></i> Agregar
+                </button>
+              </div>
+              <div class="card-content">
+                <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 1rem;">
+                  Configura impuestos generales que aplican sobre el subtotal de todas tus ventas (ej. Propina,
+                  Servicio).
+                </p>
+                <div id="invoiceTaxesList" class="payment-methods-list">
+                  <p class="empty-message">Cargando impuestos...</p>
+                </div>
+              </div>
+            </section>
+
             <!-- Payment Methods Section -->
             <section class="card" style="height: 100%;">
               <div class="card-header">
@@ -1695,6 +1714,12 @@
       <div class="modal-body" id="orderDetailsContent" style="padding: 1.5rem; max-height: 70vh; overflow-y: auto;">
         <!-- Details injected by JS -->
       </div>
+      <div id="deliveryNoteContainer"
+        style="display: none; padding: 1rem 1.5rem; background-color: #fdf6b2; border-top: 1px solid #e5e7eb; margin-top: auto;">
+        <h4 style="margin: 0 0 0.5rem 0; font-size: 0.95rem; color: #854d0e;"><i class="ri-sticky-note-line"></i> Nota
+          de Domiciliario</h4>
+        <p id="deliveryNoteText" style="margin: 0; font-size: 0.9rem; color: #713f12; white-space: pre-wrap;"></p>
+      </div>
       <div class="modal-footer"
         style="padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 0.5rem;">
         <button class="btn-secondary" id="closeOrderDetailsFooterBtn">Cerrar</button>
@@ -1951,6 +1976,23 @@
               <span class="slider"></span>
             </label>
             <span id="productActiveLabel" class="switch-label">Activo</span>
+          </div>
+        </div>
+
+        <div class="form-group"
+          style="padding: 1rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <label style="margin: 0; font-weight: 600;"><i class="ri-percent-line"></i> Impuestos del Producto</label>
+            <button type="button" id="addProductTaxBtn" class="btn-secondary-small">
+              <i class="ri-add-line"></i> Agregar
+            </button>
+          </div>
+          <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">
+            Añade impuestos que se calculen sobre el precio individual de este producto (ej. IVA, impoconsumo).
+          </p>
+          <div id="productTaxesListContainer" style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <!-- Se llenará dinámicamente -->
+            <p class="empty-message" style="margin: 0; font-size: 0.85rem;">Ningún impuesto configurado</p>
           </div>
         </div>
 
@@ -2324,6 +2366,74 @@
         <div class="modal-actions">
           <button type="button" class="btn-secondary" id="cancelPaymentMethodBtn">Cancelar</button>
           <button type="submit" class="btn-primary" id="savePaymentMethodBtn">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal para crear/editar impuesto de factura -->
+  <div id="invoiceTaxModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="invoiceTaxModalTitle">Nuevo Impuesto de Factura</h3>
+        <button class="modal-close" id="closeInvoiceTaxModal">&times;</button>
+      </div>
+      <form id="invoiceTaxForm" class="modal-form">
+        <input type="hidden" id="invoiceTaxIdInput">
+        <div class="form-group">
+          <label for="invoiceTaxNameInput">Nombre de impuesto *</label>
+          <input type="text" id="invoiceTaxNameInput" placeholder="Ej: Propina, Tarifa de Servicio" required>
+        </div>
+        <div class="form-group">
+          <label for="invoiceTaxRateInput">Porcentaje (%) *</label>
+          <input type="number" id="invoiceTaxRateInput" placeholder="10.00" step="0.01" min="0" required>
+        </div>
+        <div class="form-group">
+          <div class="switch-container">
+            <label class="switch">
+              <input type="checkbox" id="invoiceTaxActiveInput" checked>
+              <span class="slider"></span>
+            </label>
+            <span class="switch-label">Impuesto activo</span>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="cancelInvoiceTaxBtn">Cancelar</button>
+          <button type="submit" class="btn-primary" id="saveInvoiceTaxBtn">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal para crear/editar impuesto de producto -->
+  <div id="productTaxModal" class="modal" style="display: none; z-index: 2000;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="productTaxModalTitle">Nuevo Impuesto de Producto</h3>
+        <button class="modal-close" id="closeProductTaxModal">&times;</button>
+      </div>
+      <form id="productTaxForm" class="modal-form">
+        <input type="hidden" id="productTaxIdInput">
+        <div class="form-group">
+          <label for="productTaxNameInput">Nombre de impuesto *</label>
+          <input type="text" id="productTaxNameInput" placeholder="Ej: IVA, Impoconsumo" required>
+        </div>
+        <div class="form-group">
+          <label for="productTaxRateInput">Porcentaje (%) *</label>
+          <input type="number" id="productTaxRateInput" placeholder="19.00" step="0.01" min="0" required>
+        </div>
+        <div class="form-group">
+          <div class="switch-container">
+            <label class="switch">
+              <input type="checkbox" id="productTaxActiveInput" checked>
+              <span class="slider"></span>
+            </label>
+            <span class="switch-label">Impuesto activo</span>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="cancelProductTaxBtn">Cancelar</button>
+          <button type="submit" class="btn-primary" id="saveProductTaxBtn">Guardar</button>
         </div>
       </form>
     </div>

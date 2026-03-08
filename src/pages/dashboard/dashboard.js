@@ -24,6 +24,7 @@ import { supportService } from '../../services/support.js'
 import { ordersService } from '../../services/orders.js'
 import { deliveryPersonsService } from '../../services/deliveryPersons.js'
 import { businessSidesService } from '../../services/businessSidesService.js'
+import { taxesService } from '../../services/taxes.js'
 
 import { initAnalytics, updateAnalytics } from './analytics.js'
 import { initLinksEditor } from '../links/links-editor.js'
@@ -40,6 +41,13 @@ let businessHours = []
 let editingCategory = null
 let editingProduct = null
 let editingPaymentMethod = null
+
+// Taxes state
+let invoiceTaxes = []
+let editingInvoiceTax = null
+let productTaxes = []
+let editingProductTax = null
+
 // Promotions state
 let promotions = []
 let editingPromotion = null
@@ -219,6 +227,7 @@ async function init() {
 
     // Cargar negocio
     await loadBusiness()
+    await loadInvoiceTaxes()
 
     // Inicializar sistema de planes y bloqueo UI
     planService.init(currentBusiness)
@@ -2229,6 +2238,14 @@ function openProductModal() {
 
   populateCategorySelect()
   resetProductImageUpload()
+
+  // Ocultar section taxes para nuevos productos
+  const productTaxesList = document.getElementById('productTaxesListContainer')
+  if (productTaxesList) {
+    productTaxesList.innerHTML = '<p class="empty-message" style="margin: 0; font-size: 0.85rem;">Guarda el producto primero para agregar impuestos</p>'
+  }
+  document.getElementById('addProductTaxBtn').style.display = 'none'
+
   productModal.style.display = 'flex'
 }
 
@@ -2268,6 +2285,10 @@ function openEditProductModal(productId) {
   } else {
     resetProductImageUpload()
   }
+
+  // Cargar impuestos del producto
+  loadProductTaxes(productId)
+  document.getElementById('addProductTaxBtn').style.display = 'inline-block'
 
   productModal.style.display = 'flex'
 }
@@ -5408,8 +5429,14 @@ window.viewOrderDetails = async (orderId) => {
          </div>
          ${orderData.order_notes ? `
          <div style="grid-column: 1 / -1; background: #fffbeb; padding: 0.75rem; border-radius: 6px;">
-            <label style="font-size: 0.8rem; color: #92400e; display: block; font-weight: 600;">Observaciones:</label>
+            <label style="font-size: 0.8rem; color: #92400e; display: block; font-weight: 600;">Observaciones Cliente:</label>
             <div style="color: #92400e;">${orderData.order_notes}</div>
+         </div>` : ''
+      }
+          ${orderData.delivery_notes ? `
+         <div id="deliveryNoteContainer" style="grid-column: 1 / -1; background: #fdf2f8; padding: 0.75rem; border-radius: 6px; border-left: 4px solid #db2777;">
+            <label style="font-size: 0.8rem; color: #db2777; display: block; font-weight: 600;"><i class="ri-motorbike-line"></i> Nota del Domiciliario:</label>
+            <div id="deliveryNoteText" style="color: #9d174d;">${orderData.delivery_notes}</div>
          </div>` : ''
       }
       </div>
@@ -5418,19 +5445,64 @@ window.viewOrderDetails = async (orderId) => {
       <div style="margin-bottom: 1.5rem;">
         ${itemsHtml}
       </div>
-      
+      `
+
+    // Calculate accurate breakdown for modal
+    let baseSubtotal = 0
+    let productTaxesTotal = {}
+
+    orderData.items.forEach(item => {
+      baseSubtotal += parseFloat(item.total_price)
+      if (item.options?.applied_product_taxes) {
+        item.options.applied_product_taxes.forEach(t => {
+          const taxAmt = parseFloat(item.total_price) * (parseFloat(t.rate) / 100)
+          productTaxesTotal[t.name] = (productTaxesTotal[t.name] || 0) + taxAmt
+        })
+      }
+    })
+
+    let aggregatedProductTaxesTotal = 0
+    let productTaxesHtml = ''
+    for (const [name, amount] of Object.entries(productTaxesTotal)) {
+      aggregatedProductTaxesTotal += amount
+      productTaxesHtml += `
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem; color: #6b7280;">
+            <span>${name} (Prod.)</span>
+            <span>$${Math.round(amount).toLocaleString('es-CO')}</span>
+          </div>
+        `
+    }
+
+    let invoiceTaxesHtml = ''
+    const firstItem = orderData.items[0]
+    if (firstItem && firstItem.options?.applied_invoice_taxes) {
+      const subWithProdTaxes = baseSubtotal + aggregatedProductTaxesTotal
+      firstItem.options.applied_invoice_taxes.forEach(t => {
+        const taxAmt = subWithProdTaxes * (parseFloat(t.rate) / 100)
+        invoiceTaxesHtml += `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem; color: #6b7280;">
+              <span>${t.name} (${t.rate}%)</span>
+              <span>$${Math.round(taxAmt).toLocaleString('es-CO')}</span>
+            </div>
+          `
+      })
+    }
+
+    content.innerHTML += `
       <div style="background: #f8fafc; padding: 1rem; border-radius: 8px;">
          <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-            <span>Subtotal</span>
-            <span>$${(parseFloat(orderData.total_amount) - parseFloat(orderData.delivery_price)).toLocaleString()}</span>
+            <span>Subtotal (base)</span>
+            <span>$${Math.round(baseSubtotal).toLocaleString('es-CO')}</span>
          </div>
+         ${productTaxesHtml}
+         ${invoiceTaxesHtml}
          <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
             <span>Domicilio</span>
-            <span>$${parseFloat(orderData.delivery_price).toLocaleString()}</span>
+            <span>$${parseFloat(orderData.delivery_price).toLocaleString('es-CO')}</span>
          </div>
          <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 1.1rem; border-top: 1px dashed #cbd5e1; padding-top: 0.5rem;">
             <span>Total</span>
-            <span style="color: var(--color-primary);">$${parseFloat(orderData.total_amount).toLocaleString()}</span>
+            <span style="color: var(--color-primary);">$${Math.round(orderData.total_amount).toLocaleString('es-CO')}</span>
          </div>
          <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #6b7280; text-align: right;">
             Método de Pago: <strong>${orderData.payment_method}</strong>
@@ -7289,4 +7361,325 @@ window.deleteGlobalQuickCommentOption = async (optionId, groupId) => {
   }
 }
 
+// ============================================
+// INVOICE TAXES MANAGEMENT
+// ============================================
 
+window.loadInvoiceTaxes = async () => {
+  if (!currentBusiness) return
+  const container = document.getElementById('invoiceTaxesList')
+  if (!container) return
+
+  container.innerHTML = '<p class="empty-message">Cargando impuestos...</p>'
+
+  try {
+    invoiceTaxes = await taxesService.getInvoiceTaxes(currentBusiness.id)
+    window.renderInvoiceTaxes()
+  } catch (error) {
+    console.error('Error loading invoice taxes:', error)
+    if (container) container.innerHTML = '<p class="empty-message error">Error al cargar impuestos</p>'
+  }
+}
+
+window.renderInvoiceTaxes = () => {
+  const container = document.getElementById('invoiceTaxesList')
+  if (!container) return
+
+  if (invoiceTaxes.length === 0) {
+    container.innerHTML = '<p class="empty-message">No hay impuestos configurados</p>'
+    return
+  }
+
+  container.innerHTML = invoiceTaxes.map(tax => `
+    <div class="payment-method-item" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border: 1px solid var(--color-border); border-radius: var(--radius-md); margin-bottom: 0.5rem; background: var(--surface-light);">
+      <div class="info">
+        <h4 style="margin: 0 0 0.25rem 0; font-size: 1rem;">${tax.name} <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: normal; margin-left: 0.5rem;">(${parseFloat(tax.rate).toFixed(2)}%)</span></h4>
+        <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">
+          ${tax.is_active ? '<span style="color:var(--color-success);">Activo</span>' : '<span style="color:var(--color-danger);">Inactivo</span>'}
+        </div>
+      </div>
+      <div class="actions" style="display: flex; gap: 0.5rem;">
+        <button class="btn-icon" onclick="window.openEditInvoiceTaxModal('${tax.id}')" title="Editar">
+          <i class="ri-edit-line"></i>
+        </button>
+        <button class="btn-icon danger" onclick="window.deleteInvoiceTax('${tax.id}')" title="Eliminar">
+          <i class="ri-delete-bin-line"></i>
+        </button>
+      </div>
+    </div>
+  `).join('')
+}
+
+window.openEditInvoiceTaxModal = (id) => {
+  editingInvoiceTax = invoiceTaxes.find(t => t.id === id)
+  if (!editingInvoiceTax) return
+
+  document.getElementById('invoiceTaxModalTitle').textContent = 'Editar Impuesto de Factura'
+  document.getElementById('invoiceTaxIdInput').value = editingInvoiceTax.id
+  document.getElementById('invoiceTaxNameInput').value = editingInvoiceTax.name
+  document.getElementById('invoiceTaxRateInput').value = editingInvoiceTax.rate
+  document.getElementById('invoiceTaxActiveInput').checked = editingInvoiceTax.is_active
+
+  document.getElementById('invoiceTaxModal').style.display = 'flex'
+}
+
+window.deleteInvoiceTax = async (id) => {
+  const confirmed = await confirm.show({
+    title: '¿Eliminar impuesto general?',
+    message: 'Este impuesto ya no se aplicará a nuevas facturas.',
+    confirmText: 'Eliminar',
+    cancelText: 'Cancelar',
+    type: 'danger'
+  })
+
+  if (!confirmed) return
+
+  try {
+    const loadingToast = notify.loading('Eliminando impuesto...')
+    await taxesService.deleteInvoiceTax(id)
+    notify.updateLoading(loadingToast, 'Impuesto eliminado', 'success')
+    await window.loadInvoiceTaxes()
+  } catch (error) {
+    console.error('Error deleting invoice tax:', error)
+    notify.error('Error al eliminar impuesto')
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const addBtn = document.getElementById('addInvoiceTaxBtn')
+  const form = document.getElementById('invoiceTaxForm')
+  const closeBtn = document.getElementById('closeInvoiceTaxModal')
+  const cancelBtn = document.getElementById('cancelInvoiceTaxBtn')
+  const modal = document.getElementById('invoiceTaxModal')
+
+  if (addBtn) {
+    addBtn.addEventListener('click', () => {
+      editingInvoiceTax = null
+      document.getElementById('invoiceTaxModalTitle').textContent = 'Nuevo Impuesto de Factura'
+      document.getElementById('invoiceTaxIdInput').value = ''
+      document.getElementById('invoiceTaxNameInput').value = ''
+      document.getElementById('invoiceTaxRateInput').value = ''
+      document.getElementById('invoiceTaxActiveInput').checked = true
+      modal.style.display = 'flex'
+    })
+  }
+
+  const closeModal = () => {
+    modal.style.display = 'none'
+    form.reset()
+    editingInvoiceTax = null
+  }
+
+  if (closeBtn) closeBtn.addEventListener('click', closeModal)
+  if (cancelBtn) cancelBtn.addEventListener('click', closeModal)
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault()
+
+      const id = document.getElementById('invoiceTaxIdInput').value
+      const name = document.getElementById('invoiceTaxNameInput').value
+      const rateStr = document.getElementById('invoiceTaxRateInput').value
+      let rate = parseFloat(rateStr) || 0
+      const isActive = document.getElementById('invoiceTaxActiveInput').checked
+
+      // Limit rate to 2 decimals
+      rate = Math.round(rate * 100) / 100
+
+      const submitBtn = document.getElementById('saveInvoiceTaxBtn')
+
+      await buttonLoader.execute(submitBtn, async () => {
+        try {
+          if (id || editingInvoiceTax) {
+            await taxesService.updateInvoiceTax(id || editingInvoiceTax.id, {
+              name,
+              rate,
+              is_active: isActive
+            })
+            notify.success('Impuesto actualizado')
+          } else {
+            await taxesService.createInvoiceTax({
+              business_id: currentBusiness.id,
+              name,
+              rate,
+              is_active: isActive
+            })
+            notify.success('Impuesto creado')
+          }
+          closeModal()
+          await window.loadInvoiceTaxes()
+        } catch (error) {
+          console.error('Error saving invoice tax:', error)
+          notify.error('Error al guardar impuesto')
+        }
+      }, 'Guardando...')
+    })
+  }
+})
+
+// ============================================
+// PRODUCT TAXES MANAGEMENT
+// ============================================
+
+window.loadProductTaxes = async (productId) => {
+  if (!currentBusiness) return
+  const container = document.getElementById('productTaxesListContainer')
+  if (!container) return
+
+  container.innerHTML = '<p class="empty-message" style="margin: 0; font-size: 0.85rem;">Cargando impuestos...</p>'
+
+  try {
+    productTaxes = await taxesService.getProductTaxes(currentBusiness.id, productId)
+    window.renderProductTaxes(productId)
+  } catch (error) {
+    console.error('Error loading product taxes:', error)
+    if (container) container.innerHTML = '<p class="empty-message error" style="margin: 0; font-size: 0.85rem;">Error al cargar impuestos</p>'
+  }
+}
+
+window.renderProductTaxes = (productId) => {
+  const container = document.getElementById('productTaxesListContainer')
+  if (!container) return
+
+  if (productTaxes.length === 0) {
+    container.innerHTML = '<p class="empty-message" style="margin: 0; font-size: 0.85rem;">Ningún impuesto configurado</p>'
+    return
+  }
+
+  container.innerHTML = productTaxes.map(tax => `
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 6px; background: white; margin-bottom: 0.25rem;">
+      <div class="info" style="display: flex; align-items: center;">
+        <span style="font-weight: 500; font-size: 0.9rem;">${tax.name}</span>
+        <span style="font-size: 0.85rem; color: #64748b; margin-left: 0.5rem;">${parseFloat(tax.rate).toFixed(2)}%</span>
+        ${!tax.is_active ? '<span style="font-size: 0.75rem; color: #ef4444; margin-left: 0.5rem;">(Inactivo)</span>' : ''}
+      </div>
+      <div class="actions" style="display: flex; gap: 0.25rem;">
+        <button type="button" class="btn-icon-small" onclick="window.openEditProductTaxModal('${tax.id}', event)" title="Editar">
+          <i class="ri-edit-line"></i>
+        </button>
+        <button type="button" class="btn-icon-small danger" onclick="window.deleteProductTax('${tax.id}', '${productId}', event)" title="Eliminar">
+          <i class="ri-delete-bin-line"></i>
+        </button>
+      </div>
+    </div>
+  `).join('')
+}
+
+window.openEditProductTaxModal = (id, e) => {
+  if (e) e.preventDefault()
+  editingProductTax = productTaxes.find(t => t.id === id)
+  if (!editingProductTax) return
+
+  document.getElementById('productTaxModalTitle').textContent = 'Editar Impuesto de Producto'
+  document.getElementById('productTaxIdInput').value = editingProductTax.id
+  document.getElementById('productTaxNameInput').value = editingProductTax.name
+  document.getElementById('productTaxRateInput').value = editingProductTax.rate
+  document.getElementById('productTaxActiveInput').checked = editingProductTax.is_active
+
+  document.getElementById('productTaxModal').style.display = 'flex'
+}
+
+window.deleteProductTax = async (id, productId, e) => {
+  if (e) e.preventDefault()
+  const confirmed = await confirm.show({
+    title: '¿Eliminar impuesto?',
+    message: 'El producto dejará de tener este impuesto.',
+    confirmText: 'Eliminar',
+    cancelText: 'Cancelar',
+    type: 'danger'
+  })
+
+  if (!confirmed) return
+
+  try {
+    const loadingToast = notify.loading('Eliminando impuesto...')
+    await taxesService.deleteProductTax(id)
+    notify.updateLoading(loadingToast, 'Impuesto eliminado', 'success')
+    await window.loadProductTaxes(productId)
+  } catch (error) {
+    console.error('Error deleting product tax:', error)
+    notify.error('Error al eliminar impuesto')
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const addBtn = document.getElementById('addProductTaxBtn')
+  const form = document.getElementById('productTaxForm')
+  const closeBtn = document.getElementById('closeProductTaxModal')
+  const cancelBtn = document.getElementById('cancelProductTaxBtn')
+  const modal = document.getElementById('productTaxModal')
+
+  if (addBtn) {
+    addBtn.addEventListener('click', (e) => {
+      e.preventDefault()
+      editingProductTax = null
+      document.getElementById('productTaxModalTitle').textContent = 'Nuevo Impuesto de Producto'
+      document.getElementById('productTaxIdInput').value = ''
+      document.getElementById('productTaxNameInput').value = ''
+      document.getElementById('productTaxRateInput').value = ''
+      document.getElementById('productTaxActiveInput').checked = true
+      modal.style.display = 'flex'
+    })
+  }
+
+  const closeModal = (e) => {
+    if (e) e.preventDefault()
+    modal.style.display = 'none'
+    form.reset()
+    editingProductTax = null
+  }
+
+  if (closeBtn) closeBtn.addEventListener('click', closeModal)
+  if (cancelBtn) cancelBtn.addEventListener('click', closeModal)
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault()
+
+      if (!editingProduct && !editingProductTax) {
+        notify.error('Debes guardar el producto primero')
+        return
+      }
+
+      const id = document.getElementById('productTaxIdInput').value
+      const name = document.getElementById('productTaxNameInput').value
+      const rateStr = document.getElementById('productTaxRateInput').value
+      let rate = parseFloat(rateStr) || 0
+      const isActive = document.getElementById('productTaxActiveInput').checked
+
+      rate = Math.round(rate * 100) / 100
+
+      const submitBtn = document.getElementById('saveProductTaxBtn')
+
+      await buttonLoader.execute(submitBtn, async () => {
+        try {
+          if (id || editingProductTax) {
+            await taxesService.updateProductTax(id || editingProductTax.id, {
+              name,
+              rate,
+              is_active: isActive
+            })
+            notify.success('Impuesto actualizado')
+          } else {
+            await taxesService.createProductTax({
+              business_id: currentBusiness.id,
+              product_id: editingProduct.id,
+              name,
+              rate,
+              is_active: isActive
+            })
+            notify.success('Impuesto creado')
+          }
+          closeModal()
+          // Refresh list
+          if (editingProduct) {
+            await window.loadProductTaxes(editingProduct.id)
+          }
+        } catch (error) {
+          console.error('Error saving product tax:', error)
+          notify.error('Error al guardar impuesto')
+        }
+      }, 'Guardando...')
+    })
+  }
+})

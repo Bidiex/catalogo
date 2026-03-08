@@ -554,7 +554,7 @@ async function loadMyOrders() {
     try {
         const { data, error } = await supabase
             .from('orders')
-            .select('id, order_token, customer_name, customer_address, customer_neighborhood, customer_phone, total_amount, dispatched_at, created_at, status')
+            .select('id, order_token, customer_name, customer_address, customer_neighborhood, customer_phone, total_amount, dispatched_at, created_at, status, delivery_notes')
             .eq('business_id', currentBusiness.id)
             .eq('delivery_person_id', currentDeliveryPerson.id)
             .eq('status', 'dispatched')
@@ -618,6 +618,24 @@ function buildOrderCard(order, type) {
         card.classList.add('delayed')
     }
 
+    const optionsButtonHTML = type === 'mine' ? `
+      <div class="header-actions">
+        <button class="btn-card-options" onclick="toggleOrderOptions('${order.id}')">
+          <i class="ri-more-2-fill"></i>
+        </button>
+        <div class="card-dropdown-menu hidden" id="dropdown-${order.id}">
+          <button class="dropdown-item" onclick="openDeliveryNoteModal('${order.id}')">
+            <i class="ri-sticky-note-line"></i>
+            Añadir Nota
+          </button>
+          <button class="dropdown-item danger" onclick="requestCancelation('${order.id}')">
+            <i class="ri-close-circle-line"></i>
+            Solicitar Cancelación
+          </button>
+        </div>
+      </div>
+    ` : '';
+
     const header = document.createElement('div')
     header.className = 'order-card-header'
     header.innerHTML = `
@@ -625,10 +643,13 @@ function buildOrderCard(order, type) {
       <div class="order-ref">#${ref}</div>
       <div class="order-elapsed ${elapsedClass}"><i class="ri-time-line"></i> ${elapsed}</div>
     </div>
-    ${type === 'pending'
+    <div style="display: flex; align-items: center; gap: 0.5rem; margin-left: auto;">
+      ${type === 'pending'
             ? '<span class="order-status-badge ready"><i class="ri-shopping-bag-3-line"></i> Para llevar</span>'
             : '<span class="order-status-badge dispatched"><i class="ri-motorbike-fill"></i> En camino</span>'
         }
+      ${optionsButtonHTML}
+    </div>
   `
 
     const body = document.createElement('div')
@@ -713,20 +734,14 @@ async function handleTakeOrder(orderId, card, btn) {
     btn.innerHTML = '<div class="btn-spinner"></div>'
 
     try {
-        const { data, error } = await supabase
-            .from('orders')
-            .update({
-                status: 'dispatched',
-                delivery_person_id: currentDeliveryPerson.id
-            })
-            .eq('id', orderId)
-            .eq('status', 'ready')
-            .is('delivery_person_id', null)
-            .select('id')
+        const { data, error } = await supabase.rpc('delivery_take_order', {
+            p_order_id: orderId,
+            p_delivery_person_id: currentDeliveryPerson.id
+        });
 
-        if (error) throw error
+        if (error) throw error;
 
-        const taken = data && data.length > 0
+        const taken = data; // the RPC returns true/false
 
         if (!taken) {
             showToast('Este pedido ya fue tomado por otro domiciliario', 'info')
@@ -758,14 +773,12 @@ async function handleCompleteOrder(orderId, card, btn) {
     btn.innerHTML = '<div class="btn-spinner"></div>'
 
     try {
-        const { error } = await supabase
-            .from('orders')
-            .update({ status: 'completed' })
-            .eq('id', orderId)
-            .eq('delivery_person_id', currentDeliveryPerson.id)
-            .eq('status', 'dispatched')
+        const { data, error } = await supabase.rpc('delivery_complete_order', {
+            p_order_id: orderId,
+            p_delivery_person_id: currentDeliveryPerson.id
+        });
 
-        if (error) throw error
+        if (error || !data) throw new Error('No se pudo completar el pedido o ya fue completado.');
 
         showToast('¡Pedido entregado exitosamente!', 'success')
         card.style.opacity = '0.5'
@@ -777,6 +790,129 @@ async function handleCompleteOrder(orderId, card, btn) {
         btn.innerHTML = '<i class="ri-flag-line"></i> Entregado'
     }
 }
+
+// ============================================================
+// DROPDOWN & CANCELATION LOGIC
+// ============================================================
+window.toggleOrderOptions = (orderId) => {
+    const dropdown = document.getElementById(`dropdown-${orderId}`);
+    if (!dropdown) return;
+
+    const isHidden = dropdown.classList.contains('hidden');
+
+    // Ocultar todos los otros dropdowns abiertos
+    document.querySelectorAll('.card-dropdown-menu').forEach(el => {
+        el.classList.add('hidden');
+    });
+
+    if (isHidden) {
+        dropdown.classList.remove('hidden');
+    }
+};
+
+// Cerrar dropdown al hacer click fuera
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.header-actions')) {
+        document.querySelectorAll('.card-dropdown-menu').forEach(el => {
+            el.classList.add('hidden');
+        });
+    }
+});
+
+window.requestCancelation = (orderId) => {
+    const order = myOrders.find(o => o.id === orderId);
+    if (!order) return;
+
+    const ref = order.order_token ? order.order_token.split('-')[0].toUpperCase() : order.id.slice(0, 8).toUpperCase();
+    const dpName = currentDeliveryPerson ? currentDeliveryPerson.name.split(' ')[0] : 'domiciliario';
+
+    let msg = `Hola, soy ${dpName}. Necesito cancelar el pedido #${ref} de ${order.customer_name}. Motivo: `;
+    const encodedMsg = encodeURIComponent(msg);
+
+    // Mandar WhatsApp al negocio
+    const waNumber = currentBusiness.whatsapp_number ? currentBusiness.whatsapp_number.replace(/\D/g, '') : '';
+    if (waNumber) {
+        window.open(`https://wa.me/57${waNumber}?text=${encodedMsg}`, '_blank');
+    } else {
+        showToast('El negocio no tiene un número de WhatsApp configurado', 'info');
+    }
+
+    // Cerrar dropdown
+    const dropdown = document.getElementById(`dropdown-${orderId}`);
+    if (dropdown) dropdown.classList.add('hidden');
+};
+
+// ============================================================
+// DELIVERY NOTE MODAL LOGIC
+// ============================================================
+const deliveryNoteModal = document.getElementById('deliveryNoteModal');
+const noteOverlay = document.getElementById('noteOverlay');
+const deliveryNoteInput = document.getElementById('deliveryNoteInput');
+const noteCancel = document.getElementById('noteCancel');
+const noteSave = document.getElementById('noteSave');
+let activeNoteOrderId = null;
+
+window.openDeliveryNoteModal = (orderId) => {
+    const order = myOrders.find(o => o.id === orderId);
+    if (!order) return;
+
+    activeNoteOrderId = orderId;
+    deliveryNoteInput.value = order.delivery_notes || '';
+    deliveryNoteModal.classList.remove('hidden');
+
+    // Cerrar dropdown
+    const dropdown = document.getElementById(`dropdown-${orderId}`);
+    if (dropdown) dropdown.classList.add('hidden');
+
+    setTimeout(() => deliveryNoteInput.focus(), 100);
+};
+
+const closeDeliveryNoteModal = () => {
+    deliveryNoteModal.classList.add('hidden');
+    activeNoteOrderId = null;
+    deliveryNoteInput.value = '';
+};
+
+noteOverlay.addEventListener('click', closeDeliveryNoteModal);
+noteCancel.addEventListener('click', closeDeliveryNoteModal);
+
+noteSave.addEventListener('click', async () => {
+    if (!activeNoteOrderId) return;
+    const newNote = deliveryNoteInput.value.trim();
+
+    noteSave.disabled = true;
+    noteSave.innerHTML = 'Guardando...';
+
+    try {
+        const { data, error } = await supabase
+            .from('orders')
+            .update({ delivery_notes: newNote })
+            .eq('id', activeNoteOrderId)
+            .select();
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+            console.warn('Update returned no rows. Check RLS policies on orders table for UPDATE.');
+            throw new Error('El registro no fue actualizado, puede ser un problema de permisos en la base de datos.');
+        }
+
+        // Actualizar state local
+        const order = myOrders.find(o => o.id === activeNoteOrderId);
+        if (order) {
+            order.delivery_notes = newNote;
+        }
+
+        showToast('Nota de domiciliario guardada', 'success');
+        closeDeliveryNoteModal();
+    } catch (err) {
+        console.error('Error saving delivery note:', err);
+        showToast('Error al guardar la nota.', 'error');
+    } finally {
+        noteSave.disabled = false;
+        noteSave.innerHTML = 'Guardar Nota';
+    }
+});
 
 // ============================================================
 // SECTION C: MÉTRICAS
