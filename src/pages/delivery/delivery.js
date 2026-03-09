@@ -274,6 +274,20 @@ function showApp() {
 }
 
 function renderBusinessInfo(business) {
+    // Set dynamic document title and favicon
+    if (business.name) {
+        document.title = `${business.name} — Domiciliarios`
+    }
+    if (business.logo_url) {
+        let link = document.querySelector("link[rel~='icon']")
+        if (!link) {
+            link = document.createElement('link')
+            link.rel = 'icon'
+            document.head.appendChild(link)
+        }
+        link.href = business.logo_url
+    }
+
     // Used in login screen
     if (loginBusinessName) loginBusinessName.textContent = business.name
     if (business.logo_url) {
