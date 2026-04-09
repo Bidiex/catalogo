@@ -93,6 +93,20 @@ document.addEventListener('DOMContentLoaded', () => {
   `;
     document.head.appendChild(style);
 
+    // FAQ Accordion Logic
+    const faqItems = document.querySelectorAll('.faq-item');
+    faqItems.forEach(item => {
+        item.addEventListener('toggle', (e) => {
+            if (item.open) {
+                faqItems.forEach(otherItem => {
+                    if (otherItem !== item && otherItem.open) {
+                        otherItem.removeAttribute('open');
+                    }
+                });
+            }
+        });
+    });
+
     // Call loadGlobalMetrics
     loadGlobalMetrics();
 });

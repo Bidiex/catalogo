@@ -191,19 +191,47 @@ export const generateOrderInvoice = async (order, business) => {
     y += 5;
 
     // --- TOTALS ---
-    const subtotal = parseFloat(order.total_amount) - parseFloat(order.delivery_price);
+    let baseSubtotal = 0;
+    let productTaxesTotal = {};
 
-    rowText('Subtotal:', `$${subtotal.toLocaleString()}`, y);
+    order.items.forEach(item => {
+        baseSubtotal += parseFloat(item.total_price);
+        if (item.options?.applied_product_taxes) {
+            item.options.applied_product_taxes.forEach(t => {
+                const taxAmt = parseFloat(item.total_price) * (parseFloat(t.rate) / 100);
+                productTaxesTotal[t.name] = (productTaxesTotal[t.name] || 0) + taxAmt;
+            });
+        }
+    });
+
+    rowText('Subtotal (base):', `$${Math.round(baseSubtotal).toLocaleString('es-CO')}`, y);
     y += 5;
 
+    let aggregatedProductTaxesTotal = 0;
+    for (const [name, amount] of Object.entries(productTaxesTotal)) {
+        aggregatedProductTaxesTotal += amount;
+        rowText(`${name} (Prod.):`, `$${Math.round(amount).toLocaleString('es-CO')}`, y);
+        y += 5;
+    }
+
+    const firstItem = order.items[0];
+    if (firstItem && firstItem.options?.applied_invoice_taxes) {
+        const subWithProdTaxes = baseSubtotal + aggregatedProductTaxesTotal;
+        firstItem.options.applied_invoice_taxes.forEach(t => {
+            const taxAmt = subWithProdTaxes * (parseFloat(t.rate) / 100);
+            rowText(`${t.name} (${t.rate}%):`, `$${Math.round(taxAmt).toLocaleString('es-CO')}`, y);
+            y += 5;
+        });
+    }
+
     if (parseFloat(order.delivery_price) > 0) {
-        rowText('Domicilio:', `$${parseFloat(order.delivery_price).toLocaleString()}`, y);
+        rowText('Domicilio:', `$${Math.round(parseFloat(order.delivery_price)).toLocaleString('es-CO')}`, y);
         y += 5;
     }
 
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    rowText('TOTAL:', `$${parseFloat(order.total_amount).toLocaleString()}`, y, 10, true);
+    rowText('TOTAL:  ', `$${Math.round(parseFloat(order.total_amount)).toLocaleString('es-CO')}`, y, 10, true);
     y += 8;
 
     // --- FOOTER ---

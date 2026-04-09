@@ -23,6 +23,9 @@ import { imageService } from '../../services/images.js'
 import { supportService } from '../../services/support.js'
 import { ordersService } from '../../services/orders.js'
 import { deliveryPersonsService } from '../../services/deliveryPersons.js'
+import { businessSidesService } from '../../services/businessSidesService.js'
+import { taxesService } from '../../services/taxes.js'
+import { deliveryPhotoService } from '../../services/deliveryPhotoService.js'
 
 import { initAnalytics, updateAnalytics } from './analytics.js'
 import { initLinksEditor } from '../links/links-editor.js'
@@ -39,6 +42,13 @@ let businessHours = []
 let editingCategory = null
 let editingProduct = null
 let editingPaymentMethod = null
+
+// Taxes state
+let invoiceTaxes = []
+let editingInvoiceTax = null
+let productTaxes = []
+let editingProductTax = null
+
 // Promotions state
 let promotions = []
 let editingPromotion = null
@@ -218,6 +228,7 @@ async function init() {
 
     // Cargar negocio
     await loadBusiness()
+    await loadInvoiceTaxes()
 
     // Inicializar sistema de planes y bloqueo UI
     planService.init(currentBusiness)
@@ -1067,6 +1078,8 @@ function getOrderStatusLabel(status) {
   const labels = {
     'pending': 'Pendiente',
     'verified': 'Verificado',
+    'ready': 'Para llevar',
+    'dispatched': 'Despachado',
     'completed': 'Completado',
     'cancelled': 'Cancelado'
   }
@@ -2226,6 +2239,14 @@ function openProductModal() {
 
   populateCategorySelect()
   resetProductImageUpload()
+
+  // Ocultar section taxes para nuevos productos
+  const productTaxesList = document.getElementById('productTaxesListContainer')
+  if (productTaxesList) {
+    productTaxesList.innerHTML = '<p class="empty-message" style="margin: 0; font-size: 0.85rem;">Guarda el producto primero para agregar impuestos</p>'
+  }
+  document.getElementById('addProductTaxBtn').style.display = 'none'
+
   productModal.style.display = 'flex'
 }
 
@@ -2265,6 +2286,10 @@ function openEditProductModal(productId) {
   } else {
     resetProductImageUpload()
   }
+
+  // Cargar impuestos del producto
+  loadProductTaxes(productId)
+  document.getElementById('addProductTaxBtn').style.display = 'inline-block'
 
   productModal.style.display = 'flex'
 }
@@ -2403,11 +2428,11 @@ const optionsProductName = document.getElementById('optionsProductName')
 
 // NEW: Containers for Groups
 const quickCommentsListDashboard = document.getElementById('quickCommentsListDashboard')
-const sidesListDashboard = document.getElementById('sidesListDashboard') // We might keep using this for sides or similar
+const sidesListDashboard = document.getElementById('sidesListDashboard') // may be null now
 
 // Buttons
 const addQuickCommentBtn = document.getElementById('addQuickCommentBtn') // Will be "Agregar Grupo"
-const addSideBtn = document.getElementById('addSideBtn')
+const addSideBtn = document.getElementById('addSideBtn') // May be null
 
 // Option Modal
 const optionModal = document.getElementById('optionModal')
@@ -2440,33 +2465,35 @@ async function openProductOptionsModal(productId) {
   // Update Button Text
   // Replace the button to remove old listeners
   const oldBtn = document.getElementById('addQuickCommentBtn')
-  const newBtn = oldBtn.cloneNode(true)
-  oldBtn.parentNode.replaceChild(newBtn, oldBtn)
+  if (oldBtn) {
+    const newBtn = oldBtn.cloneNode(true)
+    oldBtn.parentNode.replaceChild(newBtn, oldBtn)
 
-  // Update Button Text and Click Handler
-  newBtn.textContent = 'Nuevo Grupo'
-  newBtn.onclick = (e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    console.log('Opening Group Modal...')
-    openGroupModal()
+    // Update Button Text and Click Handler
+    newBtn.textContent = 'Nuevo Grupo'
+    newBtn.onclick = (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      console.log('Opening Group Modal...')
+      openGroupModal()
+    }
   }
 
-  // Restore Side button
+  // Restore Side button (Removed/Hidden)
   const oldSideBtn = document.getElementById('addSideBtn')
-  const newSideBtn = oldSideBtn.cloneNode(true)
-  oldSideBtn.parentNode.replaceChild(newSideBtn, oldSideBtn)
-
-  newSideBtn.style.display = 'block'
-  newSideBtn.textContent = 'Agregar Acompañante'
-  newSideBtn.onclick = (e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    openOptionModal('side')
+  if (oldSideBtn) {
+    const newSideBtn = oldSideBtn.cloneNode(true)
+    oldSideBtn.parentNode.replaceChild(newSideBtn, oldSideBtn)
+    newSideBtn.style.display = 'none'
   }
 
   await loadProductOptions(productId)
   renderProductOptionsDashboard()
+
+  // New logic for global sides
+  if (window.loadSidesInProductModal) {
+    await window.loadSidesInProductModal(productId)
+  }
 
   // Load and render product sizes
   await loadProductSizes(productId)
@@ -2476,20 +2503,14 @@ async function openProductOptionsModal(productId) {
 }
 
 let productSides = [] // New array for sides
+let allGlobalQuickCommentGroups = [] // Added to fix ReferenceError
 
 async function loadProductOptions(productId) {
   try {
     const data = await productOptionsService.getGroupsByProduct(productId)
-    productOptionGroups = data
+    productOptionGroups = data || []
 
-    // Fetch all options to separate Sides and Ungrouped Comments
-    const allOptions = await productOptionsService.getByProduct(productId)
-
-    // Filter Sides: Assuming type is 'side'
-    productSides = allOptions.filter(opt => opt.type === 'side')
-
-    // Filter Ungrouped Comments: type is 'quick_comment' (or null) AND group_id is null
-    ungroupedOptions = allOptions.filter(opt => (opt.type === 'quick_comment' || !opt.type) && !opt.group_id)
+    allGlobalQuickCommentGroups = await productOptionsService.getGroupsByBusiness(currentBusiness.id)
 
   } catch (error) {
     console.error('Error loading product options:', error)
@@ -2500,146 +2521,50 @@ async function loadProductOptions(productId) {
 }
 
 function renderProductOptionsDashboard() {
-  quickCommentsListDashboard.innerHTML = ''
+  const qcContainer = document.getElementById('availableQuickCommentsForProduct')
+  if (qcContainer) qcContainer.innerHTML = ''
 
-  // Clean sides list if it exists (it should, based on HTML view)
-  if (sidesListDashboard) sidesListDashboard.innerHTML = ''
+  if (allGlobalQuickCommentGroups.length === 0) {
+    if (qcContainer) qcContainer.innerHTML = '<p class="empty-message">No hay grupos de comentarios creados en el catálogo.</p>'
+  } else {
+    allGlobalQuickCommentGroups.forEach(group => {
+      const isAssigned = productOptionGroups.some(g => g.id === group.id)
 
-  // ============================
-  // RENDER GROUPS
-  // ============================
-  if (productOptionGroups.length > 0) {
-    productOptionGroups.forEach(group => {
-      const groupEl = document.createElement('div')
-      groupEl.className = 'option-group-item'
-      groupEl.style.cssText = 'border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 1rem; padding: 1rem; background: #f9fafb;'
-
-      const typeLabel = group.type === 'radio' ? 'Selección Única (Radio)' : 'Selección Múltiple (Checkbox)'
-      const limitsLabel = group.type === 'checkbox' && group.max_selections > 0
-        ? `(Máx. ${group.max_selections})`
-        : ''
-
-      groupEl.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
-          <div>
-            <h4 style="margin: 0; font-weight: 600; color: #374151;">${group.name}</h4>
-            <span style="font-size: 0.75rem; color: #6b7280;">${typeLabel} ${limitsLabel}</span>
-          </div>
-          <div style="display: flex; gap: 0.5rem;">
-            <button class="btn-icon-small edit-group" data-id="${group.id}">Editar</button>
-            <button class="btn-icon-small danger delete-group" data-id="${group.id}">Eliminar</button>
-            <button class="btn-icon-small primary add-option-to-group" data-group-id="${group.id}" style="margin-left: 0.5rem;">+ Opción</button>
-          </div>
-        </div>
-        <div class="group-options-list">
-          ${group.options && group.options.length > 0 ? '' : '<p style="color: #9ca3af; font-size: 0.85rem; font-style: italic;">Sin opciones</p>'}
+      const div = document.createElement('label')
+      div.style.cssText = 'display: flex; align-items: center; padding: 0.5rem; border: 1px solid #eee; border-radius: 6px; margin-bottom: 0.5rem; cursor: pointer; background: white;'
+      div.innerHTML = `
+        <input type="checkbox" class="qc-assign-toggle" data-group-id="${group.id}" ${isAssigned ? 'checked' : ''} style="margin-right: 0.75rem; transform: scale(1.1);">
+        <div style="flex: 1;">
+          <div style="font-weight: 500;">${group.name}</div>
+          <div style="font-size: 0.8rem; color: #64748b;">(${group.options ? group.options.length : 0} opciones)</div>
         </div>
       `
 
-      // Render Options inside Group
-      const optionsContainer = groupEl.querySelector('.group-options-list')
-      if (group.options && group.options.length > 0) {
-        group.options.forEach(opt => {
-          const optEl = document.createElement('div')
-          optEl.className = 'option-item'
-          optEl.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: white; border: 1px solid #eee; border-radius: 6px; margin-bottom: 0.25rem;'
-          optEl.innerHTML = `
-            <div class="option-item-info">
-              <span class="option-item-name" style="font-weight: 500;">${opt.name}</span>
-              ${parseFloat(opt.price) > 0 ? `<span class="option-item-price" style="margin-left: 0.5rem; color: #059669; font-size: 0.85rem;">+$${parseFloat(opt.price).toLocaleString()}</span>` : ''}
-            </div>
-            <div class="option-item-actions">
-              <button class="btn-icon-small edit-option" data-id="${opt.id}" data-group-id="${group.id}">Editar</button>
-              <button class="btn-icon-small danger delete-option" data-id="${opt.id}">Eliminar</button>
-            </div>
-          `
-          optionsContainer.appendChild(optEl)
-        })
-      }
-
-      quickCommentsListDashboard.appendChild(groupEl)
-    })
-  }
-
-  // ============================
-  // RENDER UNGROUPED (Legacy)
-  // ============================
-  if (ungroupedOptions.length > 0) {
-    const ungroupedEl = document.createElement('div')
-    ungroupedEl.className = 'option-group-item'
-    ungroupedEl.style.cssText = 'border: 1px dashed #9ca3af; border-radius: 8px; margin-bottom: 1rem; padding: 1rem; background: #fff;'
-
-    ungroupedEl.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
-        <div>
-          <h4 style="margin: 0; font-weight: 600; color: #6b7280;">Opciones Generales (Sin Grupo)</h4>
-        </div>
-      </div>
-      <div class="group-options-list"></div>
-    `
-    const optionsContainer = ungroupedEl.querySelector('.group-options-list')
-    ungroupedOptions.forEach(opt => {
-      const optEl = document.createElement('div')
-      optEl.className = 'option-item'
-      optEl.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: #f9fafb; border: 1px solid #eee; border-radius: 6px; margin-bottom: 0.25rem;'
-      optEl.innerHTML = `
-        <div class="option-item-info">
-          <span class="option-item-name" style="font-weight: 500;">${opt.name}</span>
-          ${parseFloat(opt.price) > 0 ? `<span class="option-item-price" style="margin-left: 0.5rem; color: #059669; font-size: 0.85rem;">+$${parseFloat(opt.price).toLocaleString()}</span>` : ''}
-        </div>
-        <div class="option-item-actions">
-          <button class="btn-icon-small edit-option" data-id="${opt.id}" data-group-id="">Editar</button>
-          <button class="btn-icon-small danger delete-option" data-id="${opt.id}">Eliminar</button>
-        </div>
-      `
-      optionsContainer.appendChild(optEl)
-    })
-
-    quickCommentsListDashboard.appendChild(ungroupedEl)
-  }
-
-  if (productOptionGroups.length === 0 && ungroupedOptions.length === 0) {
-    quickCommentsListDashboard.innerHTML = '<p class="empty-message" style="padding: 2rem; text-align: center; color: #9ca3af;">No hay grupos de opciones configurados. <br>Crea un grupo para empezar.</p>'
-  }
-
-  // ============================
-  // RENDER SIDES (Acompañantes)
-  // ============================
-  if (sidesListDashboard) {
-    if (productSides.length > 0) {
-      // Check if we need a container or just list items
-      // Using simpler styling for sides
-      const sidesContainer = document.createElement('div')
-      sidesContainer.className = 'sides-container'
-      // Header for Sides REMOVED to avoid duplication
-      // sidesContainer.innerHTML = '<h4>Acompañantes</h4>' 
-
-      productSides.forEach(opt => {
-        const optEl = document.createElement('div')
-        optEl.className = 'option-item side-item'
-        // styles moved to CSS .side-item
-        optEl.innerHTML = `
-            <div class="option-item-info">
-              <span class="option-item-name" style="font-weight: 500;">${opt.name}</span>
-              ${parseFloat(opt.price) > 0 ? `<span class="option-item-price" style="margin-left: 0.5rem; color: #d97706; font-size: 0.85rem;">+$${parseFloat(opt.price).toLocaleString()}</span>` : ''}
-            </div>
-            <div class="option-item-actions">
-              <button class="btn-icon-small edit-option-side" data-id="${opt.id}">Editar</button>
-              <button class="btn-icon-small danger delete-option-side" data-id="${opt.id}">Eliminar</button>
-            </div>
-          `
-        sidesContainer.appendChild(optEl)
+      const checkbox = div.querySelector('.qc-assign-toggle')
+      checkbox.addEventListener('change', async (e) => {
+        const isChecked = e.target.checked
+        checkbox.disabled = true
+        try {
+          if (isChecked) {
+            await productOptionsService.assignGroupToProduct(currentProductForOptions.id, group.id)
+            notify.success('Grupo asignado')
+          } else {
+            await productOptionsService.unassignGroupFromProduct(currentProductForOptions.id, group.id)
+            notify.success('Grupo desasignado')
+          }
+          productOptionGroups = await productOptionsService.getGroupsByProduct(currentProductForOptions.id)
+        } catch (error) {
+          console.error(error)
+          notify.error('Error al actualizar asignación')
+          e.target.checked = !isChecked
+        } finally {
+          checkbox.disabled = false
+        }
       })
 
-      sidesListDashboard.appendChild(sidesContainer)
-      sidesListDashboard.style.display = 'block'
-    } else {
-      sidesListDashboard.innerHTML = '<p style="color: #9ca3af; font-size: 0.85rem; padding: 1rem; text-align: center;">Sin acompañantes</p>'
-      sidesListDashboard.style.display = 'block'
-    }
+      if (qcContainer) qcContainer.appendChild(div)
+    })
   }
-
-  attachOptionEventListeners()
 }
 
 function attachOptionEventListeners() {
@@ -2700,14 +2625,52 @@ function attachOptionEventListeners() {
 closeProductOptionsModal.addEventListener('click', () => {
   productOptionsModal.style.display = 'none'
   currentProductForOptions = null
-  addSideBtn.style.display = 'block' // Restore
 })
 
 closeProductOptionsBtn.addEventListener('click', () => {
   productOptionsModal.style.display = 'none'
   currentProductForOptions = null
-  addSideBtn.style.display = 'block' // Restore
 })
+
+// Search filter logic for Comentarios Rápidos
+const searchQuickCommentsInput = document.getElementById('searchQuickCommentsInput')
+if (searchQuickCommentsInput) {
+  searchQuickCommentsInput.addEventListener('input', (e) => {
+    const term = e.target.value.toLowerCase()
+    const container = document.getElementById('availableQuickCommentsForProduct')
+    if (container) {
+      const labels = container.querySelectorAll('label')
+      labels.forEach(label => {
+        const textArea = label.querySelector('div')?.textContent || label.textContent || ''
+        if (textArea.toLowerCase().includes(term)) {
+          label.style.display = 'flex'
+        } else {
+          label.style.display = 'none'
+        }
+      })
+    }
+  })
+}
+
+// Search filter logic for Acompañantes
+const searchSidesInput = document.getElementById('searchSidesInput')
+if (searchSidesInput) {
+  searchSidesInput.addEventListener('input', (e) => {
+    const term = e.target.value.toLowerCase()
+    const container = document.getElementById('availableSidesForProduct')
+    if (container) {
+      const labels = container.querySelectorAll('label')
+      labels.forEach(label => {
+        const textArea = label.querySelector('div')?.textContent || label.textContent || ''
+        if (textArea.toLowerCase().includes(term)) {
+          label.style.display = 'flex'
+        } else {
+          label.style.display = 'none'
+        }
+      })
+    }
+  })
+}
 
 // ============================================
 // GROUP MODAL MANAGEMENT
@@ -2925,8 +2888,8 @@ function openOptionModal(type, optionId = null, groupId = null) {
     optionPriceInput.value = 0
   }
 
-  // Siempre mostrar precio (ahora todas pueden tener precio)
-  optionPriceGroup.style.display = 'flex'
+  // Siempre mostrar precio (ahora todas pueden tener precio, EXCEPTO quick_comment)
+  optionPriceGroup.style.display = type === 'quick_comment' ? 'none' : 'flex'
 
   optionModal.style.display = 'flex'
 }
@@ -2983,14 +2946,12 @@ optionForm.addEventListener('submit', async (e) => {
         await loadPromotionOptions(currentPromotionForOptions.id)
         renderPromotionOptionsDashboard()
 
-      } else if (currentProductForOptions) {
-        // PRODUCT OPTIONS (Groups & Sides)
-
-        // Determine type: use editingOptionType if set (e.g. 'side'), otherwise default to 'quick_comment'
+      } else if (currentProductForOptions || editingOptionType === 'quick_comment') {
+        // PRODUCT OPTIONS (Groups & Sides) OR GLOBAL QUICK COMMENTS
         const typeToSave = editingOptionType || 'quick_comment'
 
         const optionData = {
-          product_id: currentProductForOptions.id,
+          product_id: (currentProductForOptions && typeToSave !== 'quick_comment') ? currentProductForOptions.id : null,
           type: typeToSave,
           name,
           price,
@@ -3005,17 +2966,22 @@ optionForm.addEventListener('submit', async (e) => {
           await productOptionsService.update(editingOption.id, optionData)
           notify.success('Opción actualizada')
         } else {
-          // Calculate new display order if possible, otherwise DB handles it or it's 0
-          // Ideally we fetch max order, but for now 0 or append
-          // If we have local list, we can use it.
-          // For now, let's just save.
           await productOptionsService.create(optionData)
           notify.success('Opción creada')
         }
 
         closeOptionModalFn()
-        await loadProductOptions(currentProductForOptions.id)
-        renderProductOptionsDashboard()
+
+        if (typeToSave === 'quick_comment') {
+          if (window.loadGlobalQuickComments) await window.loadGlobalQuickComments();
+          if (currentProductForOptions && document.getElementById('productOptionsModal').style.display === 'flex') {
+            await loadProductOptions(currentProductForOptions.id)
+            renderProductOptionsDashboard()
+          }
+        } else if (currentProductForOptions) {
+          await loadProductOptions(currentProductForOptions.id)
+          renderProductOptionsDashboard()
+        }
       }
 
     } catch (error) {
@@ -3571,28 +3537,32 @@ function renderPromotionOptionsDashboard() {
 // const addSideBtn = document.getElementById('addSideBtn')
 
 // Store original listeners
-const originalAddCommentListener = addQuickCommentBtn.onclick
-const originalAddSideListener = addSideBtn.onclick
+const originalAddCommentListener = addQuickCommentBtn ? addQuickCommentBtn.onclick : null
+const originalAddSideListener = addSideBtn ? addSideBtn.onclick : null
 
 // Replace with dynamic listeners
-addQuickCommentBtn.onclick = null
-addSideBtn.onclick = null
+if (addQuickCommentBtn) addQuickCommentBtn.onclick = null
+if (addSideBtn) addSideBtn.onclick = null
 
-addQuickCommentBtn.addEventListener('click', () => {
-  if (currentPromotionForOptions) {
-    openPromotionOptionEditModal(null, 'quick_comment')
-  } else if (currentProductForOptions) {
-    openOptionModal('quick_comment')
-  }
-})
+if (addQuickCommentBtn) {
+  addQuickCommentBtn.addEventListener('click', () => {
+    if (currentPromotionForOptions) {
+      openPromotionOptionEditModal(null, 'quick_comment')
+    } else if (currentProductForOptions) {
+      openOptionModal('quick_comment')
+    }
+  })
+}
 
-addSideBtn.addEventListener('click', () => {
-  if (currentPromotionForOptions) {
-    openPromotionOptionEditModal(null, 'side')
-  } else if (currentProductForOptions) {
-    openOptionModal('side')
-  }
-})
+if (addSideBtn) {
+  addSideBtn.addEventListener('click', () => {
+    if (currentPromotionForOptions) {
+      openPromotionOptionEditModal(null, 'side')
+    } else if (currentProductForOptions) {
+      openOptionModal('side')
+    }
+  })
+}
 
 let editingPromotionOption = null
 let editingPromotionOptionType = null
@@ -3805,6 +3775,14 @@ productImageInput.addEventListener('change', async (e) => {
   const file = e.target.files[0]
   if (!file) return
 
+  // Validar peso de imagen (Máximo 2MB)
+  const maxSizeInBytes = 2 * 1024 * 1024; // 2MB
+  if (file.size > maxSizeInBytes) {
+    e.target.value = ''; // Limpiar el input
+    notify.error('La imagen de producto supera el límite de 2MB.');
+    return;
+  }
+
   let loadingToast = null
 
   try {
@@ -3874,7 +3852,7 @@ removeImageBtn.addEventListener('click', async () => {
     productImagePreview.innerHTML = `
       <i class="ri-image-line"></i>
       <p>Click para seleccionar imagen</p>
-      <small>JPG, PNG o WEBP (máx. 5MB)</small>
+      <small>JPG, PNG o WEBP (máx. 2MB)</small>
     `
     productImagePreview.classList.remove('has-image')
 
@@ -3896,7 +3874,7 @@ function resetProductImageUpload() {
   productImagePreview.innerHTML = `
     <i class="ri-image-line"></i>
     <p>Click para seleccionar imagen</p>
-    <small>JPG, PNG o WEBP (máx. 5MB)</small>
+    <small>JPG, PNG o WEBP (máx. 2MB)</small>
   `
   productImagePreview.classList.remove('has-image')
   currentProductImage = null
@@ -4376,7 +4354,7 @@ function initWhatsAppEditor() {
   const emojiPicker = document.getElementById('emojiPicker')
   const emojiGrid = document.getElementById('emojiGrid')
   const emojiTabs = document.querySelectorAll('.emoji-tab')
-  const textarea = whatsappTemplateInput
+  const textarea = document.getElementById('whatsappTemplateInput')
 
   // Formatting Buttons
   document.querySelectorAll('.toolbar-btn[data-format]').forEach(btn => {
@@ -5271,6 +5249,14 @@ function renderOrders() {
               </button>` : ''
           }
             ${order.status === 'verified' ?
+            `<button class="btn-icon" style="color: #b45309;" onclick="window.markAsReady('${order.id}')" title="Para llevar">
+                <i class="ri-shopping-bag-3-line"></i>
+              </button>
+              <button class="btn-icon danger" onclick="window.cancelOrder('${order.id}')" title="Cancelar Pedido">
+                <i class="ri-close-line"></i>
+              </button>` : ''
+          }
+            ${order.status === 'ready' ?
             `<button class="btn-icon" style="color: #7e22ce;" onclick="window.openAssignOrderModal('${order.id}', '${order.id.slice(0, 8)}')" title="Despachar Pedido">
                 <i class="ri-motorbike-fill"></i>
               </button>
@@ -5326,6 +5312,12 @@ function renderOrders() {
              </button>` : ''
           }
             ${order.status === 'verified' ?
+            `<button class="btn-primary-small" style="flex: 1; background: #b45309; justify-content: center; align-items: center;" onclick="window.markAsReady('${order.id}')">Para llevar</button>
+             <button class="btn-secondary-small danger" style="flex: 0 0 36px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="window.cancelOrder('${order.id}')" title="Cancelar">
+                <i class="ri-close-line"></i>
+             </button>` : ''
+          }
+            ${order.status === 'ready' ?
             `<button class="btn-primary-small" style="flex: 1; background: #7e22ce; justify-content: center; align-items: center;" onclick="window.openAssignOrderModal('${order.id}', '${order.id.slice(0, 8)}')">Despachar</button>
              <button class="btn-secondary-small danger" style="flex: 0 0 36px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="window.cancelOrder('${order.id}')" title="Cancelar">
                 <i class="ri-close-line"></i>
@@ -5349,6 +5341,7 @@ function getOrderStatusBadge(status) {
   const styles = {
     pending: { bg: '#fff7ed', color: '#c2410c', text: 'Pendiente', icon: 'ri-time-line' },
     verified: { bg: '#f0fdf4', color: '#15803d', text: 'Verificado', icon: 'ri-check-double-line' },
+    ready: { bg: '#fef3c7', color: '#b45309', text: 'Para llevar', icon: 'ri-shopping-bag-3-line' },
     dispatched: { bg: '#f3e8ff', color: '#7e22ce', text: 'Despachado', icon: 'ri-motorbike-fill' },
     completed: { bg: '#eff6ff', color: '#1d4ed8', text: 'Completado', icon: 'ri-flag-line' },
     cancelled: { bg: '#fef2f2', color: '#b91c1c', text: 'Cancelado', icon: 'ri-close-circle-line' }
@@ -5437,29 +5430,94 @@ window.viewOrderDetails = async (orderId) => {
          </div>
          ${orderData.order_notes ? `
          <div style="grid-column: 1 / -1; background: #fffbeb; padding: 0.75rem; border-radius: 6px;">
-            <label style="font-size: 0.8rem; color: #92400e; display: block; font-weight: 600;">Observaciones:</label>
+            <label style="font-size: 0.8rem; color: #92400e; display: block; font-weight: 600;">Observaciones Cliente:</label>
             <div style="color: #92400e;">${orderData.order_notes}</div>
          </div>` : ''
       }
+          ${orderData.delivery_notes ? `
+         <div id="deliveryNoteContainer" style="grid-column: 1 / -1; background: #fdf2f8; padding: 0.75rem; border-radius: 6px; border-left: 4px solid #db2777;">
+            <label style="font-size: 0.8rem; color: #db2777; display: block; font-weight: 600;"><i class="ri-motorbike-line"></i> Nota del Domiciliario:</label>
+            <div id="deliveryNoteText" style="color: #9d174d;">${orderData.delivery_notes}</div>
+         </div>` : ''
+      }
+      </div>
+
+      <div id="deliveryPhotoContainer-${orderId}" style="display: none; grid-column: 1 / -1; margin-bottom: 1.5rem; background: #f0fdf4; padding: 0.75rem; border-radius: 6px; border-left: 4px solid #16a34a;">
+         <label style="font-size: 0.8rem; color: #16a34a; display: block; font-weight: 600; margin-bottom: 0.5rem;">
+            <i class="ri-camera-lens-fill"></i> Foto de Entrega Disponible:
+         </label>
+         <div style="display: flex; gap: 1rem; align-items: center;">
+             <div style="flex: 1;">
+                 <p style="font-size: 0.85rem; color: #15803d; margin: 0 0 0.5rem 0;">El domiciliario adjuntó una foto como evidencia.</p>
+                 <a id="deliveryPhotoLink-${orderId}" href="#" target="_blank" class="btn-secondary-small" style="font-size: 0.8rem; display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; border-color: #bbf7d0; color: #16a34a; background: white;">
+                    <i class="ri-external-link-line"></i> Ver imagen a tamaño completo
+                 </a>
+             </div>
+         </div>
       </div>
 
       <h4 style="border-bottom: 2px solid #f3f4f6; padding-bottom: 0.5rem; margin-bottom: 1rem;">Productos</h4>
       <div style="margin-bottom: 1.5rem;">
         ${itemsHtml}
       </div>
-      
+      `
+
+    // Calculate accurate breakdown for modal
+    let baseSubtotal = 0
+    let productTaxesTotal = {}
+
+    orderData.items.forEach(item => {
+      baseSubtotal += parseFloat(item.total_price)
+      if (item.options?.applied_product_taxes) {
+        item.options.applied_product_taxes.forEach(t => {
+          const taxAmt = parseFloat(item.total_price) * (parseFloat(t.rate) / 100)
+          productTaxesTotal[t.name] = (productTaxesTotal[t.name] || 0) + taxAmt
+        })
+      }
+    })
+
+    let aggregatedProductTaxesTotal = 0
+    let productTaxesHtml = ''
+    for (const [name, amount] of Object.entries(productTaxesTotal)) {
+      aggregatedProductTaxesTotal += amount
+      productTaxesHtml += `
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem; color: #6b7280;">
+            <span>${name} (Prod.)</span>
+            <span>$${Math.round(amount).toLocaleString('es-CO')}</span>
+          </div>
+        `
+    }
+
+    let invoiceTaxesHtml = ''
+    const firstItem = orderData.items[0]
+    if (firstItem && firstItem.options?.applied_invoice_taxes) {
+      const subWithProdTaxes = baseSubtotal + aggregatedProductTaxesTotal
+      firstItem.options.applied_invoice_taxes.forEach(t => {
+        const taxAmt = subWithProdTaxes * (parseFloat(t.rate) / 100)
+        invoiceTaxesHtml += `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem; color: #6b7280;">
+              <span>${t.name} (${t.rate}%)</span>
+              <span>$${Math.round(taxAmt).toLocaleString('es-CO')}</span>
+            </div>
+          `
+      })
+    }
+
+    content.innerHTML += `
       <div style="background: #f8fafc; padding: 1rem; border-radius: 8px;">
          <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-            <span>Subtotal</span>
-            <span>$${(parseFloat(orderData.total_amount) - parseFloat(orderData.delivery_price)).toLocaleString()}</span>
+            <span>Subtotal (base)</span>
+            <span>$${Math.round(baseSubtotal).toLocaleString('es-CO')}</span>
          </div>
+         ${productTaxesHtml}
+         ${invoiceTaxesHtml}
          <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
             <span>Domicilio</span>
-            <span>$${parseFloat(orderData.delivery_price).toLocaleString()}</span>
+            <span>$${parseFloat(orderData.delivery_price).toLocaleString('es-CO')}</span>
          </div>
          <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 1.1rem; border-top: 1px dashed #cbd5e1; padding-top: 0.5rem;">
             <span>Total</span>
-            <span style="color: var(--color-primary);">$${parseFloat(orderData.total_amount).toLocaleString()}</span>
+            <span style="color: var(--color-primary);">$${Math.round(orderData.total_amount).toLocaleString('es-CO')}</span>
          </div>
          <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #6b7280; text-align: right;">
             Método de Pago: <strong>${orderData.payment_method}</strong>
@@ -5479,14 +5537,39 @@ window.viewOrderDetails = async (orderId) => {
       content.innerHTML += `
         <div style="display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
             <button class="btn-secondary danger" style="flex: 1;" onclick="window.cancelOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">Cancelar Pedido</button>
+            <button class="btn-primary" style="flex: 1; background: #b45309;" onclick="window.markAsReady('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">
+              <i class="ri-shopping-bag-3-line"></i> Para llevar
+            </button>
+         </div>
+        `
+    } else if (orderData.status === 'ready') {
+      content.innerHTML += `
+        <div style="display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
+            <button class="btn-secondary danger" style="flex: 1;" onclick="window.cancelOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">Cancelar Pedido</button>
             <button class="btn-primary" style="flex: 1; background: #7e22ce;" onclick="window.openAssignOrderModal('${orderId}', '${orderId.slice(0, 8)}'); document.getElementById('orderDetailsModal').style.display='none'">
               <i class="ri-motorbike-fill"></i> Despachar
             </button>
          </div>
         `
     } else if (orderData.status === 'dispatched') {
+      let deliveryPersonSection = ''
+      if (orderData.delivery_person_id) {
+        const dp = deliveryPersons.find(p => p.id === orderData.delivery_person_id)
+        const dpName = dp ? dp.name : 'Domiciliario asignado'
+        deliveryPersonSection = `
+          <div style="margin-top: 1.5rem; padding: 0.75rem 1rem; background: #f5f3ff; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <i class="ri-motorbike-fill" style="color: #7e22ce;"></i>
+              <span style="font-weight: 600; color: #581c87;">${dpName}</span>
+            </div>
+            <button class="btn-secondary-small" onclick="window.openReassignModal('${orderId}', '${orderData.delivery_person_id}'); document.getElementById('orderDetailsModal').style.display='none'">
+              <i class="ri-user-shared-line"></i> Reasignar
+            </button>
+          </div>`
+      }
       content.innerHTML += `
-        <div style="display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
+        ${deliveryPersonSection}
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
             <button class="btn-secondary danger" style="flex: 1;" onclick="window.cancelOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">Cancelar Pedido</button>
             <button class="btn-primary" style="flex: 1; background: #2563eb;" onclick="window.completeOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">
               <i class="ri-flag-line"></i> Completar
@@ -5519,6 +5602,21 @@ window.viewOrderDetails = async (orderId) => {
       content.appendChild(notesSection)
     }
 
+    // Fetch Signed Photo URL if delivery_photo_url exists
+    if (orderData.delivery_photo_url) {
+      deliveryPhotoService.getSignedPhotoUrl(orderData.delivery_photo_url)
+        .then(res => {
+          const photoContainer = document.getElementById(`deliveryPhotoContainer-${orderId}`);
+          const photoLink = document.getElementById(`deliveryPhotoLink-${orderId}`);
+
+          if (res.signedUrl && photoContainer && photoLink) {
+            photoLink.href = res.signedUrl;
+            photoContainer.style.display = 'block';
+          }
+        })
+        .catch(err => console.error('Error fetching signed photo url:', err));
+    }
+
     // Add Delete/Cancel Button at the bottom for all orders
     const deleteSection = document.createElement('div')
     deleteSection.style.marginTop = '2rem'
@@ -5539,7 +5637,8 @@ window.viewOrderDetails = async (orderId) => {
   } catch (error) {
     console.error('Error details:', error)
     notify.error('Error al cargar detalles')
-    if (modal) modal.style.display = 'none'
+    const errorModal = document.getElementById('orderDetailsModal')
+    if (errorModal) errorModal.style.display = 'none'
   }
 }
 
@@ -5685,6 +5784,52 @@ window.completeOrder = async (orderId) => {
     console.error('Error completing order:', error)
     notify.updateLoading(loadingToast, 'Error al completar el pedido', 'error')
   }
+}
+
+window.markAsReady = async (orderId) => {
+  const confirmed = await confirm.show({
+    title: '¿Marcar como "Para llevar"?',
+    message: 'El pedido quedará listo para que un domiciliario lo tome.',
+    type: 'info',
+    confirmText: 'Para llevar'
+  })
+  if (!confirmed) return
+
+  const loadingToast = notify.loading('Actualizando pedido...')
+  try {
+    const { error } = await ordersService.updateStatus(orderId, 'ready')
+    if (error) throw error
+
+    notify.updateLoading(loadingToast, 'Pedido marcado como "Para llevar"', 'success')
+    loadOrders()
+  } catch (error) {
+    console.error('Error marking order as ready:', error)
+    notify.updateLoading(loadingToast, 'Error al actualizar el pedido', 'error')
+  }
+}
+
+window.openReassignModal = async (orderId, currentDeliveryPersonId) => {
+  orderToAssignId = orderId
+  selectedDeliveryPersonId = null
+
+  const modal = document.getElementById('assignOrderModal')
+  const title = modal.querySelector('h3') || modal.querySelector('.modal-title')
+  if (title) title.textContent = 'Reasignar Domiciliario'
+  document.getElementById('assignOrderNumber').textContent = `#${orderId.slice(0, 8)}`
+
+  if (!deliveryPersons || deliveryPersons.length === 0) {
+    try {
+      const data = await deliveryPersonsService.getAll(currentBusiness.id)
+      deliveryPersons = data || []
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const filteredList = deliveryPersons.filter(p => p.id !== currentDeliveryPersonId)
+  renderAssignmentList(filteredList)
+
+  modal.style.display = 'flex'
 }
 
 window.cancelOrder = async (orderId) => {
@@ -6366,6 +6511,7 @@ function getTranslatedStatus(status) {
   const map = {
     'pending': 'Pendiente',
     'verified': 'Verificado',
+    'ready': 'Para llevar',
     'dispatched': 'Despachado',
     'completed': 'Completado',
     'cancelled': 'Cancelado'
@@ -6407,7 +6553,56 @@ function initProductsTabs() {
         loadProducts()
       } else if (tabId === 'suggestions') {
         loadSuggestions()
+      } else if (tabId === 'quick-comments') {
+        if (window.loadGlobalQuickComments) window.loadGlobalQuickComments()
       }
+    })
+  })
+
+  // ============================================
+  // TABS HEADER SCROLL LOGIC
+  // ============================================
+  const header = document.getElementById('productsTabsHeader')
+  const scrollEl = document.querySelector('.products-tabs-scroll')
+  const leftArrow = document.querySelector('.products-tabs-arrow--left')
+  const rightArrow = document.querySelector('.products-tabs-arrow--right')
+
+  function updateArrows() {
+    if (!scrollEl || !leftArrow || !rightArrow) return
+
+    // Allow 4px leeway to avoid floating point issues
+    const atStart = scrollEl.scrollLeft <= 4
+    const atEnd = scrollEl.scrollLeft >= scrollEl.scrollWidth - scrollEl.clientWidth - 4
+    const hasOverflow = scrollEl.scrollWidth > scrollEl.clientWidth + 4
+
+    leftArrow.classList.toggle('is-visible', hasOverflow && !atStart)
+    rightArrow.classList.toggle('is-visible', hasOverflow && !atEnd)
+  }
+
+  if (scrollEl && leftArrow && rightArrow) {
+    scrollEl.addEventListener('scroll', updateArrows, { passive: true })
+
+    const ro = new ResizeObserver(() => updateArrows())
+    ro.observe(scrollEl)
+
+    // Check initially and periodically when fonts/images load
+    updateArrows()
+    setTimeout(updateArrows, 150)
+
+    leftArrow.addEventListener('click', () => {
+      // scroll by ~55% of visible width
+      scrollEl.scrollBy({ left: -(scrollEl.clientWidth * 0.55), behavior: 'smooth' })
+    })
+
+    rightArrow.addEventListener('click', () => {
+      scrollEl.scrollBy({ left: scrollEl.clientWidth * 0.55, behavior: 'smooth' })
+    })
+  }
+
+  // Handle active tab scroll into view
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
     })
   })
 
@@ -6802,3 +6997,720 @@ async function confirmDeleteDailyMenu(id) {
     }
   }
 }
+
+// ============================================
+// GLOBAL SIDES MANAGEMENT (ACOMPAÑANTES)
+// ============================================
+
+window.loadGlobalSides = async () => {
+  const container = document.getElementById('globalSidesListContainer');
+  if (!container) return;
+  if (!currentBusiness) return;
+
+  container.innerHTML = '<p class="empty-message">Cargando...</p>';
+  try {
+    const sides = await businessSidesService.getByBusiness(currentBusiness.id);
+    if (sides.length === 0) {
+      container.innerHTML = '<p class="empty-message">No hay acompañantes creados aún.</p>';
+      return;
+    }
+
+    container.innerHTML = sides.map(side => `
+      <div class="option-item side-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: white; border: 1px solid #eee; border-radius: 6px; margin-bottom: 0.25rem;">
+        <div class="option-item-info">
+          <span class="option-item-name" style="font-weight: 500;">${side.name}</span>
+          ${side.price > 0 ? `<span class="option-item-price" style="margin-left: 0.5rem; color: #d97706; font-size: 0.85rem;">+$${parseFloat(side.price).toLocaleString()}</span>` : '<span class="option-item-price" style="margin-left: 0.5rem; color: #10b981; font-size: 0.85rem;">Sin cargo</span>'}
+        </div>
+        <div class="option-item-actions">
+          <button type="button" onclick="window.openEditGlobalSideModal('${side.id}')" class="btn-icon-small edit-option-side">Editar</button>
+          <button type="button" onclick="window.deleteGlobalSide('${side.id}')" class="btn-icon-small danger delete-option-side" style="margin-left: 0.5rem;">Eliminar</button>
+        </div>
+      </div>
+    `).join('');
+  } catch (err) {
+    container.innerHTML = `<p class="error empty-message" style="color: red;">Error al cargar acompañantes: ${err.message}</p>`;
+  }
+}
+
+window.openCreateGlobalSideModal = () => {
+  document.getElementById('globalSideModalTitle').textContent = 'Nuevo Acompañante';
+  document.getElementById('globalSideName').value = '';
+  document.getElementById('globalSidePrice').value = '0';
+  document.getElementById('globalSideIdInput').value = '';
+  document.getElementById('globalSideModal').style.display = 'flex';
+}
+
+window.openEditGlobalSideModal = async (sideId) => {
+  try {
+    const sides = await businessSidesService.getByBusiness(currentBusiness.id);
+    const side = sides.find(s => s.id === sideId);
+    if (!side) return;
+    document.getElementById('globalSideModalTitle').textContent = 'Editar Acompañante';
+    document.getElementById('globalSideName').value = side.name;
+    document.getElementById('globalSidePrice').value = side.price;
+    document.getElementById('globalSideIdInput').value = side.id;
+    document.getElementById('globalSideModal').style.display = 'flex';
+  } catch (err) {
+    notify.error('Error al abrir el acompañante');
+  }
+}
+
+window.closeGlobalSideModal = () => {
+  document.getElementById('globalSideModal').style.display = 'none';
+}
+
+window.deleteGlobalSide = async (sideId) => {
+  const confirmed = await confirm.show({
+    title: '¿Eliminar este acompañante?',
+    message: 'Se desvinculará de todos los productos y ya no se podrá seleccionar.',
+    confirmText: 'Eliminar',
+    cancelText: 'Cancelar',
+    type: 'danger'
+  });
+  if (!confirmed) return;
+  try {
+    await businessSidesService.delete(sideId);
+    await window.loadGlobalSides();
+    notify.success('Acompañante eliminado');
+  } catch (err) {
+    notify.error(`Error: ${err.message}`);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const addBtn = document.getElementById('addGlobalSideBtn');
+  if (addBtn) addBtn.addEventListener('click', window.openCreateGlobalSideModal);
+
+  const closeBtn = document.getElementById('closeGlobalSideModal');
+  if (closeBtn) closeBtn.addEventListener('click', window.closeGlobalSideModal);
+
+  const cancelBtn = document.getElementById('cancelGlobalSideBtn');
+  if (cancelBtn) cancelBtn.addEventListener('click', window.closeGlobalSideModal);
+
+  const form = document.getElementById('globalSideForm');
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('globalSideIdInput').value;
+      const name = document.getElementById('globalSideName').value;
+      const price = parseFloat(document.getElementById('globalSidePrice').value) || 0;
+
+      const submitBtn = document.getElementById('saveGlobalSideBtn');
+      await buttonLoader.execute(submitBtn, async () => {
+        try {
+          if (id) {
+            await businessSidesService.update(id, { name, price });
+            notify.success('Acompañante actualizado');
+          } else {
+            await businessSidesService.create(currentBusiness.id, { name, price });
+            notify.success('Acompañante creado');
+          }
+          window.closeGlobalSideModal();
+          await window.loadGlobalSides();
+        } catch (err) {
+          notify.error(`Error: ${err.message}`);
+        }
+      });
+    });
+  }
+
+  const tabBtns = document.querySelectorAll('.products-tab-btn');
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      if (e.target.closest('button').dataset.tab === 'sides') {
+        window.loadGlobalSides();
+      }
+    });
+  });
+});
+
+// ============================================
+// LINKING SIDES TO PRODUCTS LOGIC
+// ============================================
+
+window.loadSidesInProductModal = async (productId) => {
+  const container = document.getElementById('availableSidesForProduct');
+  if (!container) return;
+
+  container.innerHTML = '<p class="empty-message">Cargando...</p>';
+  try {
+    const allSides = await businessSidesService.getByBusiness(currentBusiness.id);
+    const linkedSides = await businessSidesService.getByProduct(productId);
+    const linkedSideIds = linkedSides.map(ls => ls.side_id);
+
+    if (allSides.length === 0) {
+      container.innerHTML = '<p class="empty-message">No hay acompañantes en el catálogo. Ve a la pestaña Acompañantes para crearlos.</p>';
+      return;
+    }
+
+    container.innerHTML = allSides.map(side => {
+      const isLinked = linkedSideIds.includes(side.id);
+      const linkedRecord = linkedSides.find(ls => ls.side_id === side.id);
+      const productOptionId = linkedRecord ? linkedRecord.id : '';
+
+      return `
+        <label style="display: flex; align-items: center; padding: 0.5rem; border: 1px solid #eee; border-radius: 6px; margin-bottom: 0.5rem; cursor: pointer; background: white;">
+          <input type="checkbox" 
+            onchange="window.toggleSideLink(this, '${productId}', '${side.id}', '${side.name.replace(/'/g, "\\'")}', ${side.price})" 
+            ${isLinked ? 'checked' : ''} 
+            data-product-option-id="${productOptionId}"
+            style="margin-right: 0.75rem; transform: scale(1.1);"
+          />
+          <div style="flex: 1;">
+            <div style="font-weight: 500;">${side.name}</div>
+            <div style="font-size: 0.8rem; color: #64748b;">${side.price > 0 ? `+$${side.price}` : 'Sin costo'}</div>
+          </div>
+        </label>
+      `;
+    }).join('');
+  } catch (err) {
+    container.innerHTML = `<p class="error empty-message">Error: ${err.message}</p>`;
+  }
+}
+
+window.toggleSideLink = async (checkbox, productId, sideId, sideName, sidePrice) => {
+  const isChecked = checkbox.checked;
+  checkbox.disabled = true;
+  try {
+    if (isChecked) {
+      const newOption = await businessSidesService.linkToProduct(productId, { id: sideId, name: sideName, price: sidePrice });
+      checkbox.dataset.productOptionId = newOption.id;
+      notify.success('Acompañante agregado al producto');
+    } else {
+      const productOptionId = checkbox.dataset.productOptionId;
+      if (productOptionId) {
+        await businessSidesService.unlinkFromProduct(productOptionId);
+        checkbox.dataset.productOptionId = '';
+        notify.success('Acompañante removido del producto');
+      }
+    }
+  } catch (err) {
+    notify.error(`Error: ${err.message}`);
+    checkbox.checked = !isChecked;
+  } finally {
+    checkbox.disabled = false;
+  }
+}
+
+// ============================================
+// GLOBAL QUICK COMMENTS LOGIC
+// ============================================
+
+window.loadGlobalQuickComments = async () => {
+  const container = document.getElementById('globalQuickCommentsListContainer')
+  if (!container) return
+
+  container.innerHTML = '<p class="empty-message">Cargando...</p>'
+
+  try {
+    const groups = await productOptionsService.getGroupsByBusiness(currentBusiness.id)
+
+    if (groups.length === 0) {
+      container.innerHTML = '<p class="empty-message">No hay grupos de comentarios creados. Haz clic en "Nuevo Grupo" para empezar.</p>'
+      return
+    }
+
+    container.innerHTML = groups.map(group => {
+      const typeLabel = group.type === 'radio' ? 'Selección Única (Radio)' : 'Selección Múltiple (Checkbox)'
+      const limitsLabel = group.type === 'checkbox' && group.max_selections > 0
+        ? `(Máx. ${group.max_selections})`
+        : ''
+
+      const optionsHtml = group.options && group.options.length > 0
+        ? group.options.map(opt => `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: white; border: 1px solid #eee; border-radius: 6px; margin-bottom: 0.25rem;">
+              <span class="option-item-name" style="font-weight: 500;">${opt.name}</span>
+              <div>
+                <button class="btn-icon-small" onclick="window.editGlobalQuickCommentOption('${opt.id}', '${group.id}')" title="Editar Opción"><i class="ri-edit-line"></i></button>
+                <button class="btn-icon-small danger" onclick="window.deleteGlobalQuickCommentOption('${opt.id}', '${group.id}')" title="Eliminar Opción"><i class="ri-delete-bin-line"></i></button>
+              </div>
+            </div>
+          `).join('')
+        : '<p style="color: #9ca3af; font-size: 0.85rem; font-style: italic;">Sin opciones</p>'
+
+      return `
+        <div style="border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 1rem; padding: 1rem; background: #f9fafb;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
+            <div>
+              <h4 style="margin: 0; font-weight: 600; color: #374151;">${group.name} ${group.catalog_name ? `<span style="font-size: 0.8rem; color: #6b7280; font-weight: normal;">(Catálogo: ${group.catalog_name})</span>` : ''}</h4>
+              <span style="font-size: 0.75rem; color: #6b7280;">${typeLabel} ${limitsLabel}</span>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="btn-icon-small" onclick="window.openGlobalQuickCommentGroupModal('${group.id}')">Editar</button>
+              <button class="btn-icon-small danger" onclick="window.deleteGlobalQuickCommentGroup('${group.id}')">Eliminar</button>
+              <button class="btn-icon-small primary" onclick="window.addGlobalQuickCommentOption('${group.id}')" style="margin-left: 0.5rem;">Opción</button>
+            </div>
+          </div>
+          <div>${optionsHtml}</div>
+        </div>
+      `
+    }).join('')
+  } catch (error) {
+    console.error(error)
+    container.innerHTML = '<p class="empty-message error">Error al cargar grupos</p>'
+  }
+}
+
+let editingGlobalQuickCommentGroupId = null
+
+window.openGlobalQuickCommentGroupModal = async (groupId = null) => {
+  editingGlobalQuickCommentGroupId = groupId
+  const form = document.getElementById('globalQuickCommentGroupForm')
+  form.reset()
+
+  if (groupId) {
+    document.getElementById('globalQuickCommentGroupModalTitle').textContent = 'Editar Grupo'
+    try {
+      const groups = await productOptionsService.getGroupsByBusiness(currentBusiness.id)
+      const group = groups.find(g => g.id === groupId)
+      if (group) {
+        document.getElementById('globalQuickCommentGroupIdInput').value = group.id
+        document.getElementById('globalQuickCommentGroupName').value = group.name
+        document.getElementById('globalQuickCommentGroupCatalogName').value = group.catalog_name || ''
+        document.getElementById('globalQuickCommentGroupType').value = group.type || 'checkbox'
+        document.getElementById('globalQuickCommentGroupMin').value = group.min_selections || 0
+        document.getElementById('globalQuickCommentGroupMax').value = group.max_selections || 0
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  } else {
+    document.getElementById('globalQuickCommentGroupModalTitle').textContent = 'Nuevo Grupo'
+    document.getElementById('globalQuickCommentGroupType').value = 'checkbox'
+  }
+
+  document.getElementById('globalQuickCommentGroupModal').style.display = 'flex'
+}
+
+window.closeGlobalQuickCommentGroupModal = () => {
+  document.getElementById('globalQuickCommentGroupModal').style.display = 'none'
+  editingGlobalQuickCommentGroupId = null
+}
+
+const closeGlobalQuickCommentGroupBtn = document.getElementById('closeGlobalQuickCommentGroupModal')
+if (closeGlobalQuickCommentGroupBtn) closeGlobalQuickCommentGroupBtn.addEventListener('click', window.closeGlobalQuickCommentGroupModal)
+
+const cancelGlobalQuickCommentGroupBtn = document.getElementById('cancelGlobalQuickCommentGroupBtn')
+if (cancelGlobalQuickCommentGroupBtn) cancelGlobalQuickCommentGroupBtn.addEventListener('click', window.closeGlobalQuickCommentGroupModal)
+
+const addGlobalQuickCommentGroupBtn = document.getElementById('addGlobalQuickCommentGroupBtn')
+if (addGlobalQuickCommentGroupBtn) addGlobalQuickCommentGroupBtn.addEventListener('click', () => window.openGlobalQuickCommentGroupModal())
+
+const globalQuickCommentGroupForm = document.getElementById('globalQuickCommentGroupForm')
+if (globalQuickCommentGroupForm) {
+  globalQuickCommentGroupForm.addEventListener('submit', async (e) => {
+    e.preventDefault()
+
+    const originalSubmitBtn = e.submitter || document.getElementById('saveGlobalQuickCommentGroupBtn')
+
+    await buttonLoader.execute(originalSubmitBtn, async () => {
+      try {
+        const gId = document.getElementById('globalQuickCommentGroupIdInput').value
+        const name = document.getElementById('globalQuickCommentGroupName').value
+        const catalogName = document.getElementById('globalQuickCommentGroupCatalogName').value
+        const type = document.getElementById('globalQuickCommentGroupType').value
+        const minSelections = parseInt(document.getElementById('globalQuickCommentGroupMin').value) || 0
+        const maxSelections = parseInt(document.getElementById('globalQuickCommentGroupMax').value) || 0
+
+        const data = {
+          name,
+          catalog_name: catalogName,
+          type,
+          min_selections: minSelections,
+          max_selections: maxSelections,
+          business_id: currentBusiness.id
+        }
+
+        if (editingGlobalQuickCommentGroupId || gId) {
+          await productOptionsService.updateGroup(gId, data)
+          notify.success('Grupo actualizado')
+        } else {
+          await productOptionsService.createGroup(data)
+          notify.success('Grupo creado')
+        }
+
+        window.closeGlobalQuickCommentGroupModal()
+        window.loadGlobalQuickComments()
+
+      } catch (error) {
+        console.error(error)
+        notify.error('Error al guardar grupo')
+      }
+    }, 'Guardando...')
+  })
+}
+
+window.deleteGlobalQuickCommentGroup = async (groupId) => {
+  const confirmed = await confirm.show({
+    title: 'Eliminar Grupo',
+    message: '¿Estás seguro? Se eliminarán todas las opciones de este grupo y ya no aparecerá en tus productos.',
+    confirmText: 'Sí, eliminar',
+    type: 'danger'
+  })
+  if (confirmed) {
+    try {
+      await productOptionsService.deleteGroup(groupId)
+      notify.success('Grupo eliminado')
+      window.loadGlobalQuickComments()
+    } catch (e) {
+      console.error(e)
+      notify.error('Error al eliminar grupo')
+    }
+  }
+}
+
+window.addGlobalQuickCommentOption = (groupId) => {
+  openOptionModal('quick_comment', null, groupId)
+}
+
+window.editGlobalQuickCommentOption = (optionId, groupId) => {
+  openOptionModal('quick_comment', optionId, groupId)
+}
+
+window.deleteGlobalQuickCommentOption = async (optionId, groupId) => {
+  const confirmed = await confirm.show({
+    title: 'Eliminar Opción',
+    message: '¿Estás seguro? Esta opción se eliminará del grupo.',
+    confirmText: 'Sí, eliminar',
+    type: 'danger'
+  })
+  if (confirmed) {
+    try {
+      await productOptionsService.deleteOption(optionId, groupId)
+      notify.success('Opción eliminada')
+      window.loadGlobalQuickComments()
+      // If we are also on a product options modal, reload it
+      const modal = document.getElementById('productOptionsModal')
+      if (modal && modal.style.display === 'flex' && window.currentProductForOptions) {
+        await window.loadProductOptions(window.currentProductForOptions.id)
+        window.renderProductOptionsDashboard()
+      }
+    } catch (e) {
+      console.error(e)
+      notify.error('Error al eliminar opción')
+    }
+  }
+}
+
+// ============================================
+// INVOICE TAXES MANAGEMENT
+// ============================================
+
+window.loadInvoiceTaxes = async () => {
+  if (!currentBusiness) return
+  const container = document.getElementById('invoiceTaxesList')
+  if (!container) return
+
+  container.innerHTML = '<p class="empty-message">Cargando impuestos...</p>'
+
+  try {
+    invoiceTaxes = await taxesService.getInvoiceTaxes(currentBusiness.id)
+    window.renderInvoiceTaxes()
+  } catch (error) {
+    console.error('Error loading invoice taxes:', error)
+    if (container) container.innerHTML = '<p class="empty-message error">Error al cargar impuestos</p>'
+  }
+}
+
+window.renderInvoiceTaxes = () => {
+  const container = document.getElementById('invoiceTaxesList')
+  if (!container) return
+
+  if (invoiceTaxes.length === 0) {
+    container.innerHTML = '<p class="empty-message">No hay impuestos configurados</p>'
+    return
+  }
+
+  container.innerHTML = invoiceTaxes.map(tax => `
+    <div class="payment-method-item" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border: 1px solid var(--color-border); border-radius: var(--radius-md); margin-bottom: 0.5rem; background: var(--surface-light);">
+      <div class="info">
+        <h4 style="margin: 0 0 0.25rem 0; font-size: 1rem;">${tax.name} <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: normal; margin-left: 0.5rem;">(${parseFloat(tax.rate).toFixed(2)}%)</span></h4>
+        <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">
+          ${tax.is_active ? '<span style="color:var(--color-success);">Activo</span>' : '<span style="color:var(--color-danger);">Inactivo</span>'}
+        </div>
+      </div>
+      <div class="actions" style="display: flex; gap: 0.5rem;">
+        <button class="btn-icon" onclick="window.openEditInvoiceTaxModal('${tax.id}')" title="Editar">
+          <i class="ri-edit-line"></i>
+        </button>
+        <button class="btn-icon danger" onclick="window.deleteInvoiceTax('${tax.id}')" title="Eliminar">
+          <i class="ri-delete-bin-line"></i>
+        </button>
+      </div>
+    </div>
+  `).join('')
+}
+
+window.openEditInvoiceTaxModal = (id) => {
+  editingInvoiceTax = invoiceTaxes.find(t => t.id === id)
+  if (!editingInvoiceTax) return
+
+  document.getElementById('invoiceTaxModalTitle').textContent = 'Editar Impuesto de Factura'
+  document.getElementById('invoiceTaxIdInput').value = editingInvoiceTax.id
+  document.getElementById('invoiceTaxNameInput').value = editingInvoiceTax.name
+  document.getElementById('invoiceTaxRateInput').value = editingInvoiceTax.rate
+  document.getElementById('invoiceTaxActiveInput').checked = editingInvoiceTax.is_active
+
+  document.getElementById('invoiceTaxModal').style.display = 'flex'
+}
+
+window.deleteInvoiceTax = async (id) => {
+  const confirmed = await confirm.show({
+    title: '¿Eliminar impuesto general?',
+    message: 'Este impuesto ya no se aplicará a nuevas facturas.',
+    confirmText: 'Eliminar',
+    cancelText: 'Cancelar',
+    type: 'danger'
+  })
+
+  if (!confirmed) return
+
+  try {
+    const loadingToast = notify.loading('Eliminando impuesto...')
+    await taxesService.deleteInvoiceTax(id)
+    notify.updateLoading(loadingToast, 'Impuesto eliminado', 'success')
+    await window.loadInvoiceTaxes()
+  } catch (error) {
+    console.error('Error deleting invoice tax:', error)
+    notify.error('Error al eliminar impuesto')
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const addBtn = document.getElementById('addInvoiceTaxBtn')
+  const form = document.getElementById('invoiceTaxForm')
+  const closeBtn = document.getElementById('closeInvoiceTaxModal')
+  const cancelBtn = document.getElementById('cancelInvoiceTaxBtn')
+  const modal = document.getElementById('invoiceTaxModal')
+
+  if (addBtn) {
+    addBtn.addEventListener('click', () => {
+      editingInvoiceTax = null
+      document.getElementById('invoiceTaxModalTitle').textContent = 'Nuevo Impuesto de Factura'
+      document.getElementById('invoiceTaxIdInput').value = ''
+      document.getElementById('invoiceTaxNameInput').value = ''
+      document.getElementById('invoiceTaxRateInput').value = ''
+      document.getElementById('invoiceTaxActiveInput').checked = true
+      modal.style.display = 'flex'
+    })
+  }
+
+  const closeModal = () => {
+    modal.style.display = 'none'
+    form.reset()
+    editingInvoiceTax = null
+  }
+
+  if (closeBtn) closeBtn.addEventListener('click', closeModal)
+  if (cancelBtn) cancelBtn.addEventListener('click', closeModal)
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault()
+
+      const id = document.getElementById('invoiceTaxIdInput').value
+      const name = document.getElementById('invoiceTaxNameInput').value
+      const rateStr = document.getElementById('invoiceTaxRateInput').value
+      let rate = parseFloat(rateStr) || 0
+      const isActive = document.getElementById('invoiceTaxActiveInput').checked
+
+      // Limit rate to 2 decimals
+      rate = Math.round(rate * 100) / 100
+
+      const submitBtn = document.getElementById('saveInvoiceTaxBtn')
+
+      await buttonLoader.execute(submitBtn, async () => {
+        try {
+          if (id || editingInvoiceTax) {
+            await taxesService.updateInvoiceTax(id || editingInvoiceTax.id, {
+              name,
+              rate,
+              is_active: isActive
+            })
+            notify.success('Impuesto actualizado')
+          } else {
+            await taxesService.createInvoiceTax({
+              business_id: currentBusiness.id,
+              name,
+              rate,
+              is_active: isActive
+            })
+            notify.success('Impuesto creado')
+          }
+          closeModal()
+          await window.loadInvoiceTaxes()
+        } catch (error) {
+          console.error('Error saving invoice tax:', error)
+          notify.error('Error al guardar impuesto')
+        }
+      }, 'Guardando...')
+    })
+  }
+})
+
+// ============================================
+// PRODUCT TAXES MANAGEMENT
+// ============================================
+
+window.loadProductTaxes = async (productId) => {
+  if (!currentBusiness) return
+  const container = document.getElementById('productTaxesListContainer')
+  if (!container) return
+
+  container.innerHTML = '<p class="empty-message" style="margin: 0; font-size: 0.85rem;">Cargando impuestos...</p>'
+
+  try {
+    productTaxes = await taxesService.getProductTaxes(currentBusiness.id, productId)
+    window.renderProductTaxes(productId)
+  } catch (error) {
+    console.error('Error loading product taxes:', error)
+    if (container) container.innerHTML = '<p class="empty-message error" style="margin: 0; font-size: 0.85rem;">Error al cargar impuestos</p>'
+  }
+}
+
+window.renderProductTaxes = (productId) => {
+  const container = document.getElementById('productTaxesListContainer')
+  if (!container) return
+
+  if (productTaxes.length === 0) {
+    container.innerHTML = '<p class="empty-message" style="margin: 0; font-size: 0.85rem;">Ningún impuesto configurado</p>'
+    return
+  }
+
+  container.innerHTML = productTaxes.map(tax => `
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 6px; background: white; margin-bottom: 0.25rem;">
+      <div class="info" style="display: flex; align-items: center;">
+        <span style="font-weight: 500; font-size: 0.9rem;">${tax.name}</span>
+        <span style="font-size: 0.85rem; color: #64748b; margin-left: 0.5rem;">${parseFloat(tax.rate).toFixed(2)}%</span>
+        ${!tax.is_active ? '<span style="font-size: 0.75rem; color: #ef4444; margin-left: 0.5rem;">(Inactivo)</span>' : ''}
+      </div>
+      <div class="actions" style="display: flex; gap: 0.25rem;">
+        <button type="button" class="btn-icon-small" onclick="window.openEditProductTaxModal('${tax.id}', event)" title="Editar">
+          <i class="ri-edit-line"></i>
+        </button>
+        <button type="button" class="btn-icon-small danger" onclick="window.deleteProductTax('${tax.id}', '${productId}', event)" title="Eliminar">
+          <i class="ri-delete-bin-line"></i>
+        </button>
+      </div>
+    </div>
+  `).join('')
+}
+
+window.openEditProductTaxModal = (id, e) => {
+  if (e) e.preventDefault()
+  editingProductTax = productTaxes.find(t => t.id === id)
+  if (!editingProductTax) return
+
+  document.getElementById('productTaxModalTitle').textContent = 'Editar Impuesto de Producto'
+  document.getElementById('productTaxIdInput').value = editingProductTax.id
+  document.getElementById('productTaxNameInput').value = editingProductTax.name
+  document.getElementById('productTaxRateInput').value = editingProductTax.rate
+  document.getElementById('productTaxActiveInput').checked = editingProductTax.is_active
+
+  document.getElementById('productTaxModal').style.display = 'flex'
+}
+
+window.deleteProductTax = async (id, productId, e) => {
+  if (e) e.preventDefault()
+  const confirmed = await confirm.show({
+    title: '¿Eliminar impuesto?',
+    message: 'El producto dejará de tener este impuesto.',
+    confirmText: 'Eliminar',
+    cancelText: 'Cancelar',
+    type: 'danger'
+  })
+
+  if (!confirmed) return
+
+  try {
+    const loadingToast = notify.loading('Eliminando impuesto...')
+    await taxesService.deleteProductTax(id)
+    notify.updateLoading(loadingToast, 'Impuesto eliminado', 'success')
+    await window.loadProductTaxes(productId)
+  } catch (error) {
+    console.error('Error deleting product tax:', error)
+    notify.error('Error al eliminar impuesto')
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const addBtn = document.getElementById('addProductTaxBtn')
+  const form = document.getElementById('productTaxForm')
+  const closeBtn = document.getElementById('closeProductTaxModal')
+  const cancelBtn = document.getElementById('cancelProductTaxBtn')
+  const modal = document.getElementById('productTaxModal')
+
+  if (addBtn) {
+    addBtn.addEventListener('click', (e) => {
+      e.preventDefault()
+      editingProductTax = null
+      document.getElementById('productTaxModalTitle').textContent = 'Nuevo Impuesto de Producto'
+      document.getElementById('productTaxIdInput').value = ''
+      document.getElementById('productTaxNameInput').value = ''
+      document.getElementById('productTaxRateInput').value = ''
+      document.getElementById('productTaxActiveInput').checked = true
+      modal.style.display = 'flex'
+    })
+  }
+
+  const closeModal = (e) => {
+    if (e) e.preventDefault()
+    modal.style.display = 'none'
+    form.reset()
+    editingProductTax = null
+  }
+
+  if (closeBtn) closeBtn.addEventListener('click', closeModal)
+  if (cancelBtn) cancelBtn.addEventListener('click', closeModal)
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault()
+
+      if (!editingProduct && !editingProductTax) {
+        notify.error('Debes guardar el producto primero')
+        return
+      }
+
+      const id = document.getElementById('productTaxIdInput').value
+      const name = document.getElementById('productTaxNameInput').value
+      const rateStr = document.getElementById('productTaxRateInput').value
+      let rate = parseFloat(rateStr) || 0
+      const isActive = document.getElementById('productTaxActiveInput').checked
+
+      rate = Math.round(rate * 100) / 100
+
+      const submitBtn = document.getElementById('saveProductTaxBtn')
+
+      await buttonLoader.execute(submitBtn, async () => {
+        try {
+          if (id || editingProductTax) {
+            await taxesService.updateProductTax(id || editingProductTax.id, {
+              name,
+              rate,
+              is_active: isActive
+            })
+            notify.success('Impuesto actualizado')
+          } else {
+            await taxesService.createProductTax({
+              business_id: currentBusiness.id,
+              product_id: editingProduct.id,
+              name,
+              rate,
+              is_active: isActive
+            })
+            notify.success('Impuesto creado')
+          }
+          closeModal()
+          // Refresh list
+          if (editingProduct) {
+            await window.loadProductTaxes(editingProduct.id)
+          }
+        } catch (error) {
+          console.error('Error saving product tax:', error)
+          notify.error('Error al guardar impuesto')
+        }
+      }, 'Guardando...')
+    })
+  }
+})

@@ -221,6 +221,8 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-width: 0;
+  /* Crucial for preventing horizontal flex overflow */
 }
 
 /* Top Header Bar */
@@ -291,6 +293,8 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  min-width: 0;
+  /* Prevents children from expanding this layout */
 }
 
 /* Dashboard Sections */
@@ -3438,20 +3442,91 @@ input:checked+.slider:before {
   font-size: 0.85rem;
 }
 
+#section-products>section {
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
 /* ============================================
    PRODUCT TABS STYLES
    ============================================ */
 .products-tabs-header {
   display: flex;
+  align-items: center;
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  margin-bottom: 1.5rem;
+  /* do NOT set overflow here */
+}
+
+.products-tabs-scroll {
+  flex: 1;
+  min-width: 0;
+  /* THIS IS THE KEY FIX */
+  display: flex;
   gap: 1rem;
   border-bottom: 1px solid var(--color-border);
-  margin-bottom: 1.5rem;
-  /* Fix overflow on mobile */
   overflow-x: auto;
   white-space: nowrap;
   -webkit-overflow-scrolling: touch;
   padding-bottom: 4px;
-  /* Ensure scrollbar doesn't overlay too tight if visible */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+}
+
+.products-tabs-scroll::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.products-tabs-arrow {
+  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  z-index: 2;
+  flex-shrink: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s, color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.products-tabs-arrow.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.products-tabs-arrow:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  background: var(--bg-light);
+}
+
+.products-tabs-arrow--left {
+  margin-right: 0.5rem;
+}
+
+.products-tabs-arrow--right {
+  margin-left: 0.5rem;
+}
+
+/* Mobile specific styling for tabs */
+@media (max-width: 640px) {
+  .products-tabs-arrow {
+    display: none !important;
+  }
 }
 
 .products-tab-btn {
@@ -3471,6 +3546,7 @@ input:checked+.slider:before {
   /* Overlap border */
   flex-shrink: 0;
   /* Prevent shrinking on mobile */
+  scroll-snap-align: start;
 }
 
 .products-tab-btn:hover {
@@ -3621,4 +3697,29 @@ input:checked+.slider:before {
     flex-direction: column;
     gap: 1rem;
   }
+}
+
+/* ============================================
+   PRODUCT OPTIONS MODAL SEARCH & SCROLL
+   ============================================ */
+.modal-search-bar {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: white;
+}
+
+.modal-search-bar input {
+  border: none;
+  outline: none;
+  width: 100%;
+}
+
+#availableQuickCommentsForProduct,
+#availableSidesForProduct {
+  max-height: 250px;
+  overflow-y: auto;
 }

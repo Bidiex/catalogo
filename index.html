@@ -217,8 +217,10 @@
             <p class="plan-desc">Para negocios que están empezando.</p>
           </div>
           <div class="mb-8">
-            <span class="plan-price">$44.900</span>
-            <span class="plan-period">/mes</span>
+            <span class="plan-price">$0</span>
+          </div>
+          <div class="plan-commitment highlight">
+            30 días gratis luego $44.900/mes
           </div>
           <ul class="pricing-features">
             <li class="feature-item">
@@ -246,7 +248,7 @@
             </li>
             <li class="feature-item">
               <span class="material-symbols-rounded text-primary">check_circle</span>
-              <span>Gestión de Tamaños en prodcuctos</span>
+              <span>Gestión de Tamaños en productos</span>
             </li>
             <li class="feature-item">
               <span class="material-symbols-rounded text-primary">check_circle</span>
@@ -277,10 +279,9 @@
               <span>Soporte Básico</span>
             </li>
           </ul>
-          <a class="btn-pricing primary" href="/login?mode=register">Comenzar Gratis</a>
-          <a class="btn-pricing btn-plus"
-            href="https://wa.me/573180779665?text=Hola,%20me%20interesa%20contratar%20el%20Plan%20Plus"
-            target="_blank">Contratar Plus</a>
+          <div class="pricing-actions">
+            <a class="btn-pricing primary" href="/login?mode=register">Comenzar Gratis</a>
+          </div>
         </div>
 
         <!-- Plan Pro -->
@@ -294,10 +295,10 @@
             <span class="plan-price">$79.900</span>
             <span class="plan-period">/mes</span>
           </div>
+          <div class="plan-commitment highlight">
+            Todo lo incluido en el plan Plus más:
+          </div>
           <ul class="pricing-features">
-            <li class="feature-item">
-              <strong>Todo lo incluido en el plan Plus más:</strong>
-            </li>
             <li class="feature-item">
               <span class="material-symbols-rounded text-primary">check_circle</span>
               <span>Productos Ilimitados</span>
@@ -333,10 +334,14 @@
               <span>Soporte Prioritario</span>
             </li>
           </ul>
-          <a class="btn-pricing primary" href="/login?mode=register">Comenzar Gratis</a>
-          <a class="btn-pricing btn-pro"
-            href="https://wa.me/573180779665?text=Hola,%20me%20interesa%20contratar%20el%20Plan%20Pro"
-            target="_blank">Contratar Pro</a>
+          <div class="pricing-actions">
+            <a class="btn-pricing primary" href="/login?mode=register">Contratar Pro</a>
+            <a class="btn-pricing btn-outline-gray"
+              href="https://wa.me/573180779665?text=Hola,%20me%20interesa%20contratar%20el%20Plan%20Pro"
+              target="_blank">
+              Hablar con ventas
+            </a>
+          </div>
         </div>
 
         <!-- Plan Premium (Coming Soon) -->
@@ -367,7 +372,8 @@
       </div>
 
       <div class="faq-wrapper">
-        <details class="faq-item" open>
+        <div class="faq-col">
+          <details class="faq-item" open>
           <summary class="faq-summary">
             ¿Necesito tarjeta de crédito para empezar?
             <span class="material-symbols-rounded faq-icon-rotate">expand_more</span>
@@ -399,6 +405,69 @@
             o compartir por WhatsApp.
           </div>
         </details>
+
+        <details class="faq-item">
+          <summary class="faq-summary">
+            ¿Cuanto tiempo me tomará crear mi catálogo?
+            <span class="material-symbols-rounded faq-icon-rotate">expand_more</span>
+          </summary>
+          <div class="faq-content">
+            En menos de 10 minutos puedes tener tu catálogo listo con tus productos, fotos y precios. Si tienes alguna duda, nuestro equipo te ayuda por WhatsApp.
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-summary">
+            ¿Cómo recibo los pedidos exactamente?
+            <span class="material-symbols-rounded faq-icon-rotate">expand_more</span>
+          </summary>
+          <div class="faq-content">
+            Tu cliente arma su pedido desde tu catálogo y al finalizar le llega un botón para enviártelo por WhatsApp. Tú recibes un mensaje ya formateado con los productos, cantidades y el total. Sin llamadas, sin errores.
+          </div>
+        </details>
+        </div>
+
+        <div class="faq-col">
+        <details class="faq-item">
+          <summary class="faq-summary">
+            ¿Puedo cancelar en cualquier momento?
+            <span class="material-symbols-rounded faq-icon-rotate">expand_more</span>
+          </summary>
+          <div class="faq-content">
+            Sí. No hay contratos de permanencia. Cancelas cuando quieras simplemente no renovando el pago de tu suscripción para el proximo mes.
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-summary">
+            ¿Qué pasa cuando se vence el periodo gratuito?
+            <span class="material-symbols-rounded faq-icon-rotate">expand_more</span>
+          </summary>
+          <div class="faq-content">
+            Te avisamos antes de que se venza. Si decides continuar, activas tu plan desde la plataforma. Si no, tu cuenta queda pausada y tus datos se conservan por 30 días adicionales.
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-summary">
+            ¿Mis clientes necesitan descargarse una app?
+            <span class="material-symbols-rounded faq-icon-rotate">expand_more</span>
+          </summary>
+          <div class="faq-content">
+            No. Tu catálogo funciona desde el navegador del celular. Tus clientes entran por el enlace, arman su pedido y listo.
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-summary">
+            ¿Puedo tener varios menús según el día?
+            <span class="material-symbols-rounded faq-icon-rotate">expand_more</span>
+          </summary>
+          <div class="faq-content">
+            Sí, puedes definir menús por día de la semana y activarlos según el día que toquen.
+          </div>
+        </details>
+        </div>
       </div>
     </div>
   </section>
@@ -411,6 +480,7 @@
         <div class="cta-content">
           <h2 class="cta-title">Únete a los que ya están vendiendo más de forma fácil y rápida.</h2>
           <a class="btn-cta-large" href="/login?mode=register">Crear mi Catálogo Ahora</a>
+          <p class="cta-subtitle">Gratis por 30 días, sin tarjeta</p>
         </div>
       </div>
     </div>

@@ -60,6 +60,15 @@ El proyecto está construido con un enfoque moderno y ligero, priorizando el ren
 7. **SEO y Compartibilidad**: Metadatos Open Graph para previsualizaciones ricas al compartir en redes y WhatsApp.
 8. **Páginas de Error Amigables**: Experiencia unificada en escenarios de "Catálogo no encontrado", "Links no encontrado" y "Error 404".
 
+### 🛵 Para el Repartidor (Plataforma de Domiciliarios)
+
+1. **Acceso Seguro y Rápido**: Ingreso mediante código único (OTP de 6 dígitos) específico por negocio y repartidor, con persistencia de sesión.
+2. **Gestión en Tiempo Real**: Listado de pedidos listos "para llevar" (disponibles) y pedidos asignados al repartidor ("en camino") actualizados sin recargar la página.
+3. **Flujo de Entrega Completo**: Toma de pedidos, enrutamiento a la dirección del cliente vía Google Maps y confirmación de la entrega ("Entregado").
+4. **Comunicación Directa**: Botones de acceso rápido en la UI para realizar llamadas telefónicas o abrir chats de WhatsApp pre-formateados con el cliente respectivo.
+5. **Gestión de Incidencias**: Capacidad para agregar "Notas de Entrega" y "Solicitar Cancelación" en los pedidos ya asignados.
+6. **Métricas Personales**: Vista de métricas individuales de desempeño, como la cantidad de pedidos completados diarios y los tiempos promedio de entrega por pedido.
+
 ### 🌐 Landing Page Pública
 
 - Sección de métricas globales en tiempo real (número de negocios, pedidos totales, etc.) obtenidas desde Supabase.
@@ -71,6 +80,7 @@ El proyecto está construido con un enfoque moderno y ligero, priorizando el ren
 - **Row Level Security (RLS)** habilitado en todas las tablas sensibles de Supabase.
 - Políticas de acceso para que cada negocio solo gestione sus propios datos.
 - Protección en rutas del panel admin mediante `middleware.js` de Vercel.
+- **Seguridad en Delivery App (RPC)**: Control estricto de actualización de pedidos a través de funciones RPC (Remote Procedure Calls) con privilegios delegados (`SECURITY DEFINER`), asegurando que cada repartidor sólo pueda modificar estados o añadir notas a sus propios pedidos asignados.
 
 ## Estructura del Proyecto
 
@@ -79,6 +89,7 @@ src/
 ├── pages/          # Vistas principales (landing, admin, catalog, links, auth, dashboard, 404...)
 │   ├── admin/      # Panel administrativo del negocio
 │   ├── catalog/    # Catálogo público del cliente
+│   ├── delivery/   # Aplicación web "mobile-first" para repartidores (Domiciliarios)
 │   ├── links/      # Editor y vista pública del Link Center
 │   ├── dashboard/  # Métricas y reportes
 │   └── landing/    # Landing page de TraeGo

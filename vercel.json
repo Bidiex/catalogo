@@ -65,6 +65,10 @@
             "destination": "/links.html"
         },
         {
+            "source": "/d/:slug*",
+            "destination": "/delivery.html"
+        },
+        {
             "source": "/(.*)",
             "destination": "/404.html"
         }
