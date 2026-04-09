@@ -837,6 +837,31 @@ body {
     color: var(--text-slate-500);
 }
 
+.pricing-actions {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    height: 125px; /* Ensures exact same height and top alignment */
+    margin-top: auto;
+}
+
+.plan-commitment {
+    background-color: var(--surface-light);
+    color: var(--text-slate-900);
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.plan-commitment.highlight {
+    background-color: rgba(76, 237, 23, 0.15);
+    color: #15803d;
+    border: 1px solid rgba(76, 237, 23, 0.3);
+    font-weight: 700;
+}
+
 .pricing-features {
     list-style: none;
     padding: 0;
@@ -983,7 +1008,57 @@ body {
     color: white;
 }
 
+.link-pro {
+    color: #5170ff;
+    text-align: center;
+    text-decoration: underline;
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-top: 0.25rem;
+    align-self: center;
+    transition: all 0.2s;
+}
 
+.link-pro:hover {
+    color: #3b50c0;
+}
+
+.link-pro.whatsapp-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: #10b981;
+    text-decoration: none;
+    font-weight: 700;
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    background-color: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    margin-top: 0.5rem;
+    width: fit-content;
+}
+
+.link-pro.whatsapp-link:hover {
+    background-color: #10b981;
+    color: white;
+}
+
+.btn-outline-gray {
+    background-color: transparent;
+    border-color: var(--border-slate-200);
+    color: var(--text-slate-600);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn-outline-gray:hover {
+    background-color: var(--surface-light);
+    border-color: var(--border-slate-700);
+    color: var(--text-slate-900);
+}
 
 /* FAQ */
 .faq-section {
@@ -993,15 +1068,30 @@ body {
 }
 
 .faq-wrapper {
-    max-width: 42rem;
+    max-width: 64rem;
     margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+    .faq-wrapper {
+        grid-template-columns: repeat(2, 1fr);
+        align-items: start;
+    }
+}
+
+.faq-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
 }
 
 .faq-item {
     background-color: var(--bg-light);
     border: 1px solid var(--border-slate-100);
     border-radius: 1rem;
-    margin-bottom: 1rem;
     overflow: hidden;
 }
 
@@ -1101,6 +1191,13 @@ details[open] .faq-icon-rotate {
     transform: scale(1.05);
     background-color: var(--primary-dark);
     color: white;
+}
+
+.cta-subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.95rem;
+    margin-top: 1rem;
+    font-weight: 500;
 }
 
 /* Footer */
