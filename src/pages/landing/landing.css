@@ -1313,3 +1313,15 @@ details[open] .faq-icon-rotate {
     mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
     z-index: 10;
 }
+
+@media (max-width: 768px) {
+    .hero-image {
+        padding: 0;
+        background-color: transparent;
+        border: none;
+        box-shadow: none;
+        -webkit-mask-image: none;
+        mask-image: none;
+        border-radius: 0;
+    }
+}
