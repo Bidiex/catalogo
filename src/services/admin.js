@@ -544,5 +544,61 @@ export const adminService = {
             console.error('Admin API Error (updateTicket):', error)
             return { success: false, error: error.message }
         }
+    },
+
+    /**
+     * Eliminar usuario completo con TODOS sus datos asociados.
+     * Llama al RPC delete_user_complete que borra DB, luego limpia Storage.
+     * OPERACIÓN IRREVERSIBLE.
+     */
+    async deleteUserComplete(userId) {
+        try {
+            // 1. Ejecutar RPC en base de datos (borra todo incluyendo auth.users)
+            const { data: rpcResult, error: rpcError } = await supabase.rpc('delete_user_complete', {
+                target_user_id: userId
+            })
+
+            if (rpcError) throw rpcError
+
+            // 2. Limpiar Storage — eliminar archivos del usuario en los 3 buckets
+            const buckets = ['product-images', 'negocios-logos', 'delivery-photos']
+            const storageErrors = []
+
+            for (const bucket of buckets) {
+                try {
+                    // Listar archivos con prefijo del userId
+                    const { data: files, error: listError } = await supabase.storage
+                        .from(bucket)
+                        .list(userId, { limit: 1000 })
+
+                    if (listError) {
+                        // Si no hay carpeta del usuario o el bucket no tiene esa ruta, lo ignoramos
+                        continue
+                    }
+
+                    if (files && files.length > 0) {
+                        const filePaths = files.map(f => `${userId}/${f.name}`)
+                        const { error: removeError } = await supabase.storage
+                            .from(bucket)
+                            .remove(filePaths)
+
+                        if (removeError) {
+                            storageErrors.push(`${bucket}: ${removeError.message}`)
+                        }
+                    }
+                } catch (storageErr) {
+                    storageErrors.push(`${bucket}: ${storageErr.message}`)
+                }
+            }
+
+            return {
+                success: true,
+                data: rpcResult,
+                storageErrors: storageErrors.length > 0 ? storageErrors : null
+            }
+        } catch (error) {
+            console.error('Admin API Error (deleteUserComplete):', error)
+            return { success: false, error: error.message }
+        }
     }
 }
