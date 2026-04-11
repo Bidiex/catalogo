@@ -10,6 +10,7 @@ export default defineConfig({
         login: resolve(__dirname, 'src/pages/login/index.html'),
         dashboard: resolve(__dirname, 'src/pages/dashboard/index.html'),
         catalog: resolve(__dirname, 'src/pages/catalog/index.html'),
+        'pago-pendiente': resolve(__dirname, 'src/pages/dashboard/pago-pendiente/index.html'),
         product: resolve(__dirname, 'src/pages/product/index.html'),
         'reset-password': resolve(__dirname, 'src/pages/reset-password/index.html'),
         'update-password': resolve(__dirname, 'src/pages/update-password/index.html'),
@@ -41,6 +42,7 @@ export default defineConfig({
           const rewrites = {
             '/login': '/src/pages/login/index.html',
             '/dashboard': '/src/pages/dashboard/index.html',
+            '/dashboard/pago-pendiente': '/src/pages/dashboard/pago-pendiente/index.html',
             '/catalog': '/src/pages/catalog/index.html',
             '/product': '/src/pages/product/index.html',
             '/reset-password': '/src/pages/reset-password/index.html',
@@ -87,6 +89,7 @@ export default defineConfig({
           const rewrites = {
             '/login': '/login.html',
             '/dashboard': '/dashboard.html',
+            '/dashboard/pago-pendiente': '/pago-pendiente.html',
             '/catalog': '/catalog.html',
             '/product': '/product.html',
             '/reset-password': '/reset-password.html',
@@ -150,6 +153,7 @@ export default defineConfig({
         if (fs.existsSync(srcDir)) {
           moveFile(resolve(srcDir, 'login/index.html'), resolve(distDir, 'login.html'))
           moveFile(resolve(srcDir, 'dashboard/index.html'), resolve(distDir, 'dashboard.html'))
+          moveFile(resolve(srcDir, 'dashboard/pago-pendiente/index.html'), resolve(distDir, 'pago-pendiente.html'))
           moveFile(resolve(srcDir, 'catalog/index.html'), resolve(distDir, 'catalog.html'))
           moveFile(resolve(srcDir, 'product/index.html'), resolve(distDir, 'product.html'))
           moveFile(resolve(srcDir, 'reset-password/index.html'), resolve(distDir, 'reset-password.html'))

@@ -13,6 +13,13 @@ const errorMessage = document.getElementById('errorMessage')
 const registerErrorMessage = document.getElementById('registerErrorMessage')
 const googleLoginBtn = document.getElementById('googleLoginBtn')
 
+// Guardar plan pre-seleccionado si existe
+const urlParams = new URLSearchParams(window.location.search)
+const plan = urlParams.get('plan')
+if (plan === 'plus' || plan === 'pro') {
+  localStorage.setItem('selectedPlan', plan)
+}
+
 // Verificar si ya hay sesión activa
 checkExistingSession()
 

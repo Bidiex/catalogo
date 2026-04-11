@@ -31,19 +31,34 @@ export const businessService = {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('No authenticated')
 
-      // Calculate default plan expiration (30 days from now)
+      // Guard contra duplicados: si ya existe un negocio para este usuario, retornarlo
+      const { data: existing } = await supabase
+        .from('businesses')
+        .select('*')
+        .eq('user_id', user.id)
+        .limit(1)
+        .maybeSingle()
+      if (existing) return existing
+
       const now = new Date()
-      const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+      
+      const isProPending = businessData.selectedPlan === 'pro'
+      const planType = isProPending ? 'pro' : 'plus'
+      const isActive = !isProPending
+      const expiresAt = isProPending ? now.toISOString() : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      
+      // Clean selectedPlan from data to not insert it into db
+      const { selectedPlan, ...cleanBusinessData } = businessData
+
 
       const { data, error } = await supabase
         .from('businesses')
         .insert([{
           user_id: user.id,
-          ...businessData,
-          // Force defaults for new logic
-          plan_type: 'plus',
-          plan_expires_at: expiresAt.toISOString(),
-          is_active: true,
+          ...cleanBusinessData,
+          plan_type: planType,
+          plan_expires_at: expiresAt,
+          is_active: isActive,
           monthly_orders_count: 0,
           plan_renewed_at: now.toISOString()
         }])
@@ -344,6 +359,20 @@ export const businessService = {
       return data
     } catch (error) {
       console.error('Error incrementing monthly orders:', error)
+      throw error
+    }
+  },
+
+  /**
+   * Downgrade pending pro plan back to Plus trial securely
+   */
+  async activatePlusTrialFromPendingPro() {
+    try {
+      const { data, error } = await supabase.rpc('downgrade_to_trial_plus')
+      if (error) throw error
+      return data
+    } catch (error) {
+      console.error('Error activating plus trial:', error)
       throw error
     }
   }
