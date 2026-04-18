@@ -846,6 +846,17 @@ async function loadBusiness() {
     } else {
       // Check if business is operational
       const isOperational = businessService.isOperational(currentBusiness)
+      
+      const isPendingPro = currentBusiness.plan_type === 'pro' && currentBusiness.is_active === false
+
+      if (isPendingPro) {
+        // Bloquear completamente con la pantalla de pago
+        await loadAllData()
+        const pendingModal = document.getElementById('pendingProModal')
+        if (pendingModal) pendingModal.style.display = 'flex'
+        showBusinessState()
+        return // Detiene el flujo normal de advertencias
+      }
 
       if (!isOperational) {
         // Show Blocked State but load basic data? 
@@ -1162,6 +1173,9 @@ async function updatePlanUsageUI() {
 }
 
 // Modal Elements & Listeners
+const pendingProModal = document.getElementById('pendingProModal')
+const btnAlreadyPaidPro = document.getElementById('btnAlreadyPaidPro')
+const btnDowngradeToPlus = document.getElementById('btnDowngradeToPlus')
 const upgradePlanModal = document.getElementById('upgradePlanModal')
 const blockedPlanModal = document.getElementById('blockedPlanModal')
 const closeUpgradeModal = document.getElementById('closeUpgradeModal')
@@ -1170,6 +1184,29 @@ const contactSupportRenewBtn = document.getElementById('contactSupportRenewBtn')
 const btnUpgradePlan = document.getElementById('btnUpgradePlan')
 const btnPermanentUpgrade = document.getElementById('btnPermanentUpgrade') // New button
 const logoutBlockedBtn = document.getElementById('logoutBlockedBtn')
+
+// Pending Pro actions
+if (btnAlreadyPaidPro) {
+  btnAlreadyPaidPro.addEventListener('click', () => {
+    window.location.href = '/dashboard/pago-pendiente?plan=pro'
+  })
+}
+
+if (btnDowngradeToPlus) {
+  btnDowngradeToPlus.addEventListener('click', async () => {
+    try {
+      if (confirm('¿Estás seguro de que quieres cancelar y probar 30 días con el Plan Plus?')) {
+        await businessService.activatePlusTrialFromPendingPro()
+        notify.success('¡Activaste tu Plan Plus Exitosamente!')
+        setTimeout(() => {
+          window.location.reload()
+        }, 1000)
+      }
+    } catch (e) {
+      notify.error('Hubo un error al cambiar tu plan. Intenta nuevamente.' + e.message)
+    }
+  })
+}
 
 // Upgrade Button in Dashboard (Limit Warning)
 if (btnUpgradePlan) {
@@ -1196,15 +1233,15 @@ const CONTACT_PHONE = '573180779665' // Replace with actual admin number
 
 if (contactSupportUpgradeBtn) {
   contactSupportUpgradeBtn.addEventListener('click', () => {
-    const text = `Hola, quiero mejorar mi plan a PRO para el negocio: ${currentBusiness.name}`
-    window.open(`https://wa.me/${CONTACT_PHONE}?text=${encodeURIComponent(text)}`, '_blank')
+    window.open('https://checkout.nequi.wompi.co/l/8oK0Nb', '_blank')
   })
 }
 
 if (contactSupportRenewBtn) {
   contactSupportRenewBtn.addEventListener('click', () => {
-    const text = `Hola, mi plan ha vencido. Quiero renovar la suscripción para el negocio: ${currentBusiness.name}`
-    window.open(`https://wa.me/${CONTACT_PHONE}?text=${encodeURIComponent(text)}`, '_blank')
+    const isPro = currentBusiness && currentBusiness.plan_type === 'pro'
+    const link = isPro ? 'https://checkout.nequi.wompi.co/l/8oK0Nb' : 'https://checkout.nequi.wompi.co/l/YSftYt'
+    window.open(link, '_blank')
   })
 }
 
@@ -1711,7 +1748,13 @@ document.getElementById('businessForm').addEventListener('submit', async (e) => 
         notify.success('Negocio actualizado correctamente')
       } else {
         // Crear
+        const plan = localStorage.getItem('selectedPlan')
+        if (plan) {
+          businessData.selectedPlan = plan
+        }
         currentBusiness = await businessService.createBusiness(businessData)
+        if (plan) localStorage.removeItem('selectedPlan')
+        
         notify.success('Negocio creado correctamente')
       }
 
@@ -3946,7 +3989,28 @@ if (wizardBusinessForm) {
           logo_url: wizardLogoUrl || null
         }
 
+        const plan = localStorage.getItem('selectedPlan')
+        if (plan) {
+          businessData.selectedPlan = plan
+        }
+        
         const createdBusiness = await businessService.createBusiness(businessData)
+        
+        if (plan) localStorage.removeItem('selectedPlan')
+
+        if (createdBusiness.plan_type === 'pro' && createdBusiness.is_active === false) {
+          notify.success('¡Negocio creado en estado Pendiente!')
+          document.getElementById('noBusinessState').style.display = 'none'
+          
+          currentBusiness = createdBusiness
+          await loadAllData()
+          
+          const pendingModal = document.getElementById('pendingProModal')
+          if (pendingModal) pendingModal.style.display = 'flex'
+          showBusinessState()
+          return
+        }
+
         wizardData.business = createdBusiness
 
         notify.success('Negocio creado correctamente')
@@ -3954,7 +4018,11 @@ if (wizardBusinessForm) {
 
       } catch (error) {
         console.error('Error creating business:', error)
-        notify.error('Error al crear el negocio: ' + error.message)
+        if (error.code === '23505') {
+          notify.error('El nombre de enlace ya está en uso. Por favor, elige otro.')
+        } else {
+          notify.error('Error al crear el negocio: ' + error.message)
+        }
       }
     }, 'Creando...')
   })

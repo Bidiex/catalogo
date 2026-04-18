@@ -104,12 +104,19 @@ function renderTable() {
                 <button class="action-btn setup" title="Setup Catálogo" onclick="window.location.href='/admin/setup-catalogo?negocio_id=${u.business_id}'">
                     <i class="fa-solid fa-box-open"></i>
                 </button>
+                <button class="action-btn delete" title="Eliminar usuario y negocio" onclick="window.openDeleteModal('${u.user_id}', '${u.email}', '${(u.business_name || '').replace(/'/g, "\\'")}')"
+                >
+                    <i class="fa-solid fa-trash"></i>
+                </button>
             `
         } else {
             actions = `
                 <button class="action-btn" style="background:var(--primary); color:white;" title="Crear Negocio" 
                     onclick="window.openCreateModal('${u.user_id}', '${u.email}')">
                     <i class="fa-solid fa-plus"></i>
+                </button>
+                <button class="action-btn delete" title="Eliminar usuario" onclick="window.openDeleteModal('${u.user_id}', '${u.email}', null)">
+                    <i class="fa-solid fa-trash"></i>
                 </button>
             `
         }
@@ -224,6 +231,81 @@ function setupModalListeners() {
             loadData() // Refresh table
         } else {
             notify.updateLoading(loading, error, 'error')
+        }
+    })
+
+    // --- Delete User Modal ---
+
+    window.openDeleteModal = (userId, email, businessName) => {
+        // Populate modal info
+        document.getElementById('deleteTargetUserId').value = userId
+        document.getElementById('deleteUserEmail').textContent = email
+        document.getElementById('deleteConfirmEmailHint').textContent = email
+
+        const businessRow = document.getElementById('deleteUserBusinessRow')
+        if (businessName) {
+            document.getElementById('deleteUserBusinessName').textContent = businessName
+            businessRow.style.display = 'block'
+        } else {
+            businessRow.style.display = 'none'
+        }
+
+        // Reset to step 1
+        document.getElementById('deleteProceedBlock').style.display = 'block'
+        document.getElementById('deleteConfirmStep').classList.remove('visible')
+        document.getElementById('deleteConfirmInput').value = ''
+        document.getElementById('deleteConfirmInput').classList.remove('matched')
+        document.getElementById('deleteConfirmBtn').disabled = true
+
+        document.getElementById('deleteUserModal').style.display = 'flex'
+    }
+
+    // Step 1 → Step 2
+    document.getElementById('deleteProceedBtn').addEventListener('click', () => {
+        document.getElementById('deleteProceedBlock').style.display = 'none'
+        document.getElementById('deleteConfirmStep').classList.add('visible')
+        document.getElementById('deleteConfirmInput').focus()
+    })
+
+    // Habilitar botón solo cuando el email coincide exactamente
+    document.getElementById('deleteConfirmInput').addEventListener('input', (e) => {
+        const expectedEmail = document.getElementById('deleteUserEmail').textContent.trim()
+        const typedEmail = e.target.value.trim()
+        const matches = typedEmail.toLowerCase() === expectedEmail.toLowerCase()
+
+        document.getElementById('deleteConfirmBtn').disabled = !matches
+        e.target.classList.toggle('matched', matches)
+    })
+
+    // Confirmar y ejecutar eliminación
+    document.getElementById('deleteConfirmBtn').addEventListener('click', async () => {
+        const userId = document.getElementById('deleteTargetUserId').value
+        const email = document.getElementById('deleteUserEmail').textContent
+
+        // Seguridad adicional: verificar coincidencia de email
+        const typedEmail = document.getElementById('deleteConfirmInput').value.trim()
+        if (typedEmail.toLowerCase() !== email.toLowerCase()) {
+            notify.error('El email no coincide')
+            return
+        }
+
+        // Cerrar modal y mostrar loading
+        document.getElementById('deleteUserModal').style.display = 'none'
+        const loading = notify.loading(`Eliminando usuario ${email}...`)
+
+        const { success, error, storageErrors } = await adminService.deleteUserComplete(userId)
+
+        if (success) {
+            let msg = `Usuario ${email} eliminado correctamente`
+            if (storageErrors) {
+                msg += ` (advertencia Storage: ${storageErrors.join(', ')})`
+                notify.updateLoading(loading, msg, 'warning')
+            } else {
+                notify.updateLoading(loading, msg, 'success')
+            }
+            loadData() // Recargar tabla
+        } else {
+            notify.updateLoading(loading, `Error: ${error}`, 'error')
         }
     })
 }

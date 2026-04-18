@@ -178,13 +178,91 @@
         </div>
     </div>
 
+    <!-- Modal Eliminar Usuario (Doble Confirmación) -->
+    <div class="modal-overlay" id="deleteUserModal">
+        <div class="modal">
+            <div class="modal-header danger">
+                <h3>
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    Eliminar Usuario Completo
+                </h3>
+                <button class="close-modal-btn" onclick="closeDeleteModal()">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Info del usuario a eliminar -->
+                <div style="margin-bottom: 1rem;">
+                    <p style="font-size: 0.875rem; color: #374151; margin: 0 0 0.25rem 0;">
+                        <strong>Usuario:</strong> <span id="deleteUserEmail" style="color: #dc2626;"></span>
+                    </p>
+                    <p style="font-size: 0.875rem; color: #374151; margin: 0;" id="deleteUserBusinessRow">
+                        <strong>Negocio:</strong> <span id="deleteUserBusinessName"></span>
+                    </p>
+                </div>
+
+                <!-- Advertencia: qué se va a borrar -->
+                <div class="delete-warning-box">
+                    <p><i class="fa-solid fa-circle-exclamation"></i> Se eliminarán permanentemente:</p>
+                    <ul class="delete-warning-list">
+                        <li><i class="fa-solid fa-xmark"></i> El usuario y su acceso a la plataforma</li>
+                        <li><i class="fa-solid fa-xmark"></i> El negocio y toda su configuración</li>
+                        <li><i class="fa-solid fa-xmark"></i> Todos los productos y categorías</li>
+                        <li><i class="fa-solid fa-xmark"></i> Todos los pedidos e historial</li>
+                        <li><i class="fa-solid fa-xmark"></i> Imágenes en Storage (productos, logo, fotos de entrega)</li>
+                        <li><i class="fa-solid fa-xmark"></i> Domiciliarios, horarios, métodos de pago</li>
+                        <li><i class="fa-solid fa-xmark"></i> Página de links, menús, promociones</li>
+                        <li><i class="fa-solid fa-xmark"></i> Tickets de soporte asociados</li>
+                    </ul>
+                </div>
+
+                <!-- Paso 1: Botón para continuar -->
+                <div id="deleteProceedBlock">
+                    <button class="btn-proceed" id="deleteProceedBtn">
+                        <i class="fa-solid fa-chevron-down"></i>
+                        Entiendo los riesgos, continuar
+                    </button>
+                </div>
+
+                <!-- Paso 2: Confirmación por email -->
+                <div class="delete-confirm-step" id="deleteConfirmStep">
+                    <label class="delete-confirm-label">
+                        Para confirmar, escribe el email del usuario:
+                        <span id="deleteConfirmEmailHint"></span>
+                    </label>
+                    <input
+                        type="email"
+                        id="deleteConfirmInput"
+                        class="delete-confirm-input"
+                        placeholder="email@ejemplo.com"
+                        autocomplete="off"
+                    >
+                </div>
+
+                <!-- Hidden: userId -->
+                <input type="hidden" id="deleteTargetUserId">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeDeleteModal()">Cancelar</button>
+                <button type="button" class="btn-danger" id="deleteConfirmBtn" disabled>
+                    <i class="fa-solid fa-trash"></i>
+                    Eliminar definitivamente
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script type="module" src="/src/pages/admin/users/users.js"></script>
     <script>
         function closeModal() {
             document.getElementById('createBusinessModal').style.display = 'none';
         }
+        function closeDeleteModal() {
+            document.getElementById('deleteUserModal').style.display = 'none';
+        }
     </script>
+
 </body>
 
 </html>

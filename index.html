@@ -18,6 +18,16 @@
 
   <!-- Styles -->
   <link rel="stylesheet" href="/src/pages/landing/landing.css">
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-BKY1NBT7CT"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    gtag('config', 'G-BKY1NBT7CT');
+  </script>
 </head>
 
 <body>
@@ -88,7 +98,7 @@
       <!-- Hero Preview -->
       <div class="hero-preview">
         <picture>
-          <source media="(max-width: 768px)" srcset="/src/assets/hero_img_phone.png">
+          <source media="(max-width: 768px)" srcset="/src/assets/mobile-hero-img.webp">
           <img src="/src/assets/hero_img.webp" alt="Dashboard Preview" class="hero-image" />
         </picture>
       </div>
@@ -335,7 +345,7 @@
             </li>
           </ul>
           <div class="pricing-actions">
-            <a class="btn-pricing primary" href="/login?mode=register">Contratar Pro</a>
+            <a class="btn-pricing primary" href="/login?mode=register&plan=pro">Contratar Pro</a>
             <a class="btn-pricing btn-outline-gray"
               href="https://wa.me/573180779665?text=Hola,%20me%20interesa%20contratar%20el%20Plan%20Pro"
               target="_blank">
@@ -374,99 +384,108 @@
       <div class="faq-wrapper">
         <div class="faq-col">
           <details class="faq-item" open>
-          <summary class="faq-summary">
-            ¿Necesito tarjeta de crédito para empezar?
-            <span class="material-symbols-rounded faq-icon-rotate">expand_more</span>
-          </summary>
-          <div class="faq-content">
-            No, puedes empezar tu prueba gratuita hoy mismo sin necesidad de ingresar una tarjeta de crédito. Solo
-            regístrate y comienza a crear tu catálogo.
-          </div>
-        </details>
+            <summary class="faq-summary">
+              ¿Necesito tarjeta de crédito para empezar?
+              <span class="material-symbols-rounded faq-icon-rotate">expand_more</span>
+            </summary>
+            <div class="faq-content">
+              No, puedes empezar tu prueba gratuita hoy mismo sin necesidad de ingresar una tarjeta de crédito. Solo
+              regístrate y comienza a crear tu catálogo.
+            </div>
+          </details>
 
-        <details class="faq-item">
-          <summary class="faq-summary">
-            ¿Cobran comisiones por venta?
-            <span class="material-symbols-rounded faq-icon-rotate">expand_more</span>
-          </summary>
-          <div class="faq-content">
-            Absolutamente no. Creemos que tus ganancias deben ser tuyas. Solo pagas la suscripción mensual de tu plan
-            elegido.
-          </div>
-        </details>
+          <details class="faq-item">
+            <summary class="faq-summary">
+              ¿Cobran comisiones por venta?
+              <span class="material-symbols-rounded faq-icon-rotate">expand_more</span>
+            </summary>
+            <div class="faq-content">
+              Absolutamente no. Creemos que tus ganancias deben ser tuyas. Solo pagas la suscripción mensual de tu plan
+              elegido.
+            </div>
+          </details>
 
-        <details class="faq-item">
-          <summary class="faq-summary">
-            ¿Puedo compartir mi catálogo en redes sociales?
-            <span class="material-symbols-rounded faq-icon-rotate">expand_more</span>
-          </summary>
-          <div class="faq-content">
-            ¡Claro! Obtienes un enlace único y limpio (traego.com/c/tu-negocio) que puedes poner en tu Instagram, TikTok
-            o compartir por WhatsApp.
-          </div>
-        </details>
+          <details class="faq-item">
+            <summary class="faq-summary">
+              ¿Puedo compartir mi catálogo en redes sociales?
+              <span class="material-symbols-rounded faq-icon-rotate">expand_more</span>
+            </summary>
+            <div class="faq-content">
+              ¡Claro! Obtienes un enlace único y limpio (traego.com/c/tu-negocio) que puedes poner en tu Instagram,
+              TikTok
+              o compartir por WhatsApp.
+            </div>
+          </details>
 
-        <details class="faq-item">
-          <summary class="faq-summary">
-            ¿Cuanto tiempo me tomará crear mi catálogo?
-            <span class="material-symbols-rounded faq-icon-rotate">expand_more</span>
-          </summary>
-          <div class="faq-content">
-            En menos de 10 minutos puedes tener tu catálogo listo con tus productos, fotos y precios. Si tienes alguna duda, nuestro equipo te ayuda por WhatsApp.
-          </div>
-        </details>
+          <details class="faq-item">
+            <summary class="faq-summary">
+              ¿Cuanto tiempo me tomará crear mi catálogo?
+              <span class="material-symbols-rounded faq-icon-rotate">expand_more</span>
+            </summary>
+            <div class="faq-content">
+              En menos de 10 minutos puedes tener tu catálogo listo con tus productos, fotos y precios. Si tienes alguna
+              duda, nuestro equipo te ayuda por WhatsApp.
+            </div>
+          </details>
 
-        <details class="faq-item">
-          <summary class="faq-summary">
-            ¿Cómo recibo los pedidos exactamente?
-            <span class="material-symbols-rounded faq-icon-rotate">expand_more</span>
-          </summary>
-          <div class="faq-content">
-            Tu cliente arma su pedido desde tu catálogo y al finalizar le llega un botón para enviártelo por WhatsApp. Tú recibes un mensaje ya formateado con los productos, cantidades y el total. Sin llamadas, sin errores.
-          </div>
-        </details>
+          <details class="faq-item">
+            <summary class="faq-summary">
+              ¿Cómo recibo los pedidos exactamente?
+              <span class="material-symbols-rounded faq-icon-rotate">expand_more</span>
+            </summary>
+            <div class="faq-content">
+              Tu cliente arma su pedido desde tu catálogo y al finalizar da clic en un botón para enviártelo por
+              WhatsApp.
+              Tú recibes un mensaje ya formateado con los productos, cantidades y el total y en tu panel de
+              administrador dentro de la plataforma también recibes la notificación del pedido. Sin llamadas, sin
+              errores.
+            </div>
+          </details>
         </div>
 
         <div class="faq-col">
-        <details class="faq-item">
-          <summary class="faq-summary">
-            ¿Puedo cancelar en cualquier momento?
-            <span class="material-symbols-rounded faq-icon-rotate">expand_more</span>
-          </summary>
-          <div class="faq-content">
-            Sí. No hay contratos de permanencia. Cancelas cuando quieras simplemente no renovando el pago de tu suscripción para el proximo mes.
-          </div>
-        </details>
+          <details class="faq-item">
+            <summary class="faq-summary">
+              ¿Puedo cancelar en cualquier momento?
+              <span class="material-symbols-rounded faq-icon-rotate">expand_more</span>
+            </summary>
+            <div class="faq-content">
+              Sí. No hay contratos de permanencia. Cancelas cuando quieras simplemente no renovando el pago de tu
+              suscripción para el proximo mes.
+            </div>
+          </details>
 
-        <details class="faq-item">
-          <summary class="faq-summary">
-            ¿Qué pasa cuando se vence el periodo gratuito?
-            <span class="material-symbols-rounded faq-icon-rotate">expand_more</span>
-          </summary>
-          <div class="faq-content">
-            Te avisamos antes de que se venza. Si decides continuar, activas tu plan desde la plataforma. Si no, tu cuenta queda pausada y tus datos se conservan por 30 días adicionales.
-          </div>
-        </details>
+          <details class="faq-item">
+            <summary class="faq-summary">
+              ¿Qué pasa cuando se vence el periodo gratuito?
+              <span class="material-symbols-rounded faq-icon-rotate">expand_more</span>
+            </summary>
+            <div class="faq-content">
+              Te avisamos antes de que se venza. Si decides continuar, activas tu plan desde la plataforma. Si no, tu
+              cuenta queda pausada y tus datos se conservan por 30 días adicionales.
+            </div>
+          </details>
 
-        <details class="faq-item">
-          <summary class="faq-summary">
-            ¿Mis clientes necesitan descargarse una app?
-            <span class="material-symbols-rounded faq-icon-rotate">expand_more</span>
-          </summary>
-          <div class="faq-content">
-            No. Tu catálogo funciona desde el navegador del celular. Tus clientes entran por el enlace, arman su pedido y listo.
-          </div>
-        </details>
+          <details class="faq-item">
+            <summary class="faq-summary">
+              ¿Mis clientes necesitan descargarse una app?
+              <span class="material-symbols-rounded faq-icon-rotate">expand_more</span>
+            </summary>
+            <div class="faq-content">
+              No. Tu catálogo funciona desde el navegador del celular. Tus clientes entran por el enlace, arman su
+              pedido y listo.
+            </div>
+          </details>
 
-        <details class="faq-item">
-          <summary class="faq-summary">
-            ¿Puedo tener varios menús según el día?
-            <span class="material-symbols-rounded faq-icon-rotate">expand_more</span>
-          </summary>
-          <div class="faq-content">
-            Sí, puedes definir menús por día de la semana y activarlos según el día que toquen.
-          </div>
-        </details>
+          <details class="faq-item">
+            <summary class="faq-summary">
+              ¿Puedo tener varios menús según el día?
+              <span class="material-symbols-rounded faq-icon-rotate">expand_more</span>
+            </summary>
+            <div class="faq-content">
+              Sí, puedes definir menús por día de la semana y activarlos según el día que toquen.
+            </div>
+          </details>
         </div>
       </div>
     </div>

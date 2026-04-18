@@ -36,7 +36,8 @@ class UpgradeModal {
             Mejora tu plan para desbloquear su potencial.
           </p>
           <div class="upgrade-modal-actions">
-            <a href="https://wa.me/573000000000?text=Hola,%20quiero%20mejorar%20mi%20plan%20a%20Pro" target="_blank" class="btn-upgrade-action">
+            <!-- Instead of WhatsApp, we guide them to the payment confirmation page -->
+            <a href="/dashboard/pago-pendiente?plan=pro" class="btn-upgrade-action">
               <i class="ri-rocket-line"></i> Mejorar a Pro
             </a>
             <button class="btn-upgrade-cancel" id="upgradeModalCancelBtn">Quizás más tarde</button>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirmación de Pago - TraeGo</title>
+  <link rel="icon" type="image/svg+xml" href="/src/assets/icon_traego.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+  <style>
+    :root {
+      --color-primary: #5170ff;
+      --color-primary-hover: #4058d6;
+      --color-bg: #f8fafc;
+      --color-surface: #ffffff;
+      --color-text: #1e293b;
+      --color-text-light: #64748b;
+      --color-border: #e2e8f0;
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    }
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 1rem;
+    }
+    .card {
+      background: var(--color-surface);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--color-border);
+    }
+    .icon-container {
+      width: 80px;
+      height: 80px;
+      background-color: rgba(16, 185, 129, 0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.5rem;
+    }
+    .icon-container i {
+      font-size: 40px;
+      color: #10b981;
+    }
+    .title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--color-text);
+    }
+    .subtitle {
+      font-size: 1rem;
+      color: var(--color-text-light);
+      margin-bottom: 2rem;
+      line-height: 1.5;
+    }
+    .instruction-box {
+      background-color: #f1f5f9;
+      border-left: 4px solid var(--color-primary);
+      padding: 1rem;
+      border-radius: 4px;
+      text-align: left;
+      margin-bottom: 2rem;
+    }
+    .instruction-title {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      font-size: 0.95rem;
+    }
+    .instruction-text {
+      font-size: 0.9rem;
+      color: var(--color-text-light);
+      margin: 0;
+    }
+    .btn-primary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 12px;
+      background-color: #25D366;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 1rem;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      gap: 8px;
+    }
+    .btn-primary:hover {
+      background-color: #1ebd5a;
+    }
+    .btn-secondary {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      background-color: transparent;
+      color: var(--color-text-light);
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      border: 1px solid var(--color-border);
+      cursor: pointer;
+      margin-top: 1rem;
+      transition: background-color 0.2s;
+      box-sizing: border-box;
+    }
+    .btn-secondary:hover {
+      background-color: var(--color-bg);
+      color: var(--color-text);
+    }
+    .loader {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      border: 3px solid rgba(0,0,0,0.1);
+      border-radius: 50%;
+      border-top-color: var(--color-primary);
+      animation: spin 1s ease-in-out infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    #content-container { display: none; }
+  </style>
+</head>
+<body>
+
+  <div id="loading" style="text-align: center;">
+    <div class="loader"></div>
+    <p style="color: var(--color-text-light); margin-top: 1rem; font-size: 0.9rem;">Verificando tu cuenta...</p>
+  </div>
+
+  <div class="card" id="content-container">
+    <div class="icon-container">
+      <i class="ri-checkbox-circle-fill"></i>
+    </div>
+    <h1 class="title">¡Casi listo!</h1>
+    <p class="subtitle">Solo falta verificar tu comprobante para activar tu plan.</p>
+    
+    <div class="instruction-box">
+      <div class="instruction-title">Siguiente paso:</div>
+      <p class="instruction-text">
+        Envíanos una captura de pantalla del pago exitoso de Nequi o Wompi por WhatsApp para habilitar todas las funcionalidades de tu negocio.
+      </p>
+    </div>
+
+    <button id="btnWhatsappConfirm" class="btn-primary">
+      <i class="ri-whatsapp-line"></i> Enviar Comprobante por WhatsApp
+    </button>
+
+    <a href="/dashboard" class="btn-secondary">Volver al inicio</a>
+  </div>
+
+  <!-- Supabase JS CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <script type="module" src="/src/pages/dashboard/pago-pendiente/pago-pendiente.js"></script>
+</body>
+</html>
