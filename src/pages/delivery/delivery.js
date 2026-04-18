@@ -27,6 +27,7 @@ const SESSION_KEY = 'traego_delivery_session'
 // ============================================================
 const loadingScreen = document.getElementById('loadingScreen')
 const notFoundScreen = document.getElementById('notFoundScreen')
+const planBlockScreen = document.getElementById('planBlockScreen')
 const loginScreen = document.getElementById('loginScreen')
 const appScreen = document.getElementById('appScreen')
 
@@ -40,6 +41,14 @@ const loginSpinner = document.getElementById('loginSpinner')
 const codeError = document.getElementById('codeError')
 const loginBusinessName = document.getElementById('loginBusinessName')
 const loginBusinessLogo = document.getElementById('loginBusinessLogo')
+const planUpgradeBtn = document.getElementById('planUpgradeBtn')
+
+if (planUpgradeBtn) {
+    planUpgradeBtn.addEventListener('click', () => {
+        window.open('https://checkout.nequi.wompi.co/l/8oK0Nb', '_blank')
+        window.location.href = '/dashboard/pago-pendiente?plan=pro'
+    })
+}
 
 // Setup OTP logic
 otpInputs.forEach((input, index) => {
@@ -131,6 +140,9 @@ async function init() {
 
     const business = await resolveBusiness(slug)
     if (!business) return showNotFound()
+    
+    const currentPlan = (business.plan_type || 'plus').toLowerCase()
+    if (currentPlan !== 'pro') return showPlanBlock()
 
     currentBusiness = business
     renderBusinessInfo(business)
@@ -164,7 +176,7 @@ async function resolveBusiness(slug) {
     try {
         const { data, error } = await supabase
             .from('businesses')
-            .select('id, name, logo_url, slug, primary_color, whatsapp_number')
+            .select('id, name, logo_url, slug, primary_color, whatsapp_number, plan_type')
             .eq('slug', slug)
             .single()
 
@@ -198,6 +210,11 @@ async function validateDeliveryPerson(uniqueCode, businessId) {
 function showNotFound() {
     loadingScreen.classList.add('hidden')
     notFoundScreen.classList.remove('hidden')
+}
+
+function showPlanBlock() {
+    loadingScreen.classList.add('hidden')
+    planBlockScreen.classList.remove('hidden')
 }
 
 function showLogin() {
@@ -1049,7 +1066,7 @@ async function loadMetrics(range) {
 
         const { data, error } = await supabase
             .from('orders')
-            .select('id, dispatched_at, completed_at, status')
+            .select('id, order_token, dispatched_at, completed_at, status')
             .eq('business_id', currentBusiness.id)
             .eq('delivery_person_id', currentDeliveryPerson.id)
             .eq('status', 'completed')

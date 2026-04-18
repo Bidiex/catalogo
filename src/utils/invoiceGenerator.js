@@ -258,3 +258,137 @@ const loadImage = (url) => {
         img.src = url;
     });
 };
+
+/**
+ * Generates a PDF ticket for kitchen/preparation.
+ * @param {Object} order - The order object.
+ * @param {Object} business - The business object.
+ */
+export const generateOrderTicket = async (order, business) => {
+    // 1. Setup PDF (80mm width)
+    const baseHeight = 80;
+    const itemHeight = 15;
+    const itemsCount = order.items ? order.items.length : 0;
+    const estimatedHeight = baseHeight + (itemsCount * itemHeight) + 40;
+
+    const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: [80, estimatedHeight]
+    });
+
+    const pageWidth = 80;
+    const margin = 5;
+    const contentWidth = pageWidth - (margin * 2);
+    let y = 10;
+
+    const centerText = (text, yPos, fontSize = 10, fontStyle = 'normal') => {
+        doc.setFontSize(fontSize);
+        doc.setFont('helvetica', fontStyle);
+        const textWidth = doc.getTextWidth(text);
+        const x = (pageWidth - textWidth) / 2;
+        doc.text(text, x, yPos);
+    };
+
+    // --- HEADER ---
+    centerText('TICKET DE PREPARACIÓN', y, 12, 'bold');
+    y += 8;
+
+    const serial = order.invoice_serial || `REF-${order.id.slice(0, 8).toUpperCase()}`;
+    centerText(`No: ${serial}`, y, 10, 'bold');
+    y += 6;
+
+    centerText(`Fecha: ${new Date(order.created_at).toLocaleString()}`, y, 8);
+    y += 8;
+
+    // Customer Name (Important for picking up)
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Cliente:`, margin, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(order.customer_name || 'N/A', margin + 18, y);
+    y += 6;
+
+    doc.setFontSize(9);
+    if (order.order_notes) {
+        const splitNotes = doc.splitTextToSize(`Notas Gral: ${order.order_notes}`, contentWidth);
+        doc.text(splitNotes, margin, y);
+        y += (splitNotes.length * 4) + 2;
+    }
+
+    doc.setDrawColor(200, 200, 200);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 5;
+
+    // --- ITEMS ---
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Cant.', margin, y);
+    doc.text('Producto', margin + 12, y);
+    y += 5;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10); // slightly larger for kitchen readability
+
+    order.items.forEach(item => {
+        const quantity = item.quantity.toString();
+        
+        doc.setFont('helvetica', 'bold');
+        doc.text(quantity, margin + 3, y, { align: 'center' });
+
+        const maxNameWidth = contentWidth - 15;
+        const splitName = doc.splitTextToSize(item.product_name, maxNameWidth);
+        doc.text(splitName, margin + 12, y);
+
+        let currentLineHeight = splitName.length * 5;
+
+        // Options
+        doc.setFont('helvetica', 'normal');
+        if (item.options) {
+            let optsText = [];
+            if (item.options.size) optsText.push(`Tamaño: ${item.options.size.name}`);
+            
+            // Handle sides
+            if (item.options.sides && item.options.sides.length) {
+                optsText.push(`+ ${item.options.sides.map(s => s.name).join(', ')}`);
+            }
+            
+            // Handle option groups (new system)
+            if (item.options.groups && item.options.groups.length > 0) {
+              item.options.groups.forEach(g => {
+                const selections = g.selections.map(s => s.name).join(', ');
+                optsText.push(`${g.name}: ${selections}`);
+              });
+            }
+
+            // Handle quickComments
+            if (item.options.quickComments && item.options.quickComments.length > 0) {
+              item.options.quickComments.forEach(c => optsText.push(`Nota: ${c.name}`));
+            } else if (item.options.quickComment) {
+              optsText.push(`Nota: ${item.options.quickComment.name}`);
+            }
+
+            if (optsText.length > 0) {
+                doc.setFontSize(8);
+                optsText.forEach(opt => {
+                    const splitOpts = doc.splitTextToSize(`- ${opt}`, maxNameWidth);
+                    doc.text(splitOpts, margin + 12, y + currentLineHeight);
+                    currentLineHeight += (splitOpts.length * 4);
+                });
+                doc.setFontSize(10); // reset
+            }
+        }
+
+        y += currentLineHeight + 4;
+    });
+
+    y += 2;
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 5;
+
+    centerText('--- FIN DEL PEDIDO ---', y, 8, 'italic');
+    y += 5;
+    
+    doc.setProperties({ title: `Ticket_${serial}` });
+    doc.save(`Ticket_${serial}.pdf`);
+};

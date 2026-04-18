@@ -1,5 +1,5 @@
 import { authService } from '../../services/auth.js'
-import { generateOrderInvoice } from '../../utils/invoiceGenerator.js'
+import { generateOrderInvoice, generateOrderTicket } from '../../utils/invoiceGenerator.js'
 import { planService } from '../../services/plan.js'
 import { featureLocker } from '../../utils/featureLocker.js'
 import { upgradeModal } from '../../components/upgradeModal.js'
@@ -3938,6 +3938,20 @@ copyLinkBtn.addEventListener('click', async () => {
   }
 })
 
+const copyDeliveryLinkBtn = document.getElementById('copyDeliveryLinkBtn')
+if (copyDeliveryLinkBtn) {
+  copyDeliveryLinkBtn.addEventListener('click', async () => {
+    if (!currentBusiness || !currentBusiness.slug) return
+    const url = `${window.location.origin}/d/${currentBusiness.slug}`
+    try {
+      await navigator.clipboard.writeText(url)
+      notify.success('Enlace copiado al portapapeles')
+    } catch (error) {
+      notify.error('No se pudo copiar el enlace')
+    }
+  })
+}
+
 // ============================================
 // WIZARD ONBOARDING - SIMPLE
 // ============================================
@@ -5317,15 +5331,20 @@ function renderOrders() {
               </button>` : ''
           }
             ${order.status === 'verified' ?
-            `<button class="btn-icon" style="color: #b45309;" onclick="window.markAsReady('${order.id}')" title="Para llevar">
+            (planService.isPro() ?
+              `<button class="btn-icon" style="color: #b45309;" onclick="window.markAsReady('${order.id}')" title="Para llevar">
                 <i class="ri-shopping-bag-3-line"></i>
-              </button>
-              <button class="btn-icon danger" onclick="window.cancelOrder('${order.id}')" title="Cancelar Pedido">
+              </button>` :
+              `<button class="btn-icon" style="color: #7e22ce;" onclick="window.openAssignOrderModal('${order.id}', '${orderRef}')" title="Despachar Pedido">
+                <i class="ri-motorbike-fill"></i>
+              </button>`
+            ) +
+             `<button class="btn-icon danger" onclick="window.cancelOrder('${order.id}')" title="Cancelar Pedido">
                 <i class="ri-close-line"></i>
               </button>` : ''
           }
             ${order.status === 'ready' ?
-            `<button class="btn-icon" style="color: #7e22ce;" onclick="window.openAssignOrderModal('${order.id}', '${order.id.slice(0, 8)}')" title="Despachar Pedido">
+            `<button class="btn-icon" style="color: #7e22ce;" onclick="window.openAssignOrderModal('${order.id}', '${orderRef}')" title="Despachar Pedido">
                 <i class="ri-motorbike-fill"></i>
               </button>
               <button class="btn-icon danger" onclick="window.cancelOrder('${order.id}')" title="Cancelar Pedido">
@@ -5342,6 +5361,9 @@ function renderOrders() {
           }
             <button class="btn-icon" onclick="window.printOrderInvoice('${order.id}')" title="Imprimir Factura">
               <i class="ri-printer-line"></i>
+            </button>
+            <button class="btn-icon" onclick="window.printOrderTicket('${order.id}')" title="Imprimir Ticket (Cocina)">
+              <i class="ri-receipt-line"></i>
             </button>
           </td>
         </tr>
@@ -5365,6 +5387,9 @@ function renderOrders() {
                 <button class="btn-icon" onclick="window.printOrderInvoice('${order.id}')" title="Imprimir Factura" style="padding: 0.25rem 0.5rem; min-width: auto;">
                   <i class="ri-printer-line"></i>
                 </button>
+                <button class="btn-icon" onclick="window.printOrderTicket('${order.id}')" title="Imprimir Ticket (Cocina)" style="padding: 0.25rem 0.5rem; min-width: auto;">
+                  <i class="ri-receipt-line"></i>
+                </button>
              </div>
           </div>
           <h4 style="margin: 0 0 0.25rem 0;">${order.customer_name}</h4>
@@ -5380,13 +5405,16 @@ function renderOrders() {
              </button>` : ''
           }
             ${order.status === 'verified' ?
-            `<button class="btn-primary-small" style="flex: 1; background: #b45309; justify-content: center; align-items: center;" onclick="window.markAsReady('${order.id}')">Para llevar</button>
-             <button class="btn-secondary-small danger" style="flex: 0 0 36px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="window.cancelOrder('${order.id}')" title="Cancelar">
+            (planService.isPro() ?
+             `<button class="btn-primary-small" style="flex: 1; background: #b45309; justify-content: center; align-items: center;" onclick="window.markAsReady('${order.id}')">Para llevar</button>` :
+             `<button class="btn-primary-small" style="flex: 1; background: #7e22ce; justify-content: center; align-items: center;" onclick="window.openAssignOrderModal('${order.id}', '${orderRef}')">Despachar</button>`
+            ) +
+            `<button class="btn-secondary-small danger" style="flex: 0 0 36px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="window.cancelOrder('${order.id}')" title="Cancelar">
                 <i class="ri-close-line"></i>
              </button>` : ''
           }
             ${order.status === 'ready' ?
-            `<button class="btn-primary-small" style="flex: 1; background: #7e22ce; justify-content: center; align-items: center;" onclick="window.openAssignOrderModal('${order.id}', '${order.id.slice(0, 8)}')">Despachar</button>
+            `<button class="btn-primary-small" style="flex: 1; background: #7e22ce; justify-content: center; align-items: center;" onclick="window.openAssignOrderModal('${order.id}', '${orderRef}')">Despachar</button>
              <button class="btn-secondary-small danger" style="flex: 0 0 36px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="window.cancelOrder('${order.id}')" title="Cancelar">
                 <i class="ri-close-line"></i>
              </button>` : ''
@@ -5485,6 +5513,9 @@ window.viewOrderDetails = async (orderId) => {
             <div>${orderData.customer_phone}</div>
             <button class="btn-secondary-small" style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.5rem;" onclick="window.printOrderInvoice('${orderId}')">
                 <i class="ri-printer-line"></i> Imprimir Factura
+            </button>
+            <button class="btn-secondary-small" style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.5rem; color: #1e3a8a; border-color: #bfdbfe; background: #eff6ff;" onclick="window.printOrderTicket('${orderId}')">
+                <i class="ri-receipt-line"></i> Imprimir Ticket
             </button>
          </div>
          <div>
@@ -5593,6 +5624,8 @@ window.viewOrderDetails = async (orderId) => {
       </div>
       `
 
+    const orderRefData = orderData.order_token ? orderData.order_token.split('-')[0].toUpperCase() : orderData.id.slice(0, 8).toUpperCase()
+
     // Setup action actions
     if (orderData.status === 'pending') {
       content.innerHTML += `
@@ -5605,16 +5638,21 @@ window.viewOrderDetails = async (orderId) => {
       content.innerHTML += `
         <div style="display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
             <button class="btn-secondary danger" style="flex: 1;" onclick="window.cancelOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">Cancelar Pedido</button>
-            <button class="btn-primary" style="flex: 1; background: #b45309;" onclick="window.markAsReady('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">
+            ${planService.isPro() ?
+            `<button class="btn-primary" style="flex: 1; background: #b45309;" onclick="window.markAsReady('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">
               <i class="ri-shopping-bag-3-line"></i> Para llevar
-            </button>
+            </button>` :
+            `<button class="btn-primary" style="flex: 1; background: #7e22ce;" onclick="window.openAssignOrderModal('${orderId}', '${orderRefData}'); document.getElementById('orderDetailsModal').style.display='none'">
+              <i class="ri-motorbike-fill"></i> Despachar
+            </button>`
+            }
          </div>
         `
     } else if (orderData.status === 'ready') {
       content.innerHTML += `
         <div style="display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
             <button class="btn-secondary danger" style="flex: 1;" onclick="window.cancelOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">Cancelar Pedido</button>
-            <button class="btn-primary" style="flex: 1; background: #7e22ce;" onclick="window.openAssignOrderModal('${orderId}', '${orderId.slice(0, 8)}'); document.getElementById('orderDetailsModal').style.display='none'">
+            <button class="btn-primary" style="flex: 1; background: #7e22ce;" onclick="window.openAssignOrderModal('${orderId}', '${orderRefData}'); document.getElementById('orderDetailsModal').style.display='none'">
               <i class="ri-motorbike-fill"></i> Despachar
             </button>
          </div>
@@ -5630,7 +5668,7 @@ window.viewOrderDetails = async (orderId) => {
               <i class="ri-motorbike-fill" style="color: #7e22ce;"></i>
               <span style="font-weight: 600; color: #581c87;">${dpName}</span>
             </div>
-            <button class="btn-secondary-small" onclick="window.openReassignModal('${orderId}', '${orderData.delivery_person_id}'); document.getElementById('orderDetailsModal').style.display='none'">
+            <button class="btn-secondary-small" onclick="window.openReassignModal('${orderId}', '${orderData.delivery_person_id}', '${orderRefData}'); document.getElementById('orderDetailsModal').style.display='none'">
               <i class="ri-user-shared-line"></i> Reasignar
             </button>
           </div>`
@@ -5876,14 +5914,14 @@ window.markAsReady = async (orderId) => {
   }
 }
 
-window.openReassignModal = async (orderId, currentDeliveryPersonId) => {
+window.openReassignModal = async (orderId, currentDeliveryPersonId, orderRef) => {
   orderToAssignId = orderId
   selectedDeliveryPersonId = null
 
   const modal = document.getElementById('assignOrderModal')
   const title = modal.querySelector('h3') || modal.querySelector('.modal-title')
   if (title) title.textContent = 'Reasignar Domiciliario'
-  document.getElementById('assignOrderNumber').textContent = `#${orderId.slice(0, 8)}`
+  document.getElementById('assignOrderNumber').textContent = `#${orderRef || orderId.slice(0, 8)}`
 
   if (!deliveryPersons || deliveryPersons.length === 0) {
     try {
@@ -5968,6 +6006,19 @@ window.printOrderInvoice = async (orderId) => {
   } catch (error) {
     console.error('Invoice error:', error)
     notify.updateLoading(loadingToast, 'Error al generar factura', 'error')
+  }
+}
+
+window.printOrderTicket = async (orderId) => {
+  let order = orders.find(o => o.id === orderId)
+  const loadingToast = notify.loading('Generando ticket...')
+  try {
+    const fullOrder = await ordersService.getOrderDetails(orderId)
+    await generateOrderTicket(fullOrder, currentBusiness)
+    notify.updateLoading(loadingToast, 'Ticket generado', 'success')
+  } catch (error) {
+    console.error('Ticket error:', error)
+    notify.updateLoading(loadingToast, 'Error al generar ticket', 'error')
   }
 }
 

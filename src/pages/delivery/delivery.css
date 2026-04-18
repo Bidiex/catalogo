@@ -167,6 +167,23 @@ body {
   max-width: 280px;
 }
 
+.plan-block-avatar-wrapper {
+  width: 100%;
+  max-width: 210px;
+  margin-bottom: 0.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.plan-block-avatar {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+}
+
 /* ============================================================ */
 /* LOGIN SCREEN                                                */
 /* ============================================================ */
@@ -1841,4 +1858,31 @@ body {
   color: var(--text-muted);
   text-align: center;
   margin-top: -0.25rem;
+}
+
+.btn-delivery-upgrade {
+  background-color: #5f6ef2;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 0.85rem 1.75rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 1.5rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(95, 110, 242, 0.3);
+  transition: transform 0.2s;
+}
+
+.btn-delivery-upgrade:active {
+  transform: scale(0.97);
+}
+
+.btn-delivery-upgrade i {
+  font-size: 1rem;
+  color: #ffffff;
 }
