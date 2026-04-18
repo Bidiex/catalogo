@@ -36,10 +36,10 @@ class UpgradeModal {
             Mejora tu plan para desbloquear su potencial.
           </p>
           <div class="upgrade-modal-actions">
-            <!-- Instead of WhatsApp, we guide them to the payment confirmation page -->
-            <a href="/dashboard/pago-pendiente?plan=pro" class="btn-upgrade-action">
+            <!-- Guide to Nequi Payment and redirect to confirmation state -->
+            <button class="btn-upgrade-action" id="upgradeActionBtn">
               <i class="ri-rocket-line"></i> Mejorar a Pro
-            </a>
+            </button>
             <button class="btn-upgrade-cancel" id="upgradeModalCancelBtn">Quizás más tarde</button>
           </div>
         </div>
@@ -51,6 +51,10 @@ class UpgradeModal {
         // Event listeners
         this.modalEl.querySelector('#upgradeModalCloseBtn').addEventListener('click', () => this.hide());
         this.modalEl.querySelector('#upgradeModalCancelBtn').addEventListener('click', () => this.hide());
+        this.modalEl.querySelector('#upgradeActionBtn').addEventListener('click', () => {
+            window.open('https://checkout.nequi.wompi.co/l/8oK0Nb', '_blank');
+            window.location.href = '/dashboard/pago-pendiente?plan=pro';
+        });
 
         // Close on overlay click
         this.modalEl.addEventListener('click', (e) => {
@@ -70,7 +74,8 @@ class UpgradeModal {
         // Map feature IDs to readable text
         const featureLabels = {
             'order-tracking': 'El seguimiento de pedidos en línea',
-            'order-suggestions': 'Las sugerencias inteligentes en el checkout'
+            'order-suggestions': 'Las sugerencias inteligentes en el checkout',
+            'delivery-platform': 'La plataforma de domiciliarios'
         };
 
         if (featureName && featureLabels[featureName]) {

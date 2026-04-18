@@ -9,7 +9,8 @@ import { businessService } from './business.js'
 // Por defecto se asume que si no requiere 'pro', un 'plus' puede acceder a todo lo básico.
 export const FEATURES_MAP = {
     'order-tracking': ['pro'],
-    'order-suggestions': ['pro']
+    'order-suggestions': ['pro'],
+    'delivery-platform': ['pro']
 }
 
 class PlanService {

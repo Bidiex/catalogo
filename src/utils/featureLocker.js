@@ -37,7 +37,7 @@ export const featureLocker = {
         // Si queremos mostrar un badge o ícono
         const lockIcon = document.createElement('div')
         lockIcon.classList.add('feature-lock-badge')
-        lockIcon.innerHTML = `<i class="ri-lock-star-line"></i> Pro`
+        lockIcon.innerHTML = `<i class="ri-vip-crown-fill"></i>`
 
         // Solo agregar el badge si el nodo no lo tiene y tiene posición relativa/absolute
         if (!node.querySelector('.feature-lock-badge')) {

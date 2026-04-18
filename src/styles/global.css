@@ -767,12 +767,13 @@ button[type="submit"]:disabled {
   transform: translate(-50%, -50%);
   background: #5170ff;
   color: white;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0.75rem 0.5rem 1rem;
   border-radius: var(--radius-full);
   font-size: 0.85rem;
   font-weight: 600;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   z-index: 10;
   box-shadow: 0 4px 12px rgba(81, 112, 255, 0.3);

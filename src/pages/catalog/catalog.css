@@ -99,9 +99,14 @@
 .business-logo {
   width: 60px;
   height: 60px;
-  background: linear-gradient(135deg, #2563eb, #38bdf8);
-  border-radius: 16px !important;
+  background-color: transparent;
+  border-radius: 50%;
+  overflow: hidden;
   flex-shrink: 0;
+}
+
+#headerLogo {
+  display: none;
 }
 
 .business-logo img {
