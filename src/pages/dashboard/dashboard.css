@@ -306,6 +306,81 @@
   display: block;
 }
 
+/* Casi Listo / Pago Pendiente Section */
+.casi-listo-container {
+  max-width: 480px;
+  margin: 4rem auto;
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+}
+
+.casi-listo-header {
+  background: #5170ff;
+  padding: 2rem;
+  text-align: center;
+  color: white;
+}
+
+.casi-listo-icon {
+  width: 64px;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+  font-size: 2rem;
+  color: #ffffff;
+}
+
+.casi-listo-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.casi-listo-body {
+  padding: 2rem;
+  text-align: center;
+}
+
+.casi-listo-body p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.casi-listo-actions {
+  display: flex;
+  gap: 1rem;
+  flex-direction: column;
+}
+
+.casi-listo-actions button {
+  width: 100%;
+  justify-content: center;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+}
+
+.casi-listo-actions .btn-primary {
+  background: #25d366;
+  color: white;
+  border: none;
+}
+
+.casi-listo-actions .btn-primary:hover {
+  background: #128c7e;
+  transform: translateY(-2px);
+}
+
 /* Stats Grid - Dashboard Cards */
 .stats-grid {
   display: grid;

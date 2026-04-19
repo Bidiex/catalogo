@@ -308,8 +308,30 @@ function initSidebarNavigation() {
     })
   })
 
-  // Por defecto mostrar Dashboard
-  switchSection('dashboard')
+  // Escuchar navegación externa (p. ej. desde modals)
+  window.addEventListener('traego:navigate', (e) => {
+    if (e.detail && e.detail.section) {
+      switchSection(e.detail.section)
+    }
+  })
+
+  // Revisar si existe redirección legacy en parámetro
+  const urlParams = new URLSearchParams(window.location.search)
+  const querySection = urlParams.get('seccion')
+  const savedSection = sessionStorage.getItem('traego_active_section')
+
+  if (querySection === 'pago-pendiente') {
+    switchSection('pago-pendiente')
+    window.history.replaceState({}, '', window.location.pathname)
+  } else if (savedSection && savedSection !== 'pago-pendiente') {
+    switchSection(savedSection)
+  } else {
+    // Por defecto mostrar Dashboard
+    switchSection('dashboard')
+  }
+
+  // Inicializar eventos de sección Casi Listo
+  initCasiListo()
 
   // Inicializar búsquedas
   initSearchFunctionality()
@@ -325,6 +347,25 @@ function initSidebarNavigation() {
 
   // Inicializar personalización de color
   initColorCustomization()
+}
+
+function initCasiListo() {
+  const whatsappBtn = document.getElementById('casiListoWhatsappBtn')
+  if (whatsappBtn) {
+    whatsappBtn.addEventListener('click', () => {
+      const mensaje = encodeURIComponent(
+        '¡Hola! Acabo de realizar el pago del Plan Pro de TraeGo. Te envío el comprobante para que actives mi cuenta. 🎉'
+      )
+      window.open(`https://wa.me/3180779665?text=${mensaje}`, '_blank')
+    })
+  }
+
+  const volverBtn = document.getElementById('casiListoVolverBtn')
+  if (volverBtn) {
+    volverBtn.addEventListener('click', () => {
+      switchSection('dashboard')
+    })
+  }
 }
 
 // ============================================
@@ -805,8 +846,17 @@ function switchSection(sectionName) {
     targetSection.style.display = 'block'
   }
 
+  // Sincronizar nav-item activo en el sidebar
+  const navItems = document.querySelectorAll('.nav-item[data-section]')
+  navItems.forEach(nav => nav.classList.remove('active'))
+  const activeNav = document.querySelector(`.nav-item[data-section="${sectionName}"]`)
+  if (activeNav) activeNav.classList.add('active')
+
   // Actualizar título del header
   updatePageTitle(sectionName)
+
+  // Guardar estado
+  sessionStorage.setItem('traego_active_section', sectionName)
 }
 
 function updatePageTitle(sectionName) {
@@ -1234,6 +1284,8 @@ const CONTACT_PHONE = '573180779665' // Replace with actual admin number
 if (contactSupportUpgradeBtn) {
   contactSupportUpgradeBtn.addEventListener('click', () => {
     window.open('https://checkout.nequi.wompi.co/l/8oK0Nb', '_blank')
+    if (upgradePlanModal) upgradePlanModal.style.display = 'none'
+    window.dispatchEvent(new CustomEvent('traego:navigate', { detail: { section: 'pago-pendiente' } }))
   })
 }
 

@@ -611,7 +611,7 @@
           <section class="card">
             <div class="card-header">
               <h2><i class="ri-motorbike-line"></i> Gestión de Domiciliarios</h2>
-              <div class="flex gap-2">
+              <div class="delivery-header-actions">
                 <button id="copyDeliveryLinkBtn" class="btn-primary-small font-bold btn-copy-link" data-feature="delivery-platform">
                   <i class="ri-file-copy-line"></i> Copiar Enlace Domiciliarios
                 </button>
@@ -739,6 +739,27 @@
               </div>
             </div>
           </section>
+        </div>
+
+        <!-- Section: Pago Pendiente (Casi Listo) -->
+        <div class="dashboard-section" id="section-pago-pendiente" style="display: none;">
+          <div class="casi-listo-container">
+            <div class="casi-listo-header">
+              <div class="casi-listo-icon"><i class="ri-hourglass-fill"></i></div>
+              <h2 class="casi-listo-title">¡Casi listo!</h2>
+            </div>
+            <div class="casi-listo-body">
+              <p>Tu solicitud para activar el Plan Pro está en proceso. Para completar la activación, envíanos el comprobante de tu pago por WhatsApp y lo activamos manualmente.</p>
+              <div class="casi-listo-actions">
+                <button id="casiListoWhatsappBtn" class="btn-primary">
+                  <i class="ri-whatsapp-line"></i> Enviar comprobante
+                </button>
+                <button id="casiListoVolverBtn" class="btn-secondary">
+                  <i class="ri-arrow-left-line"></i> Volver al inicio
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Link Editor Modal -->
