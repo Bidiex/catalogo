@@ -214,8 +214,8 @@
 
                 <div class="form-group">
                   <label for="wiz-whatsapp">WhatsApp *</label>
-                  <input type="tel" id="wiz-whatsapp" placeholder="+573001234567" required>
-                  <small>Incluye código de país (+57 para Colombia)</small>
+                  <input type="text" id="wiz-whatsapp" placeholder="Ej: 3001234567" inputmode="numeric" maxlength="10" pattern="3[0-9]{9}" required>
+                  <small>10 dígitos, sin espacios, empieza por 3</small>
                 </div>
 
                 <div class="form-group">
@@ -755,7 +755,7 @@
                   <i class="ri-whatsapp-line"></i> Enviar comprobante
                 </button>
                 <button id="casiListoVolverBtn" class="btn-secondary">
-                  <i class="ri-arrow-left-line"></i> Volver al inicio
+                  <i class="ri-home-line"></i> Ir al inicio
                 </button>
               </div>
             </div>
@@ -2978,7 +2978,7 @@
         <h3 style="margin-bottom: 2rem; font-size: 1.5rem; color: #4f46e5;">$79.900/mes</h3>
         
         <a href="https://checkout.nequi.wompi.co/l/8oK0Nb" target="_blank" class="btn-primary" style="width: 100%; justify-content: center; padding: 1rem; margin-bottom: 0.5rem;">
-          Pagar con Nequi
+          Pagar plan Pro
         </a>
         <p style="color: #6b7280; font-size: 0.85rem; margin-bottom: 1.5rem;">
           Después de completar el pago regresa aquí y haz clic en 'Ya pagué'

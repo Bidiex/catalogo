@@ -34,6 +34,7 @@ import * as XLSX from 'xlsx'
 // ESTADO GLOBAL
 // ============================================
 let currentUser = null
+let casiListoLocked = false // Bloquea navegación mientras la sección Casi Listo está activa
 let currentBusiness = null
 let categories = []
 let products = []
@@ -204,6 +205,15 @@ async function init() {
     }
 
     currentUser = await authService.getCurrentUser()
+
+    // Si getCurrentUser retorna null (ej: JWT válido pero usuario eliminado de Supabase),
+    // limpiar la sesión corrupta y redirigir al login
+    if (!currentUser) {
+      await authService.signOut()
+      window.location.href = '/login'
+      return
+    }
+
     userEmailSpan.textContent = currentUser.email
 
     // Inicializar navegación del sidebar
@@ -274,6 +284,12 @@ function initSidebarNavigation() {
   navItems.forEach(item => {
     item.addEventListener('click', (e) => {
       e.preventDefault()
+
+      // Bloquear navegación si pendingProModal está abierto:
+      // el usuario debe completar el flujo de pago, no esquivarlo
+      const pendingModal = document.getElementById('pendingProModal')
+      if (pendingModal && pendingModal.style.display !== 'none') return
+
       const section = item.dataset.section
 
       // Remover active de todos los nav items
@@ -363,6 +379,7 @@ function initCasiListo() {
   const volverBtn = document.getElementById('casiListoVolverBtn')
   if (volverBtn) {
     volverBtn.addEventListener('click', () => {
+      casiListoLocked = false // Desbloquear la navegación antes de salir
       switchSection('dashboard')
     })
   }
@@ -832,12 +849,21 @@ function initColorCustomization() {
 }
 
 function switchSection(sectionName) {
+  // Bloquear navegación cuando la sección "Casi listo" está activa.
+  // La única salida válida es el botón "Ir al inicio" que desactiva el lock primero.
+  if (casiListoLocked && sectionName !== 'pago-pendiente') return
+
   // Ocultar todas las secciones
   const sections = document.querySelectorAll('.dashboard-section')
   sections.forEach(section => {
     section.classList.remove('active')
     section.style.display = 'none'
   })
+
+  // Activar lock si se navega a pago-pendiente
+  if (sectionName === 'pago-pendiente') {
+    casiListoLocked = true
+  }
 
   // Mostrar la sección seleccionada
   const targetSection = document.getElementById(`section-${sectionName}`)
@@ -857,6 +883,19 @@ function switchSection(sectionName) {
 
   // Guardar estado
   sessionStorage.setItem('traego_active_section', sectionName)
+
+  // Ocultar el alert operacional en la sección Casi listo para prevenir
+  // que el botón "Configurar Ahora" active el negocio sin confirmar pago
+  const operationalAlert = document.getElementById('operationalAlert')
+  if (operationalAlert) {
+    if (sectionName === 'pago-pendiente') {
+      operationalAlert.style.display = 'none'
+    } else {
+      // Reevaluar: si el negocio sigue sin completar datos, el alert
+      // debe reaparecer en cuanto el usuario salga de Casi listo
+      checkOperationalRequirements()
+    }
+  }
 }
 
 function updatePageTitle(sectionName) {
@@ -1238,14 +1277,23 @@ const logoutBlockedBtn = document.getElementById('logoutBlockedBtn')
 // Pending Pro actions
 if (btnAlreadyPaidPro) {
   btnAlreadyPaidPro.addEventListener('click', () => {
-    window.location.href = '/dashboard/pago-pendiente?plan=pro'
+    const pendingModal = document.getElementById('pendingProModal')
+    if (pendingModal) pendingModal.style.display = 'none'
+    switchSection('pago-pendiente')
   })
 }
 
 if (btnDowngradeToPlus) {
   btnDowngradeToPlus.addEventListener('click', async () => {
     try {
-      if (confirm('¿Estás seguro de que quieres cancelar y probar 30 días con el Plan Plus?')) {
+      const result = await confirm.show({
+        title: '¿Activar Plan Plus gratis?',
+        message: 'Tendrás 30 días gratis del Plan Plus. Podrás contratar el Plan Pro en cualquier momento.',
+        confirmText: 'Aceptar',
+        cancelText: 'Contratar Pro',
+        type: 'info'
+      })
+      if (result) {
         await businessService.activatePlusTrialFromPendingPro()
         notify.success('¡Activaste tu Plan Plus Exitosamente!')
         setTimeout(() => {
@@ -1423,6 +1471,10 @@ function showNoBusinessState() {
   loadingState.style.display = 'none'
   noBusinessState.style.display = 'flex'
   businessExistsState.style.display = 'none'
+
+  // Ocultar el alert operacional: no tiene sentido durante el wizard
+  const opAlert = document.getElementById('operationalAlert')
+  if (opAlert) opAlert.style.display = 'none'
 
   // Disable sidebar navigation
   const sidebarNav = document.querySelector('.sidebar-nav')
@@ -4031,6 +4083,15 @@ const wizSkipProductBtn = document.getElementById('wiz-skip-product')
 const wizContinueProductBtn = document.getElementById('wiz-continue-product')
 const wizFinishBtn = document.getElementById('wiz-finish')
 
+
+// Validación en tiempo real del campo WhatsApp del wizard: solo dígitos
+const wizWhatsappInput = document.getElementById('wiz-whatsapp')
+if (wizWhatsappInput) {
+  wizWhatsappInput.addEventListener('input', (e) => {
+    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 10)
+  })
+}
+
 // Step 1: Crear negocio
 if (wizardBusinessForm) {
   wizardBusinessForm.addEventListener('submit', async (e) => {
@@ -4042,6 +4103,12 @@ if (wizardBusinessForm) {
     const description = document.getElementById('wiz-description').value.trim()
 
     const submitBtn = e.submitter
+
+    // Validar número de WhatsApp: 10 dígitos, empieza por 3, sin espacios
+    if (!/^3[0-9]{9}$/.test(whatsapp)) {
+      notify.error('El número de WhatsApp debe tener 10 dígitos y empezar por 3. Ej: 3001234567')
+      return
+    }
 
     await buttonLoader.execute(submitBtn, async () => {
       try {
@@ -4064,16 +4131,13 @@ if (wizardBusinessForm) {
         
         if (plan) localStorage.removeItem('selectedPlan')
 
-        if (createdBusiness.plan_type === 'pro' && createdBusiness.is_active === false) {
-          notify.success('¡Negocio creado en estado Pendiente!')
-          document.getElementById('noBusinessState').style.display = 'none'
-          
-          currentBusiness = createdBusiness
-          await loadAllData()
-          
-          const pendingModal = document.getElementById('pendingProModal')
-          if (pendingModal) pendingModal.style.display = 'flex'
-          showBusinessState()
+        // Si venía desde "Contratar Pro" en la landing, mostrar el flujo de pago al finalizar.
+        // El negocio siempre se crea en Plus; el admin activa Pro manualmente.
+        if (plan === 'pro') {
+          notify.success('¡Negocio creado! Completa el proceso para activar tu Plan Pro.')
+          wizardData.business = createdBusiness
+          wizardData.isPendingPro = true
+          showWizardStep(2)
           return
         }
 
@@ -4262,8 +4326,18 @@ async function saveWizardProduct() {
 
 // Finalizar wizard
 if (wizFinishBtn) {
-  wizFinishBtn.addEventListener('click', () => {
-    window.location.reload()
+  wizFinishBtn.addEventListener('click', async () => {
+    if (wizardData.isPendingPro) {
+      // Usuario registrado con plan Pro pendiente: mostrar dashboard y modal de pago
+      document.getElementById('noBusinessState').style.display = 'none'
+      currentBusiness = wizardData.business
+      await loadAllData()
+      showBusinessState()
+      const pendingModal = document.getElementById('pendingProModal')
+      if (pendingModal) pendingModal.style.display = 'flex'
+    } else {
+      window.location.reload()
+    }
   })
 }
 
@@ -4330,6 +4404,15 @@ function showWizardStep(step) {
     if (summaryProduct && summaryProductText && wizardData.product) {
       summaryProduct.style.display = 'flex'
       summaryProductText.textContent = wizardData.product
+    }
+
+    // Cambiar texto del botón final si es pendingPro
+    if (wizFinishBtn) {
+      if (wizardData.isPendingPro) {
+        wizFinishBtn.innerHTML = 'Activar Plan Pro <i class="ri-vip-crown-line"></i>'
+      } else {
+        wizFinishBtn.innerHTML = 'Ir al Dashboard <i class="ri-arrow-right-line"></i>'
+      }
     }
   }
 }
@@ -6198,6 +6281,14 @@ function checkOperationalRequirements() {
 
   if (!alert) return
 
+  // No mostrar el alert si el wizard de onboarding está activo
+  const wizardEl = document.getElementById('noBusinessState')
+  if (wizardEl && wizardEl.style.display !== 'none') return
+
+  // No mostrar el alert si el modal de pago pendiente está abierto
+  const pendingProEl = document.getElementById('pendingProModal')
+  if (pendingProEl && pendingProEl.style.display !== 'none') return
+
   const missing = []
 
   if (!paymentMethods || paymentMethods.length === 0) {
@@ -6209,16 +6300,18 @@ function checkOperationalRequirements() {
   }
 
   if (missing.length > 0) {
-    alert.style.display = 'flex'
-    // Join with ' y ' if 2 items, otherwise comma separated (though max 2 here)
     alertText.textContent = `Debes configurar: ${missing.join(' y ')} para recibir pedidos.`
+
+    // No mostrar el alert si estamos en la sección de pago pendiente
+    const activeSection = sessionStorage.getItem('traego_active_section')
+    if (activeSection !== 'pago-pendiente') {
+      alert.style.display = 'flex'
+    }
 
     // Setup button click
     if (alertBtn) {
       alertBtn.onclick = () => {
         switchSection('business')
-        // Try to visually highlight or scroll to settings
-        // Since settings are in 'Mi Negocio', finding the settings grid is key
         setTimeout(() => {
           const settingsGrid = document.querySelector('.business-settings-grid')
           if (settingsGrid) {

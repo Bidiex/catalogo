@@ -41,11 +41,12 @@ export const businessService = {
       if (existing) return existing
 
       const now = new Date()
-      
-      const isProPending = businessData.selectedPlan === 'pro'
-      const planType = isProPending ? 'pro' : 'plus'
-      const isActive = !isProPending
-      const expiresAt = isProPending ? now.toISOString() : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString()
+
+      // Siempre crear en Plan Plus con trial de 30 días.
+      // El Plan Pro se asigna manualmente por el admin después de verificar el comprobante de pago.
+      const planType = 'plus'
+      const isActive = true
+      const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString()
       
       // Clean selectedPlan from data to not insert it into db
       const { selectedPlan, ...cleanBusinessData } = businessData

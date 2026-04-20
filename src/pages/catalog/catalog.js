@@ -2230,6 +2230,14 @@ checkoutModalClose.addEventListener('click', closeCheckoutModal)
 checkoutModalOverlay.addEventListener('click', closeCheckoutModal)
 cancelCheckoutBtn.addEventListener('click', closeCheckoutModal)
 
+// Validación en tiempo real del teléfono del checkout: solo dígitos
+const clientPhoneInput = document.getElementById('clientPhone')
+if (clientPhoneInput) {
+  clientPhoneInput.addEventListener('input', (e) => {
+    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 10)
+  })
+}
+
 // Enviar pedido
 checkoutForm.addEventListener('submit', async (e) => {
   e.preventDefault()
@@ -2242,6 +2250,13 @@ checkoutForm.addEventListener('submit', async (e) => {
     barrio: document.getElementById('clientBarrio').value.trim(),
     metodo_pago: document.getElementById('paymentMethod').value,
     observaciones: document.getElementById('clientNotes').value.trim()
+  }
+
+  // Validar el teléfono: 10 dígitos, empieza por 3
+  if (!/^3[0-9]{9}$/.test(clientData.telefono)) {
+    notify.error('El teléfono debe tener 10 dígitos y empezar por 3. Ej: 3001234567')
+    document.getElementById('clientPhone').focus()
+    return
   }
 
   saveClientData(clientData) // Guardar para próximos pedidos
