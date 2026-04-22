@@ -223,10 +223,7 @@ async function processZip(data) {
     try {
         const zip = await JSZip.loadAsync(data)
 
-        // 1. Find Excel File (flexible name check)
-        // We look for any .xlsx file if specific one is not found, or stick to 'productos.xlsx'
-        // Let's stick to strict 'productos.xlsx' for the excel, or maybe allow any xlsx? 
-        // Instructions said 'productos.xlsx', let's iterate to find *any* xlsx to be helpful.
+        // Find Excel File (any .xlsx/.xls/.csv in the ZIP)
         const excelFile = Object.values(zip.files).find(f => !f.dir && f.name.match(/\.(xlsx|xls|csv)$/i))
 
         if (!excelFile) {
@@ -235,28 +232,22 @@ async function processZip(data) {
         }
 
         // Extract Excel
-        const excelInfo = await excelFile.async('arraybuffer') // renamed variable check
-        // XLSX.read expects Uint8Array or ArrayBuffer. 
+        const excelInfo = await excelFile.async('arraybuffer')
         const workbook = XLSX.read(excelInfo, { type: 'array' })
 
-        // 2. Extract Images (Robust scan)
-        zipImages = {} // Format: { "filename.jpg": Blob } (key is lowercase for matching)
-
+        // Extract Images
+        zipImages = {}
         const imageExtensions = ['.jpg', '.jpeg', '.png', '.webp']
-
         const filePromises = []
 
         zip.forEach((relativePath, file) => {
             if (file.dir) return
-            // Ignore Mac OS artifacts
             if (relativePath.includes('__MACOSX') || relativePath.startsWith('.')) return
 
             const lowerName = relativePath.toLowerCase()
             if (imageExtensions.some(ext => lowerName.endsWith(ext))) {
                 filePromises.push((async () => {
                     const blob = await file.async('blob')
-                    // Store by basename, lowercased, for easy lookup
-                    // e.g. "Folder/Coca-Cola.JPG" -> matches excel "coca-cola.jpg" or "Coca-Cola.JPG"
                     const basename = relativePath.split('/').pop().trim().toLowerCase()
                     zipImages[basename] = blob
                 })())
@@ -264,7 +255,7 @@ async function processZip(data) {
         })
 
         await Promise.all(filePromises)
-        console.log('Images loaded:', Object.keys(zipImages)) // Debug
+        console.log('Images loaded:', Object.keys(zipImages))
 
         processWorkbook(workbook)
 
@@ -281,6 +272,78 @@ function processWorkbook(workbook) {
     validateAndPreview(json)
 }
 
+// ─── Helpers para normalización de claves ─────────────────────────────────────
+
+/**
+ * Quita tildes y convierte a minúsculas para comparar sin distinción de acentos.
+ * ej. "Tamaño" → "tamano", "Categoría" → "categoria"
+ */
+function normalize(str) {
+    return String(str)
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+}
+
+/**
+ * Construye un mapa de claves normalizadas → valores del row.
+ * Permite acceder sin importar mayúsculas ni tildes.
+ */
+function buildNormalizedRow(row) {
+    const result = {}
+    Object.keys(row).forEach(k => { result[normalize(k)] = row[k] })
+    return result
+}
+
+/**
+ * Sanitiza un nombre de archivo para que sea aceptado por Supabase Storage.
+ * Elimina tildes, ñ y cualquier carácter no permitido.
+ * ej. "Limón 10 unds.webp" → "limon_10_unds.webp"
+ */
+function sanitizeFileName(name) {
+    return String(name)
+        .normalize('NFD')                    // descompone tildes: é → e + ́
+        .replace(/[\u0300-\u036f]/g, '')     // elimina diacríticos
+        .replace(/[^a-zA-Z0-9.\-_]/g, '_')  // reemplaza chars inválidos con _
+        .toLowerCase()
+}
+
+/**
+ * Extrae dinámicamente los pares Tamaño N / Precio tamaño N del row normalizado.
+ * Retorna array de { name, price, display_order } con solo los pares válidos,
+ * y un array de warnings para los pares con datos incompletos o inválidos.
+ */
+function extractSizes(norm) {
+    const sizes = []
+    const warnings = []
+    let n = 1
+
+    while (true) {
+        // Acepta con o sin tilde: "tamano 1" o "tamano 1"
+        const sizeName = norm[`tamano ${n}`]
+        const rawPrice = norm[`precio tamano ${n}`]
+
+        // Si no hay columna de nombre de tamaño, terminamos la búsqueda
+        if (sizeName === undefined && rawPrice === undefined) break
+
+        const cleanName = sizeName ? String(sizeName).trim() : ''
+        const sizePrice = parseFloat(rawPrice)
+
+        if (cleanName && !isNaN(sizePrice) && sizePrice > 0) {
+            sizes.push({ name: cleanName, price: sizePrice, display_order: n - 1 })
+        } else if (cleanName || rawPrice !== undefined) {
+            // Hay datos pero son inválidos → warning
+            warnings.push(`Tamaño ${n} ignorado (nombre: "${cleanName || '-'}", precio: "${rawPrice ?? '-'}")`)
+        }
+
+        n++
+    }
+
+    return { sizes, sizeWarnings: warnings }
+}
+
+// ─── Validación y preview ─────────────────────────────────────────────────────
+
 function validateAndPreview(data) {
     previewData = []
     const container = document.getElementById('previewContainer')
@@ -290,28 +353,24 @@ function validateAndPreview(data) {
     let validCount = 0
     let errorsCount = 0
 
-    // Validate first 100 rows
+    // Limitar a 50 filas en el preview
     const rows = data.slice(0, 50)
 
-    rows.forEach((row, index) => {
-        // Expected keys (case insensitive check usually needed, but assuming strict for now or standardizing)
-        // Let's coerce keys to lowercase for standard matching
-        const normalized = {}
-        Object.keys(row).forEach(k => normalized[k.toLowerCase()] = row[k])
+    rows.forEach((row) => {
+        const norm = buildNormalizedRow(row)
 
-        const category = normalized['categoría'] || normalized['categoria'] || normalized['category']
-        const name = normalized['nombre'] || normalized['name'] || normalized['producto']
-        const price = normalized['precio'] || normalized['price']
+        const category = norm['categoria'] || norm['category']
+        const name = norm['nombre'] || norm['name'] || norm['producto']
+        const price = norm['precio'] || norm['price']
 
         const isValid = category && name && !isNaN(parseFloat(price))
         if (isValid) validCount++
         else errorsCount++
 
-        // Check image
+        // Imagen
         let imgStatus = '-'
         let hasImage = false
-        const rawImgName = normalized['imagen'] || normalized['image'] || normalized['foto']
-
+        const rawImgName = norm['imagen'] || norm['image'] || norm['foto']
         let matchingBlobKey = null
 
         if (rawImgName) {
@@ -325,19 +384,31 @@ function validateAndPreview(data) {
             }
         }
 
-        // standardized object
+        // Tamaños
+        const { sizes, sizeWarnings } = extractSizes(norm)
+        let sizesStatus = '-'
+        if (sizes.length > 0) {
+            sizesStatus = `<span style="color: #16a34a; font-weight: 600;">${sizes.length} tamaño${sizes.length > 1 ? 's' : ''}</span>`
+        }
+        if (sizeWarnings.length > 0) {
+            sizesStatus += ` <span class="text-danger" title="${sizeWarnings.join('\n')}">⚠️</span>`
+        }
+
+        // Objeto estandarizado
         const item = {
             category,
             name,
             price,
-            description: normalized['descripción'] || normalized['description'] || '',
-            imageFile: hasImage ? matchingBlobKey : null, // Store key to retrieve blob from zipImages
+            description: norm['descripcion'] || norm['description'] || '',
+            imageFile: hasImage ? matchingBlobKey : null,
             originalImageName: rawImgName,
+            sizes,
+            sizeWarnings,
             isValid
         }
         previewData.push(item)
 
-        // Render in preview (All items)
+        // Fila en el preview
         const tr = document.createElement('tr')
         if (!isValid) tr.className = 'row-error'
         tr.innerHTML = `
@@ -345,6 +416,7 @@ function validateAndPreview(data) {
             <td>${name || '-'}</td>
             <td>${price || '-'}</td>
             <td>${imgStatus}</td>
+            <td>${sizesStatus}</td>
             <td>${isValid ? '<i class="fa-solid fa-check text-success"></i>' : '<i class="fa-solid fa-times text-danger"></i>'}</td>
         `
         tbody.appendChild(tr)
@@ -362,21 +434,25 @@ function validateAndPreview(data) {
     }
 }
 
+// ─── Importación ──────────────────────────────────────────────────────────────
+
 async function importProducts() {
     if (previewData.length === 0) return
 
+    const validItems = previewData.filter(i => i.isValid)
+
     if (!(await confirm.show({
         title: 'Importar',
-        message: `¿Importar ${previewData.filter(i => i.isValid).length} productos válidos?`
+        message: `¿Importar ${validItems.length} productos válidos?`
     }))) return
 
     const loading = notify.loading('Importando datos...')
     let imported = 0
+    let importedWithSizes = 0
+    let importedWithoutSizes = 0
+    let sizeInsertFails = 0
 
     try {
-        // Group by Category to minimize creation calls
-        // For simplicity in this version, we handle sequentially but with local cache usage
-
         for (const item of previewData) {
             if (!item.isValid) continue
 
@@ -387,18 +463,17 @@ async function importProducts() {
             if (existing) {
                 catId = existing.id
             } else {
-                // Create new
                 try {
                     const { success, data, error } = await adminService.createCategory(businessId, item.category.trim())
 
                     if (!success) {
                         console.error('Failed to create category', item.category, error)
                         notify.error(`Error creando categoría "${item.category}": ${error || 'Desconocido'}`)
-                        continue // Skip product if cat creation failed
+                        continue
                     }
 
                     catId = data.id
-                    categories.push(data) // Update local cache
+                    categories.push(data)
                 } catch (catError) {
                     console.error('Exception creating category', item.category, catError)
                     notify.error(`Error inesperado creando categoría "${item.category}"`)
@@ -408,41 +483,74 @@ async function importProducts() {
 
             // 2. Upload Image (if any)
             let imageUrl = null
-            // item.imageFile is the key to zipImages
             if (item.imageFile && zipImages[item.imageFile]) {
-                // Pass original name if possible or just use the key (which is lowercased)
-                // Better to use original name for extension detection if we can, but key works too if we trust extension
-                // Let's use item.originalImageName for the filename part to preserve extension case if needed, 
-                // but usually extension case doesn't matter for MIME type detection in browser
-                // defaulting to normalized key is safer for retrieval
                 imageUrl = await uploadImageToStorage(zipImages[item.imageFile], item.originalImageName || item.imageFile, businessId)
             }
 
             // 3. Create Product
-            await productService.create({
-                business_id: businessId,
-                category_id: catId,
-                name: item.name,
-                price: parseFloat(item.price),
-                description: item.description,
-                image_url: imageUrl,
-                is_active: true,
-                is_available: true
-            })
+            let createdProduct = null
+            try {
+                createdProduct = await productService.create({
+                    business_id: businessId,
+                    category_id: catId,
+                    name: item.name,
+                    price: parseFloat(item.price),
+                    description: item.description,
+                    image_url: imageUrl,
+                    is_active: true,
+                    is_available: true
+                })
+            } catch (productError) {
+                console.error('Error creating product', item.name, productError)
+                continue
+            }
+
             imported++
-            notify.updateLoading(loading, `Importando ${imported}/${previewData.filter(i => i.isValid).length}...`)
+            notify.updateLoading(loading, `Importando ${imported}/${validItems.length}...`)
+
+            // 4. Insert Sizes (if any) — fallo no revierte el producto
+            if (item.sizes.length > 0 && createdProduct?.id) {
+                const { success: sizesOk, error: sizesErr } = await adminService.insertProductSizes(
+                    createdProduct.id,
+                    item.sizes
+                )
+                if (sizesOk) {
+                    importedWithSizes++
+                } else {
+                    importedWithoutSizes++ // Producto importado, pero tamaños fallaron
+                    sizeInsertFails++
+                    console.error(`Tamaños no guardados para "${item.name}":`, sizesErr)
+                }
+            } else {
+                importedWithoutSizes++
+            }
+        }
+
+        // Resumen final
+        const summaryLines = []
+        if (importedWithSizes > 0) {
+            summaryLines.push(`<span style="color: green;">✅ ${importedWithSizes} producto${importedWithSizes > 1 ? 's' : ''} importado${importedWithSizes > 1 ? 's' : ''} con tamaños</span>`)
+        }
+        if (importedWithoutSizes - sizeInsertFails > 0) {
+            const count = importedWithoutSizes - sizeInsertFails
+            summaryLines.push(`<span style="color: green;">✅ ${count} producto${count > 1 ? 's' : ''} importado${count > 1 ? 's' : ''} sin tamaños</span>`)
+        }
+        if (sizeInsertFails > 0) {
+            summaryLines.push(`<span style="color: #b45309;">⚠️ ${sizeInsertFails} producto${sizeInsertFails > 1 ? 's' : ''} con tamaños que no pudieron guardarse</span>`)
         }
 
         notify.updateLoading(loading, `${imported} productos importados correctamente`)
+
+        const msg = document.getElementById('importValidationMsg')
+        msg.innerHTML = summaryLines.join('<br>')
 
         // Cleanup
         document.getElementById('fileInput').value = ''
         document.getElementById('previewContainer').style.display = 'none'
         document.getElementById('fileName').textContent = 'Haz clic o arrastra un archivo aquí'
-        document.getElementById('importValidationMsg').textContent = ''
         document.getElementById('btnImport').disabled = true
         previewData = []
-        zipImages = {} // Clear blobs
+        zipImages = {}
 
         loadProducts()
 
@@ -454,27 +562,8 @@ async function importProducts() {
 
 async function uploadImageToStorage(blob, filename, businessId) {
     try {
-        const ext = filename.split('.').pop()
-        const storagePath = `${businessId}/${Date.now()}-${filename}`
-
-        // We need supabase client here. adminService probably uses it.
-        // Assuming we can access it via adminService or global supabase object if exposed.
-        // Since adminService imports it, let's follow that pattern or import it here if needed.
-        // But wait, setup.js imports authService/adminService but not supabase client directly.
-        // I'll check adminService to see if I can expose it or if I should import it.
-        // Importing it directly is safer.
-
-        // Actually, importing createClient is not optimal if we already have it.
-        // Let's look at imports again. 
-        // No direct supabase import. I'll stick to using adminService.supabase if available, or I'll just import it.
-        // Let's assume for now I'll add the import to the top of the file in next chunk or rely on a helper.
-        // Better: I'll use a new helper function or import the client.
-
-        // RE-READING IMPORTS: No supabase import.
-        // I will add `import { supabase } from '../../../supabase.js'` (checking path).
-        // Path check: src/pages/admin/setup-catalogo/setup.js -> ../../../supabase.js ? 
-        // Let's check where supabase client is defined. usually src/supabase.js.
-
+        const safeName = sanitizeFileName(filename)
+        const storagePath = `${businessId}/${Date.now()}-${safeName}`
         const { data, error } = await adminService.uploadImage(storagePath, blob)
 
         if (error) {

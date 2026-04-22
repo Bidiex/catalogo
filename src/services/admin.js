@@ -121,7 +121,7 @@ export const adminService = {
                 'name', 'slug', 'description', 'whatsapp_number', 'phone',
                 'address', 'logo_url', 'plan_type', 'is_active',
                 'plan_expires_at', 'plan_renewed_at', 'monthly_orders_count',
-                'admin_notes'
+                'admin_notes', 'primary_color'
             ]
 
             const cleanUpdates = {}
@@ -487,6 +487,25 @@ export const adminService = {
             return { success: true, data: { ...data, publicUrl } }
         } catch (error) {
             console.error('Logo Upload Error:', error)
+            return { success: false, error: error.message }
+        }
+    },
+
+    /**
+     * Insertar tamaños para un producto recién creado.
+     * Si falla, NO revertir el producto — el caller maneja el error.
+     */
+    async insertProductSizes(productId, sizesRows) {
+        try {
+            const rows = sizesRows.map(s => ({ ...s, product_id: productId }))
+            const { error } = await supabase
+                .from('product_sizes')
+                .insert(rows)
+
+            if (error) throw error
+            return { success: true }
+        } catch (error) {
+            console.error('Admin API Error (insertProductSizes):', error)
             return { success: false, error: error.message }
         }
     },

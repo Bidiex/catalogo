@@ -500,3 +500,68 @@
 .sortable.active .sort-icon {
     color: var(--primary);
 }
+
+/* ── Color Modal ─────────────────────────────────────────── */
+.logo-section-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.color-picker-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.color-picker-native {
+    width: 56px;
+    height: 40px;
+    padding: 2px;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    background: none;
+}
+
+.color-hex-wrapper {
+    flex: 1;
+    min-width: 130px;
+}
+
+.color-hex-input {
+    font-family: monospace;
+    text-transform: uppercase;
+}
+
+.color-preview-btn {
+    border: none;
+    padding: 0.625rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: default;
+    color: #fff;
+}
+
+.color-feedback {
+    margin-top: 0.75rem;
+    font-size: 0.875rem;
+    min-height: 1.25rem;
+}
+
+.color-modal-desc {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+}
+
+.modal-btn-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}

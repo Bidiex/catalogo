@@ -105,6 +105,13 @@ function renderData() {
 
     // Admin Notes
     document.getElementById('adminNotes').value = b.admin_notes || ''
+
+    // Color del catálogo
+    const color = b.primary_color || '#000000'
+    document.getElementById('colorPicker').value = color
+    document.getElementById('colorHex').value = color.toUpperCase()
+    document.documentElement.style.setProperty('--color-primary', color)
+    document.getElementById('colorPreviewBtn').style.backgroundColor = color
 }
 
 function updateHeaderBadge(b) {
@@ -371,6 +378,73 @@ function setupListeners() {
         })
     }
     if (pmForm) pmForm.addEventListener('submit', handlePaymentModalSubmit)
+
+    // 9. Color del catálogo — Modal
+    const colorModal = document.getElementById('colorModal')
+    const btnOpenColorModal = document.getElementById('btnOpenColorModal')
+    const closeColorModalBtn = document.getElementById('closeColorModalBtn')
+    const cancelColorBtn = document.getElementById('cancelColorBtn')
+    const colorPicker = document.getElementById('colorPicker')
+    const colorHex = document.getElementById('colorHex')
+    const btnSaveColor = document.getElementById('btnSaveColor')
+    const colorFeedback = document.getElementById('colorFeedback')
+    const colorPreviewBtn = document.getElementById('colorPreviewBtn')
+
+    function openColorModal() {
+        colorFeedback.innerHTML = ''
+        colorModal.style.display = 'flex'
+    }
+
+    function closeColorModal() {
+        colorModal.style.display = 'none'
+    }
+
+    btnOpenColorModal.addEventListener('click', openColorModal)
+    closeColorModalBtn.addEventListener('click', closeColorModal)
+    cancelColorBtn.addEventListener('click', closeColorModal)
+    colorModal.addEventListener('click', (e) => {
+        if (e.target === colorModal) closeColorModal()
+    })
+
+    colorPicker.addEventListener('input', () => {
+        const val = colorPicker.value
+        colorHex.value = val.toUpperCase()
+        document.documentElement.style.setProperty('--color-primary', val)
+        colorPreviewBtn.style.backgroundColor = val
+    })
+
+    colorHex.addEventListener('input', () => {
+        const val = colorHex.value
+        if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+            colorPicker.value = val
+            document.documentElement.style.setProperty('--color-primary', val)
+            colorPreviewBtn.style.backgroundColor = val
+        }
+    })
+
+    btnSaveColor.addEventListener('click', async () => {
+        const hexValue = colorHex.value
+
+        if (!/^#[0-9A-Fa-f]{6}$/.test(hexValue)) {
+            colorFeedback.innerHTML = '<span style="color: #dc2626;"><i class="fa-solid fa-circle-exclamation"></i> Color inválido. Usa el formato #RRGGBB.</span>'
+            return
+        }
+
+        btnSaveColor.disabled = true
+        colorFeedback.innerHTML = ''
+
+        const { success, error } = await adminService.updateBusiness(businessId, { primary_color: hexValue })
+
+        btnSaveColor.disabled = false
+
+        if (success) {
+            currentBusiness.primary_color = hexValue
+            colorFeedback.innerHTML = '<span style="color: #16a34a;"><i class="fa-solid fa-check-circle"></i> Color guardado correctamente.</span>'
+            setTimeout(closeColorModal, 1200)
+        } else {
+            colorFeedback.innerHTML = `<span style="color: #dc2626;"><i class="fa-solid fa-circle-exclamation"></i> Error al guardar: ${error}</span>`
+        }
+    })
 }
 
 function updateLogoPreview(url) {

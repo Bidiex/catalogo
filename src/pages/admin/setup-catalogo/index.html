@@ -272,12 +272,10 @@
                     <h3><i class="fa-solid fa-file-import"></i> Carga Masiva (Excel/CSV)</h3>
                     Sube un archivo <strong>ZIP</strong> que contenga:
                     <ul style="margin: 0.5rem 0 1rem 1.5rem; list-style-type: disc;">
-                        <li><code>productos.xlsx</code> (con columnas: Categoría, Nombre, Precio, Descripción,
-                            <strong>Imagen</strong>)
-                        </li>
+                        <li><code>productos.xlsx</code> con columnas obligatorias: <strong>Categoría, Producto, Precio, Descripción, Imagen</strong></li>
+                        <li>Columnas opcionales de tamaños: <strong>Tamaño 1, Precio tamaño 1, Tamaño 2, Precio tamaño 2, …</strong></li>
                         <li>Carpeta <code>imagenes/</code> con las fotos (jpg, png, webp)</li>
                     </ul>
-                    </p>
 
                     <input type="file" id="fileInput" accept=".zip, .xlsx, .xls, .csv" hidden>
                     <div class="upload-area" id="uploadArea">
@@ -293,6 +291,7 @@
                                     <th>Nom.</th>
                                     <th>$$</th>
                                     <th>Img</th>
+                                    <th>Tamaños</th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
