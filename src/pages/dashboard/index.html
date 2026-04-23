@@ -1400,6 +1400,9 @@
                 <button class="products-tab-btn" data-tab="menus">
                   <i class="ri-calendar-event-line"></i> Menús del día
                 </button>
+                <button class="products-tab-btn" data-tab="badges">
+                  <i class="ri-price-tag-3-line"></i> Etiquetas
+                </button>
                 <button class="products-tab-btn" data-tab="suggestions" data-feature="order-suggestions">
                   <i class="ri-magic-line"></i> Sugerencias <span class="feature-lock-badge"><i
                       class="ri-vip-crown-fill"></i></span>
@@ -1533,6 +1536,30 @@
                 <div id="dailyMenusList" class="daily-menus-grid">
                   <!-- JS Generated -->
                   <p class="empty-message">No hay menús creados</p>
+                </div>
+              </div>
+
+              <!-- Tab Content: Etiquetas -->
+              <div id="tab-badges" class="products-tab-content" style="display: none;">
+                <div class="tab-header-actions"
+                  style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                  <h3 style="margin: 0; font-size: 1.1rem;">Gestionar Etiquetas</h3>
+                  <button id="addBadgeBtn" class="btn-primary-small">
+                    <i class="ri-add-line"></i> Nueva Etiqueta
+                  </button>
+                </div>
+
+                <div class="info-alert"
+                  style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 1rem; margin-bottom: 1.5rem;">
+                  <p style="margin: 0; font-size: 0.9rem; color: #1e40af;">
+                    <i class="ri-information-line"></i> <strong>Personalización Visual</strong>
+                    Crea etiquetas personalizadas como "Nuevo", "Recomendado" u "Oferta". 
+                    Podrás asignarlas a cada producto para destacarlos en tu catálogo.
+                  </p>
+                </div>
+
+                <div id="badgesList" class="categories-list">
+                  <p class="empty-message">Cargando...</p>
                 </div>
               </div>
 
@@ -2310,6 +2337,19 @@
           </div>
         </div>
 
+        <!-- Etiquetas Section -->
+        <div class="options-section" style="margin-top: 2rem;" id="productBadgesSection">
+          <h4 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">Etiquetas</h4>
+          <p style="color: #666; font-size: 0.85rem; margin-bottom: 1rem;">
+            Identifica visualmente este producto en el catálogo.
+          </p>
+          <div id="availableBadgesForProduct" class="options-list">
+            <p class="empty-message" style="padding: 1rem; text-align: center; color: #9ca3af; font-size: 0.9rem;">
+              Cargando...
+            </p>
+          </div>
+        </div>
+
         <!-- Sizes Section -->
         <div class="options-section" style="margin-top: 2rem;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
@@ -2468,6 +2508,36 @@
         <div class="modal-actions">
           <button type="button" class="btn-secondary" id="cancelProductTaxBtn">Cancelar</button>
           <button type="submit" class="btn-primary" id="saveProductTaxBtn">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal para crear/editar etiqueta -->
+  <div id="badgeModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 450px;">
+      <div class="modal-header">
+        <h3 id="badgeModalTitle">Nueva Etiqueta</h3>
+        <button class="modal-close" id="closeBadgeModal">&times;</button>
+      </div>
+      <form id="badgeForm" class="modal-form">
+        <input type="hidden" id="badgeIdInput">
+        <div class="form-group">
+          <label for="badgeNameInput">Nombre de la Etiqueta *</label>
+          <input type="text" id="badgeNameInput" placeholder="Ej: Nuevo, Oferta, Top" required maxlength="20">
+        </div>
+        <div class="form-group">
+          <label for="badgeColorInput">Color de la Etiqueta</label>
+          <div style="display: flex; gap: 1rem; align-items: center;">
+            <input type="color" id="badgeColorInput" value="#4ced17"
+              style="width: 50px; height: 50px; padding: 0; border: none; cursor: pointer; background: none;">
+            <div id="badgeColorPreview" style="width: 24px; height: 24px; border-radius: 50%; background: #4ced17; border: 1px solid #ddd;"></div>
+            <span id="badgeColorValue" style="font-family: monospace; color: #64748b;">#4ced17</span>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="cancelBadgeBtn">Cancelar</button>
+          <button type="submit" class="btn-primary" id="saveBadgeBtn">Guardar</button>
         </div>
       </form>
     </div>

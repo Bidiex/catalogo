@@ -11,6 +11,10 @@ import { colorUtils } from '../../utils/colorUtils.js'
 import { ordersService } from '../../services/orders.js'
 import { businessService } from '../../services/business.js'
 import { productOptionsService } from '../../services/productOptions.js'
+import { productBadgesService } from '../../services/productBadges.js'
+
+const BADGE_NUEVO_ID = '00000000-0000-0000-0000-000000000001'
+
 import gsap from 'gsap'
 
 
@@ -403,6 +407,19 @@ async function loadCatalogData() {
     } catch (error) {
       console.error('Error loading sizes:', error)
       // Continue without sizes if error
+    }
+
+    // Cargar Badges
+    try {
+      const badgesData = await productBadgesService.getBadgesForCatalog(currentBusiness.id)
+      // Attach badges to products
+      products.forEach(product => {
+        product.badges = badgesData.filter(badge => 
+          badge.product_badge_assignments.some(a => a.product_id === product.id)
+        )
+      })
+    } catch (error) {
+      console.error('Error loading badges:', error)
     }
 
     // Cargar métodos de pago
@@ -799,6 +816,18 @@ async function loadProductOptions(productId) {
     console.error('Error loading product options:', error)
     return []
   }
+}
+
+// Helper for contrast color
+function getContrastColor(hexColor) {
+  if (!hexColor) return '#000000'
+  const hex = hexColor.replace('#', '')
+  if (hex.length !== 6) return '#000000'
+  const r = parseInt(hex.substr(0, 2), 16)
+  const g = parseInt(hex.substr(2, 2), 16)
+  const b = parseInt(hex.substr(4, 2), 16)
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  return luminance > 0.5 ? '#000000' : '#FFFFFF'
 }
 
 // ============================================
@@ -1297,6 +1326,11 @@ function renderProductCard(product) {
       ? `<img src="${product.image_url}" alt="${product.name}" loading="lazy">`
       : 'Sin imagen'
     }
+        ${(product.badges || []).some(b => b.id === BADGE_NUEVO_ID) ? `
+          <div class="product-badge-new" style="position: absolute; top: 8px; left: 8px; background: #10b981; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; z-index: 2; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.2);">
+            Nuevo
+          </div>
+        ` : ''}
         <button class="favorite-btn ${isFav ? 'active' : ''}"
                 data-product-id="${product.id}">
           <i class="ri-heart-${isFav ? 'fill' : 'line'}"></i>
@@ -1398,6 +1432,22 @@ async function openProductModal(productId) {
 
   // Llenar modal
   productModalName.textContent = selectedProduct.name
+
+  // Render badges (pills)
+  const badgesContainer = document.getElementById('productModalBadges')
+  if (badgesContainer) {
+    const badges = selectedProduct.badges || []
+    if (badges.length > 0) {
+      badgesContainer.style.display = 'flex'
+      badgesContainer.innerHTML = badges.map(b => `
+        <span class="badge-pill" style="background: ${b.color}; color: ${getContrastColor(b.color)}; padding: 4px 10px; border-radius: 100px; font-size: 0.75rem; font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+          ${b.name}
+        </span>
+      `).join('')
+    } else {
+      badgesContainer.style.display = 'none'
+    }
+  }
   productModalPrice.innerHTML = priceHTML
   productModalDescription.textContent = selectedProduct.description || 'Sin descripción'
   quantityValue.textContent = currentQuantity

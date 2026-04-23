@@ -26,6 +26,9 @@ import { deliveryPersonsService } from '../../services/deliveryPersons.js'
 import { businessSidesService } from '../../services/businessSidesService.js'
 import { taxesService } from '../../services/taxes.js'
 import { deliveryPhotoService } from '../../services/deliveryPhotoService.js'
+import { productBadgesService } from '../../services/productBadges.js'
+
+const BADGE_NUEVO_ID = '00000000-0000-0000-0000-000000000001'
 
 import { initAnalytics, updateAnalytics } from './analytics.js'
 import { initLinksEditor } from '../links/links-editor.js'
@@ -49,6 +52,10 @@ let invoiceTaxes = []
 let editingInvoiceTax = null
 let productTaxes = []
 let editingProductTax = null
+
+// Badges state
+let businessBadges = []
+let editingBadge = null
 
 // Promotions state
 let promotions = []
@@ -2902,6 +2909,9 @@ async function openProductOptionsModal(productId) {
   await loadProductSizes(productId)
   renderProductSizesDashboard()
 
+  // Load and render badges
+  await loadProductBadgesInModal(productId)
+
   productOptionsModal.style.display = 'flex'
 }
 
@@ -3595,6 +3605,255 @@ async function deleteProductSize(sizeId) {
   }
 }
 
+
+// ============================================
+// PRODUCT BADGES MANAGEMENT
+// ============================================
+
+async function loadBadges() {
+  const container = document.getElementById('badgesList')
+  if (!container) return
+
+  container.innerHTML = '<p class="empty-message">Cargando badges...</p>'
+
+  try {
+    businessBadges = await productBadgesService.getByBusiness(currentBusiness.id)
+    renderBadges()
+  } catch (error) {
+    console.error('Error loading badges:', error)
+    container.innerHTML = '<p class="empty-message error">Error al cargar badges</p>'
+  }
+}
+
+function renderBadges() {
+  const container = document.getElementById('badgesList')
+  if (!container) return
+
+  if (businessBadges.length === 0) {
+    container.innerHTML = '<p class="empty-message">No hay badges creados. ¡Crea el primero!</p>'
+    return
+  }
+
+  container.innerHTML = businessBadges.map(badge => `
+    <div class="badge-item card-item" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border: 1px solid var(--color-border); border-radius: var(--radius-md); margin-bottom: 0.5rem; background: var(--surface-light);">
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <div style="width: 24px; height: 24px; border-radius: 50%; background: ${badge.color}; border: 1px solid #ddd;"></div>
+        <div>
+          <h4 style="margin: 0; font-size: 1rem;">${badge.name}</h4>
+        </div>
+      </div>
+      <div class="actions" style="display: flex; gap: 0.5rem;">
+        <button class="btn-icon" onclick="window.openBadgeModal('${badge.id}')" title="Editar">
+          <i class="ri-edit-line"></i>
+        </button>
+        <button class="btn-icon danger" onclick="window.deleteBadge('${badge.id}')" title="Eliminar">
+          <i class="ri-delete-bin-line"></i>
+        </button>
+      </div>
+    </div>
+  `).join('')
+}
+
+window.openBadgeModal = (badgeId = null) => {
+  const modal = document.getElementById('badgeModal')
+  const title = document.getElementById('badgeModalTitle')
+  const form = document.getElementById('badgeForm')
+  
+  if (!modal) return
+
+  editingBadge = badgeId ? businessBadges.find(b => b.id === badgeId) : null
+  
+  if (editingBadge) {
+    title.textContent = 'Editar Etiqueta'
+    document.getElementById('badgeNameInput').value = editingBadge.name
+    document.getElementById('badgeColorInput').value = editingBadge.color
+    document.getElementById('badgeColorPreview').style.backgroundColor = editingBadge.color
+  } else {
+    title.textContent = 'Nueva Etiqueta'
+    form.reset()
+    document.getElementById('badgeColorPreview').style.backgroundColor = '#000000'
+  }
+  
+  modal.style.display = 'flex'
+}
+
+window.closeBadgeModal = () => {
+  const modal = document.getElementById('badgeModal')
+  if (modal) modal.style.display = 'none'
+  editingBadge = null
+}
+
+// Helper for contrast color
+function getContrastColor(hexColor) {
+  if (!hexColor) return '#000000'
+  const hex = hexColor.replace('#', '')
+  if (hex.length !== 6) return '#000000'
+  const r = parseInt(hex.substr(0, 2), 16)
+  const g = parseInt(hex.substr(2, 2), 16)
+  const b = parseInt(hex.substr(4, 2), 16)
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  return luminance > 0.5 ? '#000000' : '#FFFFFF'
+}
+
+// Product specific assignments
+async function loadProductBadgesInModal(productId) {
+  const container = document.getElementById('availableBadgesForProduct')
+  if (!container) return
+  
+  container.innerHTML = '<p class="empty-message">Cargando...</p>'
+  
+  try {
+    const allBadges = await productBadgesService.getByBusiness(currentBusiness.id)
+    const assignedIds = await productBadgesService.getAssignmentsByProduct(productId)
+    
+    // Check if system badge is assigned
+    const isNuevoAssigned = assignedIds.includes(BADGE_NUEVO_ID)
+    
+    let html = `
+      <div class="system-badge-item" style="margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
+        <label style="display: flex; align-items: center; cursor: pointer;">
+          <input type="checkbox" class="badge-assign-toggle" 
+            ${isNuevoAssigned ? 'checked' : ''}
+            onchange="window.toggleBadgeAssignment(this, '${productId}', '${BADGE_NUEVO_ID}')"
+            style="margin-right: 0.75rem; transform: scale(1.1);"
+          >
+          <span class="product-badge-pill" style="background-color:#10b981; color:#ffffff; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 0.8rem;">
+            Nuevo
+          </span>
+          <span style="font-size:0.8rem; color:#64748b; margin-left:8px;">
+            Aparece también como sticker en la tarjeta del producto
+          </span>
+        </label>
+      </div>
+    `
+    
+    if (allBadges.length > 0) {
+      html += '<h5 style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.75rem; color: #64748b;">Etiquetas Personalizadas</h5>'
+      html += allBadges.map(badge => `
+        <label style="display: flex; align-items: center; padding: 0.5rem; border: 1px solid #eee; border-radius: 6px; margin-bottom: 0.5rem; cursor: pointer; background: white;">
+          <input type="checkbox" 
+            onchange="window.toggleBadgeAssignment(this, '${productId}', '${badge.id}')"
+            ${assignedIds.includes(badge.id) ? 'checked' : ''}
+            style="margin-right: 0.75rem; transform: scale(1.1);"
+          >
+          <div style="flex: 1; display: flex; align-items: center; gap: 0.5rem;">
+            <div style="width: 12px; height: 12px; border-radius: 50%; background: ${badge.color}; border: 1px solid #ddd;"></div>
+            <div style="font-weight: 500;">${badge.name}</div>
+          </div>
+        </label>
+      `).join('')
+    } else {
+      html += '<p class="empty-message" style="font-size: 0.8rem;">No tienes etiquetas personalizadas.</p>'
+    }
+    
+    container.innerHTML = html
+  } catch (error) {
+    console.error('Error loading product badges:', error)
+    container.innerHTML = '<p class="empty-message error">Error al cargar badges</p>'
+  }
+}
+
+window.toggleBadgeAssignment = async (checkbox, productId, badgeId) => {
+  const isChecked = checkbox.checked
+  checkbox.disabled = true
+  
+  try {
+    if (isChecked) {
+      await productBadgesService.assign(productId, badgeId)
+      notify.success('Etiqueta asignada')
+    } else {
+      await productBadgesService.unassign(productId, badgeId)
+      notify.success('Etiqueta removida')
+    }
+  } catch (error) {
+    console.error('Error toggling badge:', error)
+    notify.error('Error al actualizar badge')
+    checkbox.checked = !isChecked
+  } finally {
+    checkbox.disabled = false
+  }
+}
+
+window.deleteBadge = async (badgeId) => {
+  const result = await confirm.show({
+    title: '¿Eliminar etiqueta?',
+    message: 'Esta acción desvinculará la etiqueta de todos los productos. No se puede deshacer.',
+    confirmText: 'Eliminar',
+    cancelText: 'Cancelar',
+    type: 'danger'
+  })
+  
+  if (!result) return
+  
+  try {
+    await productBadgesService.delete(badgeId)
+    notify.success('Etiqueta eliminada')
+    await loadBadges()
+  } catch (error) {
+    console.error('Error deleting badge:', error)
+    notify.error('Error al eliminar badge')
+  }
+}
+
+// Global Badges Listeners
+document.addEventListener('DOMContentLoaded', () => {
+  const addBadgeBtn = document.getElementById('addBadgeBtn')
+  if (addBadgeBtn) addBadgeBtn.addEventListener('click', () => window.openBadgeModal())
+  
+  const closeBadgeModalBtn = document.getElementById('closeBadgeModal')
+  if (closeBadgeModalBtn) closeBadgeModalBtn.addEventListener('click', window.closeBadgeModal)
+  
+  const cancelBadgeBtn = document.getElementById('cancelBadgeBtn')
+  if (cancelBadgeBtn) cancelBadgeBtn.addEventListener('click', window.closeBadgeModal)
+
+  // Live color preview
+  const badgeColorInput = document.getElementById('badgeColorInput')
+  if (badgeColorInput) {
+    badgeColorInput.addEventListener('input', (e) => {
+      const preview = document.getElementById('badgeColorPreview')
+      if (preview) preview.style.backgroundColor = e.target.value
+      const valueText = document.getElementById('badgeColorValue')
+      if (valueText) valueText.textContent = e.target.value
+    })
+  }
+
+  // Badge Form Submit
+  const badgeForm = document.getElementById('badgeForm')
+  if (badgeForm) {
+    badgeForm.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      
+      const name = document.getElementById('badgeNameInput').value
+      const color = document.getElementById('badgeColorInput').value
+      
+      const submitBtn = e.submitter || badgeForm.querySelector('button[type="submit"]')
+      
+      await buttonLoader.execute(submitBtn, async () => {
+        try {
+          const badgeData = {
+            business_id: currentBusiness.id,
+            name,
+            color
+          }
+          
+          if (editingBadge) {
+            await productBadgesService.update(editingBadge.id, badgeData)
+            notify.success('Etiqueta actualizada')
+          } else {
+            await productBadgesService.create(badgeData)
+            notify.success('Etiqueta creada')
+          }
+          
+          window.closeBadgeModal()
+          await loadBadges()
+        } catch (error) {
+          console.error('Error saving badge:', error)
+          notify.error('Error al guardar badge')
+        }
+      }, 'Guardando...')
+    })
+  }
+})
 
 // ============================================
 // PROMOTIONS MANAGEMENT
@@ -7075,6 +7334,8 @@ function initProductsTabs() {
         loadSuggestions()
       } else if (tabId === 'quick-comments') {
         if (window.loadGlobalQuickComments) window.loadGlobalQuickComments()
+      } else if (tabId === 'badges') {
+        loadBadges()
       }
     })
   })
