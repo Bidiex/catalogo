@@ -73,8 +73,11 @@ function renderProductsTable(products) {
     const tbody = document.getElementById('productsTableBody')
     document.getElementById('productsCount').textContent = products.length
 
+    // Limpiar selección al re-renderizar
+    updateBulkBar()
+
     if (products.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 2rem; color: #6b7280;">No hay productos aún.</td></tr>'
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 2rem; color: #6b7280;">No hay productos aún.</td></tr>'
         return
     }
 
@@ -82,7 +85,11 @@ function renderProductsTable(products) {
     products.forEach(p => {
         const tr = document.createElement('tr')
         tr.className = 'product-row'
+        tr.dataset.id = p.id
         tr.innerHTML = `
+            <td class="col-checkbox">
+                <input type="checkbox" class="product-checkbox" data-id="${p.id}" aria-label="Seleccionar ${p.name}">
+            </td>
             <td>${p.categories?.name || 'Sin Categoría'}</td>
             <td style="font-weight: 500;">${p.name}</td>
             <td>$${parseFloat(p.price).toLocaleString()}</td>
@@ -93,8 +100,13 @@ function renderProductsTable(products) {
         tbody.appendChild(tr)
     })
 
-    // Delete Listeners
-    document.querySelectorAll('.delete-btn').forEach(btn => {
+    // Listener: actualizar barra bulk al marcar/desmarcar
+    tbody.querySelectorAll('.product-checkbox').forEach(cb => {
+        cb.addEventListener('change', () => updateBulkBar())
+    })
+
+    // Delete individual
+    tbody.querySelectorAll('.delete-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
             if (await confirm.show({ title: 'Eliminar', message: '¿Borrar este producto?', type: 'danger' })) {
                 await productService.delete(btn.dataset.id)
@@ -103,6 +115,67 @@ function renderProductsTable(products) {
             }
         })
     })
+}
+
+// ─── Selección múltiple ───────────────────────────────────────────────────────
+
+function updateBulkBar() {
+    const checkboxes = document.querySelectorAll('.product-checkbox:checked')
+    const count = checkboxes.length
+    const bar = document.getElementById('bulkDeleteBar')
+    const label = document.getElementById('bulkDeleteLabel')
+    const bulkCount = document.getElementById('bulkCount')
+
+    if (count > 0) {
+        bar.classList.add('visible')
+        label.textContent = `Eliminar seleccionados (${count})`
+        bulkCount.textContent = `${count} seleccionado${count > 1 ? 's' : ''}`
+    } else {
+        bar.classList.remove('visible')
+    }
+}
+
+async function deleteSelectedProducts() {
+    const checkboxes = [...document.querySelectorAll('.product-checkbox:checked')]
+    const count = checkboxes.length
+    if (count === 0) return
+
+    if (!(await confirm.show({
+        title: 'Eliminar productos',
+        message: `¿Eliminar ${count} producto${count > 1 ? 's' : ''}? Esta acción no se puede deshacer.`,
+        type: 'danger'
+    }))) return
+
+    const selectedIds = checkboxes.map(cb => cb.dataset.id)
+    const msg = document.getElementById('importValidationMsg')
+
+    const loading = notify.loading(`Eliminando ${count} productos...`)
+    const { success, error } = await adminService.deleteProducts(selectedIds, businessId)
+
+    if (!success) {
+        notify.updateLoading(loading, 'Error al eliminar', 'error')
+        msg.innerHTML = `<span style="color: red;">Error al eliminar: ${error}</span>`
+        return
+    }
+
+    notify.updateLoading(loading, `${count} producto${count > 1 ? 's eliminados' : ' eliminado'}`)
+
+    // Remover filas del DOM
+    selectedIds.forEach(id => {
+        const row = document.querySelector(`.product-row[data-id="${id}"]`)
+        if (row) row.remove()
+    })
+
+    // Actualizar contador de productos
+    const remaining = document.querySelectorAll('.product-row').length
+    document.getElementById('productsCount').textContent = remaining
+
+    // Limpiar barra
+    updateBulkBar()
+
+    const successMsg = `${count} producto${count > 1 ? 's eliminados' : ' eliminado'} correctamente`
+    msg.innerHTML = `<span style="color: green;">✅ ${successMsg}</span>`
+    notify.success(successMsg)
 }
 
 function setupListeners() {
@@ -199,6 +272,9 @@ function setupListeners() {
 
     // 4. Import Button
     document.getElementById('btnImport').addEventListener('click', importProducts)
+
+    // 5. Bulk Delete Button
+    document.getElementById('btnDeleteBulk').addEventListener('click', deleteSelectedProducts)
 }
 
 function handleFile(file) {
@@ -353,8 +429,8 @@ function validateAndPreview(data) {
     let validCount = 0
     let errorsCount = 0
 
-    // Limitar a 50 filas en el preview
-    const rows = data.slice(0, 50)
+    // Limitar a 100 filas en el preview
+    const rows = data.slice(0, 100)
 
     rows.forEach((row) => {
         const norm = buildNormalizedRow(row)

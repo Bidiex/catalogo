@@ -348,6 +348,28 @@ export const adminService = {
         }
     },
 
+    /**
+     * Eliminar múltiples productos en un solo query.
+     * product_sizes tiene ON DELETE CASCADE — no requiere DELETE explícito.
+     */
+    async deleteProducts(productIds, businessId) {
+        try {
+            const { error } = await supabase
+                .from('products')
+                .delete()
+                .in('id', productIds)
+
+            if (error) throw error
+
+            await this.logAction(null, businessId, 'DELETE_PRODUCTS_BULK', { productIds, count: productIds.length })
+
+            return { success: true }
+        } catch (error) {
+            console.error('Admin API Error (deleteProducts):', error)
+            return { success: false, error: error.message }
+        }
+    },
+
     // --- LOGS ---
 
     /**

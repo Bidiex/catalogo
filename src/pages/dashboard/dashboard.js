@@ -1583,7 +1583,10 @@ function renderCategories(categoriesToRender = null) {
   }
 
   categoriesList.innerHTML = catsToShow.map(category => `
-    <div class="category-item" data-id="${category.id}">
+    <div class="category-item" data-id="${category.id}" draggable="true">
+      <div class="drag-handle" title="Arrastrar para reordenar">
+        <i class="ri-drag-move-2-line"></i>
+      </div>
       <div class="category-item-info">
         <div class="category-item-name">
           ${category.name}
@@ -1593,15 +1596,17 @@ function renderCategories(categoriesToRender = null) {
         </div>
       </div>
       <div class="category-item-actions">
-  <button class="btn-icon edit-category" data-id="${category.id}">
-    <i class="ri-edit-line"></i> Editar
-  </button>
-  <button class="btn-icon danger delete-category" data-id="${category.id}">
-    <i class="ri-delete-bin-line"></i> Eliminar
-  </button>
-</div>
+        <button class="btn-icon edit-category" data-id="${category.id}">
+          <i class="ri-edit-line"></i> Editar
+        </button>
+        <button class="btn-icon danger delete-category" data-id="${category.id}">
+          <i class="ri-delete-bin-line"></i> Eliminar
+        </button>
+      </div>
     </div>
   `).join('')
+
+  initCategoryDragAndDrop()
 
   // Event listeners
   document.querySelectorAll('.edit-category').forEach(btn => {
@@ -1711,6 +1716,244 @@ function renderProducts(productsToRender = null) {
       })
     })
   })
+}
+
+// ============================================
+// DRAG & DROP LOGIC
+// ============================================
+
+function getDragAfterElement(container, y, selector) {
+  const draggableElements = [...container.querySelectorAll(`${selector}:not(.dragging)`)];
+
+  return draggableElements.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+    if (offset < 0 && offset > closest.offset) {
+      return { offset: offset, element: child };
+    } else {
+      return closest;
+    }
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+function initCategoryDragAndDrop() {
+  const list = categoriesList;
+  const items = list.querySelectorAll('.category-item');
+
+  items.forEach(item => {
+    // Desktop Drag events
+    item.addEventListener('dragstart', (e) => {
+      // Evitar drag si no es desde el handle
+      if (!e.target.closest('.drag-handle')) {
+        e.preventDefault();
+        return;
+      }
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+      saveCategoriesOrder();
+    });
+
+    // Mobile Touch events
+    item.addEventListener('touchstart', (e) => {
+      if (!e.target.closest('.drag-handle')) return;
+      
+      item.classList.add('dragging');
+      // Prevenir scroll mientras arrastra
+      document.body.style.overflow = 'hidden';
+    }, { passive: false });
+
+    item.addEventListener('touchmove', (e) => {
+      if (!item.classList.contains('dragging')) return;
+      
+      e.preventDefault();
+      const touch = e.touches[0];
+      const afterElement = getDragAfterElement(list, touch.pageY, '.category-item');
+      
+      if (afterElement == null) {
+        list.appendChild(item);
+      } else {
+        list.insertBefore(item, afterElement);
+      }
+    }, { passive: false });
+
+    item.addEventListener('touchend', () => {
+      if (!item.classList.contains('dragging')) return;
+      
+      item.classList.remove('dragging');
+      document.body.style.overflow = '';
+      saveCategoriesOrder();
+    });
+  });
+
+  list.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    const afterElement = getDragAfterElement(list, e.clientY, '.category-item');
+    const dragging = document.querySelector('.dragging');
+    if (dragging && dragging.classList.contains('category-item')) {
+      if (afterElement == null) {
+        list.appendChild(dragging);
+      } else {
+        list.insertBefore(dragging, afterElement);
+      }
+    }
+  });
+}
+
+async function saveCategoriesOrder() {
+  const itemsList = [...categoriesList.querySelectorAll('.category-item')];
+  if (itemsList.length === 0) return;
+
+  try {
+    const updates = itemsList.map((item, index) => {
+      const categoryId = item.dataset.id;
+      const displayOrder = index;
+
+      // Actualizar el array local de categorías
+      const cat = categories.find(c => c.id === categoryId);
+      if (cat) cat.display_order = displayOrder;
+
+      return supabase
+        .from('categories')
+        .update({ display_order: displayOrder })
+        .eq('id', categoryId);
+    });
+
+    const results = await Promise.all(updates);
+    const error = results.find(r => r.error)?.error;
+    if (error) throw error;
+
+    categories.sort((a, b) => a.display_order - b.display_order);
+    
+  } catch (err) {
+    console.error('Error saving categories order:', err);
+    notify.error('No se pudo guardar el nuevo orden de categorías');
+  }
+}
+
+async function renderCategoryProducts(categoryId) {
+  const container = document.getElementById('categoryProductsList');
+  if (!container) return;
+
+  container.innerHTML = '<p class="empty-message">Cargando productos...</p>';
+
+  try {
+    const products = await productService.getByCategory(categoryId);
+    
+    if (products.length === 0) {
+      container.innerHTML = '<p class="empty-message">Esta categoría no tiene productos aún.</p>';
+      return;
+    }
+
+    container.innerHTML = products.map(product => `
+      <div class="product-modal-item" data-id="${product.id}" draggable="true">
+        <div class="drag-handle" title="Arrastrar para reordenar">
+          <i class="ri-drag-move-2-line"></i>
+        </div>
+        ${product.image_url 
+          ? `<img src="${product.image_url}" class="product-modal-thumb">` 
+          : '<div class="product-modal-thumb" style="display:flex;align-items:center;justify-content:center;background:#f3f4f6;border-radius:4px;"><i class="ri-image-line" style="color:#9ca3af;"></i></div>'}
+        <div class="product-modal-info">
+          <div class="product-modal-name">${product.name}</div>
+        </div>
+      </div>
+    `).join('');
+
+    initProductDragAndDrop();
+    
+  } catch (error) {
+    console.error('Error loading category products:', error);
+    container.innerHTML = '<p class="empty-message">Error al cargar productos.</p>';
+  }
+}
+
+function initProductDragAndDrop() {
+  const list = document.getElementById('categoryProductsList');
+  if (!list) return;
+  const items = list.querySelectorAll('.product-modal-item');
+
+  items.forEach(item => {
+    // Desktop Drag events
+    item.addEventListener('dragstart', (e) => {
+      if (!e.target.closest('.drag-handle')) {
+        e.preventDefault();
+        return;
+      }
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+      saveProductsOrder();
+    });
+
+    // Mobile Touch events
+    item.addEventListener('touchstart', (e) => {
+      if (!e.target.closest('.drag-handle')) return;
+      item.classList.add('dragging');
+      document.body.style.overflow = 'hidden';
+    }, { passive: false });
+
+    item.addEventListener('touchmove', (e) => {
+      if (!item.classList.contains('dragging')) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      const afterElement = getDragAfterElement(list, touch.pageY, '.product-modal-item');
+      if (afterElement == null) {
+        list.appendChild(item);
+      } else {
+        list.insertBefore(item, afterElement);
+      }
+    }, { passive: false });
+
+    item.addEventListener('touchend', () => {
+      if (!item.classList.contains('dragging')) return;
+      item.classList.remove('dragging');
+      document.body.style.overflow = '';
+      saveProductsOrder();
+    });
+  });
+
+  list.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    const afterElement = getDragAfterElement(list, e.clientY, '.product-modal-item');
+    const dragging = document.querySelector('.dragging');
+    if (dragging && dragging.classList.contains('product-modal-item')) {
+      if (afterElement == null) {
+        list.appendChild(dragging);
+      } else {
+        list.insertBefore(dragging, afterElement);
+      }
+    }
+  });
+}
+
+async function saveProductsOrder() {
+  const list = document.getElementById('categoryProductsList');
+  if (!list) return;
+  const itemsList = [...list.querySelectorAll('.product-modal-item')];
+  if (itemsList.length === 0) return;
+
+  try {
+    const updates = itemsList.map((item, index) =>
+      supabase
+        .from('products')
+        .update({ display_order: index })
+        .eq('id', item.dataset.id)
+    );
+
+    const results = await Promise.all(updates);
+    const error = results.find(r => r.error)?.error;
+    if (error) throw error;
+    
+  } catch (err) {
+    console.error('Error saving products order:', err);
+    notify.error('No se pudo guardar el nuevo orden de productos');
+  }
 }
 
 // ============================================
@@ -1886,16 +2129,29 @@ function openCategoryModal() {
   document.getElementById('categoryModalTitle').textContent = 'Nueva Categoría'
   document.getElementById('categoryNameInput').value = ''
   document.getElementById('categoryActiveInput').checked = true
+  
+  // Ocultar sección de productos al crear nueva categoría
+  const productsSection = document.getElementById('categoryProductsSection');
+  if (productsSection) productsSection.style.display = 'none';
+  
   categoryModal.style.display = 'flex'
 }
 
-function openEditCategoryModal(categoryId) {
+async function openEditCategoryModal(categoryId) {
   editingCategory = categories.find(c => c.id === categoryId)
   if (!editingCategory) return
 
   document.getElementById('categoryModalTitle').textContent = 'Editar Categoría'
   document.getElementById('categoryNameInput').value = editingCategory.name
   document.getElementById('categoryActiveInput').checked = editingCategory.is_active !== false
+  
+  // Mostrar y cargar productos
+  const productsSection = document.getElementById('categoryProductsSection');
+  if (productsSection) {
+    productsSection.style.display = 'block';
+    renderCategoryProducts(categoryId);
+  }
+  
   categoryModal.style.display = 'flex'
 }
 

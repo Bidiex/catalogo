@@ -170,6 +170,53 @@
         .delete-btn:hover {
             background-color: #fee2e2;
         }
+
+        /* Bulk selection */
+        .products-bulk-bar {
+            display: none;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            padding: 0.625rem 0.875rem;
+            background-color: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 0.5rem;
+        }
+
+        .products-bulk-bar.visible {
+            display: flex;
+        }
+
+        .products-bulk-bar .bulk-count {
+            font-size: 0.875rem;
+            color: #991b1b;
+            font-weight: 500;
+            flex: 1;
+        }
+
+        .btn-delete-bulk {
+            background-color: #ef4444;
+            color: #fff;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: background-color 0.2s;
+        }
+
+        .btn-delete-bulk:hover {
+            background-color: #dc2626;
+        }
+
+        .col-checkbox {
+            width: 2rem;
+            text-align: center;
+        }
     </style>
 </head>
 
@@ -310,10 +357,20 @@
             <!-- Existing Products -->
             <div class="section-card">
                 <h3>Productos Agregados (<span id="productsCount">0</span>)</h3>
+
+                <div class="products-bulk-bar" id="bulkDeleteBar">
+                    <span class="bulk-count" id="bulkCount">0 seleccionados</span>
+                    <button class="btn-delete-bulk" id="btnDeleteBulk">
+                        <i class="fa-solid fa-trash"></i>
+                        <span id="bulkDeleteLabel">Eliminar seleccionados (0)</span>
+                    </button>
+                </div>
+
                 <div class="products-table-container">
                     <table class="activity-table">
                         <thead>
                             <tr>
+                                <th class="col-checkbox"></th>
                                 <th>Categoría</th>
                                 <th>Producto</th>
                                 <th>Precio</th>
@@ -322,7 +379,7 @@
                         </thead>
                         <tbody id="productsTableBody">
                             <tr>
-                                <td colspan="4" class="text-center">Cargando...</td>
+                                <td colspan="5" class="text-center">Cargando...</td>
                             </tr>
                         </tbody>
                     </table>
