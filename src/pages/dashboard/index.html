@@ -214,8 +214,8 @@
 
                 <div class="form-group">
                   <label for="wiz-whatsapp">WhatsApp *</label>
-                  <input type="tel" id="wiz-whatsapp" placeholder="+573001234567" required>
-                  <small>Incluye código de país (+57 para Colombia)</small>
+                  <input type="text" id="wiz-whatsapp" placeholder="Ej: 3001234567" inputmode="numeric" maxlength="10" pattern="3[0-9]{9}" required>
+                  <small>10 dígitos, sin espacios, empieza por 3</small>
                 </div>
 
                 <div class="form-group">
@@ -611,7 +611,7 @@
           <section class="card">
             <div class="card-header">
               <h2><i class="ri-motorbike-line"></i> Gestión de Domiciliarios</h2>
-              <div class="flex gap-2">
+              <div class="delivery-header-actions">
                 <button id="copyDeliveryLinkBtn" class="btn-primary-small font-bold btn-copy-link" data-feature="delivery-platform">
                   <i class="ri-file-copy-line"></i> Copiar Enlace Domiciliarios
                 </button>
@@ -739,6 +739,27 @@
               </div>
             </div>
           </section>
+        </div>
+
+        <!-- Section: Pago Pendiente (Casi Listo) -->
+        <div class="dashboard-section" id="section-pago-pendiente" style="display: none;">
+          <div class="casi-listo-container">
+            <div class="casi-listo-header">
+              <div class="casi-listo-icon"><i class="ri-hourglass-fill"></i></div>
+              <h2 class="casi-listo-title">¡Casi listo!</h2>
+            </div>
+            <div class="casi-listo-body">
+              <p>Tu solicitud para activar el Plan Pro está en proceso. Para completar la activación, envíanos el comprobante de tu pago por WhatsApp y lo activamos manualmente.</p>
+              <div class="casi-listo-actions">
+                <button id="casiListoWhatsappBtn" class="btn-primary">
+                  <i class="ri-whatsapp-line"></i> Enviar comprobante
+                </button>
+                <button id="casiListoVolverBtn" class="btn-secondary">
+                  <i class="ri-home-line"></i> Ir al inicio
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Link Editor Modal -->
@@ -1379,6 +1400,9 @@
                 <button class="products-tab-btn" data-tab="menus">
                   <i class="ri-calendar-event-line"></i> Menús del día
                 </button>
+                <button class="products-tab-btn" data-tab="badges">
+                  <i class="ri-price-tag-3-line"></i> Etiquetas
+                </button>
                 <button class="products-tab-btn" data-tab="suggestions" data-feature="order-suggestions">
                   <i class="ri-magic-line"></i> Sugerencias <span class="feature-lock-badge"><i
                       class="ri-vip-crown-fill"></i></span>
@@ -1512,6 +1536,30 @@
                 <div id="dailyMenusList" class="daily-menus-grid">
                   <!-- JS Generated -->
                   <p class="empty-message">No hay menús creados</p>
+                </div>
+              </div>
+
+              <!-- Tab Content: Etiquetas -->
+              <div id="tab-badges" class="products-tab-content" style="display: none;">
+                <div class="tab-header-actions"
+                  style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                  <h3 style="margin: 0; font-size: 1.1rem;">Gestionar Etiquetas</h3>
+                  <button id="addBadgeBtn" class="btn-primary-small">
+                    <i class="ri-add-line"></i> Nueva Etiqueta
+                  </button>
+                </div>
+
+                <div class="info-alert"
+                  style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 1rem; margin-bottom: 1.5rem;">
+                  <p style="margin: 0; font-size: 0.9rem; color: #1e40af;">
+                    <i class="ri-information-line"></i> <strong>Personalización Visual</strong>
+                    Crea etiquetas personalizadas como "Nuevo", "Recomendado" u "Oferta". 
+                    Podrás asignarlas a cada producto para destacarlos en tu catálogo.
+                  </p>
+                </div>
+
+                <div id="badgesList" class="categories-list">
+                  <p class="empty-message">Cargando...</p>
                 </div>
               </div>
 
@@ -2032,6 +2080,14 @@
           </label>
         </div>
 
+        <div id="categoryProductsSection" class="category-products-section" style="display: none;">
+          <h4 style="font-size: 1rem; font-weight: 600;"><i class="ri-shopping-bag-line"></i> Productos de esta categoría</h4>
+          <p style="font-size: 0.85rem; color: #64748b;">Arrastra para reordenar cómo aparecen en el catálogo.</p>
+          <div id="categoryProductsList" class="category-products-list">
+            <!-- Cargado por JS -->
+            <p class="empty-message">Cargando productos...</p>
+          </div>
+        </div>
 
         <div class="modal-actions">
           <button type="button" class="btn-secondary" id="cancelCategoryBtn">Cancelar</button>
@@ -2281,6 +2337,19 @@
           </div>
         </div>
 
+        <!-- Etiquetas Section -->
+        <div class="options-section" style="margin-top: 2rem;" id="productBadgesSection">
+          <h4 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">Etiquetas</h4>
+          <p style="color: #666; font-size: 0.85rem; margin-bottom: 1rem;">
+            Identifica visualmente este producto en el catálogo.
+          </p>
+          <div id="availableBadgesForProduct" class="options-list">
+            <p class="empty-message" style="padding: 1rem; text-align: center; color: #9ca3af; font-size: 0.9rem;">
+              Cargando...
+            </p>
+          </div>
+        </div>
+
         <!-- Sizes Section -->
         <div class="options-section" style="margin-top: 2rem;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
@@ -2439,6 +2508,36 @@
         <div class="modal-actions">
           <button type="button" class="btn-secondary" id="cancelProductTaxBtn">Cancelar</button>
           <button type="submit" class="btn-primary" id="saveProductTaxBtn">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal para crear/editar etiqueta -->
+  <div id="badgeModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 450px;">
+      <div class="modal-header">
+        <h3 id="badgeModalTitle">Nueva Etiqueta</h3>
+        <button class="modal-close" id="closeBadgeModal">&times;</button>
+      </div>
+      <form id="badgeForm" class="modal-form">
+        <input type="hidden" id="badgeIdInput">
+        <div class="form-group">
+          <label for="badgeNameInput">Nombre de la Etiqueta *</label>
+          <input type="text" id="badgeNameInput" placeholder="Ej: Nuevo, Oferta, Top" required maxlength="20">
+        </div>
+        <div class="form-group">
+          <label for="badgeColorInput">Color de la Etiqueta</label>
+          <div style="display: flex; gap: 1rem; align-items: center;">
+            <input type="color" id="badgeColorInput" value="#4ced17"
+              style="width: 50px; height: 50px; padding: 0; border: none; cursor: pointer; background: none;">
+            <div id="badgeColorPreview" style="width: 24px; height: 24px; border-radius: 50%; background: #4ced17; border: 1px solid #ddd;"></div>
+            <span id="badgeColorValue" style="font-family: monospace; color: #64748b;">#4ced17</span>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="cancelBadgeBtn">Cancelar</button>
+          <button type="submit" class="btn-primary" id="saveBadgeBtn">Guardar</button>
         </div>
       </form>
     </div>
@@ -2957,7 +3056,7 @@
         <h3 style="margin-bottom: 2rem; font-size: 1.5rem; color: #4f46e5;">$79.900/mes</h3>
         
         <a href="https://checkout.nequi.wompi.co/l/8oK0Nb" target="_blank" class="btn-primary" style="width: 100%; justify-content: center; padding: 1rem; margin-bottom: 0.5rem;">
-          Pagar con Nequi
+          Pagar plan Pro
         </a>
         <p style="color: #6b7280; font-size: 0.85rem; margin-bottom: 1.5rem;">
           Después de completar el pago regresa aquí y haz clic en 'Ya pagué'

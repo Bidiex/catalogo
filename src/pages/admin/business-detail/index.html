@@ -413,13 +413,16 @@
                                         style="font-size: 3rem; color: #d1d5db;"></i>
                                 </div>
                                 <input type="file" id="logoInput" accept="image/png, image/jpeg, image/webp" hidden>
-                                <button type="button" class="btn-secondary"
-                                    onclick="document.getElementById('logoInput').click()" style="margin: 0 auto;">
-                                    <i class="fa-solid fa-camera"></i> Cambiar Logo
-                                </button>
-                                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">Max
-                                    2MB.
-                                    JPG, PNG, WEBP</p>
+                                <div class="logo-section-actions">
+                                    <button type="button" class="btn-secondary"
+                                        onclick="document.getElementById('logoInput').click()">
+                                        <i class="fa-solid fa-camera"></i> Cambiar Logo
+                                    </button>
+                                    <button type="button" class="btn-secondary" id="btnOpenColorModal">
+                                        <i class="fa-solid fa-palette"></i> Color
+                                    </button>
+                                </div>
+                                <p class="color-modal-desc">Max 2MB. JPG, PNG, WEBP</p>
                             </div>
 
                             <form id="generalInfoForm">
@@ -609,6 +612,42 @@
                     <button type="submit" class="btn-primary">Guardar</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Color Modal -->
+    <div id="colorModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fa-solid fa-palette"></i> Color del Catálogo</h3>
+                <button type="button" class="close-modal" id="closeColorModalBtn">&times;</button>
+            </div>
+            <p class="color-modal-desc">Este color se usa como color primario en el catálogo público del negocio.</p>
+
+            <div class="form-group color-picker-row">
+                <div>
+                    <label class="form-label">Selector visual</label>
+                    <input type="color" id="colorPicker" class="color-picker-native">
+                </div>
+                <div class="color-hex-wrapper">
+                    <label class="form-label">Código hex</label>
+                    <input type="text" id="colorHex" class="form-input color-hex-input" placeholder="#000000" maxlength="7">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Vista previa</label>
+                <button type="button" id="colorPreviewBtn" class="color-preview-btn">Agregar al carrito</button>
+            </div>
+
+            <div class="modal-btn-row">
+                <button type="button" class="btn-secondary" id="cancelColorBtn">Cancelar</button>
+                <button type="button" class="btn-primary" id="btnSaveColor">
+                    <i class="fa-solid fa-save"></i> Guardar color
+                </button>
+            </div>
+
+            <div id="colorFeedback" class="color-feedback"></div>
         </div>
     </div>
 

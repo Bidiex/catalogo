@@ -282,6 +282,7 @@
           <h2 id="productModalName">Producto</h2>
           <p class="product-modal-price" id="productModalPrice">$0</p>
           <p class="product-modal-description" id="productModalDescription"></p>
+          <div id="productModalBadges" class="product-modal-badges" style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;"></div>
 
           <!-- Quick Comments -->
           <div class="product-options-section hidden" id="quickCommentsSection">
@@ -405,7 +406,7 @@
           <label for="clientPhone">
             <i class="ri-phone-line"></i> Teléfono *
           </label>
-          <input type="tel" id="clientPhone" name="clientPhone" placeholder="Ej: 3001234567" required>
+          <input type="text" id="clientPhone" name="clientPhone" placeholder="Ej: 3001234567" inputmode="numeric" maxlength="10" pattern="3[0-9]{9}" required>
         </div>
 
         <div class="form-group">

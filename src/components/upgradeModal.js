@@ -53,7 +53,8 @@ class UpgradeModal {
         this.modalEl.querySelector('#upgradeModalCancelBtn').addEventListener('click', () => this.hide());
         this.modalEl.querySelector('#upgradeActionBtn').addEventListener('click', () => {
             window.open('https://checkout.nequi.wompi.co/l/8oK0Nb', '_blank');
-            window.location.href = '/dashboard/pago-pendiente?plan=pro';
+            this.hide();
+            window.dispatchEvent(new CustomEvent('traego:navigate', { detail: { section: 'pago-pendiente' } }));
         });
 
         // Close on overlay click

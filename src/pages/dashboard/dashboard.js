@@ -26,6 +26,9 @@ import { deliveryPersonsService } from '../../services/deliveryPersons.js'
 import { businessSidesService } from '../../services/businessSidesService.js'
 import { taxesService } from '../../services/taxes.js'
 import { deliveryPhotoService } from '../../services/deliveryPhotoService.js'
+import { productBadgesService } from '../../services/productBadges.js'
+
+const BADGE_NUEVO_ID = '00000000-0000-0000-0000-000000000001'
 
 import { initAnalytics, updateAnalytics } from './analytics.js'
 import { initLinksEditor } from '../links/links-editor.js'
@@ -34,6 +37,7 @@ import * as XLSX from 'xlsx'
 // ESTADO GLOBAL
 // ============================================
 let currentUser = null
+let casiListoLocked = false // Bloquea navegación mientras la sección Casi Listo está activa
 let currentBusiness = null
 let categories = []
 let products = []
@@ -48,6 +52,10 @@ let invoiceTaxes = []
 let editingInvoiceTax = null
 let productTaxes = []
 let editingProductTax = null
+
+// Badges state
+let businessBadges = []
+let editingBadge = null
 
 // Promotions state
 let promotions = []
@@ -204,6 +212,15 @@ async function init() {
     }
 
     currentUser = await authService.getCurrentUser()
+
+    // Si getCurrentUser retorna null (ej: JWT válido pero usuario eliminado de Supabase),
+    // limpiar la sesión corrupta y redirigir al login
+    if (!currentUser) {
+      await authService.signOut()
+      window.location.href = '/login'
+      return
+    }
+
     userEmailSpan.textContent = currentUser.email
 
     // Inicializar navegación del sidebar
@@ -274,6 +291,12 @@ function initSidebarNavigation() {
   navItems.forEach(item => {
     item.addEventListener('click', (e) => {
       e.preventDefault()
+
+      // Bloquear navegación si pendingProModal está abierto:
+      // el usuario debe completar el flujo de pago, no esquivarlo
+      const pendingModal = document.getElementById('pendingProModal')
+      if (pendingModal && pendingModal.style.display !== 'none') return
+
       const section = item.dataset.section
 
       // Remover active de todos los nav items
@@ -308,8 +331,30 @@ function initSidebarNavigation() {
     })
   })
 
-  // Por defecto mostrar Dashboard
-  switchSection('dashboard')
+  // Escuchar navegación externa (p. ej. desde modals)
+  window.addEventListener('traego:navigate', (e) => {
+    if (e.detail && e.detail.section) {
+      switchSection(e.detail.section)
+    }
+  })
+
+  // Revisar si existe redirección legacy en parámetro
+  const urlParams = new URLSearchParams(window.location.search)
+  const querySection = urlParams.get('seccion')
+  const savedSection = sessionStorage.getItem('traego_active_section')
+
+  if (querySection === 'pago-pendiente') {
+    switchSection('pago-pendiente')
+    window.history.replaceState({}, '', window.location.pathname)
+  } else if (savedSection && savedSection !== 'pago-pendiente') {
+    switchSection(savedSection)
+  } else {
+    // Por defecto mostrar Dashboard
+    switchSection('dashboard')
+  }
+
+  // Inicializar eventos de sección Casi Listo
+  initCasiListo()
 
   // Inicializar búsquedas
   initSearchFunctionality()
@@ -325,6 +370,26 @@ function initSidebarNavigation() {
 
   // Inicializar personalización de color
   initColorCustomization()
+}
+
+function initCasiListo() {
+  const whatsappBtn = document.getElementById('casiListoWhatsappBtn')
+  if (whatsappBtn) {
+    whatsappBtn.addEventListener('click', () => {
+      const mensaje = encodeURIComponent(
+        '¡Hola! Acabo de realizar el pago del Plan Pro de TraeGo. Te envío el comprobante para que actives mi cuenta. 🎉'
+      )
+      window.open(`https://wa.me/3180779665?text=${mensaje}`, '_blank')
+    })
+  }
+
+  const volverBtn = document.getElementById('casiListoVolverBtn')
+  if (volverBtn) {
+    volverBtn.addEventListener('click', () => {
+      casiListoLocked = false // Desbloquear la navegación antes de salir
+      switchSection('dashboard')
+    })
+  }
 }
 
 // ============================================
@@ -791,12 +856,21 @@ function initColorCustomization() {
 }
 
 function switchSection(sectionName) {
+  // Bloquear navegación cuando la sección "Casi listo" está activa.
+  // La única salida válida es el botón "Ir al inicio" que desactiva el lock primero.
+  if (casiListoLocked && sectionName !== 'pago-pendiente') return
+
   // Ocultar todas las secciones
   const sections = document.querySelectorAll('.dashboard-section')
   sections.forEach(section => {
     section.classList.remove('active')
     section.style.display = 'none'
   })
+
+  // Activar lock si se navega a pago-pendiente
+  if (sectionName === 'pago-pendiente') {
+    casiListoLocked = true
+  }
 
   // Mostrar la sección seleccionada
   const targetSection = document.getElementById(`section-${sectionName}`)
@@ -805,8 +879,30 @@ function switchSection(sectionName) {
     targetSection.style.display = 'block'
   }
 
+  // Sincronizar nav-item activo en el sidebar
+  const navItems = document.querySelectorAll('.nav-item[data-section]')
+  navItems.forEach(nav => nav.classList.remove('active'))
+  const activeNav = document.querySelector(`.nav-item[data-section="${sectionName}"]`)
+  if (activeNav) activeNav.classList.add('active')
+
   // Actualizar título del header
   updatePageTitle(sectionName)
+
+  // Guardar estado
+  sessionStorage.setItem('traego_active_section', sectionName)
+
+  // Ocultar el alert operacional en la sección Casi listo para prevenir
+  // que el botón "Configurar Ahora" active el negocio sin confirmar pago
+  const operationalAlert = document.getElementById('operationalAlert')
+  if (operationalAlert) {
+    if (sectionName === 'pago-pendiente') {
+      operationalAlert.style.display = 'none'
+    } else {
+      // Reevaluar: si el negocio sigue sin completar datos, el alert
+      // debe reaparecer en cuanto el usuario salga de Casi listo
+      checkOperationalRequirements()
+    }
+  }
 }
 
 function updatePageTitle(sectionName) {
@@ -1188,14 +1284,23 @@ const logoutBlockedBtn = document.getElementById('logoutBlockedBtn')
 // Pending Pro actions
 if (btnAlreadyPaidPro) {
   btnAlreadyPaidPro.addEventListener('click', () => {
-    window.location.href = '/dashboard/pago-pendiente?plan=pro'
+    const pendingModal = document.getElementById('pendingProModal')
+    if (pendingModal) pendingModal.style.display = 'none'
+    switchSection('pago-pendiente')
   })
 }
 
 if (btnDowngradeToPlus) {
   btnDowngradeToPlus.addEventListener('click', async () => {
     try {
-      if (confirm('¿Estás seguro de que quieres cancelar y probar 30 días con el Plan Plus?')) {
+      const result = await confirm.show({
+        title: '¿Activar Plan Plus gratis?',
+        message: 'Tendrás 30 días gratis del Plan Plus. Podrás contratar el Plan Pro en cualquier momento.',
+        confirmText: 'Aceptar',
+        cancelText: 'Contratar Pro',
+        type: 'info'
+      })
+      if (result) {
         await businessService.activatePlusTrialFromPendingPro()
         notify.success('¡Activaste tu Plan Plus Exitosamente!')
         setTimeout(() => {
@@ -1234,6 +1339,8 @@ const CONTACT_PHONE = '573180779665' // Replace with actual admin number
 if (contactSupportUpgradeBtn) {
   contactSupportUpgradeBtn.addEventListener('click', () => {
     window.open('https://checkout.nequi.wompi.co/l/8oK0Nb', '_blank')
+    if (upgradePlanModal) upgradePlanModal.style.display = 'none'
+    window.dispatchEvent(new CustomEvent('traego:navigate', { detail: { section: 'pago-pendiente' } }))
   })
 }
 
@@ -1372,6 +1479,10 @@ function showNoBusinessState() {
   noBusinessState.style.display = 'flex'
   businessExistsState.style.display = 'none'
 
+  // Ocultar el alert operacional: no tiene sentido durante el wizard
+  const opAlert = document.getElementById('operationalAlert')
+  if (opAlert) opAlert.style.display = 'none'
+
   // Disable sidebar navigation
   const sidebarNav = document.querySelector('.sidebar-nav')
   const mobileMenuBtn = document.getElementById('mobileMenuBtn')
@@ -1479,7 +1590,10 @@ function renderCategories(categoriesToRender = null) {
   }
 
   categoriesList.innerHTML = catsToShow.map(category => `
-    <div class="category-item" data-id="${category.id}">
+    <div class="category-item" data-id="${category.id}" draggable="true">
+      <div class="drag-handle" title="Arrastrar para reordenar">
+        <i class="ri-drag-move-2-line"></i>
+      </div>
       <div class="category-item-info">
         <div class="category-item-name">
           ${category.name}
@@ -1489,15 +1603,17 @@ function renderCategories(categoriesToRender = null) {
         </div>
       </div>
       <div class="category-item-actions">
-  <button class="btn-icon edit-category" data-id="${category.id}">
-    <i class="ri-edit-line"></i> Editar
-  </button>
-  <button class="btn-icon danger delete-category" data-id="${category.id}">
-    <i class="ri-delete-bin-line"></i> Eliminar
-  </button>
-</div>
+        <button class="btn-icon edit-category" data-id="${category.id}">
+          <i class="ri-edit-line"></i> Editar
+        </button>
+        <button class="btn-icon danger delete-category" data-id="${category.id}">
+          <i class="ri-delete-bin-line"></i> Eliminar
+        </button>
+      </div>
     </div>
   `).join('')
+
+  initCategoryDragAndDrop()
 
   // Event listeners
   document.querySelectorAll('.edit-category').forEach(btn => {
@@ -1607,6 +1723,244 @@ function renderProducts(productsToRender = null) {
       })
     })
   })
+}
+
+// ============================================
+// DRAG & DROP LOGIC
+// ============================================
+
+function getDragAfterElement(container, y, selector) {
+  const draggableElements = [...container.querySelectorAll(`${selector}:not(.dragging)`)];
+
+  return draggableElements.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+    if (offset < 0 && offset > closest.offset) {
+      return { offset: offset, element: child };
+    } else {
+      return closest;
+    }
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+function initCategoryDragAndDrop() {
+  const list = categoriesList;
+  const items = list.querySelectorAll('.category-item');
+
+  items.forEach(item => {
+    // Desktop Drag events
+    item.addEventListener('dragstart', (e) => {
+      // Evitar drag si no es desde el handle
+      if (!e.target.closest('.drag-handle')) {
+        e.preventDefault();
+        return;
+      }
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+      saveCategoriesOrder();
+    });
+
+    // Mobile Touch events
+    item.addEventListener('touchstart', (e) => {
+      if (!e.target.closest('.drag-handle')) return;
+      
+      item.classList.add('dragging');
+      // Prevenir scroll mientras arrastra
+      document.body.style.overflow = 'hidden';
+    }, { passive: false });
+
+    item.addEventListener('touchmove', (e) => {
+      if (!item.classList.contains('dragging')) return;
+      
+      e.preventDefault();
+      const touch = e.touches[0];
+      const afterElement = getDragAfterElement(list, touch.pageY, '.category-item');
+      
+      if (afterElement == null) {
+        list.appendChild(item);
+      } else {
+        list.insertBefore(item, afterElement);
+      }
+    }, { passive: false });
+
+    item.addEventListener('touchend', () => {
+      if (!item.classList.contains('dragging')) return;
+      
+      item.classList.remove('dragging');
+      document.body.style.overflow = '';
+      saveCategoriesOrder();
+    });
+  });
+
+  list.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    const afterElement = getDragAfterElement(list, e.clientY, '.category-item');
+    const dragging = document.querySelector('.dragging');
+    if (dragging && dragging.classList.contains('category-item')) {
+      if (afterElement == null) {
+        list.appendChild(dragging);
+      } else {
+        list.insertBefore(dragging, afterElement);
+      }
+    }
+  });
+}
+
+async function saveCategoriesOrder() {
+  const itemsList = [...categoriesList.querySelectorAll('.category-item')];
+  if (itemsList.length === 0) return;
+
+  try {
+    const updates = itemsList.map((item, index) => {
+      const categoryId = item.dataset.id;
+      const displayOrder = index;
+
+      // Actualizar el array local de categorías
+      const cat = categories.find(c => c.id === categoryId);
+      if (cat) cat.display_order = displayOrder;
+
+      return supabase
+        .from('categories')
+        .update({ display_order: displayOrder })
+        .eq('id', categoryId);
+    });
+
+    const results = await Promise.all(updates);
+    const error = results.find(r => r.error)?.error;
+    if (error) throw error;
+
+    categories.sort((a, b) => a.display_order - b.display_order);
+    
+  } catch (err) {
+    console.error('Error saving categories order:', err);
+    notify.error('No se pudo guardar el nuevo orden de categorías');
+  }
+}
+
+async function renderCategoryProducts(categoryId) {
+  const container = document.getElementById('categoryProductsList');
+  if (!container) return;
+
+  container.innerHTML = '<p class="empty-message">Cargando productos...</p>';
+
+  try {
+    const products = await productService.getByCategory(categoryId);
+    
+    if (products.length === 0) {
+      container.innerHTML = '<p class="empty-message">Esta categoría no tiene productos aún.</p>';
+      return;
+    }
+
+    container.innerHTML = products.map(product => `
+      <div class="product-modal-item" data-id="${product.id}" draggable="true">
+        <div class="drag-handle" title="Arrastrar para reordenar">
+          <i class="ri-drag-move-2-line"></i>
+        </div>
+        ${product.image_url 
+          ? `<img src="${product.image_url}" class="product-modal-thumb">` 
+          : '<div class="product-modal-thumb" style="display:flex;align-items:center;justify-content:center;background:#f3f4f6;border-radius:4px;"><i class="ri-image-line" style="color:#9ca3af;"></i></div>'}
+        <div class="product-modal-info">
+          <div class="product-modal-name">${product.name}</div>
+        </div>
+      </div>
+    `).join('');
+
+    initProductDragAndDrop();
+    
+  } catch (error) {
+    console.error('Error loading category products:', error);
+    container.innerHTML = '<p class="empty-message">Error al cargar productos.</p>';
+  }
+}
+
+function initProductDragAndDrop() {
+  const list = document.getElementById('categoryProductsList');
+  if (!list) return;
+  const items = list.querySelectorAll('.product-modal-item');
+
+  items.forEach(item => {
+    // Desktop Drag events
+    item.addEventListener('dragstart', (e) => {
+      if (!e.target.closest('.drag-handle')) {
+        e.preventDefault();
+        return;
+      }
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+      saveProductsOrder();
+    });
+
+    // Mobile Touch events
+    item.addEventListener('touchstart', (e) => {
+      if (!e.target.closest('.drag-handle')) return;
+      item.classList.add('dragging');
+      document.body.style.overflow = 'hidden';
+    }, { passive: false });
+
+    item.addEventListener('touchmove', (e) => {
+      if (!item.classList.contains('dragging')) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      const afterElement = getDragAfterElement(list, touch.pageY, '.product-modal-item');
+      if (afterElement == null) {
+        list.appendChild(item);
+      } else {
+        list.insertBefore(item, afterElement);
+      }
+    }, { passive: false });
+
+    item.addEventListener('touchend', () => {
+      if (!item.classList.contains('dragging')) return;
+      item.classList.remove('dragging');
+      document.body.style.overflow = '';
+      saveProductsOrder();
+    });
+  });
+
+  list.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    const afterElement = getDragAfterElement(list, e.clientY, '.product-modal-item');
+    const dragging = document.querySelector('.dragging');
+    if (dragging && dragging.classList.contains('product-modal-item')) {
+      if (afterElement == null) {
+        list.appendChild(dragging);
+      } else {
+        list.insertBefore(dragging, afterElement);
+      }
+    }
+  });
+}
+
+async function saveProductsOrder() {
+  const list = document.getElementById('categoryProductsList');
+  if (!list) return;
+  const itemsList = [...list.querySelectorAll('.product-modal-item')];
+  if (itemsList.length === 0) return;
+
+  try {
+    const updates = itemsList.map((item, index) =>
+      supabase
+        .from('products')
+        .update({ display_order: index })
+        .eq('id', item.dataset.id)
+    );
+
+    const results = await Promise.all(updates);
+    const error = results.find(r => r.error)?.error;
+    if (error) throw error;
+    
+  } catch (err) {
+    console.error('Error saving products order:', err);
+    notify.error('No se pudo guardar el nuevo orden de productos');
+  }
 }
 
 // ============================================
@@ -1782,16 +2136,29 @@ function openCategoryModal() {
   document.getElementById('categoryModalTitle').textContent = 'Nueva Categoría'
   document.getElementById('categoryNameInput').value = ''
   document.getElementById('categoryActiveInput').checked = true
+  
+  // Ocultar sección de productos al crear nueva categoría
+  const productsSection = document.getElementById('categoryProductsSection');
+  if (productsSection) productsSection.style.display = 'none';
+  
   categoryModal.style.display = 'flex'
 }
 
-function openEditCategoryModal(categoryId) {
+async function openEditCategoryModal(categoryId) {
   editingCategory = categories.find(c => c.id === categoryId)
   if (!editingCategory) return
 
   document.getElementById('categoryModalTitle').textContent = 'Editar Categoría'
   document.getElementById('categoryNameInput').value = editingCategory.name
   document.getElementById('categoryActiveInput').checked = editingCategory.is_active !== false
+  
+  // Mostrar y cargar productos
+  const productsSection = document.getElementById('categoryProductsSection');
+  if (productsSection) {
+    productsSection.style.display = 'block';
+    renderCategoryProducts(categoryId);
+  }
+  
   categoryModal.style.display = 'flex'
 }
 
@@ -2542,6 +2909,9 @@ async function openProductOptionsModal(productId) {
   await loadProductSizes(productId)
   renderProductSizesDashboard()
 
+  // Load and render badges
+  await loadProductBadgesInModal(productId)
+
   productOptionsModal.style.display = 'flex'
 }
 
@@ -3235,6 +3605,255 @@ async function deleteProductSize(sizeId) {
   }
 }
 
+
+// ============================================
+// PRODUCT BADGES MANAGEMENT
+// ============================================
+
+async function loadBadges() {
+  const container = document.getElementById('badgesList')
+  if (!container) return
+
+  container.innerHTML = '<p class="empty-message">Cargando badges...</p>'
+
+  try {
+    businessBadges = await productBadgesService.getByBusiness(currentBusiness.id)
+    renderBadges()
+  } catch (error) {
+    console.error('Error loading badges:', error)
+    container.innerHTML = '<p class="empty-message error">Error al cargar badges</p>'
+  }
+}
+
+function renderBadges() {
+  const container = document.getElementById('badgesList')
+  if (!container) return
+
+  if (businessBadges.length === 0) {
+    container.innerHTML = '<p class="empty-message">No hay badges creados. ¡Crea el primero!</p>'
+    return
+  }
+
+  container.innerHTML = businessBadges.map(badge => `
+    <div class="badge-item card-item" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border: 1px solid var(--color-border); border-radius: var(--radius-md); margin-bottom: 0.5rem; background: var(--surface-light);">
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <div style="width: 24px; height: 24px; border-radius: 50%; background: ${badge.color}; border: 1px solid #ddd;"></div>
+        <div>
+          <h4 style="margin: 0; font-size: 1rem;">${badge.name}</h4>
+        </div>
+      </div>
+      <div class="actions" style="display: flex; gap: 0.5rem;">
+        <button class="btn-icon" onclick="window.openBadgeModal('${badge.id}')" title="Editar">
+          <i class="ri-edit-line"></i>
+        </button>
+        <button class="btn-icon danger" onclick="window.deleteBadge('${badge.id}')" title="Eliminar">
+          <i class="ri-delete-bin-line"></i>
+        </button>
+      </div>
+    </div>
+  `).join('')
+}
+
+window.openBadgeModal = (badgeId = null) => {
+  const modal = document.getElementById('badgeModal')
+  const title = document.getElementById('badgeModalTitle')
+  const form = document.getElementById('badgeForm')
+  
+  if (!modal) return
+
+  editingBadge = badgeId ? businessBadges.find(b => b.id === badgeId) : null
+  
+  if (editingBadge) {
+    title.textContent = 'Editar Etiqueta'
+    document.getElementById('badgeNameInput').value = editingBadge.name
+    document.getElementById('badgeColorInput').value = editingBadge.color
+    document.getElementById('badgeColorPreview').style.backgroundColor = editingBadge.color
+  } else {
+    title.textContent = 'Nueva Etiqueta'
+    form.reset()
+    document.getElementById('badgeColorPreview').style.backgroundColor = '#000000'
+  }
+  
+  modal.style.display = 'flex'
+}
+
+window.closeBadgeModal = () => {
+  const modal = document.getElementById('badgeModal')
+  if (modal) modal.style.display = 'none'
+  editingBadge = null
+}
+
+// Helper for contrast color
+function getContrastColor(hexColor) {
+  if (!hexColor) return '#000000'
+  const hex = hexColor.replace('#', '')
+  if (hex.length !== 6) return '#000000'
+  const r = parseInt(hex.substr(0, 2), 16)
+  const g = parseInt(hex.substr(2, 2), 16)
+  const b = parseInt(hex.substr(4, 2), 16)
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  return luminance > 0.5 ? '#000000' : '#FFFFFF'
+}
+
+// Product specific assignments
+async function loadProductBadgesInModal(productId) {
+  const container = document.getElementById('availableBadgesForProduct')
+  if (!container) return
+  
+  container.innerHTML = '<p class="empty-message">Cargando...</p>'
+  
+  try {
+    const allBadges = await productBadgesService.getByBusiness(currentBusiness.id)
+    const assignedIds = await productBadgesService.getAssignmentsByProduct(productId)
+    
+    // Check if system badge is assigned
+    const isNuevoAssigned = assignedIds.includes(BADGE_NUEVO_ID)
+    
+    let html = `
+      <div class="system-badge-item" style="margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
+        <label style="display: flex; align-items: center; cursor: pointer;">
+          <input type="checkbox" class="badge-assign-toggle" 
+            ${isNuevoAssigned ? 'checked' : ''}
+            onchange="window.toggleBadgeAssignment(this, '${productId}', '${BADGE_NUEVO_ID}')"
+            style="margin-right: 0.75rem; transform: scale(1.1);"
+          >
+          <span class="product-badge-pill" style="background-color:#10b981; color:#ffffff; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 0.8rem;">
+            Nuevo
+          </span>
+          <span style="font-size:0.8rem; color:#64748b; margin-left:8px;">
+            Aparece también como sticker en la tarjeta del producto
+          </span>
+        </label>
+      </div>
+    `
+    
+    if (allBadges.length > 0) {
+      html += '<h5 style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.75rem; color: #64748b;">Etiquetas Personalizadas</h5>'
+      html += allBadges.map(badge => `
+        <label style="display: flex; align-items: center; padding: 0.5rem; border: 1px solid #eee; border-radius: 6px; margin-bottom: 0.5rem; cursor: pointer; background: white;">
+          <input type="checkbox" 
+            onchange="window.toggleBadgeAssignment(this, '${productId}', '${badge.id}')"
+            ${assignedIds.includes(badge.id) ? 'checked' : ''}
+            style="margin-right: 0.75rem; transform: scale(1.1);"
+          >
+          <div style="flex: 1; display: flex; align-items: center; gap: 0.5rem;">
+            <div style="width: 12px; height: 12px; border-radius: 50%; background: ${badge.color}; border: 1px solid #ddd;"></div>
+            <div style="font-weight: 500;">${badge.name}</div>
+          </div>
+        </label>
+      `).join('')
+    } else {
+      html += '<p class="empty-message" style="font-size: 0.8rem;">No tienes etiquetas personalizadas.</p>'
+    }
+    
+    container.innerHTML = html
+  } catch (error) {
+    console.error('Error loading product badges:', error)
+    container.innerHTML = '<p class="empty-message error">Error al cargar badges</p>'
+  }
+}
+
+window.toggleBadgeAssignment = async (checkbox, productId, badgeId) => {
+  const isChecked = checkbox.checked
+  checkbox.disabled = true
+  
+  try {
+    if (isChecked) {
+      await productBadgesService.assign(productId, badgeId)
+      notify.success('Etiqueta asignada')
+    } else {
+      await productBadgesService.unassign(productId, badgeId)
+      notify.success('Etiqueta removida')
+    }
+  } catch (error) {
+    console.error('Error toggling badge:', error)
+    notify.error('Error al actualizar badge')
+    checkbox.checked = !isChecked
+  } finally {
+    checkbox.disabled = false
+  }
+}
+
+window.deleteBadge = async (badgeId) => {
+  const result = await confirm.show({
+    title: '¿Eliminar etiqueta?',
+    message: 'Esta acción desvinculará la etiqueta de todos los productos. No se puede deshacer.',
+    confirmText: 'Eliminar',
+    cancelText: 'Cancelar',
+    type: 'danger'
+  })
+  
+  if (!result) return
+  
+  try {
+    await productBadgesService.delete(badgeId)
+    notify.success('Etiqueta eliminada')
+    await loadBadges()
+  } catch (error) {
+    console.error('Error deleting badge:', error)
+    notify.error('Error al eliminar badge')
+  }
+}
+
+// Global Badges Listeners
+document.addEventListener('DOMContentLoaded', () => {
+  const addBadgeBtn = document.getElementById('addBadgeBtn')
+  if (addBadgeBtn) addBadgeBtn.addEventListener('click', () => window.openBadgeModal())
+  
+  const closeBadgeModalBtn = document.getElementById('closeBadgeModal')
+  if (closeBadgeModalBtn) closeBadgeModalBtn.addEventListener('click', window.closeBadgeModal)
+  
+  const cancelBadgeBtn = document.getElementById('cancelBadgeBtn')
+  if (cancelBadgeBtn) cancelBadgeBtn.addEventListener('click', window.closeBadgeModal)
+
+  // Live color preview
+  const badgeColorInput = document.getElementById('badgeColorInput')
+  if (badgeColorInput) {
+    badgeColorInput.addEventListener('input', (e) => {
+      const preview = document.getElementById('badgeColorPreview')
+      if (preview) preview.style.backgroundColor = e.target.value
+      const valueText = document.getElementById('badgeColorValue')
+      if (valueText) valueText.textContent = e.target.value
+    })
+  }
+
+  // Badge Form Submit
+  const badgeForm = document.getElementById('badgeForm')
+  if (badgeForm) {
+    badgeForm.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      
+      const name = document.getElementById('badgeNameInput').value
+      const color = document.getElementById('badgeColorInput').value
+      
+      const submitBtn = e.submitter || badgeForm.querySelector('button[type="submit"]')
+      
+      await buttonLoader.execute(submitBtn, async () => {
+        try {
+          const badgeData = {
+            business_id: currentBusiness.id,
+            name,
+            color
+          }
+          
+          if (editingBadge) {
+            await productBadgesService.update(editingBadge.id, badgeData)
+            notify.success('Etiqueta actualizada')
+          } else {
+            await productBadgesService.create(badgeData)
+            notify.success('Etiqueta creada')
+          }
+          
+          window.closeBadgeModal()
+          await loadBadges()
+        } catch (error) {
+          console.error('Error saving badge:', error)
+          notify.error('Error al guardar badge')
+        }
+      }, 'Guardando...')
+    })
+  }
+})
 
 // ============================================
 // PROMOTIONS MANAGEMENT
@@ -3979,6 +4598,15 @@ const wizSkipProductBtn = document.getElementById('wiz-skip-product')
 const wizContinueProductBtn = document.getElementById('wiz-continue-product')
 const wizFinishBtn = document.getElementById('wiz-finish')
 
+
+// Validación en tiempo real del campo WhatsApp del wizard: solo dígitos
+const wizWhatsappInput = document.getElementById('wiz-whatsapp')
+if (wizWhatsappInput) {
+  wizWhatsappInput.addEventListener('input', (e) => {
+    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 10)
+  })
+}
+
 // Step 1: Crear negocio
 if (wizardBusinessForm) {
   wizardBusinessForm.addEventListener('submit', async (e) => {
@@ -3990,6 +4618,12 @@ if (wizardBusinessForm) {
     const description = document.getElementById('wiz-description').value.trim()
 
     const submitBtn = e.submitter
+
+    // Validar número de WhatsApp: 10 dígitos, empieza por 3, sin espacios
+    if (!/^3[0-9]{9}$/.test(whatsapp)) {
+      notify.error('El número de WhatsApp debe tener 10 dígitos y empezar por 3. Ej: 3001234567')
+      return
+    }
 
     await buttonLoader.execute(submitBtn, async () => {
       try {
@@ -4012,16 +4646,13 @@ if (wizardBusinessForm) {
         
         if (plan) localStorage.removeItem('selectedPlan')
 
-        if (createdBusiness.plan_type === 'pro' && createdBusiness.is_active === false) {
-          notify.success('¡Negocio creado en estado Pendiente!')
-          document.getElementById('noBusinessState').style.display = 'none'
-          
-          currentBusiness = createdBusiness
-          await loadAllData()
-          
-          const pendingModal = document.getElementById('pendingProModal')
-          if (pendingModal) pendingModal.style.display = 'flex'
-          showBusinessState()
+        // Si venía desde "Contratar Pro" en la landing, mostrar el flujo de pago al finalizar.
+        // El negocio siempre se crea en Plus; el admin activa Pro manualmente.
+        if (plan === 'pro') {
+          notify.success('¡Negocio creado! Completa el proceso para activar tu Plan Pro.')
+          wizardData.business = createdBusiness
+          wizardData.isPendingPro = true
+          showWizardStep(2)
           return
         }
 
@@ -4210,8 +4841,18 @@ async function saveWizardProduct() {
 
 // Finalizar wizard
 if (wizFinishBtn) {
-  wizFinishBtn.addEventListener('click', () => {
-    window.location.reload()
+  wizFinishBtn.addEventListener('click', async () => {
+    if (wizardData.isPendingPro) {
+      // Usuario registrado con plan Pro pendiente: mostrar dashboard y modal de pago
+      document.getElementById('noBusinessState').style.display = 'none'
+      currentBusiness = wizardData.business
+      await loadAllData()
+      showBusinessState()
+      const pendingModal = document.getElementById('pendingProModal')
+      if (pendingModal) pendingModal.style.display = 'flex'
+    } else {
+      window.location.reload()
+    }
   })
 }
 
@@ -4278,6 +4919,15 @@ function showWizardStep(step) {
     if (summaryProduct && summaryProductText && wizardData.product) {
       summaryProduct.style.display = 'flex'
       summaryProductText.textContent = wizardData.product
+    }
+
+    // Cambiar texto del botón final si es pendingPro
+    if (wizFinishBtn) {
+      if (wizardData.isPendingPro) {
+        wizFinishBtn.innerHTML = 'Activar Plan Pro <i class="ri-vip-crown-line"></i>'
+      } else {
+        wizFinishBtn.innerHTML = 'Ir al Dashboard <i class="ri-arrow-right-line"></i>'
+      }
     }
   }
 }
@@ -6146,6 +6796,14 @@ function checkOperationalRequirements() {
 
   if (!alert) return
 
+  // No mostrar el alert si el wizard de onboarding está activo
+  const wizardEl = document.getElementById('noBusinessState')
+  if (wizardEl && wizardEl.style.display !== 'none') return
+
+  // No mostrar el alert si el modal de pago pendiente está abierto
+  const pendingProEl = document.getElementById('pendingProModal')
+  if (pendingProEl && pendingProEl.style.display !== 'none') return
+
   const missing = []
 
   if (!paymentMethods || paymentMethods.length === 0) {
@@ -6157,16 +6815,18 @@ function checkOperationalRequirements() {
   }
 
   if (missing.length > 0) {
-    alert.style.display = 'flex'
-    // Join with ' y ' if 2 items, otherwise comma separated (though max 2 here)
     alertText.textContent = `Debes configurar: ${missing.join(' y ')} para recibir pedidos.`
+
+    // No mostrar el alert si estamos en la sección de pago pendiente
+    const activeSection = sessionStorage.getItem('traego_active_section')
+    if (activeSection !== 'pago-pendiente') {
+      alert.style.display = 'flex'
+    }
 
     // Setup button click
     if (alertBtn) {
       alertBtn.onclick = () => {
         switchSection('business')
-        // Try to visually highlight or scroll to settings
-        // Since settings are in 'Mi Negocio', finding the settings grid is key
         setTimeout(() => {
           const settingsGrid = document.querySelector('.business-settings-grid')
           if (settingsGrid) {
@@ -6674,6 +7334,8 @@ function initProductsTabs() {
         loadSuggestions()
       } else if (tabId === 'quick-comments') {
         if (window.loadGlobalQuickComments) window.loadGlobalQuickComments()
+      } else if (tabId === 'badges') {
+        loadBadges()
       }
     })
   })
