@@ -1,4 +1,4 @@
-import { supabase } from '../../config/supabase.js'
+  import { supabase } from '../../config/supabase.js'
 import { cart } from '../../utils/cart.js'
 import { notify } from '../../utils/notifications.js'
 import { taxesService } from '../../services/taxes.js'
@@ -12,12 +12,11 @@ import { ordersService } from '../../services/orders.js'
 import { businessService } from '../../services/business.js'
 import { productOptionsService } from '../../services/productOptions.js'
 import { productBadgesService } from '../../services/productBadges.js'
+import { announcementsService } from '../../services/announcements.js'
 
 const BADGE_NUEVO_ID = '00000000-0000-0000-0000-000000000001'
 
 import gsap from 'gsap'
-
-
 
 // ============================================
 // ESTADO GLOBAL
@@ -178,8 +177,6 @@ async function init() {
 
     showCatalog()
 
-    showCatalog()
-
     // Header scroll compression
     initHeaderScrollCompression()
 
@@ -227,6 +224,9 @@ async function init() {
 
     // Limpiar carritos antiguos
     cleanOldCarts()
+
+    // Check for Announcements (Welcome Modal)
+    checkAnnouncement()
 
   } catch (error) {
     if (error.message === 'Business not operational' || error.message === 'Business incomplete') {
@@ -314,7 +314,7 @@ function showMaintenanceState() {
 
 async function loadCatalogData() {
   try {
-    // Cargar categorías activas
+    // 1. Cargar categorías activas
     const { data: categoriesData, error: categoriesError } = await supabase
       .from('categories')
       .select('*')
@@ -325,7 +325,7 @@ async function loadCatalogData() {
     if (categoriesError) throw categoriesError
     categories = categoriesData || []
 
-    // Cargar Menú del Día activo
+    // 2. Cargar Menú del Día activo
     try {
       activeDailyMenu = await dailyMenusService.getActive(currentBusiness.id)
     } catch (err) {
@@ -333,19 +333,19 @@ async function loadCatalogData() {
       activeDailyMenu = null
     }
 
-    // Cargar productos disponibles
+    // 3. Cargar productos disponibles
     const { data: productsData, error: productsError } = await supabase
       .from('products')
       .select('*')
       .eq('business_id', currentBusiness.id)
       .eq('is_available', true)
-      .eq('is_active', true) // Only show active products
+      .eq('is_active', true)
       .order('display_order', { ascending: true })
 
     if (productsError) throw productsError
     products = productsData || []
 
-    // Cargar descuentos activos
+    // 4. Cargar descuentos activos
     try {
       const { data: discountsData, error: discountsError } = await supabase
         .from('product_discounts')
@@ -355,12 +355,10 @@ async function loadCatalogData() {
 
       if (discountsError) throw discountsError
 
-      // Attach discounts to products
       const discounts = discountsData || []
       products.forEach(product => {
         const discount = discounts.find(d => d.product_id === product.id)
         if (discount) {
-          // Validate date range
           const today = new Date()
           today.setHours(0, 0, 0, 0)
           const startDate = new Date(discount.start_date)
@@ -368,7 +366,6 @@ async function loadCatalogData() {
           const endDate = new Date(discount.end_date)
           endDate.setHours(23, 59, 59, 999)
 
-          // Only attach if discount is within valid date range
           if (today >= startDate && today <= endDate) {
             product.discount = discount
           }
@@ -376,10 +373,9 @@ async function loadCatalogData() {
       })
     } catch (error) {
       console.error('Error loading discounts:', error)
-      // Continue without discounts if error
     }
 
-    // Cargar impuestos
+    // 5. Cargar impuestos
     try {
       catalogInvoiceTaxes = await taxesService.getInvoiceTaxes(currentBusiness.id)
       catalogProductTaxes = await taxesService.getAllProductTaxes(currentBusiness.id)
@@ -389,7 +385,7 @@ async function loadCatalogData() {
       catalogProductTaxes = []
     }
 
-    // Cargar tamaños de productos
+    // 6. Cargar tamaños de productos
     try {
       const { data: sizesData, error: sizesError } = await supabase
         .from('product_sizes')
@@ -399,22 +395,17 @@ async function loadCatalogData() {
 
       if (sizesError) throw sizesError
 
-      // Attach sizes to products
       const sizes = sizesData || []
       products.forEach(product => {
         product.sizes = sizes.filter(s => s.product_id === product.id)
       })
     } catch (error) {
       console.error('Error loading sizes:', error)
-      // Continue without sizes if error
     }
 
-    // Cargar Badges
+    // 7. Cargar Badges
     try {
-      // getBadgesForCatalog ahora retorna un array de asignaciones: [{ product_id, badge: { ... } }]
       const assignments = await productBadgesService.getBadgesForCatalog(currentBusiness.id);
-      
-      // Inyectar badges en productos
       products.forEach(product => {
         product.badges = (assignments || [])
           .filter(a => a.product_id === product.id)
@@ -424,7 +415,7 @@ async function loadCatalogData() {
       console.error('Error loading badges:', error);
     }
 
-    // Cargar métodos de pago
+    // 8. Cargar métodos de pago
     const { data: paymentMethodsData, error: paymentMethodsError } = await supabase
       .from('payment_methods')
       .select('*')
@@ -435,7 +426,7 @@ async function loadCatalogData() {
     if (paymentMethodsError) throw paymentMethodsError
     paymentMethods = paymentMethodsData || []
 
-    // Cargar horarios de negocio
+    // 9. Cargar horarios de negocio
     const { data: hoursData, error: hoursError } = await supabase
       .from('business_hours')
       .select('*')
@@ -445,7 +436,7 @@ async function loadCatalogData() {
     if (hoursError) throw hoursError
     businessHours = hoursData || []
 
-    // Cargar Promociones Activas
+    // 10. Cargar Promociones Activas
     try {
       promotions = await promotionsService.getActiveByBusiness(currentBusiness.id)
     } catch (err) {
@@ -453,8 +444,7 @@ async function loadCatalogData() {
       promotions = []
     }
 
-    // Verify operational readiness (NEW)
-    // If no payment methods OR no business hours, block catalog
+    // 11. Verify operational readiness
     if (!paymentMethods || paymentMethods.length === 0 || !businessHours || businessHours.length === 0) {
       console.warn('Business Incomplete: Missing payment methods or hours')
       showMaintenanceState()
@@ -559,12 +549,6 @@ async function openPromotionModal(promo) {
   console.log('Promotion ID:', promo.id)
   console.log('Promotion Title:', promo.title)
 
-  if (currentBusiness) {
-    // Track view if needed tracking for promos
-  }
-
-  updateUrl('promotion', promo.id)
-
   selectedPromotion = promo
   currentQuantity = 1
   selectedPromoQuickComment = null
@@ -629,6 +613,7 @@ async function openPromotionModal(promo) {
   }
 
   console.log('=== openPromotionModal COMPLETED ===')
+  updateUrl('promotion', promo.id)
 }
 
 function renderPromotionOptions(promo) {
@@ -705,6 +690,119 @@ function renderPromotionOptions(promo) {
   }
 
   console.log('=== renderPromotionOptions COMPLETED ===')
+}
+
+function closePromotionModal() {
+  clearUrl()
+  promotionOverlay.classList.remove('active')
+  selectedPromotion = null
+}
+
+// ============================================
+// ANNOUNCEMENT MODAL (WELCOME MODAL)
+// ============================================
+async function checkAnnouncement() {
+  if (!currentBusiness) return
+
+  const businessId = currentBusiness.id;
+  const sessionKey = `announcement_seen_${businessId}`;
+
+  console.log('[Announcement] business_id usado:', businessId);
+  console.log('[Announcement] sessionStorage key:', sessionKey);
+  console.log('[Announcement] sessionStorage valor:', sessionStorage.getItem(sessionKey));
+
+  if (sessionStorage.getItem(sessionKey)) {
+    console.log('[Announcement] Bloqueado por sessionStorage');
+    return
+  }
+
+  try {
+    const announcement = await announcementsService.getActive(businessId);
+    console.log('[Announcement] resultado query:', announcement);
+    
+    if (announcement) {
+      showAnnouncement(announcement)
+    } else {
+      console.log('[Announcement] La query retornó data vacío (no hay anuncio activo o expiró)');
+    }
+  } catch (error) {
+    console.log('[Announcement] resultado query ERROR:', error);
+    console.error('Error checking announcement:', error)
+  }
+}
+
+function showAnnouncement(announcement) {
+  const overlay = document.getElementById('announcementOverlay')
+  const image = document.getElementById('announcementImage')
+  const ctaBtn = document.getElementById('announcementCtaBtn')
+  const closeBtn = document.getElementById('closeAnnouncementBtn')
+  const footer = document.getElementById('announcementFooter')
+
+  if (!overlay || !image || !ctaBtn || !closeBtn) {
+    console.error('[Announcement] Error: No se encontraron elementos del DOM necesarios', { overlay, image, ctaBtn, closeBtn });
+    return
+  }
+
+  image.src = announcement.image_url
+  
+  if (announcement.cta_type !== 'none') {
+    ctaBtn.textContent = announcement.cta_text
+    if (footer) footer.style.display = 'block'
+  } else {
+    if (footer) footer.style.display = 'none'
+  }
+
+  // CTA Handling
+  ctaBtn.onclick = () => {
+    handleAnnouncementCta(announcement)
+    closeAnnouncementModal()
+  }
+
+  closeBtn.onclick = closeAnnouncementModal
+  overlay.onclick = (e) => {
+    if (e.target === overlay) closeAnnouncementModal()
+  }
+
+  // Show with GSAP if available, else just display
+  overlay.style.display = 'flex'
+  if (typeof gsap !== 'undefined') {
+    gsap.fromTo(overlay, { opacity: 0 }, { opacity: 1, duration: 0.3 })
+    gsap.fromTo('.announcement-modal', { scale: 0.8, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.4, delay: 0.1, ease: 'back.out(1.7)' })
+  }
+
+  // Mark as shown in session
+  sessionStorage.setItem(`announcement_seen_${currentBusiness.id}`, 'true')
+}
+
+function handleAnnouncementCta(announcement) {
+  const { cta_type, cta_target_id } = announcement
+
+  if (cta_type === 'product' && cta_target_id) {
+    openProductModal(cta_target_id)
+  } else if (cta_type === 'promotion' && cta_target_id) {
+    // Try to find the promotion in the loaded data
+    const promo = promotions.find(p => p.id === cta_target_id)
+    if (promo) {
+      openPromotionModal(promo)
+    } else {
+      // If not found in current list (maybe expired or not in first page), 
+      // we could potentially fetch it, but usually announcements point to active ones.
+      console.warn('Promotion targeted by announcement not found in current list.')
+    }
+  }
+}
+
+function closeAnnouncementModal() {
+  const overlay = document.getElementById('announcementOverlay')
+  if (!overlay) return
+
+  if (typeof gsap !== 'undefined') {
+    gsap.to(overlay, { opacity: 0, duration: 0.3, onComplete: () => {
+      overlay.style.display = 'none'
+    }})
+  } else {
+    overlay.style.display = 'none'
+  }
 }
 
 function closePromotionModalFunc() {
