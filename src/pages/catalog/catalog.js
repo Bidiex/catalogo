@@ -411,15 +411,17 @@ async function loadCatalogData() {
 
     // Cargar Badges
     try {
-      const badgesData = await productBadgesService.getBadgesForCatalog(currentBusiness.id)
-      // Attach badges to products
+      // getBadgesForCatalog ahora retorna un array de asignaciones: [{ product_id, badge: { ... } }]
+      const assignments = await productBadgesService.getBadgesForCatalog(currentBusiness.id);
+      
+      // Inyectar badges en productos
       products.forEach(product => {
-        product.badges = badgesData.filter(badge => 
-          badge.product_badge_assignments.some(a => a.product_id === product.id)
-        )
-      })
+        product.badges = (assignments || [])
+          .filter(a => a.product_id === product.id)
+          .map(a => a.badge);
+      });
     } catch (error) {
-      console.error('Error loading badges:', error)
+      console.error('Error loading badges:', error);
     }
 
     // Cargar métodos de pago
@@ -1232,6 +1234,11 @@ function renderProducts(filteredCategoryId = 'all', searchQuery = '') {
 
   // Re-attach event listeners
   attachProductCardListeners()
+
+  // Detect overflow for horizontal scroll peek (Mobile only)
+  requestAnimationFrame(() => {
+    requestAnimationFrame(detectProductRowOverflow);
+  });
 }
 
 function attachProductCardListeners() {
@@ -1286,20 +1293,19 @@ function renderProductCard(product) {
     // Show discount badge and crossed prices if has discount
     if (product.discount) {
       const originalMin = Math.min(...originalPrices)
-      const originalMax = Math.max(...originalPrices)
       const discountPercentage = product.discount.discount_percentage
 
       priceHTML = `
         <div class="product-card-price-container">
-          <div class="discounted-price">$${minPrice.toLocaleString()} ... $${maxPrice.toLocaleString()}</div>
+          <div class="discounted-price"><span class="price-from">Desde</span> $${minPrice.toLocaleString()}</div>
           <div class="price-discount-wrapper">
             <span class="discount-badge">${discountPercentage}%</span>
-            <span class="original-price">$${originalMin.toLocaleString()} ... $${originalMax.toLocaleString()}</span>
+            <span class="original-price"><span class="price-from">Desde</span> $${originalMin.toLocaleString()}</span>
           </div>
         </div>
       `
     } else {
-      priceHTML = `<div class="product-card-price-range">$${minPrice.toLocaleString()} ... $${maxPrice.toLocaleString()}</div>`
+      priceHTML = `<div class="product-card-price-range"><span class="price-from">Desde</span> $${minPrice.toLocaleString()}</div>`
     }
   } else if (product.discount) {
     const originalPrice = parseFloat(product.price)
@@ -1320,16 +1326,14 @@ function renderProductCard(product) {
   }
 
   return `
-    <div class="product-card${hasSizes ? ' has-sizes' : ''}" data-id="${product.id}">
+    <div class="product-card" data-id="${product.id}">
       <div class="product-card-image">
         ${product.image_url
       ? `<img src="${product.image_url}" alt="${product.name}" loading="lazy">`
       : 'Sin imagen'
     }
         ${(product.badges || []).some(b => b.id === BADGE_NUEVO_ID) ? `
-          <div class="product-badge-new" style="position: absolute; top: 8px; left: 8px; background: #10b981; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; z-index: 2; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.2);">
-            Nuevo
-          </div>
+          <div class="product-badge-new">Nuevo</div>
         ` : ''}
         <button class="favorite-btn ${isFav ? 'active' : ''}"
                 data-product-id="${product.id}">
@@ -1438,12 +1442,24 @@ async function openProductModal(productId) {
   if (badgesContainer) {
     const badges = selectedProduct.badges || []
     if (badges.length > 0) {
+      // Ordenar: "Nuevo" siempre primero
+      const sortedBadges = [...badges].sort((a, b) => {
+        if (a.id === BADGE_NUEVO_ID) return -1
+        if (b.id === BADGE_NUEVO_ID) return 1
+        return 0
+      })
+
       badgesContainer.style.display = 'flex'
-      badgesContainer.innerHTML = badges.map(b => `
-        <span class="badge-pill" style="background: ${b.color}; color: ${getContrastColor(b.color)}; padding: 4px 10px; border-radius: 100px; font-size: 0.75rem; font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
-          ${b.name}
-        </span>
-      `).join('')
+      badgesContainer.innerHTML = sortedBadges.map(b => {
+        if (b.id === BADGE_NUEVO_ID) {
+          return `<span class="badge-pill badge-pill-nuevo">Nuevo</span>`
+        }
+        return `
+          <span class="badge-pill" style="--badge-bg: ${b.color}; --badge-text: ${getContrastColor(b.color)};">
+            ${b.name}
+          </span>
+        `
+      }).join('')
     } else {
       badgesContainer.style.display = 'none'
     }
@@ -3844,3 +3860,24 @@ function subscribeToTrackingUpdates() {
     })
     .subscribe()
 }
+
+/**
+ * Detects if product rows have horizontal overflow and applies a class
+ * to enable the scroll peek effect (via pseudo-elements).
+ */
+function detectProductRowOverflow() {
+  if (window.innerWidth > 768) return;
+
+  document.querySelectorAll('.products-row').forEach(row => {
+    // scrollWidth > clientWidth means there is content hidden by overflow
+    if (row.scrollWidth > row.clientWidth) {
+      row.classList.add('has-overflow');
+    } else {
+      row.classList.remove('has-overflow');
+    }
+  });
+}
+
+// Global listeners for responsiveness
+window.addEventListener('resize', detectProductRowOverflow);
+document.addEventListener('DOMContentLoaded', detectProductRowOverflow);
