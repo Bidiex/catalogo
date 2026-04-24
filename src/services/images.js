@@ -4,7 +4,7 @@ export const imageService = {
   /**
    * Subir imagen a Supabase Storage
    */
-  async upload(file, folder = 'products') {
+  async upload(file, folder = 'products', bucket = 'product-images') {
     try {
       // Validar archivo
       if (!file) throw new Error('No se proporcionó archivo')
@@ -33,7 +33,7 @@ export const imageService = {
 
       // Subir archivo
       const { data, error } = await supabase.storage
-        .from('product-images')
+        .from(bucket)
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
@@ -43,7 +43,7 @@ export const imageService = {
 
       // Obtener URL pública
       const { data: { publicUrl } } = supabase.storage
-        .from('product-images')
+        .from(bucket)
         .getPublicUrl(filePath)
 
       return {
@@ -64,19 +64,19 @@ export const imageService = {
   /**
    * Eliminar imagen de Supabase Storage
    */
-  async delete(imagePath) {
+  async delete(imagePath, bucket = 'product-images') {
     try {
       if (!imagePath) return { success: true }
 
       // Extraer el path relativo si es una URL completa
       let path = imagePath
-      if (imagePath.includes('product-images')) {
-        const parts = imagePath.split('product-images/')
+      if (imagePath.includes(bucket)) {
+        const parts = imagePath.split(`${bucket}/`)
         path = parts[1] || imagePath
       }
 
       const { error } = await supabase.storage
-        .from('product-images')
+        .from(bucket)
         .remove([path])
 
       if (error) throw error

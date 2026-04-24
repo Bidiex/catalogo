@@ -1,4 +1,4 @@
-import { supabase } from '../../config/supabase.js'
+  import { supabase } from '../../config/supabase.js'
 import { cart } from '../../utils/cart.js'
 import { notify } from '../../utils/notifications.js'
 import { taxesService } from '../../services/taxes.js'
@@ -12,12 +12,11 @@ import { ordersService } from '../../services/orders.js'
 import { businessService } from '../../services/business.js'
 import { productOptionsService } from '../../services/productOptions.js'
 import { productBadgesService } from '../../services/productBadges.js'
+import { announcementsService } from '../../services/announcements.js'
 
 const BADGE_NUEVO_ID = '00000000-0000-0000-0000-000000000001'
 
 import gsap from 'gsap'
-
-
 
 // ============================================
 // ESTADO GLOBAL
@@ -178,8 +177,6 @@ async function init() {
 
     showCatalog()
 
-    showCatalog()
-
     // Header scroll compression
     initHeaderScrollCompression()
 
@@ -227,6 +224,9 @@ async function init() {
 
     // Limpiar carritos antiguos
     cleanOldCarts()
+
+    // Check for Announcements (Welcome Modal)
+    checkAnnouncement()
 
   } catch (error) {
     if (error.message === 'Business not operational' || error.message === 'Business incomplete') {
@@ -314,7 +314,7 @@ function showMaintenanceState() {
 
 async function loadCatalogData() {
   try {
-    // Cargar categorías activas
+    // 1. Cargar categorías activas
     const { data: categoriesData, error: categoriesError } = await supabase
       .from('categories')
       .select('*')
@@ -325,7 +325,7 @@ async function loadCatalogData() {
     if (categoriesError) throw categoriesError
     categories = categoriesData || []
 
-    // Cargar Menú del Día activo
+    // 2. Cargar Menú del Día activo
     try {
       activeDailyMenu = await dailyMenusService.getActive(currentBusiness.id)
     } catch (err) {
@@ -333,19 +333,19 @@ async function loadCatalogData() {
       activeDailyMenu = null
     }
 
-    // Cargar productos disponibles
+    // 3. Cargar productos disponibles
     const { data: productsData, error: productsError } = await supabase
       .from('products')
       .select('*')
       .eq('business_id', currentBusiness.id)
       .eq('is_available', true)
-      .eq('is_active', true) // Only show active products
+      .eq('is_active', true)
       .order('display_order', { ascending: true })
 
     if (productsError) throw productsError
     products = productsData || []
 
-    // Cargar descuentos activos
+    // 4. Cargar descuentos activos
     try {
       const { data: discountsData, error: discountsError } = await supabase
         .from('product_discounts')
@@ -355,12 +355,10 @@ async function loadCatalogData() {
 
       if (discountsError) throw discountsError
 
-      // Attach discounts to products
       const discounts = discountsData || []
       products.forEach(product => {
         const discount = discounts.find(d => d.product_id === product.id)
         if (discount) {
-          // Validate date range
           const today = new Date()
           today.setHours(0, 0, 0, 0)
           const startDate = new Date(discount.start_date)
@@ -368,7 +366,6 @@ async function loadCatalogData() {
           const endDate = new Date(discount.end_date)
           endDate.setHours(23, 59, 59, 999)
 
-          // Only attach if discount is within valid date range
           if (today >= startDate && today <= endDate) {
             product.discount = discount
           }
@@ -376,10 +373,9 @@ async function loadCatalogData() {
       })
     } catch (error) {
       console.error('Error loading discounts:', error)
-      // Continue without discounts if error
     }
 
-    // Cargar impuestos
+    // 5. Cargar impuestos
     try {
       catalogInvoiceTaxes = await taxesService.getInvoiceTaxes(currentBusiness.id)
       catalogProductTaxes = await taxesService.getAllProductTaxes(currentBusiness.id)
@@ -389,7 +385,7 @@ async function loadCatalogData() {
       catalogProductTaxes = []
     }
 
-    // Cargar tamaños de productos
+    // 6. Cargar tamaños de productos
     try {
       const { data: sizesData, error: sizesError } = await supabase
         .from('product_sizes')
@@ -399,30 +395,27 @@ async function loadCatalogData() {
 
       if (sizesError) throw sizesError
 
-      // Attach sizes to products
       const sizes = sizesData || []
       products.forEach(product => {
         product.sizes = sizes.filter(s => s.product_id === product.id)
       })
     } catch (error) {
       console.error('Error loading sizes:', error)
-      // Continue without sizes if error
     }
 
-    // Cargar Badges
+    // 7. Cargar Badges
     try {
-      const badgesData = await productBadgesService.getBadgesForCatalog(currentBusiness.id)
-      // Attach badges to products
+      const assignments = await productBadgesService.getBadgesForCatalog(currentBusiness.id);
       products.forEach(product => {
-        product.badges = badgesData.filter(badge => 
-          badge.product_badge_assignments.some(a => a.product_id === product.id)
-        )
-      })
+        product.badges = (assignments || [])
+          .filter(a => a.product_id === product.id)
+          .map(a => a.badge);
+      });
     } catch (error) {
-      console.error('Error loading badges:', error)
+      console.error('Error loading badges:', error);
     }
 
-    // Cargar métodos de pago
+    // 8. Cargar métodos de pago
     const { data: paymentMethodsData, error: paymentMethodsError } = await supabase
       .from('payment_methods')
       .select('*')
@@ -433,7 +426,7 @@ async function loadCatalogData() {
     if (paymentMethodsError) throw paymentMethodsError
     paymentMethods = paymentMethodsData || []
 
-    // Cargar horarios de negocio
+    // 9. Cargar horarios de negocio
     const { data: hoursData, error: hoursError } = await supabase
       .from('business_hours')
       .select('*')
@@ -443,7 +436,7 @@ async function loadCatalogData() {
     if (hoursError) throw hoursError
     businessHours = hoursData || []
 
-    // Cargar Promociones Activas
+    // 10. Cargar Promociones Activas
     try {
       promotions = await promotionsService.getActiveByBusiness(currentBusiness.id)
     } catch (err) {
@@ -451,8 +444,7 @@ async function loadCatalogData() {
       promotions = []
     }
 
-    // Verify operational readiness (NEW)
-    // If no payment methods OR no business hours, block catalog
+    // 11. Verify operational readiness
     if (!paymentMethods || paymentMethods.length === 0 || !businessHours || businessHours.length === 0) {
       console.warn('Business Incomplete: Missing payment methods or hours')
       showMaintenanceState()
@@ -557,12 +549,6 @@ async function openPromotionModal(promo) {
   console.log('Promotion ID:', promo.id)
   console.log('Promotion Title:', promo.title)
 
-  if (currentBusiness) {
-    // Track view if needed tracking for promos
-  }
-
-  updateUrl('promotion', promo.id)
-
   selectedPromotion = promo
   currentQuantity = 1
   selectedPromoQuickComment = null
@@ -627,6 +613,7 @@ async function openPromotionModal(promo) {
   }
 
   console.log('=== openPromotionModal COMPLETED ===')
+  updateUrl('promotion', promo.id)
 }
 
 function renderPromotionOptions(promo) {
@@ -703,6 +690,119 @@ function renderPromotionOptions(promo) {
   }
 
   console.log('=== renderPromotionOptions COMPLETED ===')
+}
+
+function closePromotionModal() {
+  clearUrl()
+  promotionOverlay.classList.remove('active')
+  selectedPromotion = null
+}
+
+// ============================================
+// ANNOUNCEMENT MODAL (WELCOME MODAL)
+// ============================================
+async function checkAnnouncement() {
+  if (!currentBusiness) return
+
+  const businessId = currentBusiness.id;
+  const sessionKey = `announcement_seen_${businessId}`;
+
+  console.log('[Announcement] business_id usado:', businessId);
+  console.log('[Announcement] sessionStorage key:', sessionKey);
+  console.log('[Announcement] sessionStorage valor:', sessionStorage.getItem(sessionKey));
+
+  if (sessionStorage.getItem(sessionKey)) {
+    console.log('[Announcement] Bloqueado por sessionStorage');
+    return
+  }
+
+  try {
+    const announcement = await announcementsService.getActive(businessId);
+    console.log('[Announcement] resultado query:', announcement);
+    
+    if (announcement) {
+      showAnnouncement(announcement)
+    } else {
+      console.log('[Announcement] La query retornó data vacío (no hay anuncio activo o expiró)');
+    }
+  } catch (error) {
+    console.log('[Announcement] resultado query ERROR:', error);
+    console.error('Error checking announcement:', error)
+  }
+}
+
+function showAnnouncement(announcement) {
+  const overlay = document.getElementById('announcementOverlay')
+  const image = document.getElementById('announcementImage')
+  const ctaBtn = document.getElementById('announcementCtaBtn')
+  const closeBtn = document.getElementById('closeAnnouncementBtn')
+  const footer = document.getElementById('announcementFooter')
+
+  if (!overlay || !image || !ctaBtn || !closeBtn) {
+    console.error('[Announcement] Error: No se encontraron elementos del DOM necesarios', { overlay, image, ctaBtn, closeBtn });
+    return
+  }
+
+  image.src = announcement.image_url
+  
+  if (announcement.cta_type !== 'none') {
+    ctaBtn.textContent = announcement.cta_text
+    if (footer) footer.style.display = 'block'
+  } else {
+    if (footer) footer.style.display = 'none'
+  }
+
+  // CTA Handling
+  ctaBtn.onclick = () => {
+    handleAnnouncementCta(announcement)
+    closeAnnouncementModal()
+  }
+
+  closeBtn.onclick = closeAnnouncementModal
+  overlay.onclick = (e) => {
+    if (e.target === overlay) closeAnnouncementModal()
+  }
+
+  // Show with GSAP if available, else just display
+  overlay.style.display = 'flex'
+  if (typeof gsap !== 'undefined') {
+    gsap.fromTo(overlay, { opacity: 0 }, { opacity: 1, duration: 0.3 })
+    gsap.fromTo('.announcement-modal', { scale: 0.8, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.4, delay: 0.1, ease: 'back.out(1.7)' })
+  }
+
+  // Mark as shown in session
+  sessionStorage.setItem(`announcement_seen_${currentBusiness.id}`, 'true')
+}
+
+function handleAnnouncementCta(announcement) {
+  const { cta_type, cta_target_id } = announcement
+
+  if (cta_type === 'product' && cta_target_id) {
+    openProductModal(cta_target_id)
+  } else if (cta_type === 'promotion' && cta_target_id) {
+    // Try to find the promotion in the loaded data
+    const promo = promotions.find(p => p.id === cta_target_id)
+    if (promo) {
+      openPromotionModal(promo)
+    } else {
+      // If not found in current list (maybe expired or not in first page), 
+      // we could potentially fetch it, but usually announcements point to active ones.
+      console.warn('Promotion targeted by announcement not found in current list.')
+    }
+  }
+}
+
+function closeAnnouncementModal() {
+  const overlay = document.getElementById('announcementOverlay')
+  if (!overlay) return
+
+  if (typeof gsap !== 'undefined') {
+    gsap.to(overlay, { opacity: 0, duration: 0.3, onComplete: () => {
+      overlay.style.display = 'none'
+    }})
+  } else {
+    overlay.style.display = 'none'
+  }
 }
 
 function closePromotionModalFunc() {
@@ -1232,6 +1332,11 @@ function renderProducts(filteredCategoryId = 'all', searchQuery = '') {
 
   // Re-attach event listeners
   attachProductCardListeners()
+
+  // Detect overflow for horizontal scroll peek (Mobile only)
+  requestAnimationFrame(() => {
+    requestAnimationFrame(detectProductRowOverflow);
+  });
 }
 
 function attachProductCardListeners() {
@@ -1286,20 +1391,19 @@ function renderProductCard(product) {
     // Show discount badge and crossed prices if has discount
     if (product.discount) {
       const originalMin = Math.min(...originalPrices)
-      const originalMax = Math.max(...originalPrices)
       const discountPercentage = product.discount.discount_percentage
 
       priceHTML = `
         <div class="product-card-price-container">
-          <div class="discounted-price">$${minPrice.toLocaleString()} ... $${maxPrice.toLocaleString()}</div>
+          <div class="discounted-price"><span class="price-from">Desde</span> $${minPrice.toLocaleString()}</div>
           <div class="price-discount-wrapper">
             <span class="discount-badge">${discountPercentage}%</span>
-            <span class="original-price">$${originalMin.toLocaleString()} ... $${originalMax.toLocaleString()}</span>
+            <span class="original-price"><span class="price-from">Desde</span> $${originalMin.toLocaleString()}</span>
           </div>
         </div>
       `
     } else {
-      priceHTML = `<div class="product-card-price-range">$${minPrice.toLocaleString()} ... $${maxPrice.toLocaleString()}</div>`
+      priceHTML = `<div class="product-card-price-range"><span class="price-from">Desde</span> $${minPrice.toLocaleString()}</div>`
     }
   } else if (product.discount) {
     const originalPrice = parseFloat(product.price)
@@ -1320,16 +1424,14 @@ function renderProductCard(product) {
   }
 
   return `
-    <div class="product-card${hasSizes ? ' has-sizes' : ''}" data-id="${product.id}">
+    <div class="product-card" data-id="${product.id}">
       <div class="product-card-image">
         ${product.image_url
       ? `<img src="${product.image_url}" alt="${product.name}" loading="lazy">`
       : 'Sin imagen'
     }
         ${(product.badges || []).some(b => b.id === BADGE_NUEVO_ID) ? `
-          <div class="product-badge-new" style="position: absolute; top: 8px; left: 8px; background: #10b981; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; z-index: 2; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.2);">
-            Nuevo
-          </div>
+          <div class="product-badge-new">Nuevo</div>
         ` : ''}
         <button class="favorite-btn ${isFav ? 'active' : ''}"
                 data-product-id="${product.id}">
@@ -1438,12 +1540,24 @@ async function openProductModal(productId) {
   if (badgesContainer) {
     const badges = selectedProduct.badges || []
     if (badges.length > 0) {
+      // Ordenar: "Nuevo" siempre primero
+      const sortedBadges = [...badges].sort((a, b) => {
+        if (a.id === BADGE_NUEVO_ID) return -1
+        if (b.id === BADGE_NUEVO_ID) return 1
+        return 0
+      })
+
       badgesContainer.style.display = 'flex'
-      badgesContainer.innerHTML = badges.map(b => `
-        <span class="badge-pill" style="background: ${b.color}; color: ${getContrastColor(b.color)}; padding: 4px 10px; border-radius: 100px; font-size: 0.75rem; font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
-          ${b.name}
-        </span>
-      `).join('')
+      badgesContainer.innerHTML = sortedBadges.map(b => {
+        if (b.id === BADGE_NUEVO_ID) {
+          return `<span class="badge-pill badge-pill-nuevo">Nuevo</span>`
+        }
+        return `
+          <span class="badge-pill" style="--badge-bg: ${b.color}; --badge-text: ${getContrastColor(b.color)};">
+            ${b.name}
+          </span>
+        `
+      }).join('')
     } else {
       badgesContainer.style.display = 'none'
     }
@@ -3844,3 +3958,24 @@ function subscribeToTrackingUpdates() {
     })
     .subscribe()
 }
+
+/**
+ * Detects if product rows have horizontal overflow and applies a class
+ * to enable the scroll peek effect (via pseudo-elements).
+ */
+function detectProductRowOverflow() {
+  if (window.innerWidth > 768) return;
+
+  document.querySelectorAll('.products-row').forEach(row => {
+    // scrollWidth > clientWidth means there is content hidden by overflow
+    if (row.scrollWidth > row.clientWidth) {
+      row.classList.add('has-overflow');
+    } else {
+      row.classList.remove('has-overflow');
+    }
+  });
+}
+
+// Global listeners for responsiveness
+window.addEventListener('resize', detectProductRowOverflow);
+document.addEventListener('DOMContentLoaded', detectProductRowOverflow);

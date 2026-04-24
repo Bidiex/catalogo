@@ -137,12 +137,13 @@ export const productBadgesService = {
   async getBadgesForCatalog(businessId) {
     try {
       const { data, error } = await supabase
-        .from('product_badges')
+        .from('product_badge_assignments')
         .select(`
-          *,
-          product_badge_assignments(product_id)
+          product_id,
+          badge:product_badges!inner(*),
+          product:products!inner(business_id)
         `)
-        .eq('business_id', businessId)
+        .eq('product.business_id', businessId)
 
       if (error) throw error
       return data || []

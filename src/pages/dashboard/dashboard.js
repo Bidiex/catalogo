@@ -27,6 +27,7 @@ import { businessSidesService } from '../../services/businessSidesService.js'
 import { taxesService } from '../../services/taxes.js'
 import { deliveryPhotoService } from '../../services/deliveryPhotoService.js'
 import { productBadgesService } from '../../services/productBadges.js'
+import { announcementsService } from '../../services/announcements.js'
 
 const BADGE_NUEVO_ID = '00000000-0000-0000-0000-000000000001'
 
@@ -59,7 +60,9 @@ let editingBadge = null
 
 // Promotions state
 let promotions = []
+let announcements = []
 let editingPromotion = null
+let editingAnnouncement = null
 let currentPromotionImage = null
 let supportTickets = [] // Global state for tickets
 // Orders State
@@ -4098,6 +4101,323 @@ function closePromotionModalFunc() {
 }
 
 // ============================================
+// ANNOUNCEMENTS MANAGEMENT
+// ============================================
+const addAnnouncementBtn = document.getElementById('addAnnouncementBtn')
+const announcementsList = document.getElementById('announcementsList')
+const announcementModal = document.getElementById('announcementModal')
+const closeAnnouncementModal = document.getElementById('closeAnnouncementModal')
+const cancelAnnouncementBtn = document.getElementById('cancelAnnouncementBtn')
+const announcementForm = document.getElementById('announcementForm')
+const announcementImageInput = document.getElementById('announcementImageInput')
+const announcementImagePreview = document.getElementById('announcementImagePreview')
+const announcementImagePlaceholder = document.getElementById('announcementImagePlaceholder')
+const announcementImageActions = document.getElementById('announcementImageActions')
+const announcementImageUrlHidden = document.getElementById('announcementImageUrl')
+const ctaCharCount = document.getElementById('ctaCharCount')
+const announcementCtaType = document.getElementById('announcementCtaType')
+const ctaTargetGroup = document.getElementById('ctaTargetGroup')
+const announcementCtaTarget = document.getElementById('announcementCtaTarget')
+const announcementActiveInput = document.getElementById('announcementActiveInput')
+const activeWarning = document.getElementById('activeWarning')
+
+// Initialize Announcements listeners
+if (addAnnouncementBtn) addAnnouncementBtn.addEventListener('click', () => openAnnouncementModal())
+if (closeAnnouncementModal) closeAnnouncementModal.addEventListener('click', closeAnnouncementModalFunc)
+if (cancelAnnouncementBtn) cancelAnnouncementBtn.addEventListener('click', closeAnnouncementModalFunc)
+
+// CTA Character Counter
+const announcementCtaText = document.getElementById('announcementCtaText')
+if (announcementCtaText) {
+  announcementCtaText.addEventListener('input', (e) => {
+    const len = e.target.value.length
+    ctaCharCount.textContent = `${len}/30`
+  })
+}
+
+// CTA Type Change
+if (announcementCtaType) {
+  announcementCtaType.addEventListener('change', (e) => {
+    const type = e.target.value
+    if (type === 'none') {
+      ctaTargetGroup.style.display = 'none'
+    } else {
+      ctaTargetGroup.style.display = 'block'
+      loadCtaTargets(type)
+    }
+  })
+}
+
+// Active Warning toggle
+if (announcementActiveInput) {
+  announcementActiveInput.addEventListener('change', (e) => {
+    activeWarning.style.display = e.target.checked ? 'block' : 'none'
+  })
+}
+
+// Image Upload Logic for Announcement
+if (announcementImagePlaceholder) {
+  announcementImagePlaceholder.addEventListener('click', () => {
+    announcementImageInput.click()
+  })
+}
+
+if (document.getElementById('changeAnnouncementImageBtn')) {
+  document.getElementById('changeAnnouncementImageBtn').addEventListener('click', () => {
+    announcementImageInput.click()
+  })
+}
+
+if (document.getElementById('removeAnnouncementImageBtn')) {
+  document.getElementById('removeAnnouncementImageBtn').addEventListener('click', () => {
+    resetAnnouncementImageUpload()
+  })
+}
+
+if (announcementImageInput) {
+  announcementImageInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    try {
+      // Show local preview immediately (3:4 ratio)
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        announcementImagePreview.innerHTML = `<img src="${event.target.result}" alt="Preview">`
+        announcementImagePreview.style.display = 'block'
+        announcementImagePlaceholder.style.display = 'none'
+        announcementImageActions.style.display = 'flex'
+      }
+      reader.readAsDataURL(file)
+
+      // We will upload on save or immediately? 
+      // The requirement says "preview... antes de guardar". 
+      // Most of this dashboard uploads immediately. Let's stick to immediate upload for consistency with Promotions.
+      
+      notify.info('Subiendo imagen...')
+      
+      // Resize for 3:4 (e.g. 600x800)
+      const resizedFile = await imageService.resizeImage(file, 600, 800, 0.9)
+      
+      const result = await imageService.upload(resizedFile, 'announcements', 'announcement-images')
+
+      if (result.success) {
+        announcementImageUrlHidden.value = result.url
+        notify.success('Imagen lista')
+      } else {
+        throw new Error(result.error)
+      }
+    } catch (error) {
+      console.error('Upload error:', error)
+      notify.error('Error al procesar imagen: ' + error.message)
+      resetAnnouncementImageUpload()
+    }
+  })
+}
+
+function resetAnnouncementImageUpload() {
+  announcementImageUrlHidden.value = ''
+  announcementImageInput.value = ''
+  announcementImagePreview.style.display = 'none'
+  announcementImagePlaceholder.style.display = 'flex'
+  announcementImageActions.style.display = 'none'
+}
+
+async function loadAnnouncements() {
+  try {
+    announcements = await announcementsService.getByBusiness(currentBusiness.id)
+    renderAnnouncements()
+  } catch (error) {
+    console.error('Error loading announcements:', error)
+    notify.error('Error al cargar anuncios')
+  }
+}
+
+function renderAnnouncements() {
+  if (!announcementsList) return
+
+  if (announcements.length === 0) {
+    announcementsList.innerHTML = '<p class="empty-message">No hay anuncios configurados</p>'
+    return
+  }
+
+  announcementsList.innerHTML = announcements.map(ann => {
+    const isExpired = new Date(ann.expires_at) < new Date()
+    return `
+      <div class="announcement-card" data-id="${ann.id}">
+        <img src="${ann.image_url}" class="announcement-img-vignette" alt="${ann.name}">
+        <div class="announcement-info">
+          <div class="announcement-title">${ann.name}</div>
+          <div class="announcement-meta">
+            ${ann.is_active 
+              ? `<span class="badge-active">Activo</span>` 
+              : `<span class="badge-inactive">Inactivo</span>`}
+            ${isExpired ? `<span class="badge-expired">Vencido</span>` : ''}
+            <br>
+            <small>Expira: ${new Date(ann.expires_at).toLocaleDateString()} ${new Date(ann.expires_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</small>
+          </div>
+        </div>
+        <div class="announcement-actions">
+          <button class="btn-icon edit-announcement" data-id="${ann.id}">
+            <i class="ri-edit-line"></i>
+          </button>
+          <button class="btn-icon danger delete-announcement" data-id="${ann.id}">
+            <i class="ri-delete-bin-line"></i>
+          </button>
+        </div>
+      </div>
+    `
+  }).join('')
+
+  // Listeners
+  document.querySelectorAll('.edit-announcement').forEach(btn => {
+    btn.addEventListener('click', () => openAnnouncementModal(btn.dataset.id))
+  })
+
+  document.querySelectorAll('.delete-announcement').forEach(btn => {
+    btn.addEventListener('click', () => deleteAnnouncement(btn.dataset.id))
+  })
+}
+
+async function loadCtaTargets(type) {
+  announcementCtaTarget.innerHTML = '<option value="">Cargando...</option>'
+  try {
+    if (type === 'product') {
+      const { data } = await supabase.from('products').select('id, name').eq('business_id', currentBusiness.id).eq('is_active', true)
+      announcementCtaTarget.innerHTML = data.map(p => `<option value="${p.id}">${p.name}</option>`).join('')
+    } else if (type === 'promotion') {
+      const { data } = await supabase.from('promotions').select('id, title').eq('business_id', currentBusiness.id).eq('is_active', true)
+      announcementCtaTarget.innerHTML = data.map(p => `<option value="${p.id}">${p.title}</option>`).join('')
+    }
+  } catch (err) {
+    console.error('Error loading targets:', err)
+  }
+}
+
+function openAnnouncementModal(announcementId = null) {
+  resetAnnouncementImageUpload()
+  announcementForm.reset()
+  ctaCharCount.textContent = '0/30'
+  ctaTargetGroup.style.display = 'none'
+  activeWarning.style.display = 'none'
+
+  if (announcementId) {
+    editingAnnouncement = announcements.find(a => a.id === announcementId)
+    document.getElementById('announcementModalTitle').textContent = 'Editar Anuncio'
+    
+    document.getElementById('announcementNameInput').value = editingAnnouncement.name
+    document.getElementById('announcementCtaText').value = editingAnnouncement.cta_text
+    ctaCharCount.textContent = `${editingAnnouncement.cta_text.length}/30`
+    
+    document.getElementById('announcementExpiresInput').value = toLocalISOString(new Date(editingAnnouncement.expires_at))
+    document.getElementById('announcementCtaType').value = editingAnnouncement.cta_type
+    
+    if (editingAnnouncement.cta_type !== 'none') {
+      ctaTargetGroup.style.display = 'block'
+      loadCtaTargets(editingAnnouncement.cta_type).then(() => {
+        announcementCtaTarget.value = editingAnnouncement.cta_target_id
+      })
+    }
+    
+    announcementActiveInput.checked = editingAnnouncement.is_active
+    if (editingAnnouncement.is_active) activeWarning.style.display = 'block'
+    
+    // Image
+    if (editingAnnouncement.image_url) {
+      announcementImageUrlHidden.value = editingAnnouncement.image_url
+      announcementImagePreview.innerHTML = `<img src="${editingAnnouncement.image_url}" alt="Preview">`
+      announcementImagePreview.style.display = 'block'
+      announcementImagePlaceholder.style.display = 'none'
+      announcementImageActions.style.display = 'flex'
+    }
+  } else {
+    editingAnnouncement = null
+    document.getElementById('announcementModalTitle').textContent = 'Nuevo Anuncio'
+    // Default expiration: 7 days from now
+    const nextWeek = new Date()
+    nextWeek.setDate(nextWeek.getDate() + 7)
+    document.getElementById('announcementExpiresInput').value = toLocalISOString(nextWeek)
+    announcementActiveInput.checked = true
+    activeWarning.style.display = 'block'
+  }
+
+  announcementModal.style.display = 'flex'
+}
+
+function closeAnnouncementModalFunc() {
+  announcementModal.style.display = 'none'
+  editingAnnouncement = null
+}
+
+announcementForm.addEventListener('submit', async (e) => {
+  e.preventDefault()
+  
+  const imageUrl = announcementImageUrlHidden.value
+  if (!imageUrl) {
+    notify.error('La imagen es obligatoria')
+    return
+  }
+
+  const submitBtn = document.getElementById('saveAnnouncementBtn')
+  
+  await buttonLoader.execute(submitBtn, async () => {
+    try {
+      const announcementData = {
+        business_id: currentBusiness.id,
+        name: document.getElementById('announcementNameInput').value,
+        image_url: imageUrl,
+        cta_text: document.getElementById('announcementCtaText').value,
+        cta_type: document.getElementById('announcementCtaType').value,
+        cta_target_id: document.getElementById('announcementCtaTarget').value || null,
+        expires_at: new Date(document.getElementById('announcementExpiresInput').value).toISOString(),
+        is_active: announcementActiveInput.checked
+      }
+
+      let savedId
+      if (editingAnnouncement) {
+        const result = await announcementsService.update(editingAnnouncement.id, announcementData)
+        savedId = result.id
+        notify.success('Anuncio actualizado')
+      } else {
+        const result = await announcementsService.create(announcementData)
+        savedId = result.id
+        notify.success('Anuncio creado')
+      }
+
+      // If active, deactivate others
+      if (announcementData.is_active) {
+        await announcementsService.deactivateAllOther(currentBusiness.id, savedId)
+      }
+
+      closeAnnouncementModalFunc()
+      loadAnnouncements()
+    } catch (error) {
+      console.error('Error saving announcement:', error)
+      notify.error('Error al guardar el anuncio')
+    }
+  }, 'Guardando...')
+})
+
+async function deleteAnnouncement(id) {
+  const result = await confirm.show({
+    title: '¿Eliminar anuncio?',
+    message: 'Esta acción no se puede deshacer.',
+    confirmText: 'Eliminar',
+    type: 'danger'
+  })
+
+  if (!result) return
+
+  try {
+    await announcementsService.delete(id)
+    notify.success('Anuncio eliminado')
+    loadAnnouncements()
+  } catch (error) {
+    notify.error('Error al eliminar')
+  }
+}
+
+// ============================================
 // PROMOTION OPTIONS MANAGEMENT (Like Product Options)
 // ============================================
 let currentPromotionForOptions = null
@@ -7336,6 +7656,10 @@ function initProductsTabs() {
         if (window.loadGlobalQuickComments) window.loadGlobalQuickComments()
       } else if (tabId === 'badges') {
         loadBadges()
+      } else if (tabId === 'promotions-list') {
+        loadPromotions()
+      } else if (tabId === 'announcements') {
+        loadAnnouncements()
       }
     })
   })
