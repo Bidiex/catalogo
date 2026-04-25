@@ -1593,7 +1593,7 @@ function renderCategories(categoriesToRender = null) {
   }
 
   categoriesList.innerHTML = catsToShow.map(category => `
-    <div class="category-item" data-id="${category.id}" draggable="true">
+    <div class="category-item" data-id="${category.id}">
       <div class="drag-handle" title="Arrastrar para reordenar">
         <i class="ri-drag-move-2-line"></i>
       </div>
@@ -1746,24 +1746,82 @@ function getDragAfterElement(container, y, selector) {
   }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
+function getCategoryDragAfterElement(container, x, y) {
+  const items = [...container.querySelectorAll(
+    '.category-item:not(.dragging):not(.drag-placeholder)'
+  )];
+
+  return items.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const centerX = box.left + box.width / 2;
+    const centerY = box.top + box.height / 2;
+    // Euclidean distance from cursor to center of each item
+    const distance = Math.sqrt(
+      Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2)
+    );
+    if (distance < closest.distance) {
+      return { distance, element: child };
+    }
+    return closest;
+  }, { distance: Infinity }).element;
+}
+
 function initCategoryDragAndDrop() {
   const list = categoriesList;
   const items = list.querySelectorAll('.category-item');
+  let placeholder = null;
+  let dragSrcEl = null;
+  let lastAfterElement = undefined;
 
   items.forEach(item => {
+    const handle = item.querySelector('.drag-handle');
+    
+    // Dynamic draggable assignment to avoid conflicts with buttons and ghost capture
+    if (handle) {
+      handle.addEventListener('pointerdown', () => {
+        item.setAttribute('draggable', 'true');
+      });
+      handle.addEventListener('pointerup', () => {
+        item.setAttribute('draggable', 'false');
+      });
+    }
+
     // Desktop Drag events
     item.addEventListener('dragstart', (e) => {
-      // Evitar drag si no es desde el handle
-      if (!e.target.closest('.drag-handle')) {
-        e.preventDefault();
-        return;
-      }
+      dragSrcEl = item;
       item.classList.add('dragging');
+      
+      // Crear placeholder con las dimensiones del item original
+      placeholder = document.createElement('div');
+      placeholder.className = 'drag-placeholder';
+      placeholder.style.height = `${item.offsetHeight}px`;
+      
+      // Copiar el border-radius computado para consistencia visual
+      const computedStyle = window.getComputedStyle(item);
+      placeholder.style.borderRadius = computedStyle.borderRadius;
+      
+      // Insertar placeholder en la posición actual del item
+      item.parentNode.insertBefore(placeholder, item.nextSibling);
+      
+      dragSrcEl.style.opacity = '0';
+      
       e.dataTransfer.effectAllowed = 'move';
     });
 
     item.addEventListener('dragend', () => {
+      // Reset draggable state
+      item.setAttribute('draggable', 'false');
+      if (dragSrcEl) dragSrcEl.style.opacity = '';
+      dragSrcEl = null;
+      lastAfterElement = undefined;
+      
+      if (placeholder && placeholder.parentNode) {
+        // Colocar el item real exactamente donde quedó el placeholder
+        placeholder.parentNode.replaceChild(item, placeholder);
+      }
+      
       item.classList.remove('dragging');
+      placeholder = null;
       saveCategoriesOrder();
     });
 
@@ -1801,14 +1859,19 @@ function initCategoryDragAndDrop() {
 
   list.addEventListener('dragover', (e) => {
     e.preventDefault();
-    const afterElement = getDragAfterElement(list, e.clientY, '.category-item');
-    const dragging = document.querySelector('.dragging');
-    if (dragging && dragging.classList.contains('category-item')) {
-      if (afterElement == null) {
-        list.appendChild(dragging);
-      } else {
-        list.insertBefore(dragging, afterElement);
-      }
+    e.dataTransfer.dropEffect = 'move';
+    if (!dragSrcEl || !placeholder) return;
+
+    const afterElement = getCategoryDragAfterElement(list, e.clientX, e.clientY);
+
+    // Only mutate the DOM if the insertion point actually changed
+    if (afterElement === lastAfterElement) return;
+    lastAfterElement = afterElement;
+
+    if (afterElement == null) {
+      list.appendChild(placeholder);
+    } else {
+      list.insertBefore(placeholder, afterElement);
     }
   });
 }

@@ -707,10 +707,29 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
-  background: var(--bg-light);
+  background: var(--surface-light);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
   transition: var(--transition);
+}
+
+.category-item .category-item-info {
+  pointer-events: none;
+}
+
+.category-item.dragging {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.drag-placeholder {
+  pointer-events: none;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  background: #f9fafb;
+  min-height: 56px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .category-item:hover {
