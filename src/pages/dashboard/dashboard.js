@@ -3,6 +3,8 @@ import { generateOrderInvoice, generateOrderTicket } from '../../utils/invoiceGe
 import { planService } from '../../services/plan.js'
 import { featureLocker } from '../../utils/featureLocker.js'
 import { upgradeModal } from '../../components/upgradeModal.js'
+import { announcementModal } from '../../components/AnnouncementModal.js'
+import { notificationBell } from '../../components/NotificationBell.js'
 
 import { businessService } from '../../services/business.js'
 import { categoryService } from '../../services/categories.js'
@@ -254,6 +256,9 @@ async function init() {
     planService.init(currentBusiness)
     featureLocker.applyFeatureLocks()
 
+    // Cargar anuncios de sistema
+    await loadSystemAnnouncements()
+
     // Show Reminder Modal - Only on fresh login, not on page refresh
     const reminderModal = document.getElementById('whatsappReminderModal')
     const closeReminderBtn = document.getElementById('closeReminderModalBtn')
@@ -282,6 +287,31 @@ async function init() {
   } catch (error) {
     console.error('Error initializing dashboard:', error)
     notify.error('Error al cargar el dashboard')
+  }
+}
+
+async function loadSystemAnnouncements() {
+  try {
+    const { data, error } = await supabase.rpc('get_my_announcements')
+    if (error) {
+      console.error('Error fetching system announcements:', error)
+      return
+    }
+
+    if (data && data.length > 0) {
+      // Pasamos todos los anuncios a la campanilla
+      notificationBell.setAnnouncements(data)
+
+      // Verificamos si hay anuncios tipo modal no vistos
+      const pendingModals = data.filter(a => a.show_as_modal && !a.seen_at)
+      
+      if (pendingModals.length > 0) {
+        // Tomamos el primero (más reciente, asumiendo orden por BD)
+        announcementModal.show(pendingModals[0])
+      }
+    }
+  } catch (err) {
+    console.error('Exception loading announcements:', err)
   }
 }
 
@@ -4253,7 +4283,7 @@ function closePromotionModalFunc() {
 // ============================================
 const addAnnouncementBtn = document.getElementById('addAnnouncementBtn')
 const announcementsList = document.getElementById('announcementsList')
-const announcementModal = document.getElementById('announcementModal')
+const catalogAnnouncementModalEl = document.getElementById('announcementModal')
 const closeAnnouncementModal = document.getElementById('closeAnnouncementModal')
 const cancelAnnouncementBtn = document.getElementById('cancelAnnouncementBtn')
 const announcementForm = document.getElementById('announcementForm')
@@ -4489,11 +4519,11 @@ function openAnnouncementModal(announcementId = null) {
     activeWarning.style.display = 'block'
   }
 
-  announcementModal.style.display = 'flex'
+  catalogAnnouncementModalEl.style.display = 'flex'
 }
 
 function closeAnnouncementModalFunc() {
-  announcementModal.style.display = 'none'
+  catalogAnnouncementModalEl.style.display = 'none'
   editingAnnouncement = null
 }
 

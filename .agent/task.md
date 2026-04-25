@@ -1,0 +1,17 @@
+- `[x]` Preparar componentes de UI (Modal y Campanilla)
+  - `[x]` `src/components/AnnouncementModal.js`
+  - `[x]` `src/components/NotificationBell.js`
+- `[x]` Modificar Dashboard HTML
+  - `[x]` Agregar Campanilla en `.header-actions`
+  - `[x]` Agregar Panel de Notificaciones al final del DOM (Drawer derecho)
+- `[x]` Modificar CSS del Dashboard
+  - `[x]` Estilos para NotificationBell
+  - `[x]` Estilos para Notification Panel (drawer con overlay)
+  - `[x]` Estilos para AnnouncementModal (backdrop blur, CTA flotante, botón X exterior)
+- `[x]` Modificar Lógica del Dashboard (`dashboard.js`)
+  - `[x]` Invocar `get_my_announcements` al iniciar.
+  - `[x]` Filtrar y mostrar el AnnouncementModal automático.
+- `[x]` Implementar Gestión en Super Admin
+  - `[x]` Crear `src/pages/admin/announcements/index.html`
+  - `[x]` Crear `src/pages/admin/announcements/announcements.js` (incluyendo validación MODAL_LIMIT_EXCEEDED)
+  - `[x]` Añadir menú "Anuncios" en el sidebar del admin.

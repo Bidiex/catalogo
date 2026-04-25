@@ -103,6 +103,10 @@
           </button>
           <h1 id="pageTitle">Dashboard</h1>
           <div class="header-actions">
+            <button class="btn-header-action notification-bell-btn" id="headerNotificationBtn">
+              <i class="ri-notification-3-line"></i>
+              <span class="notification-badge" style="display: none;">0</span>
+            </button>
             <button id="editBusinessBtn" class="btn-header-action" style="display: none;">
               <i class="ri-edit-line"></i>
               <span>Editar Negocio</span>
@@ -2768,6 +2772,23 @@
 
 
   <script type="module" src="/src/pages/dashboard/dashboard.js"></script>
+
+
+  <!-- Notifications Panel -->
+  <div id="notificationsOverlay" class="notifications-panel-overlay"></div>
+  <aside id="notificationsPanel" class="notifications-panel">
+    <div class="notifications-panel-header">
+      <h2>Notificaciones</h2>
+      <button id="closeNotificationsBtn" class="close-panel-btn">
+        <i class="ri-close-line"></i>
+      </button>
+    </div>
+    <div class="notifications-panel-content" id="notificationsList">
+      <!-- Se llena por JS -->
+    </div>
+  </aside>
+
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
   <!-- Modal para crear/editar promoción -->
   <div id="promotionModal" class="modal" style="display: none;">
