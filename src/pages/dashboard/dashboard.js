@@ -6,6 +6,8 @@ import { upgradeModal } from '../../components/upgradeModal.js'
 import { announcementModal } from '../../components/AnnouncementModal.js'
 import { notificationBell } from '../../components/NotificationBell.js'
 
+window.announcementModal = announcementModal
+
 import { businessService } from '../../services/business.js'
 import { categoryService } from '../../services/categories.js'
 import { productService } from '../../services/products.js'

@@ -72,8 +72,8 @@ class NotificationBell {
     this.createElements();
     this.announcements = announcements || [];
     
-    // Calcular no leídas (no vistas o sin acción según requiera el sistema, asumiremos read_at nulo como "no leído" para la campanilla)
-    this.unreadCount = this.announcements.filter(a => !a.read_at && !a.dismissed_at).length;
+    // Calcular no leídas para el badge (solo vistas nulas)
+    this.unreadCount = this.announcements.filter(a => !a.seen_at).length;
     this.updateBadge();
     this.renderList();
   }
@@ -104,42 +104,90 @@ class NotificationBell {
       return;
     }
 
-    listEl.innerHTML = this.announcements.map(announcement => {
-      const isUnread = !announcement.read_at && !announcement.dismissed_at;
+    const unreadAnns = this.announcements.filter(a => !a.read_at);
+    const readAnns = this.announcements.filter(a => a.read_at);
+
+    let html = '';
+
+    const renderCard = (announcement) => {
+      const isUnread = !announcement.read_at;
       const imgHtml = announcement.image_url
-        ? `<img src="${announcement.image_url}" class="notification-img">`
+        ? `<div class="notification-img-wrapper"><img src="${announcement.image_url}" class="notification-img"></div>`
         : '';
-      const ctaHtml = announcement.cta_text
-        ? `<button class="btn-notification-action" data-id="${announcement.id}">
-             ${announcement.cta_text}
-           </button>`
-        : '';
+        
+      const typeClass = announcement.type ? `badge-${announcement.type.toLowerCase()}` : 'badge-default';
+      const typeLabel = announcement.type ? announcement.type : 'Aviso';
+      
+      const dateFormatted = announcement.created_at ? new Date(announcement.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
 
       return `
-        <div class="notification-item ${isUnread ? 'unread' : ''}" data-id="${announcement.id}">
+        <div class="notification-item ${isUnread ? 'unread' : 'read'}" data-id="${announcement.announcement_id}">
           ${imgHtml}
           <div class="notification-info">
+            <div class="notification-meta">
+              <span class="notification-badge-type ${typeClass}">${typeLabel}</span>
+              <span class="notification-date">${dateFormatted}</span>
+            </div>
             <h4>${announcement.title || 'Notificación'}</h4>
             <p>${announcement.description || ''}</p>
-            ${ctaHtml}
           </div>
         </div>
       `;
-    }).join('');
+    };
 
-    // Listeners para los botones CTA del listado
-    listEl.querySelectorAll('.btn-notification-action').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.dataset.id;
-        const found = this.announcements.find(a => a.id === id);
+    if (unreadAnns.length > 0) {
+      html += `<h3 class="notifications-section-title">Sin leer</h3>`;
+      html += unreadAnns.map(renderCard).join('');
+    }
+
+    if (readAnns.length > 0) {
+      if (unreadAnns.length > 0) {
+        html += `<div class="notifications-separator"></div>`;
+      }
+      html += `<h3 class="notifications-section-title">Leídas</h3>`;
+      html += readAnns.map(renderCard).join('');
+    }
+
+    listEl.innerHTML = html;
+
+    // Listeners para las cards del listado
+    listEl.querySelectorAll('.notification-item').forEach(card => {
+      card.addEventListener('click', async () => {
+        const id = card.dataset.id;
+        const found = this.announcements.find(a => String(a.announcement_id) === String(id));
         if (found) {
           this.closePanel();
-          // Asumimos que AnnouncementModal se exporta y usa aquí o es expuesto
+          
+          if (!found.read_at) {
+            try {
+              // Llamar a Supabase para marcar como leído
+              await supabase.rpc('mark_announcement_read', { p_announcement_id: found.announcement_id });
+              
+              // Actualizar el estado local
+              found.read_at = new Date().toISOString();
+              
+              // Actualizar el conteo de no vistos si aplica
+              if (!found.seen_at) {
+                found.seen_at = new Date().toISOString();
+                this.unreadCount = Math.max(0, this.unreadCount - 1);
+                this.updateBadge();
+              }
+              
+              // Modificar DOM directamente para una respuesta más suave
+              card.classList.remove('unread');
+              card.classList.add('read');
+              
+              // Actualizamos la lista completa después de un momento para que se reordene si abren de nuevo
+              setTimeout(() => this.renderList(), 500);
+            } catch (err) {
+              console.error('Error marking announcement as read:', err);
+            }
+          }
+
+          // Mostrar Modal
           if (window.announcementModal) {
             window.announcementModal.show(found);
           } else {
-             // Si no está en window, deberíamos importarlo. 
-             // Por simplicidad, se dispara un evento.
              window.dispatchEvent(new CustomEvent('traego:show-announcement', { detail: { announcement: found }}));
           }
         }
