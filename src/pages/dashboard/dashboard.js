@@ -1593,7 +1593,7 @@ function renderCategories(categoriesToRender = null) {
   }
 
   categoriesList.innerHTML = catsToShow.map(category => `
-    <div class="category-item" data-id="${category.id}">
+    <div class="category-item" data-id="${category.id}" data-name="${category.name}">
       <div class="drag-handle" title="Arrastrar para reordenar">
         <i class="ri-drag-move-2-line"></i>
       </div>
@@ -1781,7 +1781,7 @@ function initCategoryDragAndDrop() {
       handle.addEventListener('pointerdown', () => {
         item.setAttribute('draggable', 'true');
       });
-      handle.addEventListener('pointerup', () => {
+      handle.addEventListener('pointercancel', () => {
         item.setAttribute('draggable', 'false');
       });
     }
@@ -1867,6 +1867,98 @@ function initCategoryDragAndDrop() {
       list.insertBefore(placeholder, afterElement);
     }
   });
+
+  // ── Modal "Ordenar Categorías" (desktop only) ──────────────────────────
+  const sortBtn       = document.getElementById('sortCategoriesBtn');
+  const sortModal     = document.getElementById('sortCategoriesModal');
+  const sortModalList = document.getElementById('sortModalList');
+  const confirmBtn    = document.getElementById('sortModalConfirm');
+  const cancelBtn     = document.getElementById('sortModalCancel');
+  const closeBtn      = document.getElementById('sortModalClose');
+
+  if (!sortBtn || !sortModal) return;
+
+  function openSortModal() {
+    sortModalList.innerHTML = '';
+
+    // Poblar lista con el orden actual del grid
+    const currentItems = [...categoriesList.querySelectorAll('.category-item')];
+    currentItems.forEach(catItem => {
+      const name = catItem.dataset.name || '—';
+      const id   = catItem.dataset.id || '';
+
+      const li = document.createElement('li');
+      li.className = 'sort-modal-item';
+      li.dataset.categoryId = id;
+      li.innerHTML = `
+        <i class="ri-drag-move-2-line sort-item-icon"></i>
+        <span class="sort-item-name">${name}</span>
+      `;
+      sortModalList.appendChild(li);
+    });
+
+    sortModal.style.display = 'flex';
+    initModalDrag();
+  }
+
+  function closeModal() {
+    sortModal.style.display = 'none';
+  }
+
+  sortBtn.addEventListener('click', openSortModal);
+  cancelBtn.addEventListener('click', closeModal);
+  closeBtn.addEventListener('click', closeModal);
+  sortModal.addEventListener('click', (e) => {
+    if (e.target === sortModal) closeModal();
+  });
+
+  confirmBtn.addEventListener('click', () => {
+    // Leer el nuevo orden del modal
+    const newOrder = [...sortModalList.querySelectorAll('.sort-modal-item')]
+      .map(li => li.dataset.categoryId);
+
+    // Reordenar los nodos reales en el grid según el nuevo orden
+    newOrder.forEach(id => {
+      const realItem = categoriesList.querySelector(`[data-id="${id}"]`);
+      if (realItem) categoriesList.appendChild(realItem);
+    });
+
+    closeModal();
+    saveCategoriesOrder();
+  });
+
+  // Drag & drop interno del modal — mouse events (desktop)
+  function initModalDrag() {
+    const items = sortModalList.querySelectorAll('.sort-modal-item');
+    let dragSrc = null;
+
+    items.forEach(item => {
+      item.addEventListener('dragstart', (e) => {
+        dragSrc = item;
+        item.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+
+      item.addEventListener('dragend', () => {
+        item.classList.remove('dragging');
+        dragSrc = null;
+      });
+
+      item.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (!dragSrc || dragSrc === item) return;
+        const rect = item.getBoundingClientRect();
+        const midY = rect.top + rect.height / 2;
+        if (e.clientY < midY) {
+          sortModalList.insertBefore(dragSrc, item);
+        } else {
+          sortModalList.insertBefore(dragSrc, item.nextSibling);
+        }
+      });
+
+      item.setAttribute('draggable', 'true');
+    });
+  }
 }
 
 async function saveCategoriesOrder() {
