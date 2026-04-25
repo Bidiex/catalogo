@@ -1,4 +1,4 @@
-  import { supabase } from '../../config/supabase.js'
+import { supabase } from '../../config/supabase.js'
 import { cart } from '../../utils/cart.js'
 import { notify } from '../../utils/notifications.js'
 import { taxesService } from '../../services/taxes.js'
@@ -612,6 +612,7 @@ async function openPromotionModal(promo) {
     })
   }
 
+  updateAddPromotionToCartBtnState()
   console.log('=== openPromotionModal COMPLETED ===')
   updateUrl('promotion', promo.id)
 }
@@ -696,6 +697,23 @@ function closePromotionModal() {
   clearUrl()
   promotionOverlay.classList.remove('active')
   selectedPromotion = null
+}
+
+/**
+ * Actualiza el contenido del botón "Agregar al carrito" en el modal de promociones
+ */
+function updateAddPromotionToCartBtnState() {
+  if (!selectedPromotion) return
+
+  const total = parseFloat(selectedPromotion.price) * currentQuantity
+
+  if (addPromotionToCartBtn) {
+    addPromotionToCartBtn.innerHTML = `
+      <i class="ri-shopping-cart-line"></i>
+      <span class="btn-text">Agregar</span>
+      <span class="btn-price">${formatPriceCompact(total)}</span>
+    `
+  }
 }
 
 // ============================================
@@ -836,6 +854,7 @@ if (promotionDecreaseQty) {
     if (currentQuantity > 1) {
       currentQuantity--
       promotionQuantityValue.textContent = currentQuantity
+      updateAddPromotionToCartBtnState()
     }
   })
 }
@@ -844,6 +863,7 @@ if (promotionIncreaseQty) {
   promotionIncreaseQty.addEventListener('click', () => {
     currentQuantity++
     promotionQuantityValue.textContent = currentQuantity
+    updateAddPromotionToCartBtnState()
   })
 }
 
@@ -1613,7 +1633,54 @@ async function openProductModal(productId) {
       }
     })
   }
+  updateAddToCartBtnState()
 }
+
+/**
+ * Formatea un precio de forma compacta (K para miles, M para millones)
+ */
+function formatPriceCompact(price) {
+  if (price >= 1_000_000) {
+    const val = (price / 1_000_000);
+    return '$' + (val % 1 === 0 ? val : val.toFixed(2).replace(/\.?0+$/, '')) + 'M';
+  }
+  if (price >= 100_000) {
+    const val = (price / 1_000);
+    return '$' + (val % 1 === 0 ? val : val.toFixed(1).replace(/\.?0+$/, '')) + 'K';
+  }
+  return '$' + price.toLocaleString('es-CO');
+}
+
+/**
+ * Actualiza el contenido del botón "Agregar al carrito" con el precio total dinámico
+ */
+function updateAddToCartBtnState() {
+  if (!selectedProduct) return
+
+  // Calcular precio unitario base (con tamaño si aplica)
+  let unitPrice = selectedSize ? parseFloat(selectedSize.price) : parseFloat(selectedProduct.price)
+
+  // Aplicar descuento si existe
+  if (selectedProduct.discount) {
+    const discountPercentage = selectedProduct.discount.discount_percentage
+    unitPrice = unitPrice * (1 - discountPercentage / 100)
+  }
+
+  // Multiplicar por cantidad
+  const total = unitPrice * currentQuantity
+
+  // Actualizar HTML del botón con DOM puro como pidió el usuario
+  if (addToCartBtn) {
+    addToCartBtn.innerHTML = `
+      <span class="btn-top-row">
+        <i class="ri-shopping-cart-line"></i>
+        <span class="btn-text">Agregar</span>
+      </span>
+      <span class="btn-price">${formatPriceCompact(total)}</span>
+    `;
+  }
+}
+
 
 // Global variables for options (Catalog Scope)
 let productOptionGroups = []
@@ -1746,6 +1813,7 @@ function renderSizeSelector() {
 
         // Re-render to update border colors
         renderSizeSelector()
+        updateAddToCartBtnState()
       }
     })
   })
@@ -1911,12 +1979,14 @@ decreaseQty.addEventListener('click', () => {
   if (currentQuantity > 1) {
     currentQuantity--
     quantityValue.textContent = currentQuantity
+    updateAddToCartBtnState()
   }
 })
 
 increaseQty.addEventListener('click', () => {
   currentQuantity++
   quantityValue.textContent = currentQuantity
+  updateAddToCartBtnState()
 })
 
 addToCartBtn.addEventListener('click', () => {
@@ -2094,6 +2164,14 @@ function renderCartItems() {
       itemPrice += sidesTotal
     }
 
+    // Sumar precio de grupos
+    if (item.options?.groups && item.options.groups.length > 0) {
+      const groupsTotal = item.options.groups.reduce((sum, group) => {
+        return sum + (group.selections?.reduce((s, sel) => s + (parseFloat(sel.price) || 0), 0) || 0)
+      }, 0)
+      itemPrice += groupsTotal
+    }
+
     // Construir texto de opciones
     let optionsText = ''
 
@@ -2134,7 +2212,7 @@ function renderCartItems() {
         <div class="cart-item-info">
           <div class="cart-item-name">${item.options?.size ? `${item.name} - ${item.options.size.name}` : item.name}</div>
           ${optionsText}
-          <div class="cart-item-price">$${itemPrice.toLocaleString()} c/u</div>
+          <div class="cart-item-price">$${(itemPrice * item.quantity).toLocaleString('es-CO')}</div>
           <div class="cart-item-quantity">
             <button class="cart-item-decrease" data-key="${item.itemKey}">-</button>
             <span>${item.quantity}</span>
@@ -2297,6 +2375,12 @@ function renderCartItems() {
       cart.remove(currentBusiness.id, itemKey)
       updateCartUI()
       renderCartItems()
+
+      // Si el carrito quedó vacío, cerrarlo automáticamente
+      const cartItems = cart.get(currentBusiness.id)
+      if (cartItems.length === 0) {
+        closeCart()
+      }
     })
   })
 
@@ -2346,18 +2430,17 @@ function renderCheckoutSuggestions() {
 }
 
 // Abrir/cerrar carrito
+function closeCart() {
+  cartPanel.style.display = 'none'
+}
+
 cartFabBtn.addEventListener('click', () => {
   cartPanel.style.display = 'flex'
   renderCartItems()
 })
 
-cartClose.addEventListener('click', () => {
-  cartPanel.style.display = 'none'
-})
-
-cartOverlay.addEventListener('click', () => {
-  cartPanel.style.display = 'none'
-})
+cartClose.addEventListener('click', closeCart)
+cartOverlay.addEventListener('click', closeCart)
 
 // ============================================
 // CHECKOUT & WHATSAPP ORDER
@@ -2789,7 +2872,7 @@ Método de pago: {metodo_pago}
     // Cerrar modal de checkout inmediatamente
     closeCheckoutModal()
     // Cerrar panel del carrito
-    cartPanel.style.display = 'none'
+    closeCart()
 
     // Opcional: Feedback visual de redirección
     const redirectModal = showRedirectModal()
@@ -3005,7 +3088,7 @@ function openRealCheckoutForm() {
   populatePaymentMethods()
 
   // Cerrar carrito y abrir modal checkout
-  cartPanel.style.display = 'none'
+  closeCart()
   checkoutModal.style.display = 'flex'
 
   // Cargar datos guardados

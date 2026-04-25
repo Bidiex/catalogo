@@ -2371,19 +2371,21 @@ button i {
 .business-hour-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 1rem;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 0;
   background: #f9fafb;
   border: 1px solid var(--color-border);
   border-radius: 0.5rem;
-  gap: 1rem;
+  padding: 1rem;
 }
 
 .business-hour-day {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  min-width: 120px;
+  gap: 6px;
+  min-width: 90px;
+  flex-shrink: 0;
 }
 
 .business-hour-day input[type="checkbox"] {
@@ -2399,11 +2401,28 @@ button i {
 .business-hour-times {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
   flex: 1;
+  flex-wrap: wrap;
 }
 
-.business-hour-times input[type="time"] {
+.time-input-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 100px;
+}
+
+.time-input-group label {
+  font-size: 0.8rem;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.time-input {
+  width: 100%;
+  min-width: 80px;
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -2412,24 +2431,18 @@ button i {
   color: var(--color-text);
   background: white;
   transition: all 0.2s;
-  min-width: 120px;
 }
 
-.business-hour-times input[type="time"]:focus {
+.time-input:focus {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(37, 200, 37, 0.1);
 }
 
-.business-hour-times input[type="time"]:disabled {
+.time-input:disabled {
   background: #f3f4f6;
   color: #9ca3af;
   cursor: not-allowed;
-}
-
-.business-hour-times span {
-  color: #6b7280;
-  font-weight: 500;
 }
 
 

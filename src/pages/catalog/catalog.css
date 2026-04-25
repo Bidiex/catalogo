@@ -3342,3 +3342,23 @@
     max-width: 350px;
   }
 }
+
+.btn-add-to-cart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.btn-add-to-cart .btn-top-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-add-to-cart .btn-price {
+  font-size: 0.78em;
+  opacity: 0.9;
+  line-height: 1;
+}

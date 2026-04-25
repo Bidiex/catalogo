@@ -298,6 +298,15 @@ function setupListeners() {
         window.location.href = `/admin/setup-catalogo?negocio_id=${businessId}`
     })
 
+    // 5.1 Visit Catalog
+    document.getElementById('btnVisitCatalog').addEventListener('click', () => {
+        if (!currentBusiness || !currentBusiness.slug) {
+            notify.error('Este negocio no tiene slug configurado.')
+            return
+        }
+        window.open(`https://traego.app/c/${currentBusiness.slug}`, '_blank')
+    })
+
     // 6. Logo Upload
     const logoInput = document.getElementById('logoInput')
     logoInput.addEventListener('change', async (e) => {
