@@ -1789,39 +1789,32 @@ function initCategoryDragAndDrop() {
     // Desktop Drag events
     item.addEventListener('dragstart', (e) => {
       dragSrcEl = item;
-      item.classList.add('dragging');
-      
-      // Crear placeholder con las dimensiones del item original
+
       placeholder = document.createElement('div');
       placeholder.className = 'drag-placeholder';
       placeholder.style.height = `${item.offsetHeight}px`;
-      
-      // Copiar el border-radius computado para consistencia visual
+
       const computedStyle = window.getComputedStyle(item);
       placeholder.style.borderRadius = computedStyle.borderRadius;
-      
-      // Insertar placeholder en la posición actual del item
-      item.parentNode.insertBefore(placeholder, item.nextSibling);
-      
-      dragSrcEl.style.opacity = '0';
-      
+
+      item.classList.add('dragging');
+      item.parentNode.insertBefore(placeholder, item);
+
       e.dataTransfer.effectAllowed = 'move';
     });
 
     item.addEventListener('dragend', () => {
-      // Reset draggable state
+      item.classList.remove('dragging');
+
+      if (placeholder && placeholder.parentNode) {
+        placeholder.parentNode.insertBefore(item, placeholder);
+        placeholder.parentNode.removeChild(placeholder);
+      }
+
       item.setAttribute('draggable', 'false');
-      if (dragSrcEl) dragSrcEl.style.opacity = '';
+      placeholder = null;
       dragSrcEl = null;
       lastAfterElement = undefined;
-      
-      if (placeholder && placeholder.parentNode) {
-        // Colocar el item real exactamente donde quedó el placeholder
-        placeholder.parentNode.replaceChild(item, placeholder);
-      }
-      
-      item.classList.remove('dragging');
-      placeholder = null;
       saveCategoriesOrder();
     });
 
