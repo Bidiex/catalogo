@@ -304,8 +304,8 @@ async function loadSystemAnnouncements() {
       // Pasamos todos los anuncios a la campanilla
       notificationBell.setAnnouncements(data)
 
-      // Verificamos si hay anuncios tipo modal no vistos
-      const pendingModals = data.filter(a => a.show_as_modal && !a.seen_at)
+      // Verificamos si hay anuncios tipo modal no vistos ni leídos
+      const pendingModals = data.filter(a => a.show_as_modal && !a.seen_at && !a.read_at)
       
       if (pendingModals.length > 0) {
         // Tomamos el primero (más reciente, asumiendo orden por BD)
