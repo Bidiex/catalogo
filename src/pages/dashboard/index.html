@@ -3108,83 +3108,107 @@
     </div>
   </div>
 
-  <!-- Modal: Anuncios (Welcome Modal) -->
+  <!-- Modal: Anuncios -->
   <div id="announcementModal" class="modal" style="display: none;">
-    <div class="modal-content">
+    <div class="modal-content large">
       <div class="modal-header">
-        <h2 id="announcementModalTitle">Nuevo Anuncio</h2>
-        <button id="closeAnnouncementModal" class="btn-close">&times;</button>
+        <div class="header-title">
+          <h2 id="announcementModalTitle">Configurar Anuncio</h2>
+        </div>
+        <button id="closeAnnouncementModal" class="modal-close">&times;</button>
       </div>
-      <form id="announcementForm">
+      <form id="announcementForm" class="announcement-form">
         <div class="modal-body">
-          <div class="form-group">
-            <label for="announcementNameInput">Nombre Interno (No visible para clientes)</label>
-            <input type="text" id="announcementNameInput" placeholder="Ej: Promo Temporada Escolar" required>
+          
+          <!-- Sección: Información del Anuncio -->
+          <div class="form-section">
+            <h3 class="section-subtitle">
+              <i class="ri-information-line"></i> Información Básica
+            </h3>
+            <div class="form-grid">
+              <div class="form-group full-width">
+                <label for="announcementNameInput">Nombre del Anuncio *</label>
+                <input type="text" id="announcementNameInput" placeholder="Ej: Promo Temporada Escolar" required>
+                <small class="form-help">Este nombre es solo para tu control interno.</small>
+              </div>
+              
+              <div class="form-group">
+                <label for="announcementCtaText">Texto del Botón (CTA) *</label>
+                <div class="input-with-counter">
+                  <input type="text" id="announcementCtaText" maxlength="30" placeholder="Ej: Ver Oferta" required>
+                  <span id="ctaCharCount" class="char-counter">0/30</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="announcementExpiresInput">Fecha de Expiración *</label>
+                <input type="datetime-local" id="announcementExpiresInput" required>
+              </div>
+            </div>
           </div>
 
-          <div class="form-group">
-            <label>Imagen del Anuncio (Aspect Ratio 3:4)</label>
-            <div id="announcementImageContainer" class="image-upload-wrapper aspect-3-4">
+          <!-- Sección: Multimedia -->
+          <div class="form-section">
+            <h3 class="section-subtitle">
+              <i class="ri-image-line"></i> Imagen del Anuncio
+            </h3>
+            <div class="image-upload-wrapper aspect-3-4" id="announcementImageContainer">
+              <input type="file" id="announcementImageInput" accept="image/*" style="display: none;">
+              <input type="hidden" id="announcementImageUrl">
+              
               <div id="announcementImagePlaceholder" class="upload-placeholder">
                 <i class="ri-image-add-line"></i>
                 <p>Click para subir imagen</p>
-                <small>Formato 3:4 (Ej: 600x800px)</small>
+                <small>Formato sugerido 3:4 (600x800px)</small>
               </div>
+
               <div id="announcementImagePreview" class="upload-preview" style="display: none;"></div>
-              <input type="file" id="announcementImageInput" accept="image/*" style="display: none;">
+
               <div id="announcementImageActions" class="upload-actions" style="display: none;">
                 <button type="button" id="changeAnnouncementImageBtn" class="btn-secondary-small">
                   <i class="ri-image-edit-line"></i> Cambiar
                 </button>
                 <button type="button" id="removeAnnouncementImageBtn" class="btn-secondary-small danger">
-                  <i class="ri-delete-bin-line"></i> Eliminar
+                  <i class="ri-delete-bin-line"></i>
                 </button>
               </div>
             </div>
-            <input type="hidden" id="announcementImageUrl">
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label for="announcementCtaText">Texto del Botón (CTA)</label>
-              <div class="input-with-counter">
-                <input type="text" id="announcementCtaText" maxlength="30" placeholder="Ej: Ver Oferta" required>
-                <span id="ctaCharCount" class="char-counter">0/30</span>
+          <!-- Sección: Configuración de Acción -->
+          <div class="form-section">
+            <h3 class="section-subtitle">
+              <i class="ri-settings-4-line"></i> Configuración de Acción
+            </h3>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="announcementCtaType">¿A dónde lleva el botón?</label>
+                <select id="announcementCtaType">
+                  <option value="none">Sin acción (solo visual)</option>
+                  <option value="product">Un producto específico</option>
+                  <option value="promotion">Una promoción</option>
+                </select>
+              </div>
+              <div id="ctaTargetGroup" class="form-group" style="display: none;">
+                <label id="ctaTargetLabel" for="announcementCtaTarget">Seleccionar Destino</label>
+                <select id="announcementCtaTarget"></select>
               </div>
             </div>
-            <div class="form-group">
-              <label for="announcementExpiresInput">Fecha de Expiración</label>
-              <input type="datetime-local" id="announcementExpiresInput" required>
-            </div>
-          </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label for="announcementCtaType">Tipo de Acción</label>
-              <select id="announcementCtaType">
-                <option value="none">Solo cerrar (Sin acción)</option>
-                <option value="product">Redirigir a Producto</option>
-                <option value="promotion">Redirigir a Promoción</option>
-              </select>
-            </div>
-            <div id="ctaTargetGroup" class="form-group" style="display: none;">
-              <label id="ctaTargetLabel" for="announcementCtaTarget">Seleccionar Destino</label>
-              <select id="announcementCtaTarget">
-                <!-- Se llena con JS -->
-              </select>
+            <div class="status-config" style="margin-top: 1.5rem;">
+              <div class="form-group-inline">
+                <label class="switch">
+                  <input type="checkbox" id="announcementActiveInput" checked>
+                  <span class="slider round"></span>
+                </label>
+                <span class="status-label" style="font-weight: 600; color: var(--color-text);">Anuncio Activo</span>
+              </div>
+              <div id="activeWarning" class="alert-warning" style="display: none;">
+                <i class="ri-alert-line"></i>
+                <p>Al activar este anuncio, se desactivarán automáticamente los demás anuncios de tu catálogo.</p>
+              </div>
             </div>
           </div>
-
-          <div class="form-group checkbox-group" style="margin-top: 1rem;">
-            <label class="switch">
-              <input type="checkbox" id="announcementActiveInput" checked>
-              <span class="slider round"></span>
-            </label>
-            <span style="font-weight: 500;">Anuncio Activo</span>
-          </div>
-          <p id="activeWarning" style="color: #f59e0b; font-size: 0.85rem; margin-top: 0.5rem; display: none;">
-            <i class="ri-alert-line"></i> Al activar este anuncio, se desactivarán automáticamente los demás.
-          </p>
         </div>
         <div class="modal-footer">
           <button type="button" id="cancelAnnouncementBtn" class="btn-secondary">Cancelar</button>

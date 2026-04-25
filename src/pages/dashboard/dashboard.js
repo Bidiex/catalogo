@@ -4142,7 +4142,7 @@ if (announcementCtaType) {
     if (type === 'none') {
       ctaTargetGroup.style.display = 'none'
     } else {
-      ctaTargetGroup.style.display = 'block'
+      ctaTargetGroup.style.display = 'flex'
       loadCtaTargets(type)
     }
   })
@@ -4313,7 +4313,7 @@ function openAnnouncementModal(announcementId = null) {
     document.getElementById('announcementCtaType').value = editingAnnouncement.cta_type
     
     if (editingAnnouncement.cta_type !== 'none') {
-      ctaTargetGroup.style.display = 'block'
+      ctaTargetGroup.style.display = 'flex'
       loadCtaTargets(editingAnnouncement.cta_type).then(() => {
         announcementCtaTarget.value = editingAnnouncement.cta_target_id
       })

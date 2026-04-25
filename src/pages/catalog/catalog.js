@@ -746,8 +746,9 @@ function showAnnouncement(announcement) {
   image.src = announcement.image_url
   
   if (announcement.cta_type !== 'none') {
-    ctaBtn.textContent = announcement.cta_text
-    if (footer) footer.style.display = 'block'
+    const ctaText = document.getElementById('announcementCtaText')
+    if (ctaText) ctaText.textContent = announcement.cta_text
+    if (footer) footer.style.display = 'flex' // Changed from block to flex for consistency
   } else {
     if (footer) footer.style.display = 'none'
   }
@@ -763,11 +764,20 @@ function showAnnouncement(announcement) {
     if (e.target === overlay) closeAnnouncementModal()
   }
 
-  // Show with GSAP if available, else just display
+  // Show with GSAP
   overlay.style.display = 'flex'
+  const modal = overlay.querySelector('.announcement-modal')
+  
   if (typeof gsap !== 'undefined') {
-    gsap.fromTo(overlay, { opacity: 0 }, { opacity: 1, duration: 0.3 })
-    gsap.fromTo('.announcement-modal', { scale: 0.8, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.4, delay: 0.1, ease: 'back.out(1.7)' })
+    gsap.killTweensOf([overlay, modal])
+    gsap.fromTo(overlay, { opacity: 0 }, { opacity: 1, duration: 0.4, ease: 'power2.out' })
+    gsap.fromTo(modal, 
+      { scale: 0.9, y: 30, opacity: 0 }, 
+      { scale: 1, y: 0, opacity: 1, duration: 0.6, delay: 0.1, ease: 'elastic.out(1, 0.8)' }
+    )
+  } else {
+    overlay.classList.add('active')
+    if (modal) modal.classList.add('active')
   }
 
   // Mark as shown in session
@@ -796,8 +806,11 @@ function closeAnnouncementModal() {
   const overlay = document.getElementById('announcementOverlay')
   if (!overlay) return
 
+  const modal = overlay.querySelector('.announcement-modal')
+
   if (typeof gsap !== 'undefined') {
-    gsap.to(overlay, { opacity: 0, duration: 0.3, onComplete: () => {
+    gsap.to(modal, { scale: 0.9, y: 20, opacity: 0, duration: 0.3, ease: 'power2.in' })
+    gsap.to(overlay, { opacity: 0, duration: 0.3, delay: 0.1, onComplete: () => {
       overlay.style.display = 'none'
     }})
   } else {
