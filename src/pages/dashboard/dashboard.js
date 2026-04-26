@@ -32,6 +32,7 @@ import { taxesService } from '../../services/taxes.js'
 import { deliveryPhotoService } from '../../services/deliveryPhotoService.js'
 import { productBadgesService } from '../../services/productBadges.js'
 import { announcementsService } from '../../services/announcements.js'
+import { CatalogColorPicker } from '../../components/CatalogColorPicker.js'
 
 const BADGE_NUEVO_ID = '00000000-0000-0000-0000-000000000001'
 
@@ -890,6 +891,36 @@ function initColorCustomization() {
   })
 }
 
+/**
+ * Inicializa el selector de color del catálogo
+ */
+function initCatalogColorPicker() {
+  const container = document.getElementById('catalog-color-picker-container')
+  if (!container || !currentBusiness) return
+
+  // Limpiar contenedor
+  container.innerHTML = ''
+
+  const picker = new CatalogColorPicker({
+    initialColor: currentBusiness.catalog_bg_color || '#FFFFFF',
+    onSave: async (newColor) => {
+      try {
+        await businessService.updateBusiness(currentBusiness.id, {
+          catalog_bg_color: newColor
+        })
+        currentBusiness.catalog_bg_color = newColor
+        notify.success('Color del catálogo actualizado')
+      } catch (error) {
+        console.error('Error updating catalog color:', error)
+        notify.error('Error al actualizar el color')
+        throw error // Para que el picker sepa que falló
+      }
+    }
+  })
+
+  picker.render(container)
+}
+
 function switchSection(sectionName) {
   // Bloquear navegación cuando la sección "Casi listo" está activa.
   // La única salida válida es el botón "Ir al inicio" que desactiva el lock primero.
@@ -1006,6 +1037,9 @@ async function loadBusiness() {
         await loadWhatsAppTemplate()
         showBusinessState()
       }
+      
+      // Inicializar selector de color del catálogo
+      initCatalogColorPicker()
     }
   } catch (error) {
     console.error('Error loading business:', error)

@@ -13,6 +13,7 @@ import { businessService } from '../../services/business.js'
 import { productOptionsService } from '../../services/productOptions.js'
 import { productBadgesService } from '../../services/productBadges.js'
 import { announcementsService } from '../../services/announcements.js'
+import { buildCatalogTheme } from '../../utils/catalogTheme.js'
 
 const BADGE_NUEVO_ID = '00000000-0000-0000-0000-000000000001'
 
@@ -257,6 +258,9 @@ async function loadBusiness(slug) {
     if (!data) throw new Error('Business not found')
 
     currentBusiness = data
+    
+    // Aplicar tema del catálogo
+    applyTheme(currentBusiness.catalog_bg_color)
 
     // Verificar estado operativo
     const isOperational = checkSubscriptionStatus(currentBusiness)
@@ -961,6 +965,22 @@ function getContrastColor(hexColor) {
   const b = parseInt(hex.substr(4, 2), 16)
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
   return luminance > 0.5 ? '#000000' : '#FFFFFF'
+}
+
+/**
+ * Aplica el tema de color al catálogo
+ * @param {string} bgHex 
+ */
+function applyTheme(bgHex) {
+  const theme = buildCatalogTheme(bgHex || '#FFFFFF')
+  const catalogRoot = document.getElementById('catalogContent') || document.body
+  
+  Object.entries(theme).forEach(([key, value]) => {
+    catalogRoot.style.setProperty(key, value)
+  })
+  
+  // También aplicar al body para el fondo general si catalogContent no cubre todo
+  document.body.style.backgroundColor = theme['--cat-bg']
 }
 
 // ============================================

@@ -5,6 +5,7 @@ import { authService } from '../../../services/auth.js'
 import { notify, confirm } from '../../../utils/notifications.js'
 import { businessHoursService } from '../../../services/businessHours.js'
 import { paymentMethodsService } from '../../../services/paymentMethods.js'
+import { CatalogColorPicker } from '../../../components/CatalogColorPicker.js'
 
 // State
 let businessId = null
@@ -112,6 +113,9 @@ function renderData() {
     document.getElementById('colorHex').value = color.toUpperCase()
     document.documentElement.style.setProperty('--color-primary', color)
     document.getElementById('colorPreviewBtn').style.backgroundColor = color
+
+    // Background color picker
+    initCatalogColorPicker()
 }
 
 function updateHeaderBadge(b) {
@@ -753,4 +757,35 @@ async function deletePaymentMethod(id) {
     } catch (error) {
         notify.updateLoading(loading, 'Error al eliminar', 'error')
     }
+}
+
+/**
+ * Inicializa el selector de color del catálogo
+ */
+function initCatalogColorPicker() {
+    const container = document.getElementById('catalog-color-picker-container')
+    if (!container || !currentBusiness) return
+
+    container.innerHTML = ''
+
+    const picker = new CatalogColorPicker({
+        initialColor: currentBusiness.catalog_bg_color || '#FFFFFF',
+        onSave: async (newColor) => {
+            try {
+                const { success, error } = await adminService.updateBusiness(businessId, {
+                    catalog_bg_color: newColor
+                })
+                if (!success) throw new Error(error)
+
+                currentBusiness.catalog_bg_color = newColor
+                notify.success('Color de fondo actualizado')
+            } catch (error) {
+                console.error('Error updating catalog bg color:', error)
+                notify.error('Error al actualizar el color')
+                throw error
+            }
+        }
+    })
+
+    picker.render(container)
 }
