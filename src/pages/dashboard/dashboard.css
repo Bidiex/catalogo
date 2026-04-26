@@ -4733,4 +4733,18 @@ input:checked+.slider:before {
 .announcement-modal-cta:hover {
   transform: translate(-50%, -2px);
   background: var(--primary-hover);
-}
+}
+.business-action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .business-action-buttons {
+    flex-direction: row;
+    justify-content: center;
+  }
+}
+

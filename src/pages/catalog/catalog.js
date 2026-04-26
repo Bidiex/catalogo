@@ -260,7 +260,7 @@ async function loadBusiness(slug) {
     currentBusiness = data
     
     // Aplicar tema del catálogo
-    applyTheme(currentBusiness.catalog_bg_color)
+    applyTheme(currentBusiness.catalog_bg_color, currentBusiness.primary_color)
 
     // Verificar estado operativo
     const isOperational = checkSubscriptionStatus(currentBusiness)
@@ -971,8 +971,8 @@ function getContrastColor(hexColor) {
  * Aplica el tema de color al catálogo
  * @param {string} bgHex 
  */
-function applyTheme(bgHex) {
-  const theme = buildCatalogTheme(bgHex || '#FFFFFF')
+function applyTheme(bgHex, primaryColor) {
+  const theme = buildCatalogTheme(bgHex || '#FFFFFF', primaryColor)
   const catalogRoot = document.getElementById('catalogContent') || document.body
   
   Object.entries(theme).forEach(([key, value]) => {

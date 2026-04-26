@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="/src/pages/dashboard/css/business-layout.css">
   <link rel="stylesheet" href="/src/pages/dashboard/css/delivery-persons.css">
   <link rel="stylesheet" href="/src/pages/links/links-editor.css">
+  <link rel="stylesheet" href="/src/pages/dashboard/css/catalog-picker.css">
 </head>
 
 <body>
@@ -1064,14 +1065,17 @@
                         </div>
                         <input type="file" id="business-logo-input" accept="image/jpeg,image/jpg,image/png,image/webp"
                           style="display: none;">
-                        <button type="button" id="changeBusinessLogoBtn" class="btn-secondary-small">
-                          <i class="ri-image-edit-line"></i> Cambiar Logo
-                        </button>
-
-                        <button type="button" id="openColorModalBtn" class="btn-secondary-small"
-                          style="margin-top: 0.5rem; background: white; border: 1px solid #e2e8f0;">
-                          <i class="ri-palette-line"></i> Personalizar Color
-                        </button>
+                        <div class="business-action-buttons">
+                          <button type="button" id="changeBusinessLogoBtn" class="btn-secondary-small">
+                            <i class="ri-image-edit-line"></i> Cambiar Logo
+                          </button>
+                          <button type="button" id="openColorModalBtn" class="btn-secondary-small">
+                            <i class="ri-palette-line"></i> Color Principal
+                          </button>
+                          <button type="button" id="openCatalogBgModalBtn" class="btn-secondary-small">
+                            <i class="ri-layout-bottom-line"></i> Color de Fondo
+                          </button>
+                        </div>
                         <div id="logo-upload-progress" style="display: none; width: 150px; margin-top: 0.5rem;">
                           <div class="progress-bar"
                             style="height: 4px; background: #eee; border-radius: 2px; overflow: hidden;">
@@ -1128,23 +1132,6 @@
                         </div>
                       </div>
 
-                      <!-- Catalog Theme Section -->
-                      <div class="catalog-theme-section card" style="margin-top: 1rem; border: 1px solid #e2e8f0; box-shadow: none;">
-                        <div class="card-header" style="padding: 1rem; border-bottom: 1px solid #e2e8f0;">
-                          <h3 style="font-size: 1rem; font-weight: 600; color: #1e293b; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-                            <i class="ri-palette-line" style="color: var(--color-primary);"></i>
-                            Color de Fondo del Catálogo
-                          </h3>
-                        </div>
-                        <div class="card-content" style="padding: 1rem;">
-                          <p style="color: #6b7280; font-size: 0.85rem; margin-bottom: 1.5rem;">
-                            Elige el color de fondo para tu catálogo. La interfaz se adaptará automáticamente para mantener la legibilidad.
-                          </p>
-                          <div id="catalog-color-picker-container">
-                            <!-- JS injected CatalogColorPicker -->
-                          </div>
-                        </div>
-                      </div>
 
                       <!-- Info Rows (Moved Here) -->
                       <div class="business-details-list" style="margin-top: 1rem;">
@@ -3279,6 +3266,55 @@
       </div>
     </div>
   </div>
+
+    <!-- Modal: Catalog Background Color -->
+    <div id="catalogBgColorModal" class="modal">
+      <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+          <h3>Color de Fondo del Catálogo</h3>
+          <button class="modal-close" id="closeCatalogBgModalBtn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="color-picker-wrapper">
+            <p style="color: #64748b; font-size: 0.875rem; margin-bottom: 1.5rem;">Selecciona el color que tendrá el fondo de tu catálogo público.</p>
+            <!-- Selector Principal -->
+            <div class="color-main-selector">
+              <div id="catalogBgColorIndicator" class="selected-color-indicator" title="Click para elegir color libremente">
+                <input type="color" id="catalogBgColorInput">
+              </div>
+              <div class="hex-input-wrapper">
+                <label>Hexadecimal</label>
+                <input type="text" id="catalogBgHexText" class="hex-input-field" placeholder="#FFFFFF" maxlength="7">
+              </div>
+            </div>
+
+            <div style="background: #f9fafb; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+              <span style="font-size: 0.9rem; font-weight: 600; color: #374151;">Color seleccionado:</span>
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+                <div id="catalogBgPreviewCircle" style="width: 24px; height: 24px; border-radius: 50%; border: 1px solid #d1d5db;"></div>
+                <span id="catalogBgPreviewCode" style="font-family: monospace; color: #6b7280;"></span>
+              </div>
+            </div>
+
+            <!-- Grid de Colores -->
+            <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #1e293b; margin-bottom: 0.5rem;">Sugerencias</label>
+            <div class="color-swatches-grid" id="catalogBgSwatchesGrid">
+              <!-- Swatches generated by JS -->
+            </div>
+
+            <!-- Advertencia de Contraste -->
+            <div id="catalogBgContrastWarning" class="contrast-warning" style="visibility: hidden;">
+              <i class="ri-error-warning-line"></i>
+              <p>Este color podría dificultar la lectura del texto.</p>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" id="cancelCatalogBgBtn">Cancelar</button>
+          <button type="button" class="btn-primary" id="saveCatalogBgBtn">Guardar Cambios</button>
+        </div>
+      </div>
+    </div>
 
 </body>
 

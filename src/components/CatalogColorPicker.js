@@ -19,53 +19,37 @@ export class CatalogColorPicker {
     if (!this.container) return;
 
     this.container.innerHTML = `
-      <div class="color-picker-component">
-        <div class="picker-controls">
-          <div class="color-input-group">
-            <label>Color de fondo</label>
-            <div class="input-wrapper">
-              <input type="color" id="catalogBgColorInput" value="${this.currentColor}">
-              <input type="text" id="catalogBgHexInput" value="${this.currentColor}" maxlength="7">
-            </div>
-          </div>
+      <div class="card">
+        <div class="card-header">
+          <h2>Color de Fondo del Catálogo</h2>
+        </div>
+        <div class="card-body">
+          <p class="color-picker-description">Selecciona el color que tendrá tu catálogo público.</p>
           
-          <div class="swatches-group">
-            <label>Sugerencias</label>
-            <div class="swatches-grid" id="colorSwatches">
+          <div class="color-picker-component">
+            <div class="form-group">
+              <label for="catalogBgColorInput">Color de fondo</label>
+              <div class="color-inputs-row">
+                <div id="selectedColorIndicator" class="selected-color-indicator" style="background-color: ${this.currentColor}"></div>
+                <input type="color" id="catalogBgColorInput" value="${this.currentColor}">
+                <input type="text" id="catalogBgHexInput" value="${this.currentColor}" placeholder="#FFFFFF" maxlength="7">
+              </div>
+            </div>
+
+            <label class="picker-label">Sugerencias</label>
+            <div id="colorSwatches" class="color-swatches">
               ${this.getSwatchesHtml()}
             </div>
-          </div>
 
-          <div id="contrastWarning" class="contrast-warning hidden">
-            <i class="ri-error-warning-line"></i>
-            <span>El contraste podría ser insuficiente para algunos usuarios (bajo 4.5:1).</span>
-          </div>
-
-          <button id="saveCatalogColorBtn" class="btn-save-color">
-            <i class="ri-save-line"></i> Guardar Cambios
-          </button>
-        </div>
-
-        <div class="picker-preview">
-          <label>Vista previa del catálogo</label>
-          <div id="catalogPreviewFrame" class="preview-frame">
-            <div class="preview-header">
-              <div class="preview-business-name">Mi Negocio</div>
-              <div class="preview-category-pills">
-                <div class="preview-pill active">Categoría</div>
-                <div class="preview-pill">Otra</div>
-              </div>
+            <div id="contrastWarning" class="contrast-warning">
+              <i class="ri-error-warning-line"></i>
+              <span>Este color podría dificultar la lectura del texto.</span>
             </div>
-            <div class="preview-card">
-              <div class="preview-card-img"></div>
-              <div class="preview-card-body">
-                <div class="preview-card-title">Hamburguesa Clásica</div>
-                <div class="preview-card-desc">Con queso y papas fritas...</div>
-                <div class="preview-card-footer">
-                  <div class="preview-card-price">$12.500</div>
-                  <div class="preview-card-btn"></div>
-                </div>
-              </div>
+
+            <div class="form-actions">
+              <button id="saveCatalogColorBtn" class="btn btn-primary">
+                <i class="ri-save-line"></i> Guardar Cambios
+              </button>
             </div>
           </div>
         </div>
@@ -73,7 +57,7 @@ export class CatalogColorPicker {
     `;
 
     this.setupEventListeners();
-    this.updatePreview(this.currentColor);
+    this.checkContrast(this.currentColor);
   }
 
   getSwatchesHtml() {
@@ -108,6 +92,9 @@ export class CatalogColorPicker {
       }
     });
 
+    const indicator = this.container.querySelector('#selectedColorIndicator');
+    indicator.addEventListener('click', () => colorInput.click());
+
     swatches.forEach(swatch => {
       swatch.addEventListener('click', () => {
         const color = swatch.dataset.color;
@@ -133,18 +120,11 @@ export class CatalogColorPicker {
 
   updateColor(hex) {
     this.currentColor = hex;
-    this.updatePreview(hex);
+    const indicator = this.container.querySelector('#selectedColorIndicator');
+    if (indicator) {
+      indicator.style.backgroundColor = hex;
+    }
     this.checkContrast(hex);
-  }
-
-  updatePreview(hex) {
-    const theme = buildCatalogTheme(hex);
-    const frame = this.container.querySelector('#catalogPreviewFrame');
-    
-    // Apply theme variables to the preview frame
-    Object.entries(theme).forEach(([key, value]) => {
-      frame.style.setProperty(key, value);
-    });
   }
 
   checkContrast(hex) {
@@ -163,9 +143,9 @@ export class CatalogColorPicker {
     const ratio = (L1 + 0.05) / (L2 + 0.05);
 
     if (ratio < 4.5) {
-      warning.classList.remove('hidden');
+      warning.classList.add('visible');
     } else {
-      warning.classList.add('hidden');
+      warning.classList.remove('visible');
     }
   }
 }

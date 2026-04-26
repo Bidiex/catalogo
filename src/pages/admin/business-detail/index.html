@@ -8,6 +8,7 @@
     <link rel="icon" type="image/svg+xml" href="/src/assets/icon_traego.svg" />
     <link rel="stylesheet" href="/src/styles/global.css">
     <link rel="stylesheet" href="/src/pages/admin/dashboard/admin-dashboard.css">
+    <link rel="stylesheet" href="/src/pages/dashboard/css/catalog-picker.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* Specific Detail View Styles */
@@ -330,6 +331,97 @@
             border-radius: 0.5rem;
             background: #fff;
         }
+        .btn-secondary-small {
+            background-color: white;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 0.4rem 0.75rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .btn-secondary-small:hover {
+            background-color: var(--bg-hover);
+        }
+
+        /* Catalog Background Color Modal Specific Styles */
+        #catalogBgColorModal .color-inputs-row {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            margin-bottom: 1.25rem;
+        }
+
+        #catalogBgColorModal .selected-color-indicator {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color, #e2e8f0);
+            flex-shrink: 0;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        #catalogBgColorModal .color-hex-input {
+            flex: 1;
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 500;
+        }
+
+        #catalogBgColorModal .color-swatches {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 8px;
+            margin-bottom: 1.25rem;
+        }
+
+        #catalogBgColorModal .swatch {
+            aspect-ratio: 1;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: transform 0.15s, border-color 0.15s;
+        }
+
+        #catalogBgColorModal .swatch:hover {
+            transform: scale(1.1);
+        }
+
+        #catalogBgColorModal .swatch.active {
+            border-color: var(--primary);
+        }
+
+        #catalogBgColorModal .contrast-warning {
+            visibility: hidden;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background-color: #fffbeb;
+            border: 1px solid #fef3c7;
+            border-radius: 0.5rem;
+            color: #92400e;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            margin-bottom: 1.5rem;
+        }
+
+        #catalogBgColorModal .contrast-warning.visible {
+            visibility: visible;
+        }
+
+        #catalogBgColorModal .contrast-warning i {
+            color: #d97706;
+            font-size: 1.1rem;
+        }
     </style>
 </head>
 
@@ -425,6 +517,9 @@
                                     <button type="button" class="btn-secondary" id="btnOpenColorModal">
                                         <i class="fa-solid fa-palette"></i> Color
                                     </button>
+                                    <button type="button" id="openCatalogBgModalBtn" class="btn-secondary-small" style="margin-top: 0.5rem;">
+                                        <i class="ri-layout-bottom-line"></i> Color de Fondo
+                                    </button>
                                 </div>
                                 <p class="color-modal-desc">Max 2MB. JPG, PNG, WEBP</p>
                             </div>
@@ -457,15 +552,6 @@
                             </form>
                         </div>
 
-                        <!-- Catalog Appearance -->
-                        <div class="section-card">
-                            <div class="section-header">
-                                <h3 class="section-title">Apariencia del Catálogo (Fondo)</h3>
-                            </div>
-                            <div id="catalog-color-picker-container">
-                                <p style="text-align:center; color: var(--text-secondary); padding: 1rem;">Cargando selector...</p>
-                            </div>
-                        </div>
 
                         <!-- Metrics -->
                         <div class="section-card">
@@ -665,6 +751,45 @@
             </div>
 
             <div id="colorFeedback" class="color-feedback"></div>
+        </div>
+    </div>
+
+    <!-- Catalog Background Color Modal -->
+    <div id="catalogBgColorModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="ri-layout-bottom-line"></i> Fondo del Catálogo</h3>
+                <button type="button" class="close-modal" id="closeCatalogBgModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="color-modal-desc">Selecciona el color que tendrá tu catálogo público.</p>
+                
+                <div class="form-group">
+                    <label class="form-label">Color de fondo</label>
+                    <div class="color-inputs-row">
+                        <div id="selectedColorIndicator" class="selected-color-indicator"></div>
+                        <input type="color" id="catalogBgColorInput" hidden>
+                        <input type="text" id="catalogBgHexInput" class="form-input color-hex-input" placeholder="#FFFFFF" maxlength="7">
+                    </div>
+                </div>
+
+                <label class="form-label">Sugerencias</label>
+                <div id="colorSwatches" class="color-swatches">
+                    <!-- JS Render -->
+                </div>
+
+                <div id="contrastWarning" class="contrast-warning">
+                    <i class="ri-error-warning-line"></i>
+                    <span>Este color podría dificultar la lectura del texto.</span>
+                </div>
+
+                <div class="modal-btn-row">
+                    <button type="button" class="btn-secondary" id="cancelCatalogBgBtn">Cancelar</button>
+                    <button type="button" id="saveCatalogColorBtn" class="btn btn-primary">
+                        <i class="fa-solid fa-save"></i> Guardar Cambios
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 

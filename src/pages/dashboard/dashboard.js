@@ -32,7 +32,7 @@ import { taxesService } from '../../services/taxes.js'
 import { deliveryPhotoService } from '../../services/deliveryPhotoService.js'
 import { productBadgesService } from '../../services/productBadges.js'
 import { announcementsService } from '../../services/announcements.js'
-import { CatalogColorPicker } from '../../components/CatalogColorPicker.js'
+import { getRelativeLuminance } from '../../utils/catalogTheme.js'
 
 const BADGE_NUEVO_ID = '00000000-0000-0000-0000-000000000001'
 
@@ -894,31 +894,111 @@ function initColorCustomization() {
 /**
  * Inicializa el selector de color del catálogo
  */
+/**
+ * Inicializa el selector de color del catálogo (Modal)
+ */
 function initCatalogColorPicker() {
-  const container = document.getElementById('catalog-color-picker-container')
-  if (!container || !currentBusiness) return
+  const openModalBtn = document.getElementById('openCatalogBgModalBtn')
+  const modal = document.getElementById('catalogBgColorModal')
+  if (!openModalBtn || !modal || !currentBusiness) return
 
-  // Limpiar contenedor
-  container.innerHTML = ''
+  const indicator = document.getElementById('catalogBgColorIndicator')
+  const colorInput = document.getElementById('catalogBgColorInput')
+  const hexInput = document.getElementById('catalogBgHexText')
+  const swatchesGrid = document.getElementById('catalogBgSwatchesGrid')
+  const contrastWarning = document.getElementById('catalogBgContrastWarning')
+  const saveBtn = document.getElementById('saveCatalogBgBtn')
+  const cancelBtn = document.getElementById('cancelCatalogBgBtn')
+  const closeBtn = document.getElementById('closeCatalogBgModalBtn')
+  const previewCircle = document.getElementById('catalogBgPreviewCircle')
+  const previewCode = document.getElementById('catalogBgPreviewCode')
 
-  const picker = new CatalogColorPicker({
-    initialColor: currentBusiness.catalog_bg_color || '#FFFFFF',
-    onSave: async (newColor) => {
-      try {
-        await businessService.updateBusiness(currentBusiness.id, {
-          catalog_bg_color: newColor
-        })
-        currentBusiness.catalog_bg_color = newColor
-        notify.success('Color del catálogo actualizado')
-      } catch (error) {
-        console.error('Error updating catalog color:', error)
-        notify.error('Error al actualizar el color')
-        throw error // Para que el picker sepa que falló
-      }
+  const swatches = ['#FFFFFF', '#F8FAFC', '#F1F5F9', '#FFF7ED', '#F0F9FF', '#FDF2F8', '#1E293B', '#0F172A']
+  let selectedColor = currentBusiness.catalog_bg_color || '#FFFFFF'
+
+  function updateUI(color) {
+    selectedColor = color.toUpperCase()
+    indicator.style.backgroundColor = selectedColor
+    colorInput.value = selectedColor
+    hexInput.value = selectedColor
+    if (previewCircle) previewCircle.style.backgroundColor = selectedColor
+    if (previewCode) previewCode.textContent = selectedColor
+
+    // Update swatches
+    renderSwatches()
+
+    // Contrast warning logic: calculate contrast ratio against the text color used in the catalog
+    const luminance = getRelativeLuminance(selectedColor)
+    // El catálogo usa texto blanco si luminance < 0.35, y texto negro si >= 0.35
+    const isDarkTheme = luminance < 0.35
+    const contrastRatio = isDarkTheme
+      ? 1.05 / (luminance + 0.05)  // Ratio de contraste con blanco
+      : (luminance + 0.05) / 0.05  // Ratio de contraste con negro
+
+    if (contrastRatio < 4.5) {
+      contrastWarning.style.visibility = 'visible'
+    } else {
+      contrastWarning.style.visibility = 'hidden'
     }
-  })
+  }
 
-  picker.render(container)
+  function renderSwatches() {
+    swatchesGrid.innerHTML = ''
+    swatches.forEach(color => {
+      const btn = document.createElement('div')
+      btn.className = `swatch-btn ${color.toUpperCase() === selectedColor.toUpperCase() ? 'active' : ''}`
+      btn.style.backgroundColor = color
+      
+      // Check contrast for the checkmark
+      if (getRelativeLuminance(color) > 0.5) {
+        btn.classList.add('light-swatch')
+      }
+
+      btn.onclick = () => updateUI(color)
+      swatchesGrid.appendChild(btn)
+    })
+  }
+
+  // Event Listeners
+  openModalBtn.onclick = () => {
+    selectedColor = currentBusiness.catalog_bg_color || '#FFFFFF'
+    updateUI(selectedColor)
+    modal.classList.add('active')
+  }
+
+  const closeModal = () => modal.classList.remove('active')
+  closeBtn.onclick = closeModal
+  cancelBtn.onclick = closeModal
+
+  // indicator.onclick = () => colorInput.click() // Eliminado ya que el input está anidado
+  
+  colorInput.oninput = (e) => updateUI(e.target.value)
+  
+  hexInput.onchange = (e) => {
+    let val = e.target.value
+    if (!val.startsWith('#')) val = '#' + val
+    if (/^#[0-9A-F]{6}$/i.test(val)) {
+      updateUI(val)
+    } else {
+      hexInput.value = selectedColor
+    }
+  }
+
+  saveBtn.onclick = async () => {
+    try {
+      await buttonLoader.execute(saveBtn, async () => {
+        await businessService.updateBusiness(currentBusiness.id, {
+          catalog_bg_color: selectedColor
+        })
+        currentBusiness.catalog_bg_color = selectedColor
+        notify.success('Color de fondo actualizado')
+        closeModal()
+      }, 'Guardando...')
+    } catch (error) {
+      console.error('Error saving catalog color:', error)
+      notify.error('Error al guardar los cambios')
+    }
+  }
 }
 
 function switchSection(sectionName) {

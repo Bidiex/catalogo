@@ -47,24 +47,33 @@ export function darken(hex, amount) {
 }
 
 /**
- * Given a background hex color, returns an object with CSS variables for the catalog.
+ * Given a background hex color and an optional primary accent color, 
+ * returns an object with CSS variables for the catalog.
  * @param {string} bgHex 
+ * @param {string} primaryColor
  */
-export function buildCatalogTheme(bgHex = '#FFFFFF') {
+export function buildCatalogTheme(bgHex = '#FFFFFF', primaryColor = '#F97316') {
   const luminance = getRelativeLuminance(bgHex);
   const isDark = luminance < 0.35; // Umbral ajustable para decidir tema claro/oscuro
 
+  // Calcular contraste para el texto sobre el color primario (pills activas)
+  const primaryLuminance = getRelativeLuminance(primaryColor);
+  const pillActiveText = primaryLuminance < 0.45 ? '#FFFFFF' : '#111111';
+
   return {
     '--cat-bg':           bgHex,
-    '--cat-surface':      isDark ? lighten(bgHex, 0.08) : darken(bgHex, 0.05),
-    '--cat-surface-2':    isDark ? lighten(bgHex, 0.14) : darken(bgHex, 0.10),
+    '--cat-surface':      '#FFFFFF',
+    '--cat-surface-2':    '#F5F5F5',
+    '--cat-card-text-primary': '#111111',
+    '--cat-card-text-secondary': '#6B7280',
     '--cat-text-primary': isDark ? '#FFFFFF' : '#111111',
     '--cat-text-secondary': isDark ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.55)',
     '--cat-border':       isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.10)',
     '--cat-tag-bg':       isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.06)',
+    '--cat-tag-text':     isDark ? 'rgba(255,255,255,0.90)' : 'rgba(0,0,0,0.80)',
     '--cat-input-bg':     isDark ? lighten(bgHex, 0.12) : '#FFFFFF',
     '--cat-shadow':       isDark ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.12)',
-    '--cat-pill-active-bg':   '#F97316', // Naranja TraeGo
-    '--cat-pill-active-text': '#FFFFFF',
+    '--cat-pill-active-bg':   primaryColor,
+    '--cat-pill-active-text': pillActiveText,
   };
 }
