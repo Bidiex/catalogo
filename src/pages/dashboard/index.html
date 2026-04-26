@@ -1049,177 +1049,168 @@
             <div class="card-content">
               <div class="business-info">
 
-                <div class="business-profile-container" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <div class="business-profile-container">
 
-                  <!-- Top: Identity (Logo + Info) + Plan -->
-                  <!-- We will use a grid/flex wrapper via CSS class 'business-top-grid' -->
+                  <!-- Top: Identity (Logo) + Info + Plan -->
                   <div class="business-top-grid">
 
-                    <!-- Identity Side -->
-                    <div class="logo-display-container" style="display: flex; flex-direction: column; gap: 1rem;">
-                      <!-- Logo & Buttons -->
-                      <div style="display: flex; flex-direction: column; align-items: center;">
-                        <div class="image-preview" id="business-logo-display"
-                          style="width: 150px; height: 150px; margin-bottom: 1rem; border-radius: 50%; overflow: hidden; background: #f3f4f6; display: flex; align-items: center; justify-content: center; border: 2px solid #e5e7eb; cursor: pointer;">
-                          <i class="ri-store-2-line" style="font-size: 3rem; color: #9ca3af;"></i>
-                        </div>
-                        <input type="file" id="business-logo-input" accept="image/jpeg,image/jpg,image/png,image/webp"
-                          style="display: none;">
-                        <div class="business-action-buttons">
-                          <button type="button" id="changeBusinessLogoBtn" class="btn-secondary-small">
-                            <i class="ri-image-edit-line"></i> Cambiar Logo
-                          </button>
-                          <button type="button" id="openColorModalBtn" class="btn-secondary-small">
-                            <i class="ri-palette-line"></i> Color Principal
-                          </button>
-                          <button type="button" id="openCatalogBgModalBtn" class="btn-secondary-small">
-                            <i class="ri-layout-bottom-line"></i> Color de Fondo
-                          </button>
-                        </div>
-                        <div id="logo-upload-progress" style="display: none; width: 150px; margin-top: 0.5rem;">
-                          <div class="progress-bar"
-                            style="height: 4px; background: #eee; border-radius: 2px; overflow: hidden;">
-                            <div class="progress-fill"
-                              style="height: 100%; background: var(--primary-color); width: 0%;">
-                            </div>
-                          </div>
-                        </div>
+                    <!-- Columna izquierda: Logo & Buttons -->
+                    <div class="logo-display-container">
+                      <div class="image-preview business-logo-display" id="business-logo-display">
+                        <i class="ri-store-2-line"></i>
                       </div>
-
-
-                      <!-- Header Background Image Section -->
-                      <div class="header-background-section">
-                        <h3 class="section-subtitle">
-                          <i class="ri-image-2-line"></i> Imagen de Fondo del Header
-                        </h3>
-                        <p class="section-description">
-                          Personaliza el fondo del header de tu catálogo para darle un toque único
-                        </p>
-
-                        <div class="resolution-tip"
-                          style="background: #eff6ff; border-left: 3px solid var(--color-primary); padding: 0.75rem; margin-bottom: 1rem; border-radius: 4px;">
-                          <p style="margin: 0; font-size: 0.85rem; color: #1e40af;">
-                            <i class="ri-lightbulb-line" style="margin-right: 0.25rem;"></i>
-                            <strong>Recomendación:</strong> Usa una imagen de <strong>1200x400 píxeles</strong> para
-                            mejores resultados. Formatos: JPG, PNG o WEBP (máx. 2MB).
-                          </p>
-                        </div>
-
-                        <div class="header-bg-preview" id="header-bg-preview">
-                          <i class="ri-landscape-line"></i>
-                          <p>Sin imagen de fondo</p>
-                          <small>Tamaño recomendado: 1200x400px</small>
-                        </div>
-
-                        <input type="file" id="header-bg-input" accept="image/jpeg,image/jpg,image/png,image/webp"
-                          style="display: none;">
-
-                        <div class="header-bg-actions">
-                          <button type="button" id="uploadHeaderBgBtn" class="btn-secondary-small">
-                            <i class="ri-upload-2-line"></i> Subir imagen
-                          </button>
-                          <button type="button" id="removeHeaderBgBtn" class="btn-secondary-small danger"
-                            style="display: none;">
-                            <i class="ri-delete-bin-line"></i> Eliminar
-                          </button>
-                        </div>
-
-                        <div id="header-bg-upload-progress" class="upload-progress-bar" style="display: none;">
-                          <div class="progress-bar">
-                            <div class="progress-fill"></div>
-                          </div>
-                          <p>Subiendo imagen...</p>
-                        </div>
+                      <input type="file" id="business-logo-input" accept="image/jpeg,image/jpg,image/png,image/webp"
+                        style="display: none;">
+                      <div class="business-action-buttons">
+                        <button type="button" id="changeBusinessLogoBtn" class="btn-secondary-small">
+                          <i class="ri-image-edit-line"></i> Cambiar Logo
+                        </button>
+                        <button type="button" id="openColorModalBtn" class="btn-secondary-small">
+                          <i class="ri-palette-line"></i> Color Principal
+                        </button>
+                        <button type="button" id="openCatalogBgModalBtn" class="btn-secondary-small">
+                          <i class="ri-layout-bottom-line"></i> Color de Fondo
+                        </button>
                       </div>
-
-
-                      <!-- Info Rows (Moved Here) -->
-                      <div class="business-details-list" style="margin-top: 1rem;">
-                        <div class="info-row">
-                          <span class="label"><i class="ri-store-line"></i> Nombre:</span>
-                          <span id="businessName" class="value">-</span>
-                        </div>
-                        <div class="info-row">
-                          <span class="label"><i class="ri-file-text-line"></i> Descripción:</span>
-                          <span id="businessDescription" class="value"
-                            style="font-style: italic; color: #6b7280;">-</span>
-                        </div>
-                        <div class="info-row">
-                          <span class="label"><i class="ri-whatsapp-line"></i> WhatsApp:</span>
-                          <span id="businessWhatsapp" class="value">-</span>
-                        </div>
-                        <div class="info-row">
-                          <span class="label"><i class="ri-map-pin-line"></i> Dirección:</span>
-                          <span id="businessAddress" class="value">-</span>
-                        </div>
-                        <div class="info-row">
-                          <span class="label"><i class="ri-e-bike-2-fill"></i> Precio domicilio:</span>
-                          <span id="businessDeliveryPrice" class="value">-</span>
-                        </div>
-                        <div class="info-row">
-                          <span class="label"><i class="ri-link"></i> Enlace del catálogo:</span>
-                          <div class="catalog-link">
-                            <a id="catalogLink" href="#" target="_blank" class="link">-</a>
-                            <button id="copyLinkBtn" class="btn-copy">
-                              <i class="ri-file-copy-line"></i> Copiar
-                            </button>
-                          </div>
+                      <div id="logo-upload-progress" class="logo-upload-progress" style="display: none;">
+                        <div class="progress-bar">
+                          <div class="progress-fill"></div>
                         </div>
                       </div>
                     </div>
 
-                    <!-- Plan Status Side -->
-                    <div class="plan-status-section"
-                      style="background: #f8fafc; padding: 1.5rem; border-radius: 8px; border: 1px solid #e2e8f0; height: fit-content;">
-                      <div
-                        style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-                        <div>
-                          <span class="label"
-                            style="display: block; font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Tu Plan
-                            Actual</span>
-                          <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <span id="planBadge" class="badge"
-                              style="background: var(--primary-color); color: white; padding: 0.25rem 0.75rem; border-radius: 99px; font-weight: 600; font-size: 0.9rem;">LOADING...</span>
-                            <span id="planStatusTag"
-                              style="font-size: 0.8rem; padding: 2px 6px; border-radius: 4px; background: #dcfce7; color: #166534;">Activo</span>
-                          </div>
+                    <!-- Columna central: Info Rows -->
+                    <div class="business-details-list">
+                      <div class="info-row">
+                        <span class="label"><i class="ri-store-line"></i> Nombre:</span>
+                        <span id="businessName" class="value">-</span>
+                      </div>
+                      <div class="info-row">
+                        <span class="label"><i class="ri-file-text-line"></i> Descripción:</span>
+                        <span id="businessDescription" class="value business-desc-value">-</span>
+                      </div>
+                      <div class="info-row">
+                        <span class="label"><i class="ri-whatsapp-line"></i> WhatsApp:</span>
+                        <span id="businessWhatsapp" class="value">-</span>
+                      </div>
+                      <div class="info-row">
+                        <span class="label"><i class="ri-map-pin-line"></i> Dirección:</span>
+                        <span id="businessAddress" class="value">-</span>
+                      </div>
+                      <div class="info-row">
+                        <span class="label"><i class="ri-e-bike-2-fill"></i> Precio domicilio:</span>
+                        <span id="businessDeliveryPrice" class="value">-</span>
+                      </div>
+                      <div class="info-row">
+                        <span class="label"><i class="ri-link"></i> Enlace del catálogo:</span>
+                        <div class="catalog-link">
+                          <a id="catalogLink" href="#" target="_blank" class="link">-</a>
+                          <button id="copyLinkBtn" class="btn-copy">
+                            <i class="ri-file-copy-line"></i> Copiar
+                          </button>
                         </div>
-                        <div style="text-align: right;">
-                          <span class="label"
-                            style="display: block; font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Vence
-                            en</span>
-                          <span id="planDaysRemaining" style="font-weight: 600; font-size: 1.1rem; color: #334155;">-
-                            días</span>
-                          <div id="planExpiryDate" style="font-size: 0.75rem; color: #94a3b8;">-</div>
+                      </div>
+                    </div>
+
+                    <!-- Columna derecha: Plan Status Side -->
+                    <div class="plan-status-section">
+
+                      <div class="plan-status-header">
+                        <div class="plan-identity">
+                          <div class="plan-badge-row">
+                            <span id="planBadge" class="badge-circle-pro">PRO</span>
+                            <span id="planStatusTag" class="plan-status-tag">Activo</span>
+                          </div>
+                          <div class="plan-name">Plan Pro</div>
+                        </div>
+                        <div class="plan-expiry-group">
+                          <span class="plan-label">Vence en</span>
+                          <span id="planDaysRemaining" class="plan-days">- días</span>
+                          <div id="planExpiryDate" class="plan-date">-</div>
                         </div>
                       </div>
 
-                      <!-- Usage Meter -->
-                      <div class="usage-meter" style="margin-top: 1rem;">
-                        <div
-                          style="display: flex; justify-content: space-between; margin-bottom: 0.25rem; font-size: 0.85rem;">
-                          <span style="color: #64748b;">Productos usados</span>
-                          <span id="productUsageText" style="font-weight: 600;">0 / 50</span>
+                      <!-- Solo visible cuando quedan <= 3 días -->
+                      <div class="plan-expiry-warning" id="planExpiryWarning" style="display: none;">
+                        <span class="warning-dot"></span>
+                        <span class="warning-text">Tu plan vence pronto — considera renovar</span>
+                      </div>
+
+                      <hr class="plan-divider">
+
+                      <div class="usage-meter">
+                        <div class="usage-text">
+                          <span class="usage-label">Productos usados</span>
+                          <span id="productUsageText" class="usage-value">Ilimitados</span>
                         </div>
-                        <div style="height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden;">
-                          <div id="productUsageBar"
-                            style="height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s ease;">
-                          </div>
+                        <div class="usage-bar-bg">
+                          <div id="productUsageBar" class="usage-bar-fill"></div>
                         </div>
-                        <div id="upgradeMessage" style="display: none; margin-top: 0.5rem;">
-                          <button id="btnUpgradePlan" class="btn-primary-small"
-                            style="width: 100%; justify-content: center; background: #5170ff; color: white; border: none;">
+                        <div id="upgradeMessage" class="upgrade-message" style="display: none;">
+                          <button id="btnUpgradePlan" class="btn-primary-small upgrade-btn">
                             <i class="ri-rocket-line"></i> Mejorar a PRO
                           </button>
                         </div>
-                        <!-- Botón Permanente de Upgrade -->
-                        <div id="permanentUpgradeContainer"
-                          style="display: none; margin-top: 1rem; border-top: 1px dashed #e2e8f0; padding-top: 0.75rem;">
-                          <button id="btnPermanentUpgrade" class="btn-secondary-small"
-                            style="width: 100%; justify-content: center; color: #5170ff; border-color: #5170ff; background: rgba(81, 112, 255, 0.1); cursor: pointer;">
+                        <div id="permanentUpgradeContainer" class="permanent-upgrade-container" style="display: none;">
+                          <button id="btnPermanentUpgrade" class="btn-secondary-small permanent-upgrade-btn">
                             <i class="ri-rocket-line"></i> Mejorar mi Plan a PRO
                           </button>
                         </div>
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                  <hr class="business-section-divider">
+
+                  <!-- Fila inferior: 2 columnas -->
+                  <div class="business-bottom-grid">
+                    
+                    <!-- Columna izquierda: Información del header background -->
+                    <div class="header-background-info">
+                      <h3 class="section-subtitle">
+                        <i class="ri-image-2-line"></i> Imagen de Fondo del Header
+                      </h3>
+                      <p class="section-description">
+                        Personaliza el fondo del header de tu catálogo para darle un toque único
+                      </p>
+
+                      <div class="resolution-tip">
+                        <p>
+                          <i class="ri-lightbulb-line"></i>
+                          <strong>Recomendación:</strong> Usa una imagen de <strong>1200x400 píxeles</strong> para
+                          mejores resultados. Formatos: JPG, PNG o WEBP (máx. 2MB).
+                        </p>
+                      </div>
+
+                      <input type="file" id="header-bg-input" accept="image/jpeg,image/jpg,image/png,image/webp"
+                        style="display: none;">
+
+                      <div class="header-bg-actions">
+                        <button type="button" id="uploadHeaderBgBtn" class="btn-secondary-small">
+                          <i class="ri-upload-2-line"></i> Subir imagen
+                        </button>
+                        <button type="button" id="removeHeaderBgBtn" class="btn-secondary-small danger"
+                          style="display: none;">
+                          <i class="ri-delete-bin-line"></i> Eliminar
+                        </button>
+                      </div>
+
+                      <div id="header-bg-upload-progress" class="upload-progress-bar" style="display: none;">
+                        <div class="progress-bar">
+                          <div class="progress-fill"></div>
+                        </div>
+                        <p>Subiendo imagen...</p>
+                      </div>
+                    </div>
+
+                    <!-- Columna derecha: Preview -->
+                    <div class="header-background-preview-container">
+                      <div class="header-bg-preview" id="header-bg-preview">
+                        <i class="ri-landscape-line"></i>
+                        <p>Sin imagen de fondo</p>
+                        <small>Tamaño recomendado: 1200x400px</small>
                       </div>
                     </div>
 

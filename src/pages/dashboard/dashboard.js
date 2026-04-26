@@ -1362,8 +1362,12 @@ async function updatePlanUsageUI() {
 
   if (planBadge) {
     planBadge.textContent = planInfo.label
-    planBadge.className = `badge badge-${planType}` // CSS class needed or inline style adjustment
-    planBadge.style.background = planType === 'pro' ? '#5170ff' : '#8c52ff'
+    // Mantener clase badge-circle-pro, solo actualizar color si aplica
+    if (planType === 'pro') {
+      planBadge.style.background = '#5170ff'
+    } else {
+      planBadge.style.background = '#8c52ff'
+    }
     planBadge.style.color = '#ffffff'
   }
 
@@ -1374,6 +1378,11 @@ async function updatePlanUsageUI() {
       planDaysRemaining.style.color = '#334155'
     }
     planDaysRemaining.textContent = planInfo.daysRemaining > 0 ? `${planInfo.daysRemaining} días` : 'Vencido'
+
+    const warningEl = document.getElementById('planExpiryWarning')
+    if (warningEl) {
+      warningEl.style.display = planInfo.daysRemaining <= 3 ? 'flex' : 'none'
+    }
   }
 
   if (planExpiryDate) {
