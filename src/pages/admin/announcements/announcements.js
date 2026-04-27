@@ -243,7 +243,7 @@ function openModal(ann = null) {
         document.getElementById('annShowModal').checked = ann.show_as_modal
         document.getElementById('annIsActive').checked = ann.is_active
         
-        document.getElementById('annCtaType').value = ann.cta_type || ''
+        document.getElementById('annCtaType').value = ann.cta_type || 'none'
         document.getElementById('annCtaText').value = ann.cta_label || ''
         document.getElementById('annUrl').value = ann.cta_url || ''
         document.getElementById('annPhone').value = ann.cta_phone || ''
@@ -263,6 +263,7 @@ function openModal(ann = null) {
         document.getElementById('annId').value = ''
         document.getElementById('annIsActive').checked = true
         document.getElementById('annShowModal').checked = false
+        document.getElementById('annCtaType').value = 'none'
         imageUrlHidden.value = ''
         imagePreviewContainer.style.display = 'none'
     }
@@ -320,7 +321,7 @@ async function saveAnnouncement() {
             target_plan: document.getElementById('annTargetPlan').value,
             expires_at: document.getElementById('annExpiresAt').value ? new Date(document.getElementById('annExpiresAt').value).toISOString() : null,
             image_url: finalImageUrl || null,
-            cta_type: ctaTypeSelect.value || null,
+            cta_type: ctaTypeSelect.value,
             cta_label: document.getElementById('annCtaText').value || null,
             cta_url: document.getElementById('annUrl').value || null,
             cta_phone: document.getElementById('annPhone').value || null,
@@ -342,7 +343,11 @@ async function saveAnnouncement() {
         }
 
         if (error) {
-            console.error('ERROR COMPLETO DE SUPABASE:', error);
+            console.error('ERROR SUPABASE - message:', error.message);
+            console.error('ERROR SUPABASE - details:', error.details);
+            console.error('ERROR SUPABASE - hint:', error.hint);
+            console.error('ERROR SUPABASE - code:', error.code);
+            console.error('ERROR SUPABASE - payload enviado:', dataToSave);
             if (error.message && error.message.includes('MODAL_LIMIT_EXCEEDED')) {
                 document.getElementById('modalLimitWarning').style.display = 'block'
                 return // Stay in modal
@@ -355,7 +360,8 @@ async function saveAnnouncement() {
         await loadAnnouncements()
     } catch (err) {
         console.error(err)
-        notify.error('Error al guardar el anuncio')
+        const errorMsg = err?.message || 'Error desconocido'
+        notify.error(`Error al guardar: ${errorMsg}`)
     } finally {
         btn.textContent = ogText
         btn.disabled = false

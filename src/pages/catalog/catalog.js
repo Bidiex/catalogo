@@ -671,7 +671,7 @@ function renderPromotionOptions(promo) {
               >
               <label for="promo-side-${index}" class="side-option-name">${side.name}</label>
             </div>
-            <span class="side-option-price">+$${parseFloat(side.price).toLocaleString()}</span>
+            <span class="side-option-price">+$${parseFloat(side.price).toLocaleString('es-CO')}</span>
           </div>
         `).join('')
 
@@ -973,10 +973,9 @@ function getContrastColor(hexColor) {
  */
 function applyTheme(bgHex, primaryColor) {
   const theme = buildCatalogTheme(bgHex || '#FFFFFF', primaryColor)
-  const catalogRoot = document.getElementById('catalogContent') || document.body
   
   Object.entries(theme).forEach(([key, value]) => {
-    catalogRoot.style.setProperty(key, value)
+    document.documentElement.style.setProperty(key, value)
   })
   
   // También aplicar al body para el fondo general si catalogContent no cubre todo
@@ -1942,7 +1941,7 @@ function renderProductOptions() {
             <input type="checkbox" id="side-${side.id}" value="${side.id}" data-name="${side.name}" data-price="${side.price}">
             <label for="side-${side.id}" class="side-option-name">${side.name}</label>
           </div>
-          <span class="side-option-price">+$${parseFloat(side.price).toLocaleString()}</span>
+          <span class="side-option-price">+$${parseFloat(side.price).toLocaleString('es-CO')}</span>
         </div>
       `
     })
@@ -2238,7 +2237,9 @@ function renderCartItems() {
             <span>${item.quantity}</span>
             <button class="cart-item-increase" data-key="${item.itemKey}">+</button>
           </div>
-          <button class="cart-item-remove" data-key="${item.itemKey}">Eliminar</button>
+          <button class="cart-item-remove" data-key="${item.itemKey}">
+            <i class="ri-delete-bin-line"></i>
+          </button>
         </div>
       </div>
     `
@@ -2391,7 +2392,7 @@ function renderCartItems() {
 
   document.querySelectorAll('.cart-item-remove').forEach(btn => {
     btn.addEventListener('click', (e) => {
-      const itemKey = e.target.dataset.key
+      const itemKey = e.currentTarget.dataset.key
       cart.remove(currentBusiness.id, itemKey)
       updateCartUI()
       renderCartItems()

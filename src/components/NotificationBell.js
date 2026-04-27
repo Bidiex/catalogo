@@ -69,6 +69,9 @@ class NotificationBell {
   }
 
   setAnnouncements(announcements) {
+    // Guard: si no hay botón de campanilla en el DOM (ej: negocio sin configurar / onboarding activo), no proceder
+    if (!document.getElementById('headerNotificationBtn')) return;
+
     this.createElements();
     this.announcements = announcements || [];
     

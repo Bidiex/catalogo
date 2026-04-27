@@ -259,8 +259,10 @@ async function init() {
     planService.init(currentBusiness)
     featureLocker.applyFeatureLocks()
 
-    // Cargar anuncios de sistema
-    await loadSystemAnnouncements()
+    // Cargar anuncios de sistema: solo si el negocio existe y está configurado (onboarding completo)
+    if (currentBusiness && currentBusiness.name && currentBusiness.slug && currentBusiness.whatsapp_number) {
+      await loadSystemAnnouncements()
+    }
 
     // Show Reminder Modal - Only on fresh login, not on page refresh
     const reminderModal = document.getElementById('whatsappReminderModal')
@@ -302,15 +304,24 @@ async function loadSystemAnnouncements() {
     }
 
     if (data && data.length > 0) {
-      // Pasamos todos los anuncios a la campanilla
+      // Pasamos todos los anuncios a la campanilla (siempre)
       notificationBell.setAnnouncements(data)
 
-      // Verificamos si hay anuncios tipo modal no vistos ni leídos
-      const pendingModals = data.filter(a => a.show_as_modal && !a.seen_at && !a.read_at)
-      
+      // Auto-display modal: solo si el anuncio no ha sido visto, leído ni descartado,
+      // Y solo una vez por sesión de login (no en recargas de página)
+      const pendingModals = data.filter(a =>
+        a.show_as_modal &&
+        !a.seen_at &&
+        !a.read_at &&
+        !a.dismissed_at &&
+        !sessionStorage.getItem(`traego_modal_shown_${a.announcement_id}`)
+      )
+
       if (pendingModals.length > 0) {
-        // Tomamos el primero (más reciente, asumiendo orden por BD)
-        announcementModal.show(pendingModals[0])
+        const target = pendingModals[0]
+        // Marcar en sessionStorage antes de mostrarlo para que recargas no lo repitan
+        sessionStorage.setItem(`traego_modal_shown_${target.announcement_id}`, '1')
+        announcementModal.show(target)
       }
     }
   } catch (err) {
@@ -1023,6 +1034,12 @@ function switchSection(sectionName) {
   if (targetSection) {
     targetSection.classList.add('active')
     targetSection.style.display = 'block'
+    
+    // Seleccionar automáticamente la primera pestaña si la sección las tiene
+    const firstTab = targetSection.querySelector('.products-tab-btn')
+    if (firstTab) {
+      firstTab.click()
+    }
   }
 
   // Sincronizar nav-item activo en el sidebar
