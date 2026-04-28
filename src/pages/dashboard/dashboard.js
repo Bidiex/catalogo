@@ -417,6 +417,17 @@ function initSidebarNavigation() {
 
   // Inicializar personalización de color
   initColorCustomization()
+
+  // Inicializar tabs de Mi Negocio
+  document.getElementById('business-tabs-scroll')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('.products-tab-btn');
+    if (!btn) return;
+    document.querySelectorAll('#business-tabs-scroll .products-tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.business-tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    const panel = document.getElementById('business-tab-' + btn.dataset.tab);
+    if (panel) panel.classList.add('active');
+  });
 }
 
 function initCasiListo() {
@@ -1367,80 +1378,132 @@ async function updatePlanUsageUI() {
 
   const planInfo = businessService.getPlanInfo(currentBusiness)
   const planType = planInfo.type
+  const daysRemaining = planInfo.daysRemaining
 
-  // Update Plan UI Elements
-  const planBadge = document.getElementById('planBadge')
-  const planStatusTag = document.getElementById('planStatusTag')
-  const planDaysRemaining = document.getElementById('planDaysRemaining')
-  const planExpiryDate = document.getElementById('planExpiryDate')
-  const productUsageText = document.getElementById('productUsageText')
-  const productUsageBar = document.getElementById('productUsageBar')
-  const upgradeMessage = document.getElementById('upgradeMessage')
+  const $ = id => document.getElementById(id);
 
-  if (planBadge) {
-    planBadge.textContent = planInfo.label
-    // Mantener clase badge-circle-pro, solo actualizar color si aplica
-    if (planType === 'pro') {
-      planBadge.style.background = '#5170ff'
+  // ── Ciclo activo: exactamente 30 días hacia atrás desde plan_expires_at ──
+  const cycleEnd = new Date(currentBusiness.plan_expires_at);
+  const cycleStart = new Date(cycleEnd);
+  cycleStart.setDate(cycleStart.getDate() - 30);
+  const today = new Date();
+  const pct = Math.min(100, Math.max(0,
+    ((today - cycleStart) / (cycleEnd - cycleStart)) * 100
+  ));
+
+  const fmt = d => d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
+
+  if ($('planCycleBar'))      $('planCycleBar').style.width      = pct + '%';
+  if ($('planCycleStart'))    $('planCycleStart').textContent    = 'Inicio — ' + fmt(cycleStart);
+  if ($('planCycleEnd'))      $('planCycleEnd').textContent      = 'Vencimiento — ' + fmt(cycleEnd);
+  if ($('planCycleNoteText')) $('planCycleNoteText').textContent = `Quedan ${daysRemaining} día(s) de tu ciclo actual`;
+
+  // Pill de días: solo visible si quedan 7 días o menos
+  if ($('planDaysRemainingPill')) {
+    if (daysRemaining <= 7) {
+      $('planDaysRemainingPill').textContent    = `Vence en ${daysRemaining} día(s)`;
+      $('planDaysRemainingPill').style.display  = 'inline-block';
     } else {
-      planBadge.style.background = '#8c52ff'
-    }
-    planBadge.style.color = '#ffffff'
-  }
-
-  if (planDaysRemaining) {
-    if (planInfo.daysRemaining <= 5 && planInfo.daysRemaining > 0) {
-      planDaysRemaining.style.color = '#f59e0b' // Warning
-    } else {
-      planDaysRemaining.style.color = '#334155'
-    }
-    planDaysRemaining.textContent = planInfo.daysRemaining > 0 ? `${planInfo.daysRemaining} días` : 'Vencido'
-
-    const warningEl = document.getElementById('planExpiryWarning')
-    if (warningEl) {
-      warningEl.style.display = planInfo.daysRemaining <= 3 ? 'flex' : 'none'
+      $('planDaysRemainingPill').style.display = 'none';
     }
   }
 
-  if (planExpiryDate) {
-    planExpiryDate.textContent = `Vence: ${planInfo.expiresAt.toLocaleDateString()}`
+  // ── Determinar plan activo ──
+  const isPro = (currentBusiness.plan_type === 'pro');
+
+  // ── Badge y título ──
+  if ($('planHeroTitle')) $('planHeroTitle').textContent    = isPro ? 'Plan Pro'  : 'Plan Plus';
+  if ($('planBadge'))     $('planBadge').textContent        = isPro ? 'PRO'       : 'PLUS';
+  if ($('planBadge'))     $('planBadge').style.background   = isPro ? '#5170ff'   : '#10b981';
+
+  // ── Fecha de vencimiento formateada ──
+  if ($('planExpiryDate')) {
+    $('planExpiryDate').textContent = planInfo.expiresAt.toLocaleDateString('es-CO', { 
+      day: 'numeric', 
+      month: 'long', 
+      year: 'numeric' 
+    });
+  }
+  
+  if ($('planStatusTag')) {
+    $('planStatusTag').textContent = planInfo.isExpired ? 'Vencido' : 'Activo';
+    $('planStatusTag').className = planInfo.isExpired ? 'plan-pill-warn' : 'plan-pill-active';
   }
 
-  // Usage Meter
-  // Usage Meter
-  const { allowed, current, limit } = await businessService.canCreateProduct(currentBusiness.id, planType)
+  // ── Métricas ──
+  const { current: productCount } = await businessService.canCreateProduct(currentBusiness.id, planType);
+  
+  if ($('planProductsUsage')) $('planProductsUsage').textContent = isPro ? 'Ilimitados'    : 'Hasta 50';
+  if ($('planProductsSub'))   $('planProductsSub').textContent   = isPro ? 'Sin límite en Pro' : 'Pro ofrece ilimitados';
+  if ($('planOrdersUsage'))   $('planOrdersUsage').textContent   = isPro ? 'Ilimitados'    : 'Hasta 300/mes';
+  if ($('planOrdersSub'))     $('planOrdersSub').textContent     = isPro ? 'Sin límite en Pro' : 'Pro ofrece ilimitados';
 
-  const permanentUpgradeContainer = document.getElementById('permanentUpgradeContainer')
+  // ── Funcionalidades por plan ──
+  const FEATURES_PLUS = [
+    'Catálogo digital',
+    'Hasta 50 productos',
+    'Hasta 300 pedidos/mes',
+    'Página de enlaces',
+    'Descuentos y tamaños en productos',
+    'Menús del día',
+    'Horarios de atención',
+    'Gestión de domiciliarios',
+    'Emisión de facturas en PDF',
+    'Gestión de promociones y combos',
+    'Personalización de marca',
+    'Soporte básico',
+  ];
 
-  if (productUsageText && productUsageBar) {
-    if (limit === Infinity) {
-      // Requested change: "Ilimitados" simply
-      productUsageText.textContent = `Ilimitados`
-      productUsageBar.style.width = '100%'
-      productUsageBar.style.background = 'linear-gradient(135deg, #10b981, #34d399)' // Green for PRO
+  const FEATURES_PRO = [
+    'Todo lo incluido en Plan Plus',
+    'Productos ilimitados',
+    'Pedidos ilimitados',
+    'Sugerencias de productos en el checkout',
+    'Seguimiento del pedido en tiempo real (cliente)',
+    'Plataforma de domiciliarios avanzada',
+    'Soporte prioritario',
+  ];
 
-      // Hide upgrade elements if PRO
-      if (upgradeMessage) upgradeMessage.style.display = 'none'
-      if (permanentUpgradeContainer) permanentUpgradeContainer.style.display = 'none'
+  const grid = $('planFeaturesGrid');
+  if (grid) {
+    const features = isPro ? FEATURES_PRO : FEATURES_PLUS;
+    grid.innerHTML = features.map(f => `
+      <div class="plan-feature-item">
+        <div class="plan-feat-check"><i class="ri-check-line"></i></div>
+        <span>${f}</span>
+      </div>
+    `).join('');
+  }
 
+  // ── Banner inferior según plan ──
+  const banner = $('planUpgradeBanner');
+  if (banner) {
+    banner.style.display = 'flex';
+
+    if (isPro) {
+      $('planUpgradeTitle').textContent = 'Próximamente: Plan Premium';
+      $('planUpgradeSub').textContent   = 'Estamos diseñando la herramienta definitiva para negocios líderes. Analíticas avanzadas, automatización y más.';
+      $('planUpgradeActions').innerHTML = '';
     } else {
-      productUsageText.textContent = `${current} / ${limit}`
-      const percentage = Math.min((current / limit) * 100, 100)
-      productUsageBar.style.width = `${percentage}%`
-
-      // Show warning color if near limit
-      if (percentage >= 90) {
-        productUsageBar.style.background = '#ef4444' // Red warning
-        if (upgradeMessage) upgradeMessage.style.display = 'block'
-      } else {
-        productUsageBar.style.background = '#3b82f6'
-        if (upgradeMessage) upgradeMessage.style.display = 'none'
+      $('planUpgradeTitle').textContent = '¿Listo para crecer más?';
+      $('planUpgradeSub').textContent   = 'Pasa al Plan Pro: productos y pedidos ilimitados, plataforma de domiciliarios, seguimiento de pedidos y soporte prioritario.';
+      $('planUpgradeActions').innerHTML = `
+        <button class="plan-renew-btn" id="btnUpgradeFromBanner">
+          Ver Plan Pro →
+        </button>
+      `;
+      
+      const btnFromBanner = $('btnUpgradeFromBanner');
+      const btnExisting = $('btnUpgradePlan') || $('btnPermanentUpgrade');
+      if (btnFromBanner && btnExisting) {
+        btnFromBanner.addEventListener('click', () => btnExisting.click());
       }
-
-      // Always show permanent upgrade button for Plus users
-      if (permanentUpgradeContainer) permanentUpgradeContainer.style.display = 'block'
     }
   }
+
+  // Ocultar botones internos legacy
+  if ($('upgradeMessage'))            $('upgradeMessage').style.display           = 'none';
+  if ($('permanentUpgradeContainer')) $('permanentUpgradeContainer').style.display = 'none';
 }
 
 // Modal Elements & Listeners
@@ -2310,6 +2373,9 @@ function openBusinessModal(isEdit = false) {
   const deliveryPriceInput = document.getElementById('businessDeliveryPriceInput')
   const descriptionInput = document.getElementById('businessDescriptionInput')
 
+  const deliveryToggle = document.getElementById('businessDeliveryEnabledInput')
+  const pickupToggle  = document.getElementById('businessPickupEnabledInput')
+
   if (isEdit && currentBusiness) {
     modalTitle.textContent = 'Editar Negocio'
     nameInput.value = currentBusiness.name
@@ -2319,6 +2385,8 @@ function openBusinessModal(isEdit = false) {
     if (addressInput) addressInput.value = currentBusiness.address || ''
     deliveryPriceInput.value = currentBusiness.delivery_price || 0
     descriptionInput.value = currentBusiness.description || ''
+    if (deliveryToggle) deliveryToggle.checked = currentBusiness.delivery_enabled !== false
+    if (pickupToggle)  pickupToggle.checked  = currentBusiness.pickup_enabled  === true
   } else {
     modalTitle.textContent = 'Crear Negocio'
     nameInput.value = ''
@@ -2328,6 +2396,8 @@ function openBusinessModal(isEdit = false) {
     if (addressInput) addressInput.value = ''
     deliveryPriceInput.value = 0
     descriptionInput.value = ''
+    if (deliveryToggle) deliveryToggle.checked = true
+    if (pickupToggle)  pickupToggle.checked  = false
   }
 
   // Reset validation state
@@ -2388,6 +2458,31 @@ if (whatsappInput) {
   })
 }
 
+// Order modes validation: impide que ambos toggles queden en false
+;(function initOrderModesValidation() {
+  const deliveryToggle = document.getElementById('businessDeliveryEnabledInput')
+  const pickupToggle   = document.getElementById('businessPickupEnabledInput')
+  const errorMsg       = document.getElementById('orderModesError')
+
+  function syncError() {
+    if (errorMsg) errorMsg.classList.toggle('visible', !deliveryToggle?.checked && !pickupToggle?.checked)
+  }
+
+  deliveryToggle?.addEventListener('change', () => {
+    if (!deliveryToggle.checked && !pickupToggle?.checked) {
+      deliveryToggle.checked = true
+    }
+    syncError()
+  })
+
+  pickupToggle?.addEventListener('change', () => {
+    if (!pickupToggle.checked && !deliveryToggle?.checked) {
+      pickupToggle.checked = true
+    }
+    syncError()
+  })
+})()
+
 document.getElementById('businessForm').addEventListener('submit', async (e) => {
   e.preventDefault()
 
@@ -2395,8 +2490,15 @@ document.getElementById('businessForm').addEventListener('submit', async (e) => 
   const slug = document.getElementById('businessSlugInput').value
   let whatsapp = document.getElementById('businessWhatsappInput').value
   const address = document.getElementById('businessAddressInput').value
-  const deliveryPrice = parseFloat(document.getElementById('businessDeliveryPriceInput').value) || 0
-  const description = document.getElementById('businessDescriptionInput').value
+  const deliveryPrice   = parseFloat(document.getElementById('businessDeliveryPriceInput').value) || 0
+  const description     = document.getElementById('businessDescriptionInput').value
+  const deliveryEnabled = document.getElementById('businessDeliveryEnabledInput')?.checked ?? true
+  const pickupEnabled   = document.getElementById('businessPickupEnabledInput')?.checked ?? false
+
+  if (!deliveryEnabled && !pickupEnabled) {
+    notify.error('Al menos un modo de entrega debe estar activo.')
+    return
+  }
 
   // Sanitize WhatsApp
   whatsapp = whatsapp.trim().replace(/\s+/g, '')
@@ -2416,7 +2518,9 @@ document.getElementById('businessForm').addEventListener('submit', async (e) => 
         whatsapp_number: whatsapp,
         address: address || null,
         delivery_price: deliveryPrice,
-        description
+        description,
+        delivery_enabled: deliveryEnabled,
+        pickup_enabled:   pickupEnabled
       }
 
       if (currentBusiness) {
@@ -6622,7 +6726,7 @@ function renderOrders() {
           }
             ${order.status === 'verified' ?
             (planService.isPro() ?
-              `<button class="btn-icon" style="color: #b45309;" onclick="window.markAsReady('${order.id}')" title="Para llevar">
+              `<button class="btn-icon" style="color: #b45309;" onclick="window.markAsForDelivery('${order.id}')" title="Para llevar">
                 <i class="ri-shopping-bag-3-line"></i>
               </button>` :
               `<button class="btn-icon" style="color: #7e22ce;" onclick="window.openAssignOrderModal('${order.id}', '${orderRef}')" title="Despachar Pedido">
@@ -6696,7 +6800,7 @@ function renderOrders() {
           }
             ${order.status === 'verified' ?
             (planService.isPro() ?
-             `<button class="btn-primary-small" style="flex: 1; background: #b45309; justify-content: center; align-items: center;" onclick="window.markAsReady('${order.id}')">Para llevar</button>` :
+             `<button class="btn-primary-small" style="flex: 1; background: #b45309; justify-content: center; align-items: center;" onclick="window.markAsForDelivery('${order.id}')">Para llevar</button>` :
              `<button class="btn-primary-small" style="flex: 1; background: #7e22ce; justify-content: center; align-items: center;" onclick="window.openAssignOrderModal('${order.id}', '${orderRef}')">Despachar</button>`
             ) +
             `<button class="btn-secondary-small danger" style="flex: 0 0 36px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="window.cancelOrder('${order.id}')" title="Cancelar">
@@ -6725,17 +6829,65 @@ function renderOrders() {
 
 function getOrderStatusBadge(status) {
   const styles = {
-    pending: { bg: '#fff7ed', color: '#c2410c', text: 'Pendiente', icon: 'ri-time-line' },
-    verified: { bg: '#f0fdf4', color: '#15803d', text: 'Verificado', icon: 'ri-check-double-line' },
-    ready: { bg: '#fef3c7', color: '#b45309', text: 'Para llevar', icon: 'ri-shopping-bag-3-line' },
-    dispatched: { bg: '#f3e8ff', color: '#7e22ce', text: 'Despachado', icon: 'ri-motorbike-fill' },
-    completed: { bg: '#eff6ff', color: '#1d4ed8', text: 'Completado', icon: 'ri-flag-line' },
-    cancelled: { bg: '#fef2f2', color: '#b91c1c', text: 'Cancelado', icon: 'ri-close-circle-line' }
+    pending:          { bg: '#fff7ed', color: '#c2410c', text: 'Pendiente',        icon: 'ri-time-line' },
+    verified:         { bg: '#f0fdf4', color: '#15803d', text: 'Verificado',        icon: 'ri-check-double-line' },
+    for_delivery:     { bg: '#fef3c7', color: '#b45309', text: 'Para llevar',       icon: 'ri-shopping-bag-3-line' },
+    dispatched:       { bg: '#f3e8ff', color: '#7e22ce', text: 'Despachado',        icon: 'ri-motorbike-fill' },
+    completed:        { bg: '#eff6ff', color: '#1d4ed8', text: 'Completado',        icon: 'ri-flag-line' },
+    cancelled:        { bg: '#fef2f2', color: '#b91c1c', text: 'Cancelado',         icon: 'ri-close-circle-line' },
+    ready_for_pickup: { bg: '#fff7ed', color: '#ea580c', text: 'Listo p/ retirar',  icon: 'ri-store-2-line' }
   }
   const s = styles[status] || styles.pending
   return `<span style="background: ${s.bg}; color: ${s.color}; padding: 2px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
         <i class="${s.icon}"></i> ${s.text}
   </span>`
+}
+
+/**
+ * Retorna los botones de acción disponibles para un pedido.
+ * Ramifica por order_type, status y plan. Ningún pedido pickup
+ * tendrá disponible 'dispatched' ni 'for_delivery'.
+ * @param {Object} order - Objeto completo con order_type, status
+ * @returns {Array<{label: string, nextStatus: string, style: string, icon: string}>}
+ */
+function getAvailableActions(order) {
+  const isPro = planService.isPro()
+  const { status, order_type } = order
+  const actions = []
+
+  if (order_type === 'pickup') {
+    // Flujo pickup: pending → verified → ready_for_pickup → completed
+    if (status === 'pending') {
+      actions.push({ label: 'Verificar',          nextStatus: 'verified',         style: 'success', icon: 'ri-check-double-line' })
+      actions.push({ label: 'Cancelar',           nextStatus: 'cancelled',        style: 'danger',  icon: 'ri-close-line' })
+    } else if (status === 'verified') {
+      actions.push({ label: 'Listo para retirar', nextStatus: 'ready_for_pickup', style: 'pickup',  icon: 'ri-store-2-line' })
+      actions.push({ label: 'Cancelar',           nextStatus: 'cancelled',        style: 'danger',  icon: 'ri-close-line' })
+    } else if (status === 'ready_for_pickup') {
+      actions.push({ label: 'Completar',          nextStatus: 'completed',        style: 'primary', icon: 'ri-flag-line' })
+      actions.push({ label: 'Cancelar',           nextStatus: 'cancelled',        style: 'danger',  icon: 'ri-close-line' })
+    }
+  } else {
+    // Flujo delivery: pending → verified → (for_delivery solo Pro) → dispatched → completed
+    if (status === 'pending') {
+      actions.push({ label: 'Verificar',   nextStatus: 'verified',     style: 'success', icon: 'ri-check-double-line' })
+      actions.push({ label: 'Cancelar',   nextStatus: 'cancelled',    style: 'danger',  icon: 'ri-close-line' })
+    } else if (status === 'verified') {
+      if (isPro) {
+        actions.push({ label: 'Para llevar', nextStatus: 'for_delivery', style: 'amber',  icon: 'ri-shopping-bag-3-line' })
+      }
+      actions.push({ label: 'Despachar',  nextStatus: 'dispatched',   style: 'purple', icon: 'ri-motorbike-fill' })
+      actions.push({ label: 'Cancelar',   nextStatus: 'cancelled',    style: 'danger',  icon: 'ri-close-line' })
+    } else if (status === 'for_delivery') {
+      actions.push({ label: 'Despachar',  nextStatus: 'dispatched',   style: 'purple', icon: 'ri-motorbike-fill' })
+      actions.push({ label: 'Cancelar',   nextStatus: 'cancelled',    style: 'danger',  icon: 'ri-close-line' })
+    } else if (status === 'dispatched') {
+      actions.push({ label: 'Completar',  nextStatus: 'completed',    style: 'primary', icon: 'ri-flag-line' })
+      actions.push({ label: 'Cancelar',   nextStatus: 'cancelled',    style: 'danger',  icon: 'ri-close-line' })
+    }
+  }
+
+  return actions
 }
 
 // Global actions for onclick
@@ -6929,7 +7081,7 @@ window.viewOrderDetails = async (orderId) => {
         <div style="display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
             <button class="btn-secondary danger" style="flex: 1;" onclick="window.cancelOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">Cancelar Pedido</button>
             ${planService.isPro() ?
-            `<button class="btn-primary" style="flex: 1; background: #b45309;" onclick="window.markAsReady('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">
+            `<button class="btn-primary" style="flex: 1; background: #b45309;" onclick="window.markAsForDelivery('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">
               <i class="ri-shopping-bag-3-line"></i> Para llevar
             </button>` :
             `<button class="btn-primary" style="flex: 1; background: #7e22ce;" onclick="window.openAssignOrderModal('${orderId}', '${orderRefData}'); document.getElementById('orderDetailsModal').style.display='none'">
@@ -7182,10 +7334,10 @@ window.completeOrder = async (orderId) => {
   }
 }
 
-window.markAsReady = async (orderId) => {
+window.markAsForDelivery = async (orderId) => {
   const confirmed = await confirm.show({
     title: '¿Marcar como "Para llevar"?',
-    message: 'El pedido quedará listo para que un domiciliario lo tome.',
+    message: 'El pedido quedará en estado "Para llevar", listo para asignarse a un domiciliario.',
     type: 'info',
     confirmText: 'Para llevar'
   })
@@ -7193,13 +7345,35 @@ window.markAsReady = async (orderId) => {
 
   const loadingToast = notify.loading('Actualizando pedido...')
   try {
-    const { error } = await ordersService.updateStatus(orderId, 'ready')
+    const { error } = await ordersService.updateStatus(orderId, 'for_delivery')
     if (error) throw error
 
     notify.updateLoading(loadingToast, 'Pedido marcado como "Para llevar"', 'success')
     loadOrders()
   } catch (error) {
-    console.error('Error marking order as ready:', error)
+    console.error('Error marking order as for_delivery:', error)
+    notify.updateLoading(loadingToast, 'Error al actualizar el pedido', 'error')
+  }
+}
+
+window.markAsReadyForPickup = async (orderId) => {
+  const confirmed = await confirm.show({
+    title: '¿Marcar como "Listo para retirar"?',
+    message: 'El cliente podrá venir a recoger su pedido en tienda.',
+    type: 'info',
+    confirmText: 'Listo para retirar'
+  })
+  if (!confirmed) return
+
+  const loadingToast = notify.loading('Actualizando pedido...')
+  try {
+    const { error } = await ordersService.updateStatus(orderId, 'ready_for_pickup')
+    if (error) throw error
+
+    notify.updateLoading(loadingToast, 'Pedido listo para retirar en tienda', 'success')
+    loadOrders()
+  } catch (error) {
+    console.error('Error marking order as ready_for_pickup:', error)
     notify.updateLoading(loadingToast, 'Error al actualizar el pedido', 'error')
   }
 }

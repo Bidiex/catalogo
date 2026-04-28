@@ -3364,6 +3364,60 @@ input:checked+.slider:before {
   color: #374151;
 }
 
+/* Order Modes Toggles (businessModal) */
+.order-modes-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.order-mode-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.order-mode-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.order-mode-info i {
+  font-size: 1.25rem;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.order-mode-label {
+  display: block;
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+.order-mode-desc {
+  display: block;
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+.order-modes-error {
+  display: none;
+  font-size: 0.85rem;
+  color: #ef4444;
+  margin: 0.25rem 0 0 0;
+}
+
+.order-modes-error.visible {
+  display: block;
+}
+
 /* ============================================
    CATEGORIES LAYOUT (DESKTOP)
    ============================================ */

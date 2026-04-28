@@ -541,7 +541,8 @@ async function loadPendingOrders() {
             .from('orders')
             .select('id, order_token, customer_name, customer_address, customer_neighborhood, customer_phone, total_amount, ready_at, created_at, status')
             .eq('business_id', currentBusiness.id)
-            .eq('status', 'ready')
+            .eq('status', 'for_delivery')
+            .eq('order_type', 'delivery')
             .is('delivery_person_id', null)
             .order('ready_at', { ascending: true })
 
