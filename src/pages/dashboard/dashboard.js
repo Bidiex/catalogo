@@ -6457,6 +6457,14 @@ function initOrders() {
     })
   }
 
+  // Filter Type (7b)
+  const typeFilter = document.getElementById('filterOrdersType')
+  if (typeFilter) {
+    typeFilter.addEventListener('change', () => {
+      renderOrders()
+    })
+  }
+
   // View Toggles
   viewToggles.forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -6650,13 +6658,15 @@ function renderOrders() {
   const noOrdersMsg = document.getElementById('noOrdersMessage')
   const searchInput = document.getElementById('searchOrdersInput')
   const statusFilter = document.getElementById('filterOrdersStatus')
+  const typeFilter = document.getElementById('filterOrdersType')
 
   if (!container) return
 
   const searchTerm = searchInput?.value.trim().toLowerCase() || ''
   const statusTerm = statusFilter?.value || 'all'
+  const typeTerm = typeFilter?.value || 'all'
 
-  // Filter
+  // Filter (7b)
   const filtered = orders.filter(order => {
     const orderRef = order.order_token ? order.order_token.split('-')[0].toUpperCase() : order.id.slice(0, 8).toUpperCase()
     const matchesSearch =
@@ -6666,8 +6676,11 @@ function renderOrders() {
       (order.id.slice(0, 8).includes(searchTerm))
 
     const matchesStatus = statusTerm === 'all' || order.status === statusTerm
+    
+    const orderType = order.order_type || 'delivery'
+    const matchesType = typeTerm === 'all' || orderType === typeTerm
 
-    return matchesSearch && matchesStatus
+    return matchesSearch && matchesStatus && matchesType
   })
 
   if (filtered.length === 0) {
@@ -6691,10 +6704,46 @@ function renderOrders() {
     if (tableBody) {
       tableBody.innerHTML = filtered.map(order => {
         const orderRef = order.order_token ? order.order_token.split('-')[0].toUpperCase() : order.id.slice(0, 8).toUpperCase()
+        const orderType = order.order_type || 'delivery'
+        
+        // 7a. Badge de tipo
+        const typeBadge = (orderType === 'pickup')
+          ? `<span style="background: #fff7ed; color: #c2410c; padding: 2px 8px; border-radius: 99px; font-size: 0.7rem; font-weight: 600; margin-left: 4px; border: 1px solid #ffedd5;">Retiro</span>`
+          : `<span style="background: #eff6ff; color: #1d4ed8; padding: 2px 8px; border-radius: 99px; font-size: 0.7rem; font-weight: 600; margin-left: 4px; border: 1px solid #dbeafe;">Domicilio</span>`;
+
+        // 7c. Botones de acción desde getAvailableActions
+        const actions = getAvailableActions(order);
+        const actionButtons = actions.map(act => {
+          let onClick = '';
+          switch(act.nextStatus) {
+            case 'verified':         onClick = `window.verifyOrder('${order.id}')`; break;
+            case 'ready_for_pickup': onClick = `window.markAsReadyForPickup('${order.id}')`; break;
+            case 'completed':        onClick = `window.completeOrder('${order.id}')`; break;
+            case 'for_delivery':     onClick = `window.markAsForDelivery('${order.id}')`; break;
+            case 'dispatched':       onClick = `window.openAssignOrderModal('${order.id}', '${orderRef}')`; break;
+            case 'cancelled':        onClick = `window.cancelOrder('${order.id}')`; break;
+          }
+          
+          const styleMap = {
+            success: 'success',
+            danger: 'danger',
+            pickup: 'color: #ea580c;',
+            primary: 'color: #2563eb;',
+            amber: 'color: #b45309;',
+            purple: 'color: #7e22ce;'
+          };
+          const style = styleMap[act.style] || '';
+          const isClass = ['success', 'danger'].includes(style);
+          
+          return `<button class="btn-icon ${isClass ? style : ''}" style="${!isClass ? style : ''}" onclick="${onClick}" title="${act.label}">
+            <i class="${act.icon}"></i>
+          </button>`;
+        }).join('');
+
         return `
         <tr>
           <td>
-            <div style="font-weight: 600; font-family: monospace;">#${orderRef}</div>
+            <div style="font-weight: 600; font-family: monospace;">#${orderRef}${typeBadge}</div>
             <div style="font-size: 0.8rem; color: #6b7280;">${new Date(order.created_at).toLocaleDateString()} ${new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
           </td>
           <td>
@@ -6702,8 +6751,8 @@ function renderOrders() {
             <div style="font-size: 0.8rem; color: #6b7280;">${order.customer_phone}</div>
           </td>
           <td>
-            <div style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${order.customer_address}">
-              ${order.customer_address}
+            <div style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${order.customer_address || ''}">
+              ${order.customer_address || ''}
             </div>
             <div style="font-size: 0.8rem; color: #6b7280;">${order.customer_neighborhood || ''}</div>
           </td>
@@ -6716,43 +6765,7 @@ function renderOrders() {
             <button class="btn-icon" onclick="window.viewOrderDetails('${order.id}')" title="Ver detalles">
               <i class="ri-eye-line"></i>
             </button>
-            ${order.status === 'pending' ?
-            `<button class="btn-icon success" onclick="window.verifyOrder('${order.id}')" title="Verificar">
-                <i class="ri-check-line"></i>
-              </button>
-              <button class="btn-icon danger" onclick="window.cancelOrder('${order.id}')" title="Cancelar Pedido">
-                <i class="ri-close-line"></i>
-              </button>` : ''
-          }
-            ${order.status === 'verified' ?
-            (planService.isPro() ?
-              `<button class="btn-icon" style="color: #b45309;" onclick="window.markAsForDelivery('${order.id}')" title="Para llevar">
-                <i class="ri-shopping-bag-3-line"></i>
-              </button>` :
-              `<button class="btn-icon" style="color: #7e22ce;" onclick="window.openAssignOrderModal('${order.id}', '${orderRef}')" title="Despachar Pedido">
-                <i class="ri-motorbike-fill"></i>
-              </button>`
-            ) +
-             `<button class="btn-icon danger" onclick="window.cancelOrder('${order.id}')" title="Cancelar Pedido">
-                <i class="ri-close-line"></i>
-              </button>` : ''
-          }
-            ${order.status === 'ready' ?
-            `<button class="btn-icon" style="color: #7e22ce;" onclick="window.openAssignOrderModal('${order.id}', '${orderRef}')" title="Despachar Pedido">
-                <i class="ri-motorbike-fill"></i>
-              </button>
-              <button class="btn-icon danger" onclick="window.cancelOrder('${order.id}')" title="Cancelar Pedido">
-                <i class="ri-close-line"></i>
-              </button>` : ''
-          }
-            ${order.status === 'dispatched' ?
-            `<button class="btn-icon" style="color: #2563eb;" onclick="window.completeOrder('${order.id}')" title="Completar Pedido">
-                <i class="ri-flag-line"></i>
-              </button>
-              <button class="btn-icon danger" onclick="window.cancelOrder('${order.id}')" title="Cancelar Pedido">
-                <i class="ri-close-line"></i>
-              </button>` : ''
-          }
+            ${actionButtons}
             <button class="btn-icon" onclick="window.printOrderInvoice('${order.id}')" title="Imprimir Factura">
               <i class="ri-printer-line"></i>
             </button>
@@ -6772,10 +6785,49 @@ function renderOrders() {
       mosaicGrid.style.display = 'grid'
       mosaicGrid.innerHTML = filtered.map(order => {
         const orderRef = order.order_token ? order.order_token.split('-')[0].toUpperCase() : order.id.slice(0, 8).toUpperCase()
+        const orderType = order.order_type || 'delivery'
+
+        // 7a. Badge de tipo
+        const typeBadge = (orderType === 'pickup')
+          ? `<span style="background: #fff7ed; color: #c2410c; padding: 2px 8px; border-radius: 99px; font-size: 0.7rem; font-weight: 600; margin-left: 4px; border: 1px solid #ffedd5;">Retiro</span>`
+          : `<span style="background: #eff6ff; color: #1d4ed8; padding: 2px 8px; border-radius: 99px; font-size: 0.7rem; font-weight: 600; margin-left: 4px; border: 1px solid #dbeafe;">Domicilio</span>`;
+
+        // 7c. Botones de acción dinámicos
+        const actions = getAvailableActions(order);
+        const actionButtons = actions.map(act => {
+          let onClick = '';
+          switch(act.nextStatus) {
+            case 'verified':         onClick = `window.verifyOrder('${order.id}')`; break;
+            case 'ready_for_pickup': onClick = `window.markAsReadyForPickup('${order.id}')`; break;
+            case 'completed':        onClick = `window.completeOrder('${order.id}')`; break;
+            case 'for_delivery':     onClick = `window.markAsForDelivery('${order.id}')`; break;
+            case 'dispatched':       onClick = `window.openAssignOrderModal('${order.id}', '${orderRef}')`; break;
+            case 'cancelled':        onClick = `window.cancelOrder('${order.id}')`; break;
+          }
+
+          const styleMap = {
+            success: '',
+            danger: 'danger',
+            pickup: 'background: #ea580c;',
+            primary: 'background: #2563eb;',
+            amber: 'background: #b45309;',
+            purple: 'background: #7e22ce;'
+          };
+          const style = styleMap[act.style] || '';
+          
+          if (act.nextStatus === 'cancelled') {
+             return `<button class="btn-secondary-small danger" style="flex: 0 0 36px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="${onClick}" title="Cancelar">
+                <i class="ri-close-line"></i>
+             </button>`;
+          }
+
+          return `<button class="btn-primary-small" style="flex: 1; justify-content: center; align-items: center; ${!['', 'danger'].includes(style) ? style : ''}" onclick="${onClick}">${act.label}</button>`;
+        }).join('');
+
         return `
         <div class="card" style="padding: 1rem; border: 1px solid #e5e7eb; box-shadow: none;">
           <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-             <span style="font-weight: 600; font-family: monospace;">#${orderRef}</span>
+             <span style="font-weight: 600; font-family: monospace;">#${orderRef}${typeBadge}</span>
              <div style="display: flex; gap: 0.5rem; align-items: center;">
                 ${getOrderStatusBadge(order.status)}
                 <button class="btn-icon" onclick="window.printOrderInvoice('${order.id}')" title="Imprimir Factura" style="padding: 0.25rem 0.5rem; min-width: auto;">
@@ -6792,33 +6844,7 @@ function renderOrders() {
           
           <div style="display: flex; gap: 0.5rem; border-top: 1px solid #f3f4f6; padding-top: 0.75rem;">
             <button class="btn-secondary-small" style="flex: 1; justify-content: center; align-items: center;" onclick="window.viewOrderDetails('${order.id}')">Ver Detalle</button>
-            ${order.status === 'pending' ?
-            `<button class="btn-primary-small" style="flex: 1; justify-content: center; align-items: center;" onclick="window.verifyOrder('${order.id}')">Verificar</button>
-             <button class="btn-secondary-small danger" style="flex: 0 0 36px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="window.cancelOrder('${order.id}')" title="Cancelar">
-                <i class="ri-close-line"></i>
-             </button>` : ''
-          }
-            ${order.status === 'verified' ?
-            (planService.isPro() ?
-             `<button class="btn-primary-small" style="flex: 1; background: #b45309; justify-content: center; align-items: center;" onclick="window.markAsForDelivery('${order.id}')">Para llevar</button>` :
-             `<button class="btn-primary-small" style="flex: 1; background: #7e22ce; justify-content: center; align-items: center;" onclick="window.openAssignOrderModal('${order.id}', '${orderRef}')">Despachar</button>`
-            ) +
-            `<button class="btn-secondary-small danger" style="flex: 0 0 36px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="window.cancelOrder('${order.id}')" title="Cancelar">
-                <i class="ri-close-line"></i>
-             </button>` : ''
-          }
-            ${order.status === 'ready' ?
-            `<button class="btn-primary-small" style="flex: 1; background: #7e22ce; justify-content: center; align-items: center;" onclick="window.openAssignOrderModal('${order.id}', '${orderRef}')">Despachar</button>
-             <button class="btn-secondary-small danger" style="flex: 0 0 36px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="window.cancelOrder('${order.id}')" title="Cancelar">
-                <i class="ri-close-line"></i>
-             </button>` : ''
-          }
-            ${order.status === 'dispatched' ?
-            `<button class="btn-primary-small" style="flex: 1; background: #2563eb; justify-content: center; align-items: center;" onclick="window.completeOrder('${order.id}')">Completar</button>
-             <button class="btn-secondary-small danger" style="flex: 0 0 36px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="window.cancelOrder('${order.id}')" title="Cancelar">
-                <i class="ri-close-line"></i>
-             </button>` : ''
-          }
+            ${actionButtons}
           </div>
         </div>
         `

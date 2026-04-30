@@ -47,6 +47,7 @@ let promotions = []
 let currentPromoSlide = 0
 let promoAutoPlayInterval = null
 let selectedPromotion = null
+let selectedOrderType = 'delivery'
 let selectedPromoQuickComment = null
 let selectedPromoSides = []
 
@@ -2291,8 +2292,25 @@ function renderCartItems() {
     }
   })
 
-  // Manejo del precio de domicilio
-  const deliveryPrice = parseFloat(currentBusiness.delivery_price) || 0
+  // Mostrar selector de tipo solo si ambos están activos
+  const cartOrderTypeContainer = document.getElementById('cartOrderTypeContainer')
+  if (cartOrderTypeContainer && currentBusiness) {
+    const hasDelivery = currentBusiness.delivery_enabled !== false
+    const hasPickup = currentBusiness.pickup_enabled === true
+    cartOrderTypeContainer.style.display = (hasDelivery && hasPickup) ? 'block' : 'none'
+
+    // Si solo uno está activo, forzar ese tipo
+    if (!hasDelivery && hasPickup) selectedOrderType = 'pickup'
+    if (hasDelivery && !hasPickup) selectedOrderType = 'delivery'
+
+    // Sincronizar radio del carrito con el estado global
+    const cartRadio = cartOrderTypeContainer.querySelector(`input[value="${selectedOrderType}"]`)
+    if (cartRadio) cartRadio.checked = true
+  }
+
+  // Manejo del precio de domicilio según selección
+  const isDelivery = selectedOrderType === 'delivery'
+  const deliveryPrice = isDelivery ? (parseFloat(currentBusiness.delivery_price) || 0) : 0
 
   const finalTotal = subtotalWithProductTaxes + invoiceTaxesTotal + deliveryPrice
 
@@ -2364,6 +2382,17 @@ function renderCartItems() {
 
   cartTotalAmount.textContent = `$${Math.round(finalTotal).toLocaleString()}`
   cartFooter.style.display = 'block'
+
+  // Listener para el selector del carrito (solo se añade una vez)
+  if (cartOrderTypeContainer && !cartOrderTypeContainer.dataset.listener) {
+    cartOrderTypeContainer.querySelectorAll('input[name="cartOrderType"]').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        selectedOrderType = e.target.value
+        renderCartItems()
+      })
+    })
+    cartOrderTypeContainer.dataset.listener = 'true'
+  }
 
   // Event listeners
   document.querySelectorAll('.cart-item-decrease').forEach(btn => {
@@ -2524,13 +2553,16 @@ checkoutForm.addEventListener('submit', async (e) => {
   e.preventDefault()
 
   // Capturar datos del formulario
+  const orderType = document.querySelector('input[name="orderType"]:checked')?.value || 'delivery'
+
   const clientData = {
     nombre: document.getElementById('clientName').value.trim(),
     telefono: document.getElementById('clientPhone').value.trim(),
     direccion: document.getElementById('clientAddress').value.trim(),
     barrio: document.getElementById('clientBarrio').value.trim(),
     metodo_pago: document.getElementById('paymentMethod').value,
-    observaciones: document.getElementById('clientNotes').value.trim()
+    observaciones: document.getElementById('clientNotes').value.trim(),
+    order_type: orderType
   }
 
   // Validar el teléfono: 10 dígitos, empieza por 3
@@ -2538,6 +2570,20 @@ checkoutForm.addEventListener('submit', async (e) => {
     notify.error('El teléfono debe tener 10 dígitos y empezar por 3. Ej: 3001234567')
     document.getElementById('clientPhone').focus()
     return
+  }
+
+  // Validar dirección y barrio solo para domicilio
+  if (orderType === 'delivery') {
+    if (!clientData.direccion) {
+      notify.error('La dirección de entrega es obligatoria para domicilios')
+      document.getElementById('clientAddress').focus()
+      return
+    }
+    if (!clientData.barrio) {
+      notify.error('El barrio es obligatorio para domicilios')
+      document.getElementById('clientBarrio').focus()
+      return
+    }
   }
 
   saveClientData(clientData) // Guardar para próximos pedidos
@@ -2589,6 +2635,7 @@ checkoutForm.addEventListener('submit', async (e) => {
 
         // Preparar datos de la orden
         const orderData = {
+          order_type: orderType,
           business_id: currentBusiness.id,
           customer_name: clientData.nombre,
           customer_phone: clientData.telefono,
@@ -2852,6 +2899,11 @@ Método de pago: {metodo_pago}
     }
 
     // Reemplazar variables en la plantilla
+    const isPickup = clientData.order_type === 'pickup'
+    const tipoPedidoLabel = isPickup ? "Retirar en tienda 🏪" : "Domicilio 🛵"
+    const finalDireccion = isPickup ? '' : clientData.direccion
+    const finalBarrio = isPickup ? '' : clientData.barrio
+
     let message = template
       .replace('{productos}', productsListStr)
       .replace('{total}', `$${Math.round(finalTotal).toLocaleString('es-CO')}`)
@@ -2859,6 +2911,7 @@ Método de pago: {metodo_pago}
       .replace('{telefono}', clientData.telefono)
       .replace('{metodo_pago}', clientData.metodo_pago)
       .replace('{valor de domicilio}', `$${deliveryPrice.toLocaleString('es-CO')}`)
+      .replace('{tipo_pedido}', tipoPedidoLabel)
 
     // Si la plantilla no tiene el token {valor de domicilio} y hay domicilio, lo agregamos al final de los productos
     if (deliveryPrice > 0 && !template.includes('{valor de domicilio}')) {
@@ -2866,13 +2919,12 @@ Método de pago: {metodo_pago}
     }
 
     // Lógica inteligente para dirección y barrio:
-    // Si la plantilla YA incluía {barrio}, reemplazamos ambos tokens por separado
-    // Si la plantilla NO incluía {barrio}, lo agregamos a la dirección para mantener compatibilidad.
     if (template.includes('{barrio}')) {
-      message = message.replace(/{direccion}/g, clientData.direccion)
-      message = message.replace(/{barrio}/g, clientData.barrio)
+      message = message.replace(/{direccion}/g, finalDireccion)
+      message = message.replace(/{barrio}/g, finalBarrio)
     } else {
-      message = message.replace(/{direccion}/g, `${clientData.direccion}, ${clientData.barrio}`)
+      const combinedAddress = isPickup ? '' : `${finalDireccion}, ${finalBarrio}`
+      message = message.replace(/{direccion}/g, combinedAddress)
     }
 
     // Agregar observaciones si existen
@@ -3108,6 +3160,9 @@ function openRealCheckoutForm() {
   // Poblar métodos de pago dinámicamente
   populatePaymentMethods()
 
+  // Configurar opciones de entrega/retiro según el negocio
+  initCheckoutOrderType()
+
   // Cerrar carrito y abrir modal checkout
   closeCart()
   checkoutModal.style.display = 'flex'
@@ -3120,6 +3175,46 @@ function openRealCheckoutForm() {
     document.getElementById('clientName').focus()
   }, 100)
 }
+
+function initCheckoutOrderType() {
+  const container = document.getElementById('orderTypeContainer')
+  const bizAddress = document.getElementById('businessPickupAddress')
+  const deliveryOnlyFields = document.querySelectorAll('[data-delivery-only="true"]')
+  const pickupDisclaimer = document.getElementById('pickupAddressDisclaimer')
+  const addressInput = document.getElementById('clientAddress')
+  const barrioInput = document.getElementById('clientBarrio')
+
+  if (!container) return
+
+  // La selección se gestiona en el carrito, no en el checkout
+  container.style.display = 'none'
+  if (bizAddress) bizAddress.textContent = currentBusiness.address || ''
+
+  // Sincronizar radio del checkout con el estado global
+  const checkoutRadio = document.querySelector(
+    `input[name="orderType"][value="${selectedOrderType}"]`
+  )
+  if (checkoutRadio) checkoutRadio.checked = true
+
+  const updateFields = (type) => {
+    const isDelivery = type === 'delivery'
+    deliveryOnlyFields.forEach(f => f.style.display = isDelivery ? 'block' : 'none')
+    if (pickupDisclaimer) pickupDisclaimer.style.display = isDelivery ? 'none' : 'block'
+
+    // Toggle required para validación del navegador
+    if (addressInput) addressInput.required = isDelivery
+    if (barrioInput) barrioInput.required = isDelivery
+  }
+
+  // Listeners para los radios
+  document.querySelectorAll('input[name="orderType"]').forEach(radio => {
+    radio.addEventListener('change', (e) => updateFields(e.target.value))
+  })
+
+  // Estado inicial sincronizado con el carrito
+  updateFields(selectedOrderType)
+}
+
 
 // Modal de negocio cerrado
 function showClosedModal() {

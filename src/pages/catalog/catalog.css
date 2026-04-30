@@ -3395,4 +3395,110 @@
   font-size: 0.78em;
   opacity: 0.9;
   line-height: 1;
-}
+}
+
+/* Pickup Disclaimer */
+.pickup-disclaimer {
+  background: #fff7ed;
+  border-left: 3px solid #f97316;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  align-items: flex-start;
+}
+
+.pickup-disclaimer i {
+  color: #f97316;
+  font-size: 1.25rem;
+  margin-top: 2px;
+}
+
+.pickup-disclaimer p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #c2410c;
+  line-height: 1.4;
+}
+
+/* Order Type Selector */
+.order-type-selector {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.type-option {
+  flex: 1;
+  position: relative;
+}
+
+.type-option input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.option-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: white;
+  border: 2px solid var(--cat-border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.option-content i {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  color: var(--cat-text-secondary);
+}
+
+.option-content span {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--cat-text-primary);
+}
+
+.type-option input[type="radio"]:checked + .option-content {
+  border-color: var(--color-primary);
+  background: rgba(37, 99, 235, 0.05);
+}
+
+.type-option input[type="radio"]:checked + .option-content i,
+.type-option input[type="radio"]:checked + .option-content span {
+  color: var(--color-primary);
+}
+
+/* Checkout Inputs width fix */
+.checkout-form #clientAddress,
+.checkout-form #clientBarrio {
+  width: 100% !important;
+  box-sizing: border-box;
+}/* Cart Order Type Overrides */
+.cart-order-type {
+  border-bottom: 1px dashed var(--cat-border);
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.cart-type-selector .option-content {
+  padding: 0.75rem 0.5rem;
+}
+
+.cart-type-selector .option-content i {
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.cart-type-selector .option-content span {
+  font-size: 0.85rem;
+}
+
