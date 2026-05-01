@@ -3929,6 +3929,12 @@ function initOrderTracking() {
     checkActiveOrder()
     subscribeToTrackingUpdates() // Keep listening for changes while on the catalog
   }
+
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted && currentBusiness?.plan_type === 'pro') {
+      checkActiveOrder()
+    }
+  })
 }
 
 async function checkActiveOrder() {
