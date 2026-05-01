@@ -7120,12 +7120,21 @@ window.viewOrderDetails = async (orderId) => {
             }
          </div>
         `
-    } else if (orderData.status === 'ready') {
+    } else if (orderData.status === 'for_delivery') {
       content.innerHTML += `
         <div style="display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
             <button class="btn-secondary danger" style="flex: 1;" onclick="window.cancelOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">Cancelar Pedido</button>
             <button class="btn-primary" style="flex: 1; background: #7e22ce;" onclick="window.openAssignOrderModal('${orderId}', '${orderRefData}'); document.getElementById('orderDetailsModal').style.display='none'">
               <i class="ri-motorbike-fill"></i> Despachar
+            </button>
+         </div>
+        `
+    } else if (orderData.status === 'ready_for_pickup') {
+      content.innerHTML += `
+        <div style="display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
+            <button class="btn-secondary danger" style="flex: 1;" onclick="window.cancelOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">Cancelar Pedido</button>
+            <button class="btn-primary" style="flex: 1; background: #2563eb;" onclick="window.completeOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">
+              <i class="ri-flag-line"></i> Completar
             </button>
          </div>
         `
