@@ -7107,9 +7107,13 @@ window.viewOrderDetails = async (orderId) => {
         <div style="display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
             <button class="btn-secondary danger" style="flex: 1;" onclick="window.cancelOrder('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">Cancelar Pedido</button>
             ${planService.isPro() ?
-            `<button class="btn-primary" style="flex: 1; background: #b45309;" onclick="window.markAsForDelivery('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">
-              <i class="ri-shopping-bag-3-line"></i> Para llevar
-            </button>` :
+            (orderData.order_type === 'pickup'
+              ? `<button class="btn-primary" style="flex: 1; background: #059669;" onclick="window.markAsReadyForPickup('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">
+                  <i class="ri-store-2-line"></i> Listo para recoger
+                </button>`
+              : `<button class="btn-primary" style="flex: 1; background: #b45309;" onclick="window.markAsForDelivery('${orderId}'); document.getElementById('orderDetailsModal').style.display='none'">
+                  <i class="ri-shopping-bag-3-line"></i> Para llevar
+                </button>`) :
             `<button class="btn-primary" style="flex: 1; background: #7e22ce;" onclick="window.openAssignOrderModal('${orderId}', '${orderRefData}'); document.getElementById('orderDetailsModal').style.display='none'">
               <i class="ri-motorbike-fill"></i> Despachar
             </button>`
