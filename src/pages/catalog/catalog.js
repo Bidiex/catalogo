@@ -2871,7 +2871,8 @@ Método de pago: {metodo_pago}
       }
     })
 
-    const deliveryPrice = parseFloat(currentBusiness.delivery_price) || 0
+    const isPickup = clientData.order_type === 'pickup'
+    const deliveryPrice = isPickup ? 0 : (parseFloat(currentBusiness.delivery_price) || 0)
     const finalTotal = subtotalWithProductTaxes + invoiceTaxesTotal + deliveryPrice
 
     let productsListStr = productsList.join('\n')
@@ -2899,7 +2900,6 @@ Método de pago: {metodo_pago}
     }
 
     // Reemplazar variables en la plantilla
-    const isPickup = clientData.order_type === 'pickup'
     const tipoPedidoLabel = isPickup ? "Retirar en tienda 🏪" : "Domicilio 🛵"
     const finalDireccion = isPickup ? '' : clientData.direccion
     const finalBarrio = isPickup ? '' : clientData.barrio
@@ -2913,8 +2913,13 @@ Método de pago: {metodo_pago}
       .replace('{valor de domicilio}', `$${deliveryPrice.toLocaleString('es-CO')}`)
       .replace('{tipo_pedido}', tipoPedidoLabel)
 
+    // Cabecera fija para pedidos pickup
+    if (isPickup) {
+      message = `🏪 *PEDIDO PARA RETIRAR EN TIENDA*\n\n` + message
+    }
+
     // Si la plantilla no tiene el token {valor de domicilio} y hay domicilio, lo agregamos al final de los productos
-    if (deliveryPrice > 0 && !template.includes('{valor de domicilio}')) {
+    if (!isPickup && deliveryPrice > 0 && !template.includes('{valor de domicilio}')) {
       message = message.replace(productsListStr, `${productsListStr}\n🚚 Domicilio: $${deliveryPrice.toLocaleString('es-CO')}`)
     }
 
