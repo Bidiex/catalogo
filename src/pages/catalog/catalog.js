@@ -3905,10 +3905,13 @@ let trackingSubscription = null
 
 function initOrderTracking() {
   if (!currentBusiness) return
+  console.log('[TraeGo Debug] initOrderTracking - currentBusiness:', currentBusiness?.id, '| plan_type:', currentBusiness?.plan_type)
 
   const trackingKey = `traego_orders_${currentBusiness.id}`
   const existingOrders = JSON.parse(localStorage.getItem(trackingKey) || '[]')
+  console.log('[TraeGo Debug] existingOrders:', existingOrders)
 
+  console.log('[TraeGo Debug] condición badge:', currentBusiness?.plan_type === 'pro', '| existingOrders.length:', existingOrders.length, '| headerTrackOrderBtn:', !!headerTrackOrderBtn)
   if (currentBusiness.plan_type === 'pro' && existingOrders.length > 0 && headerTrackOrderBtn) {
     headerTrackOrderBtn.style.display = 'flex'
   }
@@ -3921,6 +3924,7 @@ function initOrderTracking() {
   if (trackingModalOverlay) trackingModalOverlay.addEventListener('click', closeTrackingModal)
 
   // Chequear pedidos activos en progreso para mostar badge en header
+  console.log('[TraeGo Debug] condición checkActiveOrder:', currentBusiness?.plan_type === 'pro', '| existingOrders.length:', existingOrders.length)
   if (currentBusiness.plan_type === 'pro' && existingOrders.length > 0) {
     checkActiveOrder()
     subscribeToTrackingUpdates() // Keep listening for changes while on the catalog
