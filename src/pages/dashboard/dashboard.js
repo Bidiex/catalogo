@@ -8187,47 +8187,55 @@ function initProductsTabs() {
   // ============================================
   // TABS HEADER SCROLL LOGIC
   // ============================================
-  const header = document.getElementById('productsTabsHeader')
-  const scrollEl = document.querySelector('.products-tabs-scroll')
-  const leftArrow = document.querySelector('.products-tabs-arrow--left')
-  const rightArrow = document.querySelector('.products-tabs-arrow--right')
+  document.querySelectorAll('.products-tabs-header').forEach(header => {
+    const scrollEl = header.querySelector('.products-tabs-scroll')
+    const leftArrow = header.querySelector('.products-tabs-arrow--left')
+    const rightArrow = header.querySelector('.products-tabs-arrow--right')
 
-  function updateArrows() {
     if (!scrollEl || !leftArrow || !rightArrow) return
 
-    // Allow 4px leeway to avoid floating point issues
-    const atStart = scrollEl.scrollLeft <= 4
-    const atEnd = scrollEl.scrollLeft >= scrollEl.scrollWidth - scrollEl.clientWidth - 4
-    const hasOverflow = scrollEl.scrollWidth > scrollEl.clientWidth + 4
+    function updateArrows() {
+      // Allow 4px leeway to avoid floating point issues
+      const atStart = scrollEl.scrollLeft <= 4
+      const atEnd = scrollEl.scrollLeft >= scrollEl.scrollWidth - scrollEl.clientWidth - 4
+      const hasOverflow = scrollEl.scrollWidth > scrollEl.clientWidth + 4
 
-    leftArrow.classList.toggle('is-visible', hasOverflow && !atStart)
-    rightArrow.classList.toggle('is-visible', hasOverflow && !atEnd)
-  }
+      leftArrow.classList.toggle('is-visible', hasOverflow && !atStart)
+      rightArrow.classList.toggle('is-visible', hasOverflow && !atEnd)
+    }
 
-  if (scrollEl && leftArrow && rightArrow) {
     scrollEl.addEventListener('scroll', updateArrows, { passive: true })
 
     const ro = new ResizeObserver(() => updateArrows())
     ro.observe(scrollEl)
 
-    // Check initially and periodically when fonts/images load
+    // Check initially and periodically
     updateArrows()
-    setTimeout(updateArrows, 150)
+    setTimeout(updateArrows, 300)
 
     leftArrow.addEventListener('click', () => {
-      // scroll by ~55% of visible width
-      scrollEl.scrollBy({ left: -(scrollEl.clientWidth * 0.55), behavior: 'smooth' })
+      scrollEl.scrollBy({ left: -(scrollEl.clientWidth * 0.7), behavior: 'smooth' })
     })
 
     rightArrow.addEventListener('click', () => {
-      scrollEl.scrollBy({ left: scrollEl.clientWidth * 0.55, behavior: 'smooth' })
+      scrollEl.scrollBy({ left: scrollEl.clientWidth * 0.7, behavior: 'smooth' })
     })
-  }
 
-  // Handle active tab scroll into view
+    // Store update function to call it on tab clicks
+    header._updateArrows = updateArrows
+  })
+
+  // Handle active tab scroll into view and update arrows
   tabBtns.forEach(btn => {
     btn.addEventListener('click', (e) => {
-      e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
+      const target = e.currentTarget
+      target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
+
+      // Force arrow update after a small delay for the scroll to happen
+      const header = target.closest('.products-tabs-header')
+      if (header && header._updateArrows) {
+        setTimeout(header._updateArrows, 400)
+      }
     })
   })
 
