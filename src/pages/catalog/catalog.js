@@ -3949,7 +3949,7 @@ async function checkActiveOrder() {
     if (error) return;
 
     if (dbOrders && dbOrders.length > 0) {
-      const activeOrder = dbOrders.find(o => ['pending', 'verified', 'ready', 'dispatched'].includes(o.status));
+      const activeOrder = dbOrders.find(o => ['pending', 'verified', 'for_delivery', 'dispatched', 'ready_for_pickup'].includes(o.status));
       if (activeOrder) {
         renderActiveOrderBadge(activeOrder.status);
       } else {
@@ -3986,11 +3986,12 @@ function renderActiveOrderBadge(status) {
   }
 
   const statusMap = {
-    'pending': { text: 'Por confirmar', color: '#f59e0b', icon: 'ri-time-line' },
-    'verified': { text: 'Recibido', color: '#8b5cf6', icon: 'ri-check-double-line' },
-    'ready': { text: 'Recibido', color: '#8b5cf6', icon: 'ri-check-double-line' },
-    'dispatched': { text: 'En camino', color: '#3b82f6', icon: 'ri-motorbike-line' }
-  };
+    'pending':          { text: 'Por confirmar',      color: '#f59e0b', icon: 'ri-time-line' },
+    'verified':         { text: 'Recibido',            color: '#8b5cf6', icon: 'ri-check-double-line' },
+    'for_delivery':     { text: 'Buscando domiciliario', color: '#b45309', icon: 'ri-shopping-bag-3-line' },
+    'dispatched':       { text: 'En camino',           color: '#3b82f6', icon: 'ri-motorbike-line' },
+    'ready_for_pickup': { text: 'Listo para retirar',  color: '#ea580c', icon: 'ri-store-2-line' }
+  }
 
   const st = statusMap[status] || statusMap['pending'];
 
@@ -4047,7 +4048,7 @@ async function renderTrackingOrders() {
   try {
     const { data: dbOrders, error } = await supabase
       .from('orders')
-      .select('order_token, status, created_at, customer_name, total_amount')
+      .select('order_token, status, created_at, customer_name, total_amount, order_type')
       .in('order_token', tokens)
 
     if (error) throw error
@@ -4073,6 +4074,15 @@ async function renderTrackingOrders() {
       const stDetails = statusMap[order.status] || statusMap['pending']
       const dateStr = new Date(order.created_at).toLocaleString('es-CO', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 
+      // Lógica de Niveles y Progreso según tipo de pedido
+      const isPickup = order.order_type === 'pickup'
+      const orderLevels = isPickup
+        ? { pending: 1, verified: 2, ready_for_pickup: 3, completed: 4, cancelled: -1 }
+        : { pending: 1, verified: 2, for_delivery: 2, dispatched: 3, completed: 4, cancelled: -1 }
+      
+      const currentLvl = orderLevels[order.status] || 1
+      const progressWidth = currentLvl === -1 ? '0%' : `${((currentLvl - 1) / 3 * 100)}%`
+
       const localO = localOrders.find(o => o.token === order.order_token)
       if (localO) {
         localO.status = order.status
@@ -4091,13 +4101,20 @@ async function renderTrackingOrders() {
           <div class="tracking-status" data-status="${order.status}" style="margin-top: 1rem;">
             <div style="display: flex; justify-content: space-between; position: relative;">
                <div style="position: absolute; top: 12px; left: 10%; right: 10%; height: 2px; background: #e2e8f0; z-index: 1;">
-               <div class="tracking-progress-fill" style="position: absolute; top:0; left:0; height:100%; background: ${stDetails.color}; width: ${getProgressWidth(order.status)}; transition: width 0.5s ease;"></div>
+               <div class="tracking-progress-fill" style="position: absolute; top:0; left:0; height:100%; background: ${stDetails.color}; width: ${progressWidth}; transition: width 0.5s ease;"></div>
                </div>
                
-               ${renderTrackingStep('pending', order.status, 'ri-time-line', 'Por confrmar')}
-               ${renderTrackingStep('verified', order.status, 'ri-check-double-line', 'Recibido')}
-               ${renderTrackingStep('dispatched', order.status, 'ri-motorbike-line', 'En camino')}
-               ${renderTrackingStep('completed', order.status, 'ri-flag-line', 'Entregado')}
+               ${isPickup ? `
+                 ${renderTrackingStep('ri-time-line', 'Por confirmar', currentLvl >= 1)}
+                 ${renderTrackingStep('ri-check-double-line', 'Recibido', currentLvl >= 2)}
+                 ${renderTrackingStep('ri-store-2-line', 'Listo p/ retirar', currentLvl >= 3)}
+                 ${renderTrackingStep('ri-flag-line', 'Retirado', currentLvl >= 4)}
+               ` : `
+                 ${renderTrackingStep('ri-time-line', 'Por confirmar', currentLvl >= 1)}
+                 ${renderTrackingStep('ri-check-double-line', 'Recibido', currentLvl >= 2)}
+                 ${renderTrackingStep('ri-motorbike-line', 'En camino', currentLvl >= 3)}
+                 ${renderTrackingStep('ri-flag-line', 'Entregado', currentLvl >= 4)}
+               `}
             </div>
             ${order.status === 'cancelled' ? `
               <div style="margin-top: 1rem; padding: 0.5rem; background: #fee2e2; color: #dc2626; border-radius: 0.25rem; text-align: center; font-weight: 600; font-size: 0.9rem;">
@@ -4127,17 +4144,12 @@ function getProgressWidth(status) {
   return '0%';
 }
 
-function renderTrackingStep(stepStatus, currentStatus, icon, label) {
-  const levels = { 'pending': 1, 'verified': 2, 'ready': 2, 'dispatched': 3, 'completed': 4, 'cancelled': -1 }
-  const currentLvl = levels[currentStatus] || 1
-  const stepLvl = levels[stepStatus]
-
+function renderTrackingStep(icon, label, isCompleted) {
   let color = '#9ca3af'
   let bg = '#f3f4f6'
   let borderColor = '#e2e8f0'
 
-  if (currentStatus === 'cancelled') {
-  } else if (currentLvl >= stepLvl) {
+  if (isCompleted) {
     color = 'white'
     bg = 'var(--color-primary)'
     borderColor = 'var(--color-primary)'
@@ -4148,7 +4160,7 @@ function renderTrackingStep(stepStatus, currentStatus, icon, label) {
       <div style="width: 24px; height: 24px; border-radius: 50%; background: ${bg}; border: 2px solid ${borderColor}; display: flex; align-items: center; justify-content: center; color: ${color}; font-size: 0.9rem; transition: all 0.3s ease;">
         <i class="${icon}"></i>
       </div>
-      <span style="font-size: 0.7rem; font-weight: 500; color: ${currentLvl >= stepLvl ? 'var(--color-text)' : 'var(--text-muted)'};">${label}</span>
+      <span style="font-size: 0.7rem; font-weight: 500; color: ${isCompleted ? 'var(--color-text)' : 'var(--text-muted)'};">${label}</span>
     </div>
   `
 }
