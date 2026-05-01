@@ -5,12 +5,14 @@ import { authService } from '../../../services/auth.js'
 import { notify, confirm } from '../../../utils/notifications.js'
 import { businessHoursService } from '../../../services/businessHours.js'
 import { paymentMethodsService } from '../../../services/paymentMethods.js'
+import { getRelativeLuminance } from '../../../utils/catalogTheme.js'
 
 // State
 let businessId = null
 let currentBusiness = null
 let businessHours = []
 let paymentMethods = []
+let currentCatalogBgColor = '#FFFFFF'
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
@@ -112,6 +114,9 @@ function renderData() {
     document.getElementById('colorHex').value = color.toUpperCase()
     document.documentElement.style.setProperty('--color-primary', color)
     document.getElementById('colorPreviewBtn').style.backgroundColor = color
+
+    // Background color picker modal init
+    initCatalogBgColorModal()
 }
 
 function updateHeaderBadge(b) {
@@ -298,6 +303,15 @@ function setupListeners() {
         window.location.href = `/admin/setup-catalogo?negocio_id=${businessId}`
     })
 
+    // 5.1 Visit Catalog
+    document.getElementById('btnVisitCatalog').addEventListener('click', () => {
+        if (!currentBusiness || !currentBusiness.slug) {
+            notify.error('Este negocio no tiene slug configurado.')
+            return
+        }
+        window.open(`https://traego.app/c/${currentBusiness.slug}`, '_blank')
+    })
+
     // 6. Logo Upload
     const logoInput = document.getElementById('logoInput')
     logoInput.addEventListener('change', async (e) => {
@@ -445,6 +459,134 @@ function setupListeners() {
             colorFeedback.innerHTML = `<span style="color: #dc2626;"><i class="fa-solid fa-circle-exclamation"></i> Error al guardar: ${error}</span>`
         }
     })
+
+    // 10. Fondo del Catálogo — Modal
+    const catalogBgModal = document.getElementById('catalogBgColorModal')
+    const openCatalogBgModalBtn = document.getElementById('openCatalogBgModalBtn')
+    const closeCatalogBgModalBtn = document.getElementById('closeCatalogBgModalBtn')
+    const cancelCatalogBgBtn = document.getElementById('cancelCatalogBgBtn')
+    const catalogBgColorInput = document.getElementById('catalogBgColorInput')
+    const catalogBgHexInput = document.getElementById('catalogBgHexInput')
+    const selectedColorIndicator = document.getElementById('selectedColorIndicator')
+    const saveCatalogColorBtn = document.getElementById('saveCatalogColorBtn')
+    const contrastWarning = document.getElementById('contrastWarning')
+
+    function openCatalogBgModal() {
+        catalogBgModal.style.display = 'flex'
+        initCatalogBgColorModal()
+    }
+
+    function closeCatalogBgModal() {
+        catalogBgModal.style.display = 'none'
+    }
+
+    if (openCatalogBgModalBtn) openCatalogBgModalBtn.addEventListener('click', openCatalogBgModal)
+    if (closeCatalogBgModalBtn) closeCatalogBgModalBtn.addEventListener('click', closeCatalogBgModal)
+    if (cancelCatalogBgBtn) cancelCatalogBgBtn.addEventListener('click', closeCatalogBgModal)
+    
+    if (catalogBgModal) {
+        catalogBgModal.addEventListener('click', (e) => {
+            if (e.target === catalogBgModal) closeCatalogBgModal()
+        })
+    }
+
+    if (selectedColorIndicator) {
+        selectedColorIndicator.addEventListener('click', () => catalogBgColorInput.click())
+    }
+
+    if (catalogBgColorInput) {
+        catalogBgColorInput.addEventListener('input', (e) => {
+            const val = e.target.value
+            updateCatalogBgColorState(val)
+        })
+    }
+
+    if (catalogBgHexInput) {
+        catalogBgHexInput.addEventListener('input', (e) => {
+            let val = e.target.value
+            if (!val.startsWith('#')) val = '#' + val
+            if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+                updateCatalogBgColorState(val)
+            }
+        })
+    }
+
+    if (saveCatalogColorBtn) {
+        saveCatalogColorBtn.addEventListener('click', async () => {
+            const loading = notify.loading('Guardando color de fondo...')
+            try {
+                const { success, error } = await adminService.updateBusiness(businessId, {
+                    catalog_bg_color: currentCatalogBgColor
+                })
+                if (!success) throw new Error(error)
+
+                currentBusiness.catalog_bg_color = currentCatalogBgColor
+                notify.updateLoading(loading, 'Color de fondo actualizado')
+                setTimeout(closeCatalogBgModal, 1000)
+            } catch (error) {
+                console.error('Error updating catalog bg color:', error)
+                notify.updateLoading(loading, 'Error al actualizar el color', 'error')
+            }
+        })
+    }
+
+    function updateCatalogBgColorState(hex) {
+        currentCatalogBgColor = hex
+        if (catalogBgColorInput) catalogBgColorInput.value = hex
+        if (catalogBgHexInput) catalogBgHexInput.value = hex.toUpperCase()
+        if (selectedColorIndicator) selectedColorIndicator.style.backgroundColor = hex
+        
+        checkCatalogBgContrast(hex)
+        renderCatalogBgSwatches()
+    }
+
+    function checkCatalogBgContrast(hex) {
+        if (!contrastWarning) return
+        const luminance = getRelativeLuminance(hex)
+        
+        // Simulating the same logic as CatalogColorPicker.js
+        const isDark = luminance < 0.35
+        const textColor = isDark ? '#FFFFFF' : '#111111'
+        const textLum = getRelativeLuminance(textColor)
+        
+        const L1 = Math.max(luminance, textLum)
+        const L2 = Math.min(luminance, textLum)
+        const ratio = (L1 + 0.05) / (L2 + 0.05)
+
+        if (ratio < 4.5) {
+            contrastWarning.classList.add('visible')
+        } else {
+            contrastWarning.classList.remove('visible')
+        }
+    }
+
+    function renderCatalogBgSwatches() {
+        const swatchesContainer = document.getElementById('colorSwatches')
+        if (!swatchesContainer) return
+
+        const presets = [
+            '#FFFFFF', '#111111', '#1A1A2E', '#0F2027', 
+            '#2D1B00', '#F5F0E8', '#FFF8F0', '#F0F4F8'
+        ]
+
+        swatchesContainer.innerHTML = presets.map(color => `
+            <div class="swatch ${color.toUpperCase() === currentCatalogBgColor.toUpperCase() ? 'active' : ''}" 
+                 style="background-color: ${color}" 
+                 data-color="${color}"></div>
+        `).join('')
+
+        swatchesContainer.querySelectorAll('.swatch').forEach(sw => {
+            sw.addEventListener('click', () => {
+                updateCatalogBgColorState(sw.dataset.color)
+            })
+        })
+    }
+
+    function initCatalogBgColorModal() {
+        if (!currentBusiness) return
+        const color = currentBusiness.catalog_bg_color || '#FFFFFF'
+        updateCatalogBgColorState(color)
+    }
 }
 
 function updateLogoPreview(url) {
@@ -745,3 +887,4 @@ async function deletePaymentMethod(id) {
         notify.updateLoading(loading, 'Error al eliminar', 'error')
     }
 }
+

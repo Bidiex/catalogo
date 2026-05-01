@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="/src/pages/dashboard/css/business-layout.css">
   <link rel="stylesheet" href="/src/pages/dashboard/css/delivery-persons.css">
   <link rel="stylesheet" href="/src/pages/links/links-editor.css">
+  <link rel="stylesheet" href="/src/pages/dashboard/css/catalog-picker.css">
 </head>
 
 <body>
@@ -103,6 +104,10 @@
           </button>
           <h1 id="pageTitle">Dashboard</h1>
           <div class="header-actions">
+            <button class="btn-header-action notification-bell-btn" id="headerNotificationBtn">
+              <i class="ri-notification-3-line"></i>
+              <span class="notification-badge" style="display: none;">0</span>
+            </button>
             <button id="editBusinessBtn" class="btn-header-action" style="display: none;">
               <i class="ri-edit-line"></i>
               <span>Editar Negocio</span>
@@ -482,6 +487,21 @@
                         <option value="all">Todas las categorías</option>
                       </select>
                       <i class="ri-folder-line"
+                        style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #9ca3af;"></i>
+                    </div>
+                  </div>
+
+                  <!-- Order Type (Paso 8) -->
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label for="bi-filter-type" style="font-size: 0.85rem; font-weight: 500;">Tipo de Pedido</label>
+                    <div class="select-wrapper" style="position: relative;">
+                      <select id="bi-filter-type" class="form-input"
+                        style="width: 100%; cursor: pointer; padding-left: 2.5rem; padding-right: 1rem;">
+                        <option value="all">Todos los tipos</option>
+                        <option value="delivery">Domicilio</option>
+                        <option value="pickup">Retiro</option>
+                      </select>
+                      <i class="ri-route-line"
                         style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #9ca3af;"></i>
                     </div>
                   </div>
@@ -1035,190 +1055,198 @@
           </div>
         </div>
 
-        <!-- Section: Mi Negocio -->
         <div id="section-business" class="dashboard-section" style="display: none;">
           <section class="card">
-            <div class="card-header">
+            <div class="card-header" id="business-card-header">
               <h2><i class="ri-building-line"></i> Mi Negocio</h2>
+              <div class="products-tabs-scroll" id="business-tabs-scroll">
+                <button class="products-tab-btn active" data-tab="negocio">
+                  <i class="ri-store-line"></i> Mi negocio
+                </button>
+                <button class="products-tab-btn" data-tab="plan">
+                  <i class="ri-star-line"></i> Mi plan
+                </button>
+              </div>
             </div>
-            <div class="card-content">
-              <div class="business-info">
 
-                <div class="business-profile-container" style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <!-- Tab: Mi negocio -->
+            <div class="business-tab-panel active" id="business-tab-negocio">
+              <div class="business-top-grid">
 
-                  <!-- Top: Identity (Logo + Info) + Plan -->
-                  <!-- We will use a grid/flex wrapper via CSS class 'business-top-grid' -->
-                  <div class="business-top-grid">
-
-                    <!-- Identity Side -->
-                    <div class="logo-display-container" style="display: flex; flex-direction: column; gap: 1rem;">
-                      <!-- Logo & Buttons -->
-                      <div style="display: flex; flex-direction: column; align-items: center;">
-                        <div class="image-preview" id="business-logo-display"
-                          style="width: 150px; height: 150px; margin-bottom: 1rem; border-radius: 50%; overflow: hidden; background: #f3f4f6; display: flex; align-items: center; justify-content: center; border: 2px solid #e5e7eb; cursor: pointer;">
-                          <i class="ri-store-2-line" style="font-size: 3rem; color: #9ca3af;"></i>
-                        </div>
-                        <input type="file" id="business-logo-input" accept="image/jpeg,image/jpg,image/png,image/webp"
-                          style="display: none;">
-                        <button type="button" id="changeBusinessLogoBtn" class="btn-secondary-small">
-                          <i class="ri-image-edit-line"></i> Cambiar Logo
-                        </button>
-
-                        <button type="button" id="openColorModalBtn" class="btn-secondary-small"
-                          style="margin-top: 0.5rem; background: white; border: 1px solid #e2e8f0;">
-                          <i class="ri-palette-line"></i> Personalizar Color
-                        </button>
-                        <div id="logo-upload-progress" style="display: none; width: 150px; margin-top: 0.5rem;">
-                          <div class="progress-bar"
-                            style="height: 4px; background: #eee; border-radius: 2px; overflow: hidden;">
-                            <div class="progress-fill"
-                              style="height: 100%; background: var(--primary-color); width: 0%;">
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-
-                      <!-- Header Background Image Section -->
-                      <div class="header-background-section">
-                        <h3 class="section-subtitle">
-                          <i class="ri-image-2-line"></i> Imagen de Fondo del Header
-                        </h3>
-                        <p class="section-description">
-                          Personaliza el fondo del header de tu catálogo para darle un toque único
-                        </p>
-
-                        <div class="resolution-tip"
-                          style="background: #eff6ff; border-left: 3px solid var(--color-primary); padding: 0.75rem; margin-bottom: 1rem; border-radius: 4px;">
-                          <p style="margin: 0; font-size: 0.85rem; color: #1e40af;">
-                            <i class="ri-lightbulb-line" style="margin-right: 0.25rem;"></i>
-                            <strong>Recomendación:</strong> Usa una imagen de <strong>1200x400 píxeles</strong> para
-                            mejores resultados. Formatos: JPG, PNG o WEBP (máx. 2MB).
-                          </p>
-                        </div>
-
-                        <div class="header-bg-preview" id="header-bg-preview">
-                          <i class="ri-landscape-line"></i>
-                          <p>Sin imagen de fondo</p>
-                          <small>Tamaño recomendado: 1200x400px</small>
-                        </div>
-
-                        <input type="file" id="header-bg-input" accept="image/jpeg,image/jpg,image/png,image/webp"
-                          style="display: none;">
-
-                        <div class="header-bg-actions">
-                          <button type="button" id="uploadHeaderBgBtn" class="btn-secondary-small">
-                            <i class="ri-upload-2-line"></i> Subir imagen
-                          </button>
-                          <button type="button" id="removeHeaderBgBtn" class="btn-secondary-small danger"
-                            style="display: none;">
-                            <i class="ri-delete-bin-line"></i> Eliminar
-                          </button>
-                        </div>
-
-                        <div id="header-bg-upload-progress" class="upload-progress-bar" style="display: none;">
-                          <div class="progress-bar">
-                            <div class="progress-fill"></div>
-                          </div>
-                          <p>Subiendo imagen...</p>
-                        </div>
-                      </div>
-
-                      <!-- Info Rows (Moved Here) -->
-                      <div class="business-details-list" style="margin-top: 1rem;">
-                        <div class="info-row">
-                          <span class="label"><i class="ri-store-line"></i> Nombre:</span>
-                          <span id="businessName" class="value">-</span>
-                        </div>
-                        <div class="info-row">
-                          <span class="label"><i class="ri-file-text-line"></i> Descripción:</span>
-                          <span id="businessDescription" class="value"
-                            style="font-style: italic; color: #6b7280;">-</span>
-                        </div>
-                        <div class="info-row">
-                          <span class="label"><i class="ri-whatsapp-line"></i> WhatsApp:</span>
-                          <span id="businessWhatsapp" class="value">-</span>
-                        </div>
-                        <div class="info-row">
-                          <span class="label"><i class="ri-map-pin-line"></i> Dirección:</span>
-                          <span id="businessAddress" class="value">-</span>
-                        </div>
-                        <div class="info-row">
-                          <span class="label"><i class="ri-e-bike-2-fill"></i> Precio domicilio:</span>
-                          <span id="businessDeliveryPrice" class="value">-</span>
-                        </div>
-                        <div class="info-row">
-                          <span class="label"><i class="ri-link"></i> Enlace del catálogo:</span>
-                          <div class="catalog-link">
-                            <a id="catalogLink" href="#" target="_blank" class="link">-</a>
-                            <button id="copyLinkBtn" class="btn-copy">
-                              <i class="ri-file-copy-line"></i> Copiar
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Plan Status Side -->
-                    <div class="plan-status-section"
-                      style="background: #f8fafc; padding: 1.5rem; border-radius: 8px; border: 1px solid #e2e8f0; height: fit-content;">
-                      <div
-                        style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-                        <div>
-                          <span class="label"
-                            style="display: block; font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Tu Plan
-                            Actual</span>
-                          <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <span id="planBadge" class="badge"
-                              style="background: var(--primary-color); color: white; padding: 0.25rem 0.75rem; border-radius: 99px; font-weight: 600; font-size: 0.9rem;">LOADING...</span>
-                            <span id="planStatusTag"
-                              style="font-size: 0.8rem; padding: 2px 6px; border-radius: 4px; background: #dcfce7; color: #166534;">Activo</span>
-                          </div>
-                        </div>
-                        <div style="text-align: right;">
-                          <span class="label"
-                            style="display: block; font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Vence
-                            en</span>
-                          <span id="planDaysRemaining" style="font-weight: 600; font-size: 1.1rem; color: #334155;">-
-                            días</span>
-                          <div id="planExpiryDate" style="font-size: 0.75rem; color: #94a3b8;">-</div>
-                        </div>
-                      </div>
-
-                      <!-- Usage Meter -->
-                      <div class="usage-meter" style="margin-top: 1rem;">
-                        <div
-                          style="display: flex; justify-content: space-between; margin-bottom: 0.25rem; font-size: 0.85rem;">
-                          <span style="color: #64748b;">Productos usados</span>
-                          <span id="productUsageText" style="font-weight: 600;">0 / 50</span>
-                        </div>
-                        <div style="height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden;">
-                          <div id="productUsageBar"
-                            style="height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s ease;">
-                          </div>
-                        </div>
-                        <div id="upgradeMessage" style="display: none; margin-top: 0.5rem;">
-                          <button id="btnUpgradePlan" class="btn-primary-small"
-                            style="width: 100%; justify-content: center; background: #5170ff; color: white; border: none;">
-                            <i class="ri-rocket-line"></i> Mejorar a PRO
-                          </button>
-                        </div>
-                        <!-- Botón Permanente de Upgrade -->
-                        <div id="permanentUpgradeContainer"
-                          style="display: none; margin-top: 1rem; border-top: 1px dashed #e2e8f0; padding-top: 0.75rem;">
-                          <button id="btnPermanentUpgrade" class="btn-secondary-small"
-                            style="width: 100%; justify-content: center; color: #5170ff; border-color: #5170ff; background: rgba(81, 112, 255, 0.1); cursor: pointer;">
-                            <i class="ri-rocket-line"></i> Mejorar mi Plan a PRO
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
+                <!-- Columna izquierda: Logo & Botones -->
+                <div class="logo-display-container">
+                  <div class="image-preview business-logo-display" id="business-logo-display">
+                    <!-- img del logo se inyecta dinámicamente -->
                   </div>
+                  <input type="file" id="business-logo-input" accept="image/jpeg,image/jpg,image/png,image/webp" style="display:none;">
+                  <div class="business-action-buttons">
+                    <button type="button" id="changeBusinessLogoBtn" class="btn-secondary-small">
+                      <i class="ri-image-edit-line"></i> Cambiar Logo
+                    </button>
+                    <button type="button" id="openColorModalBtn" class="btn-secondary-small">
+                      <i class="ri-palette-line"></i> Color Principal
+                    </button>
+                    <button type="button" id="openCatalogBgModalBtn" class="btn-secondary-small">
+                      <i class="ri-layout-bottom-line"></i> Color de Fondo
+                    </button>
+                  </div>
+                  <div id="logo-upload-progress" class="logo-upload-progress" style="display:none;">
+                    <div class="progress-bar"><div class="progress-fill"></div></div>
+                  </div>
+                </div>
+
+                <!-- Columna derecha: Info del negocio -->
+                <div class="business-details-list">
+                  <div class="info-row">
+                    <span class="label"><i class="ri-store-line"></i> Nombre:</span>
+                    <span id="businessName" class="value"></span>
+                  </div>
+                  <div class="info-row">
+                    <span class="label"><i class="ri-file-text-line"></i> Descripción:</span>
+                    <span id="businessDescription" class="value business-desc-value"></span>
+                  </div>
+                  <div class="info-row">
+                    <span class="label"><i class="ri-whatsapp-line"></i> WhatsApp:</span>
+                    <span id="businessWhatsapp" class="value"></span>
+                  </div>
+                  <div class="info-row">
+                    <span class="label"><i class="ri-map-pin-line"></i> Dirección:</span>
+                    <span id="businessAddress" class="value"></span>
+                  </div>
+                  <div class="info-row">
+                    <span class="label"><i class="ri-e-bike-2-fill"></i> Precio domicilio:</span>
+                    <span id="businessDeliveryPrice" class="value"></span>
+                  </div>
+                  <div class="info-row">
+                    <span class="label"><i class="ri-link"></i> Enlace del catálogo:</span>
+                    <div class="catalog-link">
+                      <a id="catalogLink" href="#" target="_blank" class="link"></a>
+                      <button id="copyLinkBtn" class="btn-copy">
+                        <i class="ri-file-copy-line"></i> Copiar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              <hr class="business-section-divider">
+
+              <!-- Fila inferior: imagen del header -->
+              <div class="business-bottom-grid">
+                <div class="header-background-info">
+                  <h3 class="section-subtitle"><i class="ri-image-2-line"></i> Imagen de Fondo del Header</h3>
+                  <p class="section-description">Personaliza el fondo del header de tu catálogo para darle un toque único</p>
+                  <div class="resolution-tip">
+                    <p><i class="ri-lightbulb-line"></i> <strong>Recomendación:</strong> Usa una imagen de <strong>1200x400 píxeles</strong>. Formatos: JPG, PNG o WEBP (máx. 2MB).</p>
+                  </div>
+                  <input type="file" id="header-bg-input" accept="image/jpeg,image/jpg,image/png,image/webp" style="display:none;">
+                  <div class="header-bg-actions">
+                    <button type="button" id="uploadHeaderBgBtn" class="btn-secondary-small">
+                      <i class="ri-upload-2-line"></i> Subir imagen
+                    </button>
+                    <button type="button" id="removeHeaderBgBtn" class="btn-secondary-small danger" style="display:inline-flex;">
+                      <i class="ri-delete-bin-line"></i> Eliminar
+                    </button>
+                  </div>
+                  <div id="header-bg-upload-progress" class="upload-progress-bar" style="display:none;">
+                    <div class="progress-bar"><div class="progress-fill"></div></div>
+                    <p>Subiendo imagen...</p>
+                  </div>
+                </div>
+                <div class="header-background-preview-container">
+                  <div class="header-bg-preview" id="header-bg-preview"></div>
+                  <p class="header-preview-label">Vista previa</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab: Mi plan -->
+            <div class="business-tab-panel" id="business-tab-plan">
+              <div class="plan-two-col-layout">
+
+                <!-- COLUMNA IZQUIERDA: hero + barra + métricas -->
+                <div class="plan-col-left">
+
+                  <div class="plan-hero-card">
+                    <div class="plan-hero-left">
+                      <div class="plan-badge-circle" id="planBadge">PRO</div>
+                      <div>
+                        <div class="plan-hero-title" id="planHeroTitle">Plan Pro</div>
+                        <div class="plan-hero-pills">
+                          <span class="plan-pill-active" id="planStatusTag">Activo</span>
+                          <span class="plan-pill-warn" id="planDaysRemainingPill" style="display:none;"></span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="plan-hero-right">
+                      <span class="plan-expiry-lbl">Fecha de vencimiento</span>
+                      <div class="plan-expiry-date" id="planExpiryDate"></div>
+                    </div>
+                  </div>
+
+                  <div class="plan-cycle-wrap">
+                    <div class="plan-cycle-labels">
+                      <span id="planCycleStart">Inicio del ciclo</span>
+                      <span id="planCycleEnd">Vencimiento</span>
+                    </div>
+                    <div class="plan-cycle-bar-bg">
+                      <div class="plan-cycle-bar-fill" id="planCycleBar" style="width:0%"></div>
+                    </div>
+                    <div class="plan-cycle-note" id="planCycleNote">
+                      <div class="plan-warn-dot"></div>
+                      <span id="planCycleNoteText"></span>
+                    </div>
+                  </div>
+
+                  <div class="plan-metrics-row">
+                    <div class="plan-metric">
+                      <div class="plan-metric-lbl">Productos</div>
+                      <div class="plan-metric-val" id="planProductsUsage">—</div>
+                      <div class="plan-metric-sub" id="planProductsSub"></div>
+                    </div>
+                    <div class="plan-metric">
+                      <div class="plan-metric-lbl">Pedidos este mes</div>
+                      <div class="plan-metric-val" id="planOrdersUsage">—</div>
+                      <div class="plan-metric-sub" id="planOrdersSub"></div>
+                    </div>
+                  </div>
+
+                </div>
+
+                <!-- COLUMNA DERECHA: funcionalidades + banner -->
+                <div class="plan-col-right">
+
+                  <div class="plan-features-title">Funcionalidades de tu plan</div>
+                  <div class="plan-features-grid" id="planFeaturesGrid">
+                    <!-- JS lo llena dinámicamente -->
+                  </div>
+
+                  <div class="plan-upgrade-banner" id="planUpgradeBanner" style="display:none;">
+                    <div>
+                      <div class="plan-upgrade-title" id="planUpgradeTitle"></div>
+                      <div class="plan-upgrade-sub" id="planUpgradeSub"></div>
+                    </div>
+                    <div id="planUpgradeActions"></div>
+                  </div>
+
+                  <!-- Botones existentes — no eliminar, mantener ocultos por defecto -->
+                  <div id="upgradeMessage" style="display:none;">
+                    <button id="btnUpgradePlan" class="btn-primary-small">
+                      <i class="ri-rocket-line"></i> Mejorar a PRO
+                    </button>
+                  </div>
+                  <div id="permanentUpgradeContainer" style="display:none;">
+                    <button id="btnPermanentUpgrade" class="btn-secondary-small">
+                      <i class="ri-rocket-line"></i> Mejorar mi Plan a PRO
+                    </button>
+                  </div>
+
                 </div>
               </div>
             </div>
           </section>
+
 
           <!-- Grid Container for Payment & Hours -->
           <div class="business-settings-grid">
@@ -1308,6 +1336,11 @@
                   <button id="clearOrdersSearch" class="search-clear" style="display: none;"><i
                       class="ri-close-line"></i></button>
                 </div>
+                <select id="filterOrdersType" class="form-select" style="width: auto; min-width: 140px;">
+                  <option value="all">Todos los tipos</option>
+                  <option value="delivery">Domicilio</option>
+                  <option value="pickup">Retiro</option>
+                </select>
                 <div id="filterOrdersPills" class="filter-pills">
                   <button class="filter-pill active" data-status="all">Todos</button>
                   <button class="filter-pill" data-status="pending">Pendientes</button>
@@ -1447,9 +1480,14 @@
                 <div class="tab-header-actions"
                   style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                   <h3 style="margin: 0; font-size: 1.1rem;">Gestionar Categorías</h3>
-                  <button id="addCategoryBtn" class="btn-primary-small">
-                    <i class="ri-add-line"></i> Nueva Categoría
-                  </button>
+                  <div class="header-actions-group">
+                    <button id="sortCategoriesBtn" class="btn-sort-categories">
+                      <i class="ri-sort-asc"></i> Ordenar Categorías
+                    </button>
+                    <button id="addCategoryBtn" class="btn-primary-small">
+                      <i class="ri-add-line"></i> Nueva Categoría
+                    </button>
+                  </div>
                 </div>
 
                 <div class="search-bar-container">
@@ -1981,6 +2019,38 @@
           <label for="businessDeliveryPriceInput">Precio de Domicilio</label>
           <input type="number" id="businessDeliveryPriceInput" placeholder="0" min="0" step="0.01">
           <small>Valor cobrado por el servicio de domicilio (0 = gratis)</small>
+        </div>
+        <div class="form-group">
+          <label>Modos de entrega</label>
+          <div class="order-modes-toggles">
+            <div class="order-mode-row">
+              <div class="order-mode-info">
+                <i class="ri-motorbike-fill"></i>
+                <div>
+                  <span class="order-mode-label">Domicilio 🛵</span>
+                  <span class="order-mode-desc">Los clientes pueden pedir a domicilio</span>
+                </div>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="businessDeliveryEnabledInput" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="order-mode-row">
+              <div class="order-mode-info">
+                <i class="ri-store-2-line"></i>
+                <div>
+                  <span class="order-mode-label">Retirar en tienda 🏪</span>
+                  <span class="order-mode-desc">Los clientes pueden venir a recoger su pedido</span>
+                </div>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="businessPickupEnabledInput">
+                <span class="slider"></span>
+              </label>
+            </div>
+            <p id="orderModesError" class="order-modes-error">Al menos un modo de entrega debe estar activo.</p>
+          </div>
         </div>
         <div class="form-group">
           <label for="businessDescriptionInput">Descripción</label>
@@ -2764,6 +2834,23 @@
 
   <script type="module" src="/src/pages/dashboard/dashboard.js"></script>
 
+
+  <!-- Notifications Panel -->
+  <div id="notificationsOverlay" class="notifications-panel-overlay"></div>
+  <aside id="notificationsPanel" class="notifications-panel">
+    <div class="notifications-panel-header">
+      <h2>Notificaciones</h2>
+      <button id="closeNotificationsBtn" class="close-panel-btn">
+        <i class="ri-close-line"></i>
+      </button>
+    </div>
+    <div class="notifications-panel-content" id="notificationsList">
+      <!-- Se llena por JS -->
+    </div>
+  </aside>
+
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
   <!-- Modal para crear/editar promoción -->
   <div id="promotionModal" class="modal" style="display: none;">
     <div class="modal-content" style="max-width: 700px;">
@@ -3108,83 +3195,107 @@
     </div>
   </div>
 
-  <!-- Modal: Anuncios (Welcome Modal) -->
+  <!-- Modal: Anuncios -->
   <div id="announcementModal" class="modal" style="display: none;">
-    <div class="modal-content">
+    <div class="modal-content large">
       <div class="modal-header">
-        <h2 id="announcementModalTitle">Nuevo Anuncio</h2>
-        <button id="closeAnnouncementModal" class="btn-close">&times;</button>
+        <div class="header-title">
+          <h2 id="announcementModalTitle">Configurar Anuncio</h2>
+        </div>
+        <button id="closeAnnouncementModal" class="modal-close">&times;</button>
       </div>
-      <form id="announcementForm">
+      <form id="announcementForm" class="announcement-form">
         <div class="modal-body">
-          <div class="form-group">
-            <label for="announcementNameInput">Nombre Interno (No visible para clientes)</label>
-            <input type="text" id="announcementNameInput" placeholder="Ej: Promo Temporada Escolar" required>
+          
+          <!-- Sección: Información del Anuncio -->
+          <div class="form-section">
+            <h3 class="section-subtitle">
+              <i class="ri-information-line"></i> Información Básica
+            </h3>
+            <div class="form-grid">
+              <div class="form-group full-width">
+                <label for="announcementNameInput">Nombre del Anuncio *</label>
+                <input type="text" id="announcementNameInput" placeholder="Ej: Promo Temporada Escolar" required>
+                <small class="form-help">Este nombre es solo para tu control interno.</small>
+              </div>
+              
+              <div class="form-group">
+                <label for="announcementCtaText">Texto del Botón (CTA) *</label>
+                <div class="input-with-counter">
+                  <input type="text" id="announcementCtaText" maxlength="30" placeholder="Ej: Ver Oferta" required>
+                  <span id="ctaCharCount" class="char-counter">0/30</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="announcementExpiresInput">Fecha de Expiración *</label>
+                <input type="datetime-local" id="announcementExpiresInput" required>
+              </div>
+            </div>
           </div>
 
-          <div class="form-group">
-            <label>Imagen del Anuncio (Aspect Ratio 3:4)</label>
-            <div id="announcementImageContainer" class="image-upload-wrapper aspect-3-4">
+          <!-- Sección: Multimedia -->
+          <div class="form-section">
+            <h3 class="section-subtitle">
+              <i class="ri-image-line"></i> Imagen del Anuncio
+            </h3>
+            <div class="image-upload-wrapper aspect-3-4" id="announcementImageContainer">
+              <input type="file" id="announcementImageInput" accept="image/*" style="display: none;">
+              <input type="hidden" id="announcementImageUrl">
+              
               <div id="announcementImagePlaceholder" class="upload-placeholder">
                 <i class="ri-image-add-line"></i>
                 <p>Click para subir imagen</p>
-                <small>Formato 3:4 (Ej: 600x800px)</small>
+                <small>Formato sugerido 3:4 (600x800px)</small>
               </div>
+
               <div id="announcementImagePreview" class="upload-preview" style="display: none;"></div>
-              <input type="file" id="announcementImageInput" accept="image/*" style="display: none;">
+
               <div id="announcementImageActions" class="upload-actions" style="display: none;">
                 <button type="button" id="changeAnnouncementImageBtn" class="btn-secondary-small">
                   <i class="ri-image-edit-line"></i> Cambiar
                 </button>
                 <button type="button" id="removeAnnouncementImageBtn" class="btn-secondary-small danger">
-                  <i class="ri-delete-bin-line"></i> Eliminar
+                  <i class="ri-delete-bin-line"></i>
                 </button>
               </div>
             </div>
-            <input type="hidden" id="announcementImageUrl">
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label for="announcementCtaText">Texto del Botón (CTA)</label>
-              <div class="input-with-counter">
-                <input type="text" id="announcementCtaText" maxlength="30" placeholder="Ej: Ver Oferta" required>
-                <span id="ctaCharCount" class="char-counter">0/30</span>
+          <!-- Sección: Configuración de Acción -->
+          <div class="form-section">
+            <h3 class="section-subtitle">
+              <i class="ri-settings-4-line"></i> Configuración de Acción
+            </h3>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="announcementCtaType">¿A dónde lleva el botón?</label>
+                <select id="announcementCtaType">
+                  <option value="none">Sin acción (solo visual)</option>
+                  <option value="product">Un producto específico</option>
+                  <option value="promotion">Una promoción</option>
+                </select>
+              </div>
+              <div id="ctaTargetGroup" class="form-group" style="display: none;">
+                <label id="ctaTargetLabel" for="announcementCtaTarget">Seleccionar Destino</label>
+                <select id="announcementCtaTarget"></select>
               </div>
             </div>
-            <div class="form-group">
-              <label for="announcementExpiresInput">Fecha de Expiración</label>
-              <input type="datetime-local" id="announcementExpiresInput" required>
-            </div>
-          </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label for="announcementCtaType">Tipo de Acción</label>
-              <select id="announcementCtaType">
-                <option value="none">Solo cerrar (Sin acción)</option>
-                <option value="product">Redirigir a Producto</option>
-                <option value="promotion">Redirigir a Promoción</option>
-              </select>
-            </div>
-            <div id="ctaTargetGroup" class="form-group" style="display: none;">
-              <label id="ctaTargetLabel" for="announcementCtaTarget">Seleccionar Destino</label>
-              <select id="announcementCtaTarget">
-                <!-- Se llena con JS -->
-              </select>
+            <div class="status-config" style="margin-top: 1.5rem;">
+              <div class="form-group-inline">
+                <label class="switch">
+                  <input type="checkbox" id="announcementActiveInput" checked>
+                  <span class="slider round"></span>
+                </label>
+                <span class="status-label" style="font-weight: 600; color: var(--color-text);">Anuncio Activo</span>
+              </div>
+              <div id="activeWarning" class="alert-warning" style="display: none;">
+                <i class="ri-alert-line"></i>
+                <p>Al activar este anuncio, se desactivarán automáticamente los demás anuncios de tu catálogo.</p>
+              </div>
             </div>
           </div>
-
-          <div class="form-group checkbox-group" style="margin-top: 1rem;">
-            <label class="switch">
-              <input type="checkbox" id="announcementActiveInput" checked>
-              <span class="slider round"></span>
-            </label>
-            <span style="font-weight: 500;">Anuncio Activo</span>
-          </div>
-          <p id="activeWarning" style="color: #f59e0b; font-size: 0.85rem; margin-top: 0.5rem; display: none;">
-            <i class="ri-alert-line"></i> Al activar este anuncio, se desactivarán automáticamente los demás.
-          </p>
         </div>
         <div class="modal-footer">
           <button type="button" id="cancelAnnouncementBtn" class="btn-secondary">Cancelar</button>
@@ -3193,6 +3304,73 @@
       </form>
     </div>
   </div>
+
+  <!-- Modal Ordenar Categorías (solo desktop) -->
+  <div id="sortCategoriesModal" class="sort-modal-overlay" style="display:none;">
+    <div class="sort-modal">
+      <div class="sort-modal-header">
+        <h3>Ordenar Categorías</h3>
+        <button id="sortModalClose" class="sort-modal-close">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+      <p class="sort-modal-hint">Arrastra las categorías para cambiar el orden.</p>
+      <ul id="sortModalList" class="sort-modal-list"></ul>
+      <div class="sort-modal-footer">
+        <button id="sortModalCancel" class="btn-secondary">Cancelar</button>
+        <button id="sortModalConfirm" class="btn-primary">Confirmar orden</button>
+      </div>
+    </div>
+  </div>
+
+    <!-- Modal: Catalog Background Color -->
+    <div id="catalogBgColorModal" class="modal">
+      <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+          <h3>Color de Fondo del Catálogo</h3>
+          <button class="modal-close" id="closeCatalogBgModalBtn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="color-picker-wrapper">
+            <p style="color: #64748b; font-size: 0.875rem; margin-bottom: 1.5rem;">Selecciona el color que tendrá el fondo de tu catálogo público.</p>
+            <!-- Selector Principal -->
+            <div class="color-main-selector">
+              <div id="catalogBgColorIndicator" class="selected-color-indicator" title="Click para elegir color libremente">
+                <input type="color" id="catalogBgColorInput">
+              </div>
+              <div class="hex-input-wrapper">
+                <label>Hexadecimal</label>
+                <input type="text" id="catalogBgHexText" class="hex-input-field" placeholder="#FFFFFF" maxlength="7">
+              </div>
+            </div>
+
+            <div style="background: #f9fafb; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+              <span style="font-size: 0.9rem; font-weight: 600; color: #374151;">Color seleccionado:</span>
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+                <div id="catalogBgPreviewCircle" style="width: 24px; height: 24px; border-radius: 50%; border: 1px solid #d1d5db;"></div>
+                <span id="catalogBgPreviewCode" style="font-family: monospace; color: #6b7280;"></span>
+              </div>
+            </div>
+
+            <!-- Grid de Colores -->
+            <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #1e293b; margin-bottom: 0.5rem;">Sugerencias</label>
+            <div class="color-swatches-grid" id="catalogBgSwatchesGrid">
+              <!-- Swatches generated by JS -->
+            </div>
+
+            <!-- Advertencia de Contraste -->
+            <div id="catalogBgContrastWarning" class="contrast-warning" style="visibility: hidden;">
+              <i class="ri-error-warning-line"></i>
+              <p>Este color podría dificultar la lectura del texto.</p>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" id="cancelCatalogBgBtn">Cancelar</button>
+          <button type="button" class="btn-primary" id="saveCatalogBgBtn">Guardar Cambios</button>
+        </div>
+      </div>
+    </div>
 
 </body>
 

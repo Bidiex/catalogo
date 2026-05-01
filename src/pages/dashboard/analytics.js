@@ -8,7 +8,8 @@ let analyticsState = {
         month: 'all',
         category: 'all', // Product category ID
         status: 'all',   // Order status
-        day: 'all'       // Day of week (0-6)
+        day: 'all',      // Day of week (0-6)
+        type: 'all'      // order_type (delivery/pickup)
     },
     orders: [],
     products: [],
@@ -33,6 +34,7 @@ let elements = {
     filterCategory: null,
     filterStatus: null,
     filterDay: null,
+    filterType: null,
     chartOrders: null,
     chartSales: null,
     chartCategory: null
@@ -91,6 +93,7 @@ const cacheElements = () => {
     elements.filterCategory = document.getElementById('bi-filter-category');
     elements.filterStatus = document.getElementById('bi-filter-status');
     elements.filterDay = document.getElementById('bi-filter-day');
+    elements.filterType = document.getElementById('bi-filter-type');
 
     elements.chartOrders = document.getElementById('bi-chart-orders');
     elements.chartSales = document.getElementById('bi-chart-sales');
@@ -128,7 +131,7 @@ const hideLoaderAndShowChart = (loader, chartInstance) => {
 };
 
 const setupFilters = () => {
-    const validFilters = ['year', 'month', 'category', 'status', 'day'];
+    const validFilters = ['year', 'month', 'category', 'status', 'day', 'type'];
 
     validFilters.forEach(key => {
         const keyUpper = key.charAt(0).toUpperCase() + key.slice(1);
@@ -186,6 +189,10 @@ const filterOrders = (orders) => {
         if (analyticsState.filters.month !== 'all' && month !== analyticsState.filters.month) return false;
         if (analyticsState.filters.day !== 'all' && day !== analyticsState.filters.day) return false;
         if (analyticsState.filters.status !== 'all' && order.status !== analyticsState.filters.status) return false;
+
+        // Type Filter (Paso 8)
+        const orderType = order.order_type || 'delivery';
+        if (analyticsState.filters.type !== 'all' && orderType !== analyticsState.filters.type) return false;
 
         // Category Filter (Order Retention)
         if (analyticsState.filters.category !== 'all') {

@@ -1,4 +1,4 @@
-  import { supabase } from '../../config/supabase.js'
+import { supabase } from '../../config/supabase.js'
 import { cart } from '../../utils/cart.js'
 import { notify } from '../../utils/notifications.js'
 import { taxesService } from '../../services/taxes.js'
@@ -13,6 +13,7 @@ import { businessService } from '../../services/business.js'
 import { productOptionsService } from '../../services/productOptions.js'
 import { productBadgesService } from '../../services/productBadges.js'
 import { announcementsService } from '../../services/announcements.js'
+import { buildCatalogTheme } from '../../utils/catalogTheme.js'
 
 const BADGE_NUEVO_ID = '00000000-0000-0000-0000-000000000001'
 
@@ -46,6 +47,7 @@ let promotions = []
 let currentPromoSlide = 0
 let promoAutoPlayInterval = null
 let selectedPromotion = null
+let selectedOrderType = 'delivery'
 let selectedPromoQuickComment = null
 let selectedPromoSides = []
 
@@ -257,6 +259,9 @@ async function loadBusiness(slug) {
     if (!data) throw new Error('Business not found')
 
     currentBusiness = data
+    
+    // Aplicar tema del catálogo
+    applyTheme(currentBusiness.catalog_bg_color, currentBusiness.primary_color)
 
     // Verificar estado operativo
     const isOperational = checkSubscriptionStatus(currentBusiness)
@@ -612,6 +617,7 @@ async function openPromotionModal(promo) {
     })
   }
 
+  updateAddPromotionToCartBtnState()
   console.log('=== openPromotionModal COMPLETED ===')
   updateUrl('promotion', promo.id)
 }
@@ -666,7 +672,7 @@ function renderPromotionOptions(promo) {
               >
               <label for="promo-side-${index}" class="side-option-name">${side.name}</label>
             </div>
-            <span class="side-option-price">+$${parseFloat(side.price).toLocaleString()}</span>
+            <span class="side-option-price">+$${parseFloat(side.price).toLocaleString('es-CO')}</span>
           </div>
         `).join('')
 
@@ -696,6 +702,23 @@ function closePromotionModal() {
   clearUrl()
   promotionOverlay.classList.remove('active')
   selectedPromotion = null
+}
+
+/**
+ * Actualiza el contenido del botón "Agregar al carrito" en el modal de promociones
+ */
+function updateAddPromotionToCartBtnState() {
+  if (!selectedPromotion) return
+
+  const total = parseFloat(selectedPromotion.price) * currentQuantity
+
+  if (addPromotionToCartBtn) {
+    addPromotionToCartBtn.innerHTML = `
+      <i class="ri-shopping-cart-line"></i>
+      <span class="btn-text">Agregar</span>
+      <span class="btn-price">${formatPriceCompact(total)}</span>
+    `
+  }
 }
 
 // ============================================
@@ -746,8 +769,9 @@ function showAnnouncement(announcement) {
   image.src = announcement.image_url
   
   if (announcement.cta_type !== 'none') {
-    ctaBtn.textContent = announcement.cta_text
-    if (footer) footer.style.display = 'block'
+    const ctaText = document.getElementById('announcementCtaText')
+    if (ctaText) ctaText.textContent = announcement.cta_text
+    if (footer) footer.style.display = 'flex' // Changed from block to flex for consistency
   } else {
     if (footer) footer.style.display = 'none'
   }
@@ -763,11 +787,20 @@ function showAnnouncement(announcement) {
     if (e.target === overlay) closeAnnouncementModal()
   }
 
-  // Show with GSAP if available, else just display
+  // Show with GSAP
   overlay.style.display = 'flex'
+  const modal = overlay.querySelector('.announcement-modal')
+  
   if (typeof gsap !== 'undefined') {
-    gsap.fromTo(overlay, { opacity: 0 }, { opacity: 1, duration: 0.3 })
-    gsap.fromTo('.announcement-modal', { scale: 0.8, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.4, delay: 0.1, ease: 'back.out(1.7)' })
+    gsap.killTweensOf([overlay, modal])
+    gsap.fromTo(overlay, { opacity: 0 }, { opacity: 1, duration: 0.4, ease: 'power2.out' })
+    gsap.fromTo(modal, 
+      { scale: 0.9, y: 30, opacity: 0 }, 
+      { scale: 1, y: 0, opacity: 1, duration: 0.6, delay: 0.1, ease: 'elastic.out(1, 0.8)' }
+    )
+  } else {
+    overlay.classList.add('active')
+    if (modal) modal.classList.add('active')
   }
 
   // Mark as shown in session
@@ -796,8 +829,11 @@ function closeAnnouncementModal() {
   const overlay = document.getElementById('announcementOverlay')
   if (!overlay) return
 
+  const modal = overlay.querySelector('.announcement-modal')
+
   if (typeof gsap !== 'undefined') {
-    gsap.to(overlay, { opacity: 0, duration: 0.3, onComplete: () => {
+    gsap.to(modal, { scale: 0.9, y: 20, opacity: 0, duration: 0.3, ease: 'power2.in' })
+    gsap.to(overlay, { opacity: 0, duration: 0.3, delay: 0.1, onComplete: () => {
       overlay.style.display = 'none'
     }})
   } else {
@@ -823,6 +859,7 @@ if (promotionDecreaseQty) {
     if (currentQuantity > 1) {
       currentQuantity--
       promotionQuantityValue.textContent = currentQuantity
+      updateAddPromotionToCartBtnState()
     }
   })
 }
@@ -831,6 +868,7 @@ if (promotionIncreaseQty) {
   promotionIncreaseQty.addEventListener('click', () => {
     currentQuantity++
     promotionQuantityValue.textContent = currentQuantity
+    updateAddPromotionToCartBtnState()
   })
 }
 
@@ -928,6 +966,21 @@ function getContrastColor(hexColor) {
   const b = parseInt(hex.substr(4, 2), 16)
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
   return luminance > 0.5 ? '#000000' : '#FFFFFF'
+}
+
+/**
+ * Aplica el tema de color al catálogo
+ * @param {string} bgHex 
+ */
+function applyTheme(bgHex, primaryColor) {
+  const theme = buildCatalogTheme(bgHex || '#FFFFFF', primaryColor)
+  
+  Object.entries(theme).forEach(([key, value]) => {
+    document.documentElement.style.setProperty(key, value)
+  })
+  
+  // También aplicar al body para el fondo general si catalogContent no cubre todo
+  document.body.style.backgroundColor = theme['--cat-bg']
 }
 
 // ============================================
@@ -1600,7 +1653,54 @@ async function openProductModal(productId) {
       }
     })
   }
+  updateAddToCartBtnState()
 }
+
+/**
+ * Formatea un precio de forma compacta (K para miles, M para millones)
+ */
+function formatPriceCompact(price) {
+  if (price >= 1_000_000) {
+    const val = (price / 1_000_000);
+    return '$' + (val % 1 === 0 ? val : val.toFixed(2).replace(/\.?0+$/, '')) + 'M';
+  }
+  if (price >= 100_000) {
+    const val = (price / 1_000);
+    return '$' + (val % 1 === 0 ? val : val.toFixed(1).replace(/\.?0+$/, '')) + 'K';
+  }
+  return '$' + price.toLocaleString('es-CO');
+}
+
+/**
+ * Actualiza el contenido del botón "Agregar al carrito" con el precio total dinámico
+ */
+function updateAddToCartBtnState() {
+  if (!selectedProduct) return
+
+  // Calcular precio unitario base (con tamaño si aplica)
+  let unitPrice = selectedSize ? parseFloat(selectedSize.price) : parseFloat(selectedProduct.price)
+
+  // Aplicar descuento si existe
+  if (selectedProduct.discount) {
+    const discountPercentage = selectedProduct.discount.discount_percentage
+    unitPrice = unitPrice * (1 - discountPercentage / 100)
+  }
+
+  // Multiplicar por cantidad
+  const total = unitPrice * currentQuantity
+
+  // Actualizar HTML del botón con DOM puro como pidió el usuario
+  if (addToCartBtn) {
+    addToCartBtn.innerHTML = `
+      <span class="btn-top-row">
+        <i class="ri-shopping-cart-line"></i>
+        <span class="btn-text">Agregar</span>
+      </span>
+      <span class="btn-price">${formatPriceCompact(total)}</span>
+    `;
+  }
+}
+
 
 // Global variables for options (Catalog Scope)
 let productOptionGroups = []
@@ -1733,6 +1833,7 @@ function renderSizeSelector() {
 
         // Re-render to update border colors
         renderSizeSelector()
+        updateAddToCartBtnState()
       }
     })
   })
@@ -1841,7 +1942,7 @@ function renderProductOptions() {
             <input type="checkbox" id="side-${side.id}" value="${side.id}" data-name="${side.name}" data-price="${side.price}">
             <label for="side-${side.id}" class="side-option-name">${side.name}</label>
           </div>
-          <span class="side-option-price">+$${parseFloat(side.price).toLocaleString()}</span>
+          <span class="side-option-price">+$${parseFloat(side.price).toLocaleString('es-CO')}</span>
         </div>
       `
     })
@@ -1898,12 +1999,14 @@ decreaseQty.addEventListener('click', () => {
   if (currentQuantity > 1) {
     currentQuantity--
     quantityValue.textContent = currentQuantity
+    updateAddToCartBtnState()
   }
 })
 
 increaseQty.addEventListener('click', () => {
   currentQuantity++
   quantityValue.textContent = currentQuantity
+  updateAddToCartBtnState()
 })
 
 addToCartBtn.addEventListener('click', () => {
@@ -2081,6 +2184,14 @@ function renderCartItems() {
       itemPrice += sidesTotal
     }
 
+    // Sumar precio de grupos
+    if (item.options?.groups && item.options.groups.length > 0) {
+      const groupsTotal = item.options.groups.reduce((sum, group) => {
+        return sum + (group.selections?.reduce((s, sel) => s + (parseFloat(sel.price) || 0), 0) || 0)
+      }, 0)
+      itemPrice += groupsTotal
+    }
+
     // Construir texto de opciones
     let optionsText = ''
 
@@ -2121,13 +2232,15 @@ function renderCartItems() {
         <div class="cart-item-info">
           <div class="cart-item-name">${item.options?.size ? `${item.name} - ${item.options.size.name}` : item.name}</div>
           ${optionsText}
-          <div class="cart-item-price">$${itemPrice.toLocaleString()} c/u</div>
+          <div class="cart-item-price">$${(itemPrice * item.quantity).toLocaleString('es-CO')}</div>
           <div class="cart-item-quantity">
             <button class="cart-item-decrease" data-key="${item.itemKey}">-</button>
             <span>${item.quantity}</span>
             <button class="cart-item-increase" data-key="${item.itemKey}">+</button>
           </div>
-          <button class="cart-item-remove" data-key="${item.itemKey}">Eliminar</button>
+          <button class="cart-item-remove" data-key="${item.itemKey}">
+            <i class="ri-delete-bin-line"></i>
+          </button>
         </div>
       </div>
     `
@@ -2179,8 +2292,25 @@ function renderCartItems() {
     }
   })
 
-  // Manejo del precio de domicilio
-  const deliveryPrice = parseFloat(currentBusiness.delivery_price) || 0
+  // Mostrar selector de tipo solo si ambos están activos
+  const cartOrderTypeContainer = document.getElementById('cartOrderTypeContainer')
+  if (cartOrderTypeContainer && currentBusiness) {
+    const hasDelivery = currentBusiness.delivery_enabled !== false
+    const hasPickup = currentBusiness.pickup_enabled === true
+    cartOrderTypeContainer.style.display = (hasDelivery && hasPickup) ? 'block' : 'none'
+
+    // Si solo uno está activo, forzar ese tipo
+    if (!hasDelivery && hasPickup) selectedOrderType = 'pickup'
+    if (hasDelivery && !hasPickup) selectedOrderType = 'delivery'
+
+    // Sincronizar radio del carrito con el estado global
+    const cartRadio = cartOrderTypeContainer.querySelector(`input[value="${selectedOrderType}"]`)
+    if (cartRadio) cartRadio.checked = true
+  }
+
+  // Manejo del precio de domicilio según selección
+  const isDelivery = selectedOrderType === 'delivery'
+  const deliveryPrice = isDelivery ? (parseFloat(currentBusiness.delivery_price) || 0) : 0
 
   const finalTotal = subtotalWithProductTaxes + invoiceTaxesTotal + deliveryPrice
 
@@ -2253,6 +2383,17 @@ function renderCartItems() {
   cartTotalAmount.textContent = `$${Math.round(finalTotal).toLocaleString()}`
   cartFooter.style.display = 'block'
 
+  // Listener para el selector del carrito (solo se añade una vez)
+  if (cartOrderTypeContainer && !cartOrderTypeContainer.dataset.listener) {
+    cartOrderTypeContainer.querySelectorAll('input[name="cartOrderType"]').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        selectedOrderType = e.target.value
+        renderCartItems()
+      })
+    })
+    cartOrderTypeContainer.dataset.listener = 'true'
+  }
+
   // Event listeners
   document.querySelectorAll('.cart-item-decrease').forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -2280,10 +2421,16 @@ function renderCartItems() {
 
   document.querySelectorAll('.cart-item-remove').forEach(btn => {
     btn.addEventListener('click', (e) => {
-      const itemKey = e.target.dataset.key
+      const itemKey = e.currentTarget.dataset.key
       cart.remove(currentBusiness.id, itemKey)
       updateCartUI()
       renderCartItems()
+
+      // Si el carrito quedó vacío, cerrarlo automáticamente
+      const cartItems = cart.get(currentBusiness.id)
+      if (cartItems.length === 0) {
+        closeCart()
+      }
     })
   })
 
@@ -2333,18 +2480,17 @@ function renderCheckoutSuggestions() {
 }
 
 // Abrir/cerrar carrito
+function closeCart() {
+  cartPanel.style.display = 'none'
+}
+
 cartFabBtn.addEventListener('click', () => {
   cartPanel.style.display = 'flex'
   renderCartItems()
 })
 
-cartClose.addEventListener('click', () => {
-  cartPanel.style.display = 'none'
-})
-
-cartOverlay.addEventListener('click', () => {
-  cartPanel.style.display = 'none'
-})
+cartClose.addEventListener('click', closeCart)
+cartOverlay.addEventListener('click', closeCart)
 
 // ============================================
 // CHECKOUT & WHATSAPP ORDER
@@ -2407,13 +2553,16 @@ checkoutForm.addEventListener('submit', async (e) => {
   e.preventDefault()
 
   // Capturar datos del formulario
+  const orderType = document.querySelector('input[name="orderType"]:checked')?.value || 'delivery'
+
   const clientData = {
     nombre: document.getElementById('clientName').value.trim(),
     telefono: document.getElementById('clientPhone').value.trim(),
     direccion: document.getElementById('clientAddress').value.trim(),
     barrio: document.getElementById('clientBarrio').value.trim(),
     metodo_pago: document.getElementById('paymentMethod').value,
-    observaciones: document.getElementById('clientNotes').value.trim()
+    observaciones: document.getElementById('clientNotes').value.trim(),
+    order_type: orderType
   }
 
   // Validar el teléfono: 10 dígitos, empieza por 3
@@ -2421,6 +2570,20 @@ checkoutForm.addEventListener('submit', async (e) => {
     notify.error('El teléfono debe tener 10 dígitos y empezar por 3. Ej: 3001234567')
     document.getElementById('clientPhone').focus()
     return
+  }
+
+  // Validar dirección y barrio solo para domicilio
+  if (orderType === 'delivery') {
+    if (!clientData.direccion) {
+      notify.error('La dirección de entrega es obligatoria para domicilios')
+      document.getElementById('clientAddress').focus()
+      return
+    }
+    if (!clientData.barrio) {
+      notify.error('El barrio es obligatorio para domicilios')
+      document.getElementById('clientBarrio').focus()
+      return
+    }
   }
 
   saveClientData(clientData) // Guardar para próximos pedidos
@@ -2472,6 +2635,7 @@ checkoutForm.addEventListener('submit', async (e) => {
 
         // Preparar datos de la orden
         const orderData = {
+          order_type: orderType,
           business_id: currentBusiness.id,
           customer_name: clientData.nombre,
           customer_phone: clientData.telefono,
@@ -2707,7 +2871,8 @@ Método de pago: {metodo_pago}
       }
     })
 
-    const deliveryPrice = parseFloat(currentBusiness.delivery_price) || 0
+    const isPickup = clientData.order_type === 'pickup'
+    const deliveryPrice = isPickup ? 0 : (parseFloat(currentBusiness.delivery_price) || 0)
     const finalTotal = subtotalWithProductTaxes + invoiceTaxesTotal + deliveryPrice
 
     let productsListStr = productsList.join('\n')
@@ -2735,6 +2900,10 @@ Método de pago: {metodo_pago}
     }
 
     // Reemplazar variables en la plantilla
+    const tipoPedidoLabel = isPickup ? "Retirar en tienda 🏪" : "Domicilio 🛵"
+    const finalDireccion = isPickup ? '' : clientData.direccion
+    const finalBarrio = isPickup ? '' : clientData.barrio
+
     let message = template
       .replace('{productos}', productsListStr)
       .replace('{total}', `$${Math.round(finalTotal).toLocaleString('es-CO')}`)
@@ -2742,20 +2911,25 @@ Método de pago: {metodo_pago}
       .replace('{telefono}', clientData.telefono)
       .replace('{metodo_pago}', clientData.metodo_pago)
       .replace('{valor de domicilio}', `$${deliveryPrice.toLocaleString('es-CO')}`)
+      .replace('{tipo_pedido}', tipoPedidoLabel)
+
+    // Cabecera fija para pedidos pickup
+    if (isPickup) {
+      message = `🏪 *PEDIDO PARA RETIRAR EN TIENDA*\n\n` + message
+    }
 
     // Si la plantilla no tiene el token {valor de domicilio} y hay domicilio, lo agregamos al final de los productos
-    if (deliveryPrice > 0 && !template.includes('{valor de domicilio}')) {
+    if (!isPickup && deliveryPrice > 0 && !template.includes('{valor de domicilio}')) {
       message = message.replace(productsListStr, `${productsListStr}\n🚚 Domicilio: $${deliveryPrice.toLocaleString('es-CO')}`)
     }
 
     // Lógica inteligente para dirección y barrio:
-    // Si la plantilla YA incluía {barrio}, reemplazamos ambos tokens por separado
-    // Si la plantilla NO incluía {barrio}, lo agregamos a la dirección para mantener compatibilidad.
     if (template.includes('{barrio}')) {
-      message = message.replace(/{direccion}/g, clientData.direccion)
-      message = message.replace(/{barrio}/g, clientData.barrio)
+      message = message.replace(/{direccion}/g, finalDireccion)
+      message = message.replace(/{barrio}/g, finalBarrio)
     } else {
-      message = message.replace(/{direccion}/g, `${clientData.direccion}, ${clientData.barrio}`)
+      const combinedAddress = isPickup ? '' : `${finalDireccion}, ${finalBarrio}`
+      message = message.replace(/{direccion}/g, combinedAddress)
     }
 
     // Agregar observaciones si existen
@@ -2776,7 +2950,7 @@ Método de pago: {metodo_pago}
     // Cerrar modal de checkout inmediatamente
     closeCheckoutModal()
     // Cerrar panel del carrito
-    cartPanel.style.display = 'none'
+    closeCart()
 
     // Opcional: Feedback visual de redirección
     const redirectModal = showRedirectModal()
@@ -2991,8 +3165,11 @@ function openRealCheckoutForm() {
   // Poblar métodos de pago dinámicamente
   populatePaymentMethods()
 
+  // Configurar opciones de entrega/retiro según el negocio
+  initCheckoutOrderType()
+
   // Cerrar carrito y abrir modal checkout
-  cartPanel.style.display = 'none'
+  closeCart()
   checkoutModal.style.display = 'flex'
 
   // Cargar datos guardados
@@ -3003,6 +3180,46 @@ function openRealCheckoutForm() {
     document.getElementById('clientName').focus()
   }, 100)
 }
+
+function initCheckoutOrderType() {
+  const container = document.getElementById('orderTypeContainer')
+  const bizAddress = document.getElementById('businessPickupAddress')
+  const deliveryOnlyFields = document.querySelectorAll('[data-delivery-only="true"]')
+  const pickupDisclaimer = document.getElementById('pickupAddressDisclaimer')
+  const addressInput = document.getElementById('clientAddress')
+  const barrioInput = document.getElementById('clientBarrio')
+
+  if (!container) return
+
+  // La selección se gestiona en el carrito, no en el checkout
+  container.style.display = 'none'
+  if (bizAddress) bizAddress.textContent = currentBusiness.address || ''
+
+  // Sincronizar radio del checkout con el estado global
+  const checkoutRadio = document.querySelector(
+    `input[name="orderType"][value="${selectedOrderType}"]`
+  )
+  if (checkoutRadio) checkoutRadio.checked = true
+
+  const updateFields = (type) => {
+    const isDelivery = type === 'delivery'
+    deliveryOnlyFields.forEach(f => f.style.display = isDelivery ? 'block' : 'none')
+    if (pickupDisclaimer) pickupDisclaimer.style.display = isDelivery ? 'none' : 'block'
+
+    // Toggle required para validación del navegador
+    if (addressInput) addressInput.required = isDelivery
+    if (barrioInput) barrioInput.required = isDelivery
+  }
+
+  // Listeners para los radios
+  document.querySelectorAll('input[name="orderType"]').forEach(radio => {
+    radio.addEventListener('change', (e) => updateFields(e.target.value))
+  })
+
+  // Estado inicial sincronizado con el carrito
+  updateFields(selectedOrderType)
+}
+
 
 // Modal de negocio cerrado
 function showClosedModal() {
@@ -3732,7 +3949,7 @@ async function checkActiveOrder() {
     if (error) return;
 
     if (dbOrders && dbOrders.length > 0) {
-      const activeOrder = dbOrders.find(o => ['pending', 'verified', 'ready', 'dispatched'].includes(o.status));
+      const activeOrder = dbOrders.find(o => ['pending', 'verified', 'for_delivery', 'dispatched', 'ready_for_pickup'].includes(o.status));
       if (activeOrder) {
         renderActiveOrderBadge(activeOrder.status);
       } else {
@@ -3769,11 +3986,12 @@ function renderActiveOrderBadge(status) {
   }
 
   const statusMap = {
-    'pending': { text: 'Por confirmar', color: '#f59e0b', icon: 'ri-time-line' },
-    'verified': { text: 'Recibido', color: '#8b5cf6', icon: 'ri-check-double-line' },
-    'ready': { text: 'Recibido', color: '#8b5cf6', icon: 'ri-check-double-line' },
-    'dispatched': { text: 'En camino', color: '#3b82f6', icon: 'ri-motorbike-line' }
-  };
+    'pending':          { text: 'Por confirmar',      color: '#f59e0b', icon: 'ri-time-line' },
+    'verified':         { text: 'Recibido',            color: '#8b5cf6', icon: 'ri-check-double-line' },
+    'for_delivery':     { text: 'Buscando domiciliario', color: '#b45309', icon: 'ri-shopping-bag-3-line' },
+    'dispatched':       { text: 'En camino',           color: '#3b82f6', icon: 'ri-motorbike-line' },
+    'ready_for_pickup': { text: 'Listo para retirar',  color: '#ea580c', icon: 'ri-store-2-line' }
+  }
 
   const st = statusMap[status] || statusMap['pending'];
 
@@ -3830,7 +4048,7 @@ async function renderTrackingOrders() {
   try {
     const { data: dbOrders, error } = await supabase
       .from('orders')
-      .select('order_token, status, created_at, customer_name, total_amount')
+      .select('order_token, status, created_at, customer_name, total_amount, order_type')
       .in('order_token', tokens)
 
     if (error) throw error
@@ -3856,6 +4074,15 @@ async function renderTrackingOrders() {
       const stDetails = statusMap[order.status] || statusMap['pending']
       const dateStr = new Date(order.created_at).toLocaleString('es-CO', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 
+      // Lógica de Niveles y Progreso según tipo de pedido
+      const isPickup = order.order_type === 'pickup'
+      const orderLevels = isPickup
+        ? { pending: 1, verified: 2, ready_for_pickup: 3, completed: 4, cancelled: -1 }
+        : { pending: 1, verified: 2, for_delivery: 2, dispatched: 3, completed: 4, cancelled: -1 }
+      
+      const currentLvl = orderLevels[order.status] || 1
+      const progressWidth = currentLvl === -1 ? '0%' : `${((currentLvl - 1) / 3 * 100)}%`
+
       const localO = localOrders.find(o => o.token === order.order_token)
       if (localO) {
         localO.status = order.status
@@ -3874,13 +4101,20 @@ async function renderTrackingOrders() {
           <div class="tracking-status" data-status="${order.status}" style="margin-top: 1rem;">
             <div style="display: flex; justify-content: space-between; position: relative;">
                <div style="position: absolute; top: 12px; left: 10%; right: 10%; height: 2px; background: #e2e8f0; z-index: 1;">
-               <div class="tracking-progress-fill" style="position: absolute; top:0; left:0; height:100%; background: ${stDetails.color}; width: ${getProgressWidth(order.status)}; transition: width 0.5s ease;"></div>
+               <div class="tracking-progress-fill" style="position: absolute; top:0; left:0; height:100%; background: ${stDetails.color}; width: ${progressWidth}; transition: width 0.5s ease;"></div>
                </div>
                
-               ${renderTrackingStep('pending', order.status, 'ri-time-line', 'Por confrmar')}
-               ${renderTrackingStep('verified', order.status, 'ri-check-double-line', 'Recibido')}
-               ${renderTrackingStep('dispatched', order.status, 'ri-motorbike-line', 'En camino')}
-               ${renderTrackingStep('completed', order.status, 'ri-flag-line', 'Entregado')}
+               ${isPickup ? `
+                 ${renderTrackingStep('ri-time-line', 'Por confirmar', currentLvl >= 1)}
+                 ${renderTrackingStep('ri-check-double-line', 'Recibido', currentLvl >= 2)}
+                 ${renderTrackingStep('ri-store-2-line', 'Listo p/ retirar', currentLvl >= 3)}
+                 ${renderTrackingStep('ri-flag-line', 'Retirado', currentLvl >= 4)}
+               ` : `
+                 ${renderTrackingStep('ri-time-line', 'Por confirmar', currentLvl >= 1)}
+                 ${renderTrackingStep('ri-check-double-line', 'Recibido', currentLvl >= 2)}
+                 ${renderTrackingStep('ri-motorbike-line', 'En camino', currentLvl >= 3)}
+                 ${renderTrackingStep('ri-flag-line', 'Entregado', currentLvl >= 4)}
+               `}
             </div>
             ${order.status === 'cancelled' ? `
               <div style="margin-top: 1rem; padding: 0.5rem; background: #fee2e2; color: #dc2626; border-radius: 0.25rem; text-align: center; font-weight: 600; font-size: 0.9rem;">
@@ -3910,17 +4144,12 @@ function getProgressWidth(status) {
   return '0%';
 }
 
-function renderTrackingStep(stepStatus, currentStatus, icon, label) {
-  const levels = { 'pending': 1, 'verified': 2, 'ready': 2, 'dispatched': 3, 'completed': 4, 'cancelled': -1 }
-  const currentLvl = levels[currentStatus] || 1
-  const stepLvl = levels[stepStatus]
-
+function renderTrackingStep(icon, label, isCompleted) {
   let color = '#9ca3af'
   let bg = '#f3f4f6'
   let borderColor = '#e2e8f0'
 
-  if (currentStatus === 'cancelled') {
-  } else if (currentLvl >= stepLvl) {
+  if (isCompleted) {
     color = 'white'
     bg = 'var(--color-primary)'
     borderColor = 'var(--color-primary)'
@@ -3931,7 +4160,7 @@ function renderTrackingStep(stepStatus, currentStatus, icon, label) {
       <div style="width: 24px; height: 24px; border-radius: 50%; background: ${bg}; border: 2px solid ${borderColor}; display: flex; align-items: center; justify-content: center; color: ${color}; font-size: 0.9rem; transition: all 0.3s ease;">
         <i class="${icon}"></i>
       </div>
-      <span style="font-size: 0.7rem; font-weight: 500; color: ${currentLvl >= stepLvl ? 'var(--color-text)' : 'var(--text-muted)'};">${label}</span>
+      <span style="font-size: 0.7rem; font-weight: 500; color: ${isCompleted ? 'var(--color-text)' : 'var(--text-muted)'};">${label}</span>
     </div>
   `
 }

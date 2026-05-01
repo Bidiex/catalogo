@@ -1,0 +1,294 @@
+.catalog-color-picker-section {
+  margin-top: 1.5rem;
+}
+
+#catalog-color-picker-container .color-picker-description {
+  color: #64748b;
+  font-size: 0.875rem;
+  margin-bottom: 1.5rem;
+}
+
+#catalog-color-picker-container .color-picker-component {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+#catalog-color-picker-container .picker-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+#catalog-color-picker-container .color-inputs-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+#catalog-color-picker-container .selected-color-indicator {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #e2e8f0);
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+#catalog-color-picker-container #catalogBgColorInput {
+  display: none;
+}
+
+#catalog-color-picker-container #catalogBgHexInput {
+  flex: 1;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
+
+#catalog-color-picker-container .color-swatches {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 8px;
+}
+
+#catalog-color-picker-container .swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform 0.15s, border-color 0.15s;
+}
+
+#catalog-color-picker-container .swatch:hover {
+  transform: scale(1.1);
+}
+
+#catalog-color-picker-container .swatch.active {
+  border-color: var(--color-primary);
+}
+
+#catalog-color-picker-container .contrast-warning {
+  visibility: hidden;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background-color: #fffbeb;
+  border: 1px solid #fef3c7;
+  border-radius: var(--radius-md);
+  color: #92400e;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+#catalog-color-picker-container .contrast-warning.visible {
+  visibility: visible;
+}
+
+#catalog-color-picker-container .contrast-warning i {
+  color: #d97706;
+  font-size: 1.25rem;
+}
+
+#catalog-color-picker-container .form-actions {
+  margin-top: 0.5rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+#catalog-color-picker-container #saveCatalogColorBtn {
+  min-width: 160px;
+}
+
+@media (max-width: 480px) {
+  #catalog-color-picker-container .form-actions {
+    justify-content: stretch;
+  }
+  
+  #catalog-color-picker-container #saveCatalogColorBtn {
+    flex: 1;
+  }
+}
+
+/* Catalog Background Color Picker Modal Styles */
+#catalogBgColorModal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 2000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+#catalogBgColorModal.active {
+  display: flex;
+  opacity: 1;
+}
+
+#catalogBgColorModal .modal-content {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  transform: scale(0.95);
+  transition: transform 0.3s ease;
+}
+
+#catalogBgColorModal.active .modal-content {
+  transform: scale(1);
+}
+
+#catalogBgColorModal .modal-body {
+  padding: 1.5rem;
+}
+
+#catalogBgColorModal .color-picker-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+#catalogBgColorModal .color-main-selector {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+#catalogBgColorModal .selected-color-indicator {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px #e2e8f0, 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+#catalogBgColorModal #catalogBgColorInput {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+#catalogBgColorModal .selected-color-indicator:hover {
+  transform: scale(1.05);
+}
+
+#catalogBgColorModal .hex-input-wrapper {
+  flex: 1;
+}
+
+#catalogBgColorModal .hex-input-wrapper label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+}
+
+#catalogBgColorModal .hex-input-field {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+  padding: 0;
+}
+
+#catalogBgColorModal .hex-input-field:focus {
+  outline: none;
+}
+
+#catalogBgColorModal .color-swatches-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 0.5rem;
+}
+
+#catalogBgColorModal .swatch-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px #e2e8f0;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+#catalogBgColorModal .swatch-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 0 1px #cbd5e1, 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+#catalogBgColorModal .swatch-btn.active {
+  transform: scale(0.9);
+  box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+#catalogBgColorModal .swatch-btn.active::after {
+  content: '\eb7a';
+  font-family: 'remixicon';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #fff;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+  font-size: 1.25rem;
+}
+
+/* Checkmark contrast for light swatches */
+#catalogBgColorModal .swatch-btn.active.light-swatch::after {
+  color: #1e293b;
+}
+
+#catalogBgColorModal .contrast-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.875rem;
+  background: #fff7ed;
+  border: 1px solid #ffedd5;
+  border-radius: 8px;
+  color: #9a3412;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  transition: all 0.3s ease;
+}
+
+#catalogBgColorModal .contrast-warning i {
+  font-size: 1.25rem;
+  color: #f97316;
+  margin-top: -1px;
+}
+
+#catalogBgColorModal .modal-footer {
+  display: flex;
+  justify-content: center;
+}

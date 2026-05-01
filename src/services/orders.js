@@ -32,7 +32,14 @@ export const ordersService = {
             // 1. Create the Order
             const { error: orderError } = await supabase
                 .from('orders')
-                .insert([{ ...orderData, id: orderId }])
+                .insert([{ 
+                    ...orderData, 
+                    id: orderId,
+                    // En pickup forzamos nulls en dirección y barrio, y 0 en domicilio
+                    customer_address: orderData.order_type === 'pickup' ? null : orderData.customer_address,
+                    customer_neighborhood: orderData.order_type === 'pickup' ? null : orderData.customer_neighborhood,
+                    delivery_price: orderData.order_type === 'pickup' ? 0 : (orderData.delivery_price || 0)
+                }])
 
             if (orderError) throw orderError
 

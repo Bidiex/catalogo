@@ -78,9 +78,16 @@ export const cart = {
    * NO requiere businessId ya que es interno del producto
    */
   generateItemKey(productId, options) {
-    const quickComment = options.quickComment || ''
-    const sides = (options.sides || []).sort().join(',')
-    return `${productId}-${quickComment}-${sides}`
+    const sizeId = options.size ? options.size.id : 'default';
+    const quickComment = options.quickComment ? (options.quickComment.id || options.quickComment.name) : '';
+    const quickComments = (options.quickComments || []).map(qc => qc.id || qc.name).sort().join(',');
+    const sides = (options.sides || []).map(s => s.id || s.name || s).sort().join(',');
+    const groups = (options.groups || []).map(g => {
+      const selections = (g.selections || []).map(s => s.id || s.name).sort().join(',');
+      return `${g.id || g.name}:${selections}`;
+    }).sort().join('|');
+
+    return `${productId}--${sizeId}--${quickComment}--${quickComments}--${sides}--${groups}`;
   },
 
   /**
