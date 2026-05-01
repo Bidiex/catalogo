@@ -3943,17 +3943,20 @@ async function checkActiveOrder() {
 
   existingOrders.sort((a, b) => new Date(b.date) - new Date(a.date));
   const tokens = existingOrders.map(o => o.token);
+  console.log('[TraeGo Debug] checkActiveOrder - tokens a consultar:', tokens)
 
   try {
     const { data: dbOrders, error } = await supabase
       .from('orders')
       .select('status, order_token')
       .in('order_token', tokens.slice(0, 3));
+    console.log('[TraeGo Debug] dbOrders resultado:', dbOrders, '| error:', error)
 
     if (error) return;
 
     if (dbOrders && dbOrders.length > 0) {
       const activeOrder = dbOrders.find(o => ['pending', 'verified', 'for_delivery', 'dispatched', 'ready_for_pickup'].includes(o.status));
+      console.log('[TraeGo Debug] activeOrder encontrado:', activeOrder)
       if (activeOrder) {
         renderActiveOrderBadge(activeOrder.status);
       } else {
