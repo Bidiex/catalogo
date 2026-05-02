@@ -27,6 +27,7 @@ import { imageService } from '../../services/images.js'
 import { supportService } from '../../services/support.js'
 import { ordersService } from '../../services/orders.js'
 import { deliveryPersonsService } from '../../services/deliveryPersons.js'
+import { operatorsService } from '../../services/operators.js'
 import { businessSidesService } from '../../services/businessSidesService.js'
 import { taxesService } from '../../services/taxes.js'
 import { deliveryPhotoService } from '../../services/deliveryPhotoService.js'
@@ -79,6 +80,9 @@ let currentOrderFilter = 'all'
 let currentOrdersView = 'table' // 'table' or 'mosaic'
 let deliveryPersons = []
 let editingDeliveryPerson = null
+let operators = []
+let editingOperator = null
+let operatorsInitialized = false
 
 // Wizard onboarding logo
 let wizardLogoUrl = null
@@ -361,8 +365,9 @@ function initSidebarNavigation() {
         loadDeliveryPersons()
       }
 
-      if (section === 'delivery-persons' && currentBusiness) {
-        loadDeliveryPersons()
+      if (section === 'operators' && currentBusiness) {
+        if (!operatorsInitialized) initOperators()
+        loadOperators()
       }
 
       if (section === 'links' && currentBusiness) {
@@ -8149,6 +8154,188 @@ function getTranslatedStatus(status) {
     'cancelled': 'Cancelado'
   }
   return map[status] || status
+}
+
+// ============================================
+// GESTIÓN DE OPERADORES
+// ============================================
+const PERMISOS_LABELS = {
+  manage_orders: 'Gestionar pedidos',
+  create_products: 'Crear productos',
+  edit_products: 'Editar productos',
+  delete_products: 'Eliminar productos',
+  view_analytics: 'Ver analíticas'
+}
+
+function initOperators() {
+  const addBtn = document.getElementById('addOperatorBtn')
+  if (addBtn) {
+    addBtn.addEventListener('click', () => openOperatorModal())
+  }
+
+  const closeBtn = document.getElementById('closeOperatorModal')
+  const cancelBtn = document.getElementById('cancelOperatorBtn')
+  const saveBtn = document.getElementById('saveOperatorBtn')
+
+  if (closeBtn) closeBtn.addEventListener('click', () => {
+    document.getElementById('operatorModal').style.display = 'none'
+  })
+  if (cancelBtn) cancelBtn.addEventListener('click', () => {
+    document.getElementById('operatorModal').style.display = 'none'
+  })
+  if (saveBtn) saveBtn.addEventListener('click', saveOperator)
+
+  operatorsInitialized = true
+}
+
+async function loadOperators() {
+  try {
+    if (!currentBusiness) return
+    const data = await operatorsService.getAll(currentBusiness.id)
+    operators = data || []
+    renderOperatorsTable(operators)
+  } catch (error) {
+    console.error('Error loading operators:', error)
+    notify.error('Error al cargar operadores')
+  }
+}
+
+function renderOperatorsTable(list) {
+  const tbody = document.getElementById('operatorsTableBody')
+  if (!tbody) return
+
+  tbody.innerHTML = ''
+
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No hay operadores registrados</td></tr>'
+    return
+  }
+
+  list.forEach(op => {
+    const tr = document.createElement('tr')
+    
+    const permissions = op.permissions || {}
+    const activePerms = Object.keys(PERMISOS_LABELS)
+      .filter(key => permissions[key])
+      .map(key => `<span class="badge-status active" style="font-size: 10px; padding: 2px 6px; margin: 1px;">${PERMISOS_LABELS[key]}</span>`)
+      .join(' ')
+
+    const statusClass = op.is_active ? 'active' : 'inactive'
+    const statusText = op.is_active ? 'Activo' : 'Inactivo'
+
+    tr.innerHTML = `
+      <td><strong>${op.name}</strong></td>
+      <td><span class="delivery-code">${op.unique_code}</span></td>
+      <td><div style="display: flex; flex-wrap: wrap; gap: 2px;">${activePerms || '<small>Sin permisos</small>'}</div></td>
+      <td>
+        <span class="badge-status ${statusClass}">${statusText}</span>
+      </td>
+      <td>
+        <div class="action-buttons">
+          <button class="btn-icon" onclick="toggleOperatorActive('${op.id}', ${op.is_active})" title="${op.is_active ? 'Desactivar' : 'Activar'}">
+            <i class="ri-switch-line"></i>
+          </button>
+          <button class="btn-icon" onclick="openOperatorModalById('${op.id}')" title="Editar">
+            <i class="ri-pencil-line"></i>
+          </button>
+          <button class="btn-icon danger" onclick="deleteOperator('${op.id}')" title="Eliminar">
+            <i class="ri-delete-bin-line"></i>
+          </button>
+        </div>
+      </td>
+    `
+    tbody.appendChild(tr)
+  })
+}
+
+window.openOperatorModalById = (id) => {
+  const operator = operators.find(op => op.id === id)
+  if (operator) openOperatorModal(operator)
+}
+
+function openOperatorModal(operator = null) {
+  const modal = document.getElementById('operatorModal')
+  const title = document.getElementById('operatorModalTitle')
+  const nameInput = document.getElementById('operatorName')
+  
+  editingOperator = operator
+
+  if (operator) {
+    title.textContent = 'Editar operador'
+    nameInput.value = operator.name
+    
+    const permissions = operator.permissions || {}
+    Object.keys(PERMISOS_LABELS).forEach(key => {
+      const chk = document.getElementById(`perm-${key}`)
+      if (chk) chk.checked = !!permissions[key]
+    })
+  } else {
+    title.textContent = 'Nuevo operador'
+    nameInput.value = ''
+    Object.keys(PERMISOS_LABELS).forEach(key => {
+      const chk = document.getElementById(`perm-${key}`)
+      if (chk) chk.checked = false
+    })
+  }
+
+  modal.style.display = 'flex'
+}
+
+async function saveOperator() {
+  const name = document.getElementById('operatorName').value
+  if (!name) return notify.error('El nombre es obligatorio')
+
+  const permissions = {}
+  Object.keys(PERMISOS_LABELS).forEach(key => {
+    const chk = document.getElementById(`perm-${key}`)
+    if (chk) permissions[key] = chk.checked
+  })
+
+  const saveBtn = document.getElementById('saveOperatorBtn')
+  try {
+    await buttonLoader.execute(saveBtn, async () => {
+      const data = { business_id: currentBusiness.id, name, permissions }
+      if (editingOperator) {
+        await operatorsService.update(editingOperator.id, data)
+        notify.success('Operador actualizado')
+      } else {
+        await operatorsService.create(data)
+        notify.success('Operador creado')
+      }
+      document.getElementById('operatorModal').style.display = 'none'
+      loadOperators()
+    }, 'Guardando...')
+  } catch (error) {
+    notify.error('Error al guardar')
+  }
+}
+
+window.deleteOperator = async (id) => {
+  const confirmed = await confirm.show({
+    title: 'Eliminar operador',
+    message: '¿Estás seguro?',
+    confirmText: 'Eliminar',
+    type: 'danger'
+  })
+  if (confirmed) {
+    try {
+      await operatorsService.delete(id)
+      notify.success('Operador eliminado')
+      loadOperators()
+    } catch (error) {
+      notify.error('Error al eliminar')
+    }
+  }
+}
+
+window.toggleOperatorActive = async (id, currentState) => {
+  try {
+    await operatorsService.toggleActive(id, currentState)
+    notify.success('Estado actualizado')
+    loadOperators()
+  } catch (error) {
+    notify.error('Error al actualizar')
+  }
 }
 
 // ============================================

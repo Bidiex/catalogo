@@ -54,6 +54,10 @@
           <i class="ri-motorbike-line"></i>
           <span>Domiciliarios</span>
         </a>
+        <a href="#" class="nav-item" data-section="operators">
+          <i class="ri-user-settings-line"></i>
+          <span>Operadores</span>
+        </a>
 
         <a href="#" class="nav-item" data-section="products">
           <i class="ri-shopping-bag-line"></i>
@@ -682,6 +686,34 @@
               </div>
             </div>
           </section>
+        </div>
+
+        <div id="section-operators" class="dashboard-section" style="display:none">
+          <div class="section-header">
+            <h2>Operadores</h2>
+            <button class="btn-primary" id="addOperatorBtn">
+              <i class="ri-add-line"></i> Nuevo operador
+            </button>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Código</th>
+                  <th>Permisos</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="operatorsTableBody">
+                <tr>
+                  <td colspan="5" class="empty-state">No hay operadores registrados</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <!-- Section: Links Center -->
@@ -2737,6 +2769,57 @@
           <button type="submit" class="btn-primary" id="saveDeliveryPersonBtn">Guardar</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Modal operadores -->
+  <div id="operatorModal" class="modal" style="display:none">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="operatorModalTitle">Nuevo operador</h3>
+        <button class="modal-close" id="closeOperatorModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Nombre</label>
+          <input type="text" id="operatorName" placeholder="Nombre del operador" />
+        </div>
+
+        <div class="form-group">
+          <label>Permisos</label>
+          <div class="permissions-grid">
+            <label class="permission-item">
+              <input type="checkbox" id="perm-manage_orders" />
+              <span>Gestionar pedidos</span>
+              <small>Verificar, despachar y completar pedidos</small>
+            </label>
+            <label class="permission-item">
+              <input type="checkbox" id="perm-create_products" />
+              <span>Crear productos</span>
+              <small>Agregar productos al catálogo</small>
+            </label>
+            <label class="permission-item">
+              <input type="checkbox" id="perm-edit_products" />
+              <span>Editar productos</span>
+              <small>Modificar productos existentes</small>
+            </label>
+            <label class="permission-item">
+              <input type="checkbox" id="perm-delete_products" />
+              <span>Eliminar productos</span>
+              <small>Borrar productos del catálogo</small>
+            </label>
+            <label class="permission-item">
+              <input type="checkbox" id="perm-view_analytics" />
+              <span>Ver analíticas</span>
+              <small>Acceso a métricas y reportes</small>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="cancelOperatorBtn">Cancelar</button>
+        <button class="btn-primary" id="saveOperatorBtn">Guardar</button>
+      </div>
     </div>
   </div>
 
