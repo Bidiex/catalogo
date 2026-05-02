@@ -2628,7 +2628,7 @@ checkoutForm.addEventListener('submit', async (e) => {
           invoiceTaxesTotal += subtotalWithProductTaxes * (parseFloat(tax.rate) / 100)
         })
 
-        const totalAmount = subtotalWithProductTaxes + invoiceTaxesTotal + deliveryPrice
+        const totalAmount = subtotalWithProductTaxes + invoiceTaxesTotal + (orderType === 'delivery' ? deliveryPrice : 0)
 
         // Generar token para seguimiento (Pro feature)
         const orderToken = crypto.randomUUID()
