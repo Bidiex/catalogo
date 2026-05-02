@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TraeGo — Panel de Operadores</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Remix Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <!-- Styles -->
+    <link rel="stylesheet" href="./operator.css">
+</head>
+<body>
+
+    <!-- PANTALLA: LOGIN -->
+    <main id="screen-login">
+        <div class="login-card">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 1.5rem;">
+                <img src="/src/assets/icon_traego.svg" alt="TraeGo Icon" style="width: 32px;">
+                <img src="/src/assets/logo_traego.svg" alt="TraeGo Logo" style="height: 18px;">
+            </div>
+            <h1>Panel de Operadores</h1>
+            <p>Ingresa tu código para gestionar pedidos.</p>
+            
+            <form id="loginForm" class="login-form">
+                <div class="input-group">
+                    <label for="operatorCode">Código de Operador</label>
+                    <input type="text" id="operatorCode" placeholder="OP-XXXXX" required maxlength="8" autocomplete="off" spellcheck="false">
+                </div>
+                <button type="submit" class="btn-primary" id="loginBtn">Ingresar al Panel</button>
+                <div id="loginError" class="hidden" style="color: #ef4444; font-size: 0.85rem; margin-top: 1rem; font-weight: 600;"></div>
+            </form>
+        </div>
+    </main>
+
+    <!-- PANTALLA: DASHBOARD PRINCIPAL -->
+    <div id="screen-main" class="hidden">
+        <!-- Sidebar Izquierdo -->
+        <aside class="sidebar">
+            <div class="biz-info">
+                <div class="biz-logo" id="sidebarBizLogo">
+                    <i class="ri-store-2-line" style="color: #ccc; font-size: 2rem;"></i>
+                </div>
+                <h3 class="biz-name" id="sidebarBizName">Cargando...</h3>
+            </div>
+
+            <div class="op-info">
+                <span class="perm-title">Operador activo</span>
+                <h4 class="op-name" id="sidebarOpName">---</h4>
+                
+                <span class="perm-title">Permisos activos</span>
+                <div class="perm-list" id="sidebarPerms">
+                    <!-- Inyectado por JS -->
+                </div>
+            </div>
+
+            <button class="btn-logout" id="logoutBtn">
+                <i class="ri-logout-box-r-line"></i> Cerrar Sesión
+            </button>
+        </aside>
+
+        <!-- Área de Contenido Principal -->
+        <main class="main-area">
+            <header class="header">
+                <h2>Pedidos activos</h2>
+                <div class="order-counter">
+                    <span id="orderCount">0</span> pedidos en total
+                </div>
+            </header>
+
+            <section class="content">
+                <div class="orders-grid" id="ordersGrid">
+                    <!-- Inyectado por JS: Tarjetas de pedidos -->
+                    <div class="loading-state" style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-muted);">
+                        <i class="ri-loader-4-line ri-spin" style="font-size: 2rem;"></i>
+                        <p style="margin-top: 0.5rem;">Cargando pedidos...</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="./operator.js"></script>
+</body>
+</html>

@@ -1,0 +1,359 @@
+/* =============================================================
+   OPERATOR UI — operator.css
+   Desktop-first management interface
+   ============================================================= */
+
+:root {
+  /* Brand colors (from dashboard) */
+  --color-primary: #4CED17;
+  --color-primary-dark: #3dd413;
+  --color-primary-light: rgba(76, 237, 23, 0.12);
+  
+  /* Neutral professional palette */
+  --bg-app: #f4f7f6;
+  --bg-sidebar: #1a1c1e;
+  --bg-card: #ffffff;
+  --text-main: #1f2937;
+  --text-secondary: #4b5563;
+  --text-muted: #9ca3af;
+  --border-color: #e5e7eb;
+
+  /* Status Colors */
+  --status-pending: #fbbf24;     /* Amarillo */
+  --status-verified: #3b82f6;    /* Azul */
+  --status-delivery: #f97316;    /* Naranja */
+  --status-dispatched: #8b5cf6;  /* Morado */
+  --status-completed: #10b981;   /* Verde */
+  --status-cancelled: #ef4444;   /* Rojo */
+
+  /* Layout */
+  --sidebar-width: 280px;
+  --header-height: 70px;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --radius: 12px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  height: 100vh;
+  overflow: hidden;
+}
+
+.hidden { display: none !important; }
+
+/* ============================================================ */
+/* LOGIN SCREEN                                                */
+/* ============================================================ */
+#screen-login {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1a1c1e 0%, #2d3135 100%);
+}
+
+.login-card {
+  background: white;
+  padding: 2.5rem;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: var(--shadow-md);
+  text-align: center;
+}
+
+.login-logo {
+  width: 120px;
+  margin-bottom: 1.5rem;
+}
+
+.login-card h1 {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.login-card p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 2rem;
+}
+
+.input-group {
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+.input-group label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text-secondary);
+}
+
+.input-group input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius);
+  font-size: 1rem;
+  text-align: center;
+  letter-spacing: 2px;
+  font-weight: 700;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input-group input:focus {
+  border-color: var(--color-primary);
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 0.85rem;
+  background-color: var(--color-primary);
+  color: #000;
+  border: none;
+  border-radius: var(--radius);
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.1s, background-color 0.2s;
+}
+
+.btn-primary:active { transform: scale(0.98); }
+
+/* ============================================================ */
+/* MAIN LAYOUT                                                 */
+/* ============================================================ */
+#screen-main {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) 1fr;
+  height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+  background-color: var(--bg-sidebar);
+  color: white;
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid rgba(255,255,255,0.1);
+}
+
+.biz-info {
+  margin-bottom: 3rem;
+  text-align: center;
+}
+
+.biz-logo {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  background: white;
+  margin: 0 auto 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.biz-logo img { width: 100%; height: 100%; object-fit: cover; }
+
+.biz-name { font-weight: 700; font-size: 1.1rem; }
+
+.op-info {
+  flex: 1;
+}
+
+.op-name { font-weight: 600; margin-bottom: 1rem; color: var(--color-primary); }
+
+.perm-title { font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; display: block; }
+
+.perm-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+.perm-badge {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  background: rgba(255,255,255,0.1);
+  border-radius: 4px;
+  color: #ccc;
+}
+
+.btn-logout {
+  background: none;
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #ff4d4d;
+  padding: 0.6rem;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 2rem;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.btn-logout:hover { background: rgba(255, 77, 77, 0.1); }
+
+/* Main Area */
+.main-area {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.header {
+  height: var(--header-height);
+  background: white;
+  border-bottom: 1px solid var(--border-color);
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header h2 { font-size: 1.25rem; }
+
+.order-counter {
+  background: var(--bg-app);
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.content {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+/* Orders Grid */
+.orders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.order-card {
+  background: white;
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.order-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.order-id { font-weight: 800; font-family: monospace; font-size: 1.1rem; color: var(--text-secondary); }
+
+.status-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+
+.status-pending { background: #fef3c7; color: #92400e; }
+.status-verified { background: #dbeafe; color: #1e40af; }
+.status-for_delivery { background: #ffedd5; color: #9a3412; }
+.status-dispatched { background: #ede9fe; color: #5b21b6; }
+.status-completed { background: #d1fae5; color: #065f46; }
+.status-cancelled { background: #fee2e2; color: #991b1b; }
+
+.customer-name { font-weight: 700; font-size: 1.1rem; }
+
+.order-items {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.order-total {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-top: auto;
+}
+
+.card-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.btn-action {
+  flex: 1;
+  padding: 0.6rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--color-primary);
+  color: #000;
+  font-size: 0.85rem;
+  transition: opacity 0.2s;
+}
+
+.btn-action:hover { opacity: 0.9; }
+
+/* ============================================================ */
+/* RESPONSIVE                                                  */
+/* ============================================================ */
+@media (max-width: 768px) {
+  #screen-main {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    height: auto;
+    padding: 1rem;
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  /* Ajuste solicitado para prevenir rotura de layout en mobile */
+  .biz-name { 
+    font-size: 0.85rem; 
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    max-width: 120px; 
+  }
+
+  .biz-info, .btn-logout { margin: 0; }
+  .biz-logo { width: 40px; height: 40px; margin-bottom: 0; }
+  .op-info { flex: 1; }
+  .perm-list { display: none; }
+  .op-name { margin-bottom: 0; font-size: 0.9rem; }
+  
+  .header { padding: 0 1rem; }
+  .content { padding: 1rem; }
+  .orders-grid { grid-template-columns: 1fr; }
+}

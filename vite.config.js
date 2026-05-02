@@ -25,6 +25,7 @@ export default defineConfig({
 
         'links': resolve(__dirname, 'src/pages/links/index.html'),
         'delivery': resolve(__dirname, 'src/pages/delivery/index.html'),
+        'operator': resolve(__dirname, 'src/pages/operator/index.html'),
         '404': resolve(__dirname, 'src/pages/404/index.html'),
       },
       output: {
@@ -81,6 +82,10 @@ export default defineConfig({
           else if (req.url.startsWith('/d/') && !req.url.includes('.')) {
             req.url = '/src/pages/delivery/index.html'
           }
+          // Handle /o/:slug routes (UI Operadores)
+          else if (req.url.startsWith('/o/') && !req.url.includes('.')) {
+            req.url = '/src/pages/operator/index.html'
+          }
 
           next()
         })
@@ -127,6 +132,10 @@ export default defineConfig({
           else if (req.url.startsWith('/d/') && !req.url.includes('.')) {
             req.url = '/delivery.html'
           }
+          // Handle /o/:slug routes (UI Operadores)
+          else if (req.url.startsWith('/o/') && !req.url.includes('.')) {
+            req.url = '/operator.html'
+          }
           // Handle query strings (e.g., /auth/callback?code=...)
           else {
             const urlWithoutQuery = req.url.split('?')[0]
@@ -172,6 +181,7 @@ export default defineConfig({
           moveFile(resolve(srcDir, 'admin/announcements/index.html'), resolve(distDir, 'admin-announcements.html'))
           moveFile(resolve(srcDir, 'links/index.html'), resolve(distDir, 'links.html'))
           moveFile(resolve(srcDir, 'delivery/index.html'), resolve(distDir, 'delivery.html'))
+          moveFile(resolve(srcDir, 'operator/index.html'), resolve(distDir, 'operator.html'))
           moveFile(resolve(srcDir, '404/index.html'), resolve(distDir, '404.html'))
 
           // Optional: Clean up src directory in dist if empty or no longer needed
