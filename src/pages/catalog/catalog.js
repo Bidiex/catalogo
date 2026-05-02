@@ -2702,6 +2702,11 @@ checkoutForm.addEventListener('submit', async (e) => {
         // Guardar para seguimiento local
         saveOrderToTracking(currentBusiness.id, orderToken, totalAmount)
 
+        // Mostrar badge inmediatamente sin esperar regreso de WhatsApp
+        if (currentBusiness.plan_type === 'pro') {
+          checkActiveOrder()
+        }
+
         // Pasar el token al envío de WhatsApp
         await sendWhatsAppOrder(clientData, orderToken)
       } else {
