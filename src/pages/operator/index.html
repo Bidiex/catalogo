@@ -11,7 +11,7 @@
     <!-- Remix Icons -->
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <!-- Styles -->
-    <link rel="stylesheet" href="./operator.css">
+    <link rel="stylesheet" href="/src/pages/operator/operator.css">
 </head>
 <body>
 
@@ -40,47 +40,69 @@
     <div id="screen-main" class="hidden">
         <!-- Sidebar Izquierdo -->
         <aside class="sidebar">
+          <div class="sidebar-brand">
+            <img src="/src/assets/icon_traego.svg" alt="TraeGo">
+            <img src="/src/assets/logo_traego.svg" alt="TraeGo">
+          </div>
+
+          <div class="sidebar-section">
+            <span class="sidebar-section-label">Negocio</span>
             <div class="biz-info">
-                <div class="biz-logo" id="sidebarBizLogo">
-                    <i class="ri-store-2-line" style="color: #ccc; font-size: 2rem;"></i>
-                </div>
-                <h3 class="biz-name" id="sidebarBizName">Cargando...</h3>
+              <div class="biz-logo" id="sidebarBizLogo">
+                <i class="ri-store-2-line"></i>
+              </div>
+              <div>
+                <div class="biz-name" id="sidebarBizName">Cargando...</div>
+              </div>
             </div>
+          </div>
 
-            <div class="op-info">
-                <span class="perm-title">Operador activo</span>
-                <h4 class="op-name" id="sidebarOpName">---</h4>
-                
-                <span class="perm-title">Permisos activos</span>
-                <div class="perm-list" id="sidebarPerms">
-                    <!-- Inyectado por JS -->
-                </div>
-            </div>
+          <div class="sidebar-section">
+            <span class="sidebar-section-label">Operador activo</span>
+            <div class="op-name" id="sidebarOpName">---</div>
+            <div class="op-role">Operador</div>
+          </div>
 
+          <div class="sidebar-section">
+            <span class="sidebar-section-label">Permisos activos</span>
+            <div class="perm-list" id="sidebarPerms"></div>
+          </div>
+
+          <div class="sidebar-footer">
             <button class="btn-logout" id="logoutBtn">
-                <i class="ri-logout-box-r-line"></i> Cerrar Sesión
+              <i class="ri-logout-box-r-line"></i> Cerrar Sesión
             </button>
+          </div>
         </aside>
 
         <!-- Área de Contenido Principal -->
         <main class="main-area">
-            <header class="header">
-                <h2>Pedidos activos</h2>
-                <div class="order-counter">
-                    <span id="orderCount">0</span> pedidos en total
-                </div>
-            </header>
-
-            <section class="content">
-                <div class="orders-grid" id="ordersGrid">
-                    <!-- Inyectado por JS: Tarjetas de pedidos -->
-                    <div class="loading-state" style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-muted);">
-                        <i class="ri-loader-4-line ri-spin" style="font-size: 2rem;"></i>
-                        <p style="margin-top: 0.5rem;">Cargando pedidos...</p>
-                    </div>
-                </div>
-            </section>
+          <header class="main-header">
+            <h2>Pedidos activos</h2>
+            <span class="order-counter"><span id="orderCount">0</span> pedidos en total</span>
+          </header>
+          <section class="content">
+            <div class="content-card">
+              <div class="orders-grid" id="ordersGrid"></div>
+            </div>
+          </section>
         </main>
+    </div>
+
+    <!-- Assign Order Modal -->
+    <div id="opAssignModal" class="op-modal-overlay hidden">
+      <div class="op-modal">
+        <div class="op-modal-header">
+          <h3>Despachar pedido <span id="opAssignOrderRef"></span></h3>
+          <button class="op-modal-close" onclick="const m=document.getElementById('opAssignModal');m.classList.add('hidden');m.style.display='none'">&times;</button>
+        </div>
+        <div class="op-modal-body">
+          <p style="color:var(--text-muted);margin-bottom:1rem;font-size:0.9rem;">
+            Selecciona el domiciliario para este pedido:
+          </p>
+          <div id="opAssignList"></div>
+        </div>
+      </div>
     </div>
 
     <!-- Scripts -->
