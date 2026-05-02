@@ -157,15 +157,18 @@ async function loadOrders() {
     
     const { data, error } = await supabase
         .from('orders')
-        .select('id, order_token, customer_name, total_amount, status, order_items, created_at')
+        .select('id, order_token, customer_name, customer_address, total_amount, status, order_type, order_notes, created_at')
         .eq('business_id', currentBusiness.id)
         .in('status', activeStatuses)
         .order('created_at', { ascending: false })
 
-    if (!error) {
-        currentOrders = data
-        renderOrders(data)
+    if (error) {
+        console.error('loadOrders error:', error)
+        return
     }
+
+    currentOrders = data
+    renderOrders(data)
 }
 
 function renderOrders(orders) {
@@ -186,9 +189,7 @@ function renderOrders(orders) {
         card.className = 'order-card'
         
         const ref = order.order_token ? order.order_token.split('-')[0] : order.id.slice(0,5)
-        const itemsSummary = Array.isArray(order.order_items) 
-            ? order.order_items.map(i => `${i.quantity}x ${i.name}`).join(', ')
-            : 'Ver detalles'
+        const itemsSummary = order.order_notes || order.customer_address || 'Sin detalles adicionales'
 
         card.innerHTML = `
             <div class="card-header">

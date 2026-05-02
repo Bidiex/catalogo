@@ -166,36 +166,32 @@ export const operatorsService = {
      */
     async validateAndLogin(code, businessId) {
         try {
-            // 1. SELECT operator
-            const { data: operator, error: selectError } = await supabase
-                .from('operators')
-                .select('*')
-                .eq('unique_code', code.trim().toUpperCase())
-                .eq('business_id', businessId)
-                .eq('is_active', true)
-                .single()
-
-            // 2. Validate existence
-            if (selectError || !operator) {
-                return { error: 'Código inválido o operador inactivo' }
+            // 1. Verificar si ya hay sesión activa, si no crear una nueva
+            let user = null
+            const { data: { session } } = await supabase.auth.getSession()
+            if (session?.user) {
+                user = session.user
+            } else {
+                const { data: { user: newUser }, error: authError } = await supabase.auth.signInAnonymously()
+                if (authError) throw authError
+                user = newUser
             }
 
-            // 3. signInAnonymously
-            const { data: { user }, error: authError } = await supabase.auth.signInAnonymously()
-            if (authError) throw authError
+            // 2. Llamar RPC con security definer que valida y vincula
+            const { data, error: rpcError } = await supabase.rpc('operator_login', {
+                p_code: code.trim().toUpperCase(),
+                p_business_id: businessId,
+                p_auth_uid: user.id
+            })
+            if (rpcError) throw rpcError
 
-            // 4. Update auth_user_id
-            const { data: updatedOperator, error: updateError } = await supabase
-                .from('operators')
-                .update({ auth_user_id: user.id })
-                .eq('id', operator.id)
-                .select()
-                .single()
+            // 3. RPC retorna null o error si el código no existe
+            if (!data || data.error) {
+                await supabase.auth.signOut()
+                return { error: data?.error || 'Código inválido o inactivo' }
+            }
 
-            if (updateError) throw updateError
-
-            // 5. Return full operator
-            return updatedOperator
+            return data
         } catch (error) {
             console.error('operatorsService.validateAndLogin error:', error)
             return { error: error.message || 'Error al iniciar sesión' }
