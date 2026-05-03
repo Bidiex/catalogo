@@ -11,6 +11,7 @@
     <!-- Remix Icons -->
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <!-- Styles -->
+    <link rel="stylesheet" href="/src/styles/global.css">
     <link rel="stylesheet" href="/src/pages/operator/operator.css">
 </head>
 <body>
@@ -47,14 +48,24 @@
 
           <div class="sidebar-section">
             <span class="sidebar-section-label">Negocio</span>
-            <div class="biz-info">
-              <div class="biz-logo" id="sidebarBizLogo">
-                <i class="ri-store-2-line"></i>
-              </div>
-              <div>
-                <div class="biz-name" id="sidebarBizName">Cargando...</div>
-              </div>
-            </div>
+            <nav class="dashboard-tabs">
+      <div class="tab-item active" data-tab="active-orders">
+        <i class="ri-file-list-3-line"></i>
+        <span>Pedidos Activos</span>
+      </div>
+      <div class="tab-item" data-tab="history" style="display: none;">
+        <i class="ri-history-line"></i>
+        <span>Historial</span>
+      </div>
+      <div class="tab-item" data-tab="products" style="display: none;">
+        <i class="ri-shopping-bag-line"></i>
+        <span>Productos</span>
+      </div>
+      <div class="tab-item" data-tab="analytics" style="display: none;">
+        <i class="ri-bar-chart-line"></i>
+        <span>Analíticas</span>
+      </div>
+    </nav>
           </div>
 
           <div class="sidebar-section">
@@ -77,13 +88,93 @@
 
         <!-- Área de Contenido Principal -->
         <main class="main-area">
-          <header class="main-header">
-            <h2>Pedidos activos</h2>
-            <span class="order-counter"><span id="orderCount">0</span> pedidos en total</span>
+          <header class="main-header" style="flex-direction: column; align-items: stretch; gap: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h2>Gestión de Pedidos</h2>
+                <div class="op-tabs">
+                    <button class="op-tab active" data-tab="active">Pedidos Activos</button>
+                    <button class="op-tab" data-tab="history">Historial</button>
+                    <button class="op-tab hidden" data-tab="products" id="tabBtnProducts">Productos</button>
+                </div>
+            </div>
           </header>
           <section class="content">
-            <div class="content-card">
+            <!-- Tab: Activos -->
+            <div class="content-card" id="tabActive">
+              <div style="margin-bottom: 1rem; font-size: 0.9rem; color: var(--text-muted); font-weight: 500;">
+                  <span id="orderCount">0</span> pedidos en total
+              </div>
               <div class="orders-grid" id="ordersGrid"></div>
+            </div>
+
+            <!-- Tab: Historial -->
+            <div class="content-card hidden" id="tabHistory">
+              <div class="search-bar-container" style="display:flex; gap: 1rem; flex-wrap:wrap; margin-bottom: 1.5rem; align-items: center;">
+                <div class="search-bar" style="flex: 1 1 250px; display: flex; align-items: center; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 0.5rem 0.8rem; background: var(--surface-light); height: 38px;">
+                  <input type="text" id="filterHistoryId" placeholder="Buscar por ID, nombre o teléfono..." style="border: none; outline: none; background: transparent; width: 100%; font-size: 0.85rem; font-family: inherit;">
+                </div>
+                <div id="filterHistoryPills" class="filter-pills" style="display: flex; gap: 0.5rem; align-items: center;">
+                  <button class="filter-pill active" data-status="all">Todos</button>
+                  <button class="filter-pill" data-status="completed">Completados</button>
+                  <button class="filter-pill" data-status="cancelled">Cancelados</button>
+                </div>
+                <input type="date" id="filterHistoryDate" class="form-select" style="width: 140px; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 0.5rem 0.8rem; font-family: inherit; font-size: 0.85rem; height: 38px;">
+                <div style="margin-left: auto; display: flex; gap: 0.5rem;">
+                  <button id="btnSearchHistory" class="btn-primary" style="padding: 0 1rem; height: 38px;">
+                      <i class="ri-search-line"></i> Buscar
+                  </button>
+                  <button id="btnClearHistoryFilters" class="btn-clear-filters" style="width: 38px; height: 38px; padding: 0; display: flex; align-items: center; justify-content: center;" title="Limpiar Filtros">
+                      <i class="ri-filter-off-line" style="margin:0;"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Tabla de Historial -->
+              <div class="table-responsive" style="overflow-x: auto; border: 1px solid var(--color-border); border-radius: var(--radius-md);">
+                  <table class="op-history-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+                      <thead style="background: var(--bg-light); border-bottom: 2px solid var(--color-border); text-transform: capitalize !important;">
+                          <tr>
+                              <th style="padding: 1rem; color: var(--text-muted); font-size: 0.8rem; text-transform: capitalize;">Pedido</th>
+                              <th style="padding: 1rem; color: var(--text-muted); font-size: 0.8rem; text-transform: capitalize;">Fecha</th>
+                              <th style="padding: 1rem; color: var(--text-muted); font-size: 0.8rem; text-transform: capitalize;">Cliente</th>
+                              <th style="padding: 1rem; color: var(--text-muted); font-size: 0.8rem; text-transform: capitalize;">Tipo</th>
+                              <th style="padding: 1rem; color: var(--text-muted); font-size: 0.8rem; text-transform: capitalize;">Estado</th>
+                              <th style="padding: 1rem; color: var(--text-muted); font-size: 0.8rem; text-transform: capitalize;">Total</th>
+                              <th style="padding: 1rem; color: var(--text-muted); font-size: 0.8rem; text-align: center; text-transform: capitalize;">Acciones</th>
+                          </tr>
+                      </thead>
+                      <tbody id="historyTableBody">
+                          <!-- Filas inyectadas por JS -->
+                      </tbody>
+                  </table>
+                  <div id="historyEmptyState" class="hidden" style="text-align: center; padding: 4rem 1rem; color: var(--text-muted);">
+                      <i class="ri-inbox-archive-line" style="font-size: 3rem; color: var(--color-border); margin-bottom: 1rem; display: block;"></i>
+                      <p style="font-weight: 500;">No se encontraron pedidos en el historial.</p>
+                  </div>
+              </div>
+            </div>
+
+            <!-- Tab: Productos -->
+            <div class="content-card hidden" id="tabProducts">
+              <div class="search-bar-container" style="display:flex; gap: 1rem; flex-wrap:wrap; margin-bottom: 1.5rem; align-items: center;">
+                <div class="search-bar" style="flex: 1 1 250px; display: flex; align-items: center; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 0.5rem 0.8rem; background: var(--surface-light); height: 38px;">
+                  <i class="ri-search-line" style="margin-right: 0.5rem; color: var(--text-muted);"></i>
+                  <input type="text" id="filterProductsSearch" placeholder="Buscar productos..." style="border: none; outline: none; background: transparent; width: 100%; font-size: 0.85rem; font-family: inherit;">
+                </div>
+                <select id="filterProductsCategory" style="height: 38px; padding: 0 0.8rem; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--surface-light); font-size: 0.85rem; font-family: inherit; color: var(--color-text); cursor: pointer; outline: none;">
+                  <option value="">Todas las categorías</option>
+                </select>
+                <div style="margin-left: auto; display: flex; gap: 0.5rem;">
+                   <button class="btn-action hidden" id="btnNewProduct" style="height: 38px; background: var(--color-primary); color: var(--bg-dark); border: none; padding: 0 1.2rem; font-weight: 600; border-radius: var(--radius-md); cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+                      <i class="ri-add-line"></i> Nuevo Producto
+                   </button>
+                </div>
+              </div>
+              <div class="products-grid" id="productsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;"></div>
+              <div id="productsEmptyState" class="empty-state hidden" style="text-align: center; padding: 4rem 1rem; color: var(--text-muted);">
+                <i class="ri-shopping-basket-line" style="font-size: 3rem; color: var(--color-border); margin-bottom: 1rem; display: block;"></i>
+                <p>No hay productos para mostrar.</p>
+              </div>
             </div>
           </section>
         </main>
@@ -103,6 +194,107 @@
           <div id="opAssignList"></div>
         </div>
       </div>
+    </div>
+
+    <!-- Order Details Modal -->
+    <div id="orderDetailsModal" class="op-modal-overlay hidden">
+      <div class="op-modal" style="max-width: 650px; width: 95%;">
+        <div class="op-modal-header">
+          <h3>Detalle del Pedido</h3>
+          <button class="op-modal-close" id="closeOrderDetailsBtn">&times;</button>
+        </div>
+        <div class="op-modal-body" id="orderDetailsContent" style="padding: 1.5rem; max-height: 70vh; overflow-y: auto;">
+          <!-- Details injected by JS -->
+        </div>
+        <div id="deliveryNoteContainer"
+          style="display: none; padding: 1rem 1.5rem; background-color: #fdf6b2; border-top: 1px solid #e5e7eb; margin-top: auto;">
+          <h4 style="margin: 0 0 0.5rem 0; font-size: 0.95rem; color: #854d0e;"><i class="ri-sticky-note-line"></i> Nota de Domiciliario</h4>
+          <p id="deliveryNoteText" style="margin: 0; font-size: 0.9rem; color: #713f12; white-space: pre-wrap;"></p>
+        </div>
+        <div class="op-modal-footer" id="orderDetailsFooter" style="padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 0.5rem;">
+          <button class="btn-secondary" id="closeOrderDetailsFooterBtn">Cerrar</button>
+          <button class="btn-primary" id="verifyOrderBtn" style="display: none;">
+            <i class="ri-check-line"></i> Marcar como Verificado
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: PRODUCTO (Crear/Editar) -->
+    <div id="productModal" class="modal hidden">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 id="productModalTitle">Nuevo Producto</h3>
+                <button class="btn-close" id="closeProductModal"><i class="ri-close-line"></i></button>
+            </div>
+            <form id="productForm" class="modal-form">
+
+                <!-- Imagen -->
+                <div class="form-group">
+                    <label>Imagen del producto</label>
+                    <div class="image-upload-container">
+                        <div class="image-preview" id="productImagePreview">
+                            <i class="ri-image-add-line"></i>
+                            <span>Sin imagen</span>
+                        </div>
+                        <input type="file" id="productImageInput" accept="image/jpeg,image/jpg,image/png,image/webp" style="display: none;">
+                        <div class="image-upload-actions" id="imageUploadActions" style="display: none;">
+                            <button type="button" class="btn-secondary-small" id="changeImageBtn">
+                                <i class="ri-image-edit-line"></i> Cambiar imagen
+                            </button>
+                            <button type="button" class="btn-secondary-small danger" id="removeImageBtn">
+                                <i class="ri-delete-bin-line"></i> Eliminar
+                            </button>
+                        </div>
+                        <div class="image-upload-progress" id="imageUploadProgress" style="display: none;">
+                            <div class="progress-bar"><div class="progress-fill"></div></div>
+                            <p>Subiendo imagen...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="productNameInput">Nombre del producto *</label>
+                    <input type="text" id="productNameInput" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="productPriceInput">Precio *</label>
+                    <input type="number" id="productPriceInput" step="0.01" min="0" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="productCategoryInput">Categoría</label>
+                    <select id="productCategoryInput">
+                        <option value="">Sin categoría</option>
+                        <!-- Dinámico -->
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="productDescriptionInput">Descripción</label>
+                    <textarea id="productDescriptionInput" rows="3"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Estado del producto</label>
+                    <div class="switch-container">
+                        <label class="switch">
+                            <input type="checkbox" id="productActiveInput" checked>
+                            <span class="slider"></span>
+                        </label>
+                        <span id="productActiveLabel" class="switch-label">Activo</span>
+                    </div>
+                </div>
+
+                <input type="hidden" id="productImageUrlHidden">
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" id="cancelProductBtn">Cancelar</button>
+                    <button type="submit" class="btn-primary" id="saveProductBtn">Guardar</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- Scripts -->
