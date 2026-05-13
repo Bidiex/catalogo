@@ -18,84 +18,96 @@
 
     <!-- PANTALLA: LOGIN -->
     <main id="screen-login">
-        <div class="login-card">
-            <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 1.5rem;">
-                <img src="/src/assets/icon_traego.svg" alt="TraeGo Icon" style="width: 32px;">
-                <img src="/src/assets/logo_traego.svg" alt="TraeGo Logo" style="height: 18px;">
-            </div>
-            <h1>Panel de Operadores</h1>
-            <p>Ingresa tu código para gestionar pedidos.</p>
-            
-            <form id="loginForm" class="login-form">
-                <div class="input-group">
-                    <label for="operatorCode">Código de Operador</label>
-                    <input type="text" id="operatorCode" placeholder="OP-XXXXX" required maxlength="8" autocomplete="off" spellcheck="false">
-                </div>
-                <button type="submit" class="btn-primary" id="loginBtn">Ingresar al Panel</button>
-                <div id="loginError" class="hidden" style="color: #ef4444; font-size: 0.85rem; margin-top: 1rem; font-weight: 600;"></div>
-            </form>
+      <div class="login-card">
+
+        <!-- Logo TraeGo -->
+        <div class="login-logo">
+          <img src="/src/assets/icon_traego.svg" alt="TraeGo Icon" class="login-logo-icon">
+          <img src="/src/assets/logo_traego.svg" alt="TraeGo Logo" class="login-logo-text">
         </div>
+
+        <!-- Negocio -->
+        <div class="login-biz" id="loginBiz">
+          <div class="login-biz-logo" id="loginBizLogo"></div>
+          <span class="login-biz-name" id="loginBizName">Cargando...</span>
+        </div>
+
+        <h1>Panel de Operadores</h1>
+        <p>Ingresa tu código de 5 dígitos para continuar.</p>
+
+        <!-- PIN boxes -->
+        <form id="loginForm" class="login-form">
+          <div class="pin-boxes" id="pinBoxes">
+            <input class="pin-box" maxlength="1" autocomplete="off" spellcheck="false" inputmode="text" data-index="0">
+            <input class="pin-box" maxlength="1" autocomplete="off" spellcheck="false" inputmode="text" data-index="1">
+            <input class="pin-box" maxlength="1" autocomplete="off" spellcheck="false" inputmode="text" data-index="2">
+            <input class="pin-box" maxlength="1" autocomplete="off" spellcheck="false" inputmode="text" data-index="3">
+            <input class="pin-box" maxlength="1" autocomplete="off" spellcheck="false" inputmode="text" data-index="4">
+          </div>
+          <input type="hidden" id="operatorCode">
+          <button type="submit" class="btn-primary" id="loginBtn" disabled>Ingresar al Panel</button>
+          <div id="loginError" class="hidden"></div>
+        </form>
+
+        <!-- Footer -->
+        <footer class="login-footer">
+          <a href="/" class="login-footer-link">
+            <img src="/src/assets/icon_traego.svg" alt="TraeGo" class="login-footer-icon">
+            <span>TraeGo</span>
+          </a>
+          <span class="login-footer-sep">|</span>
+          <img src="/src/assets/flag-colombia.svg" alt="Colombia" class="login-footer-flag">
+          <span>Barranquilla, Colombia</span>
+          <span class="login-footer-sep">|</span>
+          <span>© 2026 TraeGo. Todos los derechos reservados.</span>
+        </footer>
+
+      </div>
     </main>
 
     <!-- PANTALLA: DASHBOARD PRINCIPAL -->
     <div id="screen-main" class="hidden">
-        <!-- Sidebar Izquierdo -->
-        <aside class="sidebar">
-          <div class="sidebar-brand">
-            <img src="/src/assets/icon_traego.svg" alt="TraeGo">
-            <img src="/src/assets/logo_traego.svg" alt="TraeGo">
-          </div>
-
-          <div class="sidebar-section">
-            <span class="sidebar-section-label">Negocio</span>
-            <nav class="dashboard-tabs">
-      <div class="tab-item active" data-tab="active-orders">
-        <i class="ri-file-list-3-line"></i>
-        <span>Pedidos Activos</span>
-      </div>
-      <div class="tab-item" data-tab="history" style="display: none;">
-        <i class="ri-history-line"></i>
-        <span>Historial</span>
-      </div>
-      <div class="tab-item" data-tab="products" style="display: none;">
-        <i class="ri-shopping-bag-line"></i>
-        <span>Productos</span>
-      </div>
-      <div class="tab-item" data-tab="analytics" style="display: none;">
-        <i class="ri-bar-chart-line"></i>
-        <span>Analíticas</span>
-      </div>
-    </nav>
-          </div>
-
-          <div class="sidebar-section">
-            <span class="sidebar-section-label">Operador activo</span>
-            <div class="op-name" id="sidebarOpName">---</div>
-            <div class="op-role">Operador</div>
-          </div>
-
-          <div class="sidebar-section">
-            <span class="sidebar-section-label">Permisos activos</span>
-            <div class="perm-list" id="sidebarPerms"></div>
-          </div>
-
-          <div class="sidebar-footer">
-            <button class="btn-logout" id="logoutBtn">
-              <i class="ri-logout-box-r-line"></i> Cerrar Sesión
-            </button>
-          </div>
-        </aside>
 
         <!-- Área de Contenido Principal -->
         <main class="main-area">
-          <header class="main-header" style="flex-direction: column; align-items: stretch; gap: 1rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                <h2>Gestión de Pedidos</h2>
-                <div class="op-tabs">
-                    <button class="op-tab active" data-tab="active">Pedidos Activos</button>
-                    <button class="op-tab" data-tab="history">Historial</button>
-                    <button class="op-tab hidden" data-tab="products" id="tabBtnProducts">Productos</button>
+          <header class="main-header">
+            <!-- Zona izquierda: TraeGo + negocio -->
+            <div class="header-left">
+              <div class="header-brand">
+                <img src="/src/assets/icon_traego.svg" alt="TraeGo" class="header-brand-icon">
+                <img src="/src/assets/logo_traego.svg" alt="TraeGo" class="header-brand-logo">
+              </div>
+              <div class="header-divider"></div>
+              <div class="header-biz" id="headerBiz">
+                <div class="header-biz-logo" id="sidebarBizLogo"></div>
+                <span class="header-biz-name" id="sidebarBizName">---</span>
+              </div>
+            </div>
+
+            <!-- Zona central: tabs de navegación -->
+            <nav class="op-tabs">
+              <button class="op-tab active" data-tab="active">Pedidos Activos</button>
+              <button class="op-tab" data-tab="history">Historial</button>
+              <button class="op-tab hidden" data-tab="products" id="tabBtnProducts">Productos</button>
+              <button class="op-tab hidden" data-tab="analytics" id="tabBtnAnalytics">Analíticas</button>
+            </nav>
+
+            <!-- Zona derecha: operador + dropdown + logout -->
+            <div class="header-right">
+              <div class="header-operator" id="headerOperator">
+                <div class="header-op-avatar" id="headerOpAvatar">M</div>
+                <span class="header-op-name" id="sidebarOpName">---</span>
+                <i class="ri-arrow-down-s-line header-op-chevron" id="headerOpChevron"></i>
+                <!-- Dropdown permisos -->
+                <div class="header-op-dropdown hidden" id="headerOpDropdown">
+                  <div class="dropdown-label">Permisos activos</div>
+                  <div class="perm-list" id="sidebarPerms"></div>
                 </div>
+              </div>
+              <button class="btn-logout-top" id="logoutBtn">
+                <i class="ri-logout-box-r-line"></i>
+                <span>Salir</span>
+              </button>
             </div>
           </header>
           <section class="content">
@@ -176,6 +188,100 @@
                 <p>No hay productos para mostrar.</p>
               </div>
             </div>
+
+            <!-- SECCIÓN: ANALÍTICAS -->
+            <div id="tabAnalytics" class="content-card hidden">
+              <div class="section-header">
+                <div class="header-info">
+                  <h3>Analíticas</h3>
+                  <p>Métricas y rendimiento del negocio</p>
+                </div>
+              </div>
+
+              <div class="analytics-kpi-grid">
+                <div class="kpi-card">
+                  <div class="kpi-label">Total Pedidos</div>
+                  <div class="kpi-value" id="bi-total-orders">—</div>
+                </div>
+                <div class="kpi-card">
+                  <div class="kpi-label">Ventas Totales</div>
+                  <div class="kpi-value" id="bi-total-sales">—</div>
+                </div>
+                <div class="kpi-card">
+                  <div class="kpi-label">Ticket Promedio</div>
+                  <div class="kpi-value" id="bi-avg-ticket">—</div>
+                </div>
+                <div class="kpi-card">
+                  <div class="kpi-label">Más Vendido</div>
+                  <div class="kpi-value" id="bi-most-sold-product">—</div>
+                </div>
+                <div class="kpi-card">
+                  <div class="kpi-label">Domicilios</div>
+                  <div class="kpi-value" id="bi-total-delivery">—</div>
+                </div>
+                <div class="kpi-card">
+                  <div class="kpi-label">Método de pago</div>
+                  <div class="kpi-value" id="bi-payment-method">—</div>
+                </div>
+              </div>
+
+              <div class="analytics-filters">
+                <select id="bi-filter-year" class="analytics-filter-select">
+                  <option value="all">Todos los años</option>
+                </select>
+                <select id="bi-filter-month" class="analytics-filter-select">
+                  <option value="all">Todos los meses</option>
+                  <option value="1">Enero</option>
+                  <option value="2">Febrero</option>
+                  <option value="3">Marzo</option>
+                  <option value="4">Abril</option>
+                  <option value="5">Mayo</option>
+                  <option value="6">Junio</option>
+                  <option value="7">Julio</option>
+                  <option value="8">Agosto</option>
+                  <option value="9">Septiembre</option>
+                  <option value="10">Octubre</option>
+                  <option value="11">Noviembre</option>
+                  <option value="12">Diciembre</option>
+                </select>
+                <select id="bi-filter-category" class="analytics-filter-select">
+                  <option value="all">Todas las categorías</option>
+                </select>
+
+                <select id="bi-filter-day" class="analytics-filter-select">
+                  <option value="all">Todos los días</option>
+                  <option value="1">Lunes</option>
+                  <option value="2">Martes</option>
+                  <option value="3">Miércoles</option>
+                  <option value="4">Jueves</option>
+                  <option value="5">Viernes</option>
+                  <option value="6">Sábado</option>
+                  <option value="0">Domingo</option>
+                </select>
+                <select id="bi-filter-type" class="analytics-filter-select">
+                  <option value="all">Todos los tipos</option>
+                  <option value="delivery">Domicilio</option>
+                  <option value="pickup">Retiro</option>
+                </select>
+              </div>
+
+              <div class="analytics-charts-stack">
+                <div class="analytics-chart-card">
+                  <div class="chart-header"><h4>Pedidos en el tiempo</h4></div>
+                  <div class="chart-loader" id="loader-orders">Cargando...</div>
+                  <div id="bi-chart-orders" class="analytics-chart-canvas"></div>
+                </div>
+                <div class="analytics-chart-card">
+                  <div class="chart-header"><h4>Ventas en el tiempo</h4></div>
+                  <div class="chart-loader" id="loader-sales">Cargando...</div>
+                  <div id="bi-chart-sales" class="analytics-chart-canvas"></div>
+                </div>
+                <div class="analytics-chart-card">
+                  <div class="chart-header"><h4>Ventas por categoría</h4></div>
+                  <div class="chart-loader" id="loader-category">Cargando...</div>
+                  <div id="bi-chart-category" class="analytics-chart-canvas"></div>
+                </div>
+              </div>
           </section>
         </main>
     </div>

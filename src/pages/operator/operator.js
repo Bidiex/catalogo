@@ -51,6 +51,7 @@ const btnSearchHistory = document.getElementById('btnSearchHistory')
 
 // Products DOM References
 const tabProducts = document.getElementById('tabProducts')
+const tabAnalytics = document.getElementById('tabAnalytics')
 const productsGrid = document.getElementById('productsGrid')
 const productsEmptyState = document.getElementById('productsEmptyState')
 const filterProductsSearch = document.getElementById('filterProductsSearch')
@@ -71,6 +72,15 @@ async function init() {
     if (!business) return window.location.href = '/404'
     currentBusiness = business
 
+    const loginBizName = document.getElementById('loginBizName')
+    const loginBizLogo = document.getElementById('loginBizLogo')
+    if (loginBizName && currentBusiness) {
+      loginBizName.textContent = currentBusiness.name
+    }
+    if (loginBizLogo && currentBusiness?.logo_url) {
+      loginBizLogo.innerHTML = `<img src="${currentBusiness.logo_url}" alt="${currentBusiness.name}">`
+    }
+
     // Intentar restaurar sesión
     const session = loadSession()
     if (session && session.businessId === business.id) {
@@ -83,6 +93,41 @@ async function init() {
     }
 
     showLogin()
+
+    // PIN boxes navigation
+    const pinBoxes = document.querySelectorAll('.pin-box')
+    const loginBtn = document.getElementById('loginBtn')
+    pinBoxes.forEach((box, i) => {
+      box.addEventListener('input', (e) => {
+        const val = e.target.value.replace(/[^a-zA-Z0-9]/g, '')
+        e.target.value = val.slice(-1).toUpperCase()
+        e.target.classList.toggle('filled', e.target.value !== '')
+        const filled = Array.from(pinBoxes).every(b => b.value !== '')
+        if (loginBtn) loginBtn.disabled = !filled
+        if (val && i < pinBoxes.length - 1) pinBoxes[i + 1].focus()
+      })
+      box.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !box.value && i > 0) {
+          pinBoxes[i - 1].value = ''
+          pinBoxes[i - 1].classList.remove('filled')
+          pinBoxes[i - 1].focus()
+          if (loginBtn) loginBtn.disabled = true
+        }
+      })
+      box.addEventListener('paste', (e) => {
+        e.preventDefault()
+        const text = (e.clipboardData || window.clipboardData)
+          .getData('text').replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 5)
+        text.split('').forEach((char, idx) => {
+          if (pinBoxes[idx]) {
+            pinBoxes[idx].value = char
+            pinBoxes[idx].classList.add('filled')
+          }
+        })
+        if (loginBtn) loginBtn.disabled = text.length < 5
+        if (pinBoxes[text.length - 1]) pinBoxes[text.length - 1].focus()
+      })
+    })
 }
 
 function getSlugFromUrl() {
@@ -106,8 +151,10 @@ async function resolveBusiness(slug) {
 // ============================================================
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault()
-    const code = operatorCodeInput.value.trim().toUpperCase()
-    if (!code) return
+    const pins = document.querySelectorAll('.pin-box')
+    const rawCode = Array.from(pins).map(p => p.value.toUpperCase()).join('')
+    const code = `OP-${rawCode}`
+    operatorCodeInput.value = code
 
     setLoginLoading(true)
     const result = await operatorsService.validateAndLogin(code, currentBusiness.id)
@@ -131,7 +178,8 @@ function enterDashboard(operator) {
     
     document.getElementById('sidebarBizName').textContent = currentBusiness.name
     document.getElementById('sidebarOpName').textContent = operator.name
-    document.querySelector('.sidebar-brand').setAttribute('data-operator', operator.name)
+    const avatar = document.getElementById('headerOpAvatar')
+    if (avatar) avatar.textContent = operator.name.charAt(0).toUpperCase()
     if (currentBusiness.logo_url) {
         document.getElementById('sidebarBizLogo').innerHTML = `<img src="${currentBusiness.logo_url}" alt="Logo">`
     }
@@ -145,6 +193,22 @@ function enterDashboard(operator) {
     setupHistoryFilters()
     setupProductHandlers()
     initOperatorImageUpload()
+
+    // Lógica del dropdown del operador
+    const headerOperator = document.getElementById('headerOperator')
+    const headerOpDropdown = document.getElementById('headerOpDropdown')
+    const headerOpChevron = document.getElementById('headerOpChevron')
+    if (headerOperator) {
+      headerOperator.addEventListener('click', (e) => {
+        e.stopPropagation()
+        headerOpDropdown.classList.toggle('hidden')
+        headerOpChevron.classList.toggle('open')
+      })
+      document.addEventListener('click', () => {
+        headerOpDropdown.classList.add('hidden')
+        headerOpChevron.classList.remove('open')
+      })
+    }
 }
 
 function renderPermissions(perms) {
@@ -164,13 +228,16 @@ function renderPermissions(perms) {
         container.appendChild(span)
     })
 
-    // Mostrar pestaña de productos si tiene algún permiso de productos
     const hasProductsPerm = perms?.create_products || perms?.edit_products || perms?.delete_products
     if (hasProductsPerm) {
         document.getElementById('tabBtnProducts').classList.remove('hidden')
         if (perms.create_products) {
             document.getElementById('btnNewProduct').classList.remove('hidden')
         }
+    }
+
+    if (perms?.view_analytics) {
+        document.getElementById('tabBtnAnalytics').classList.remove('hidden')
     }
 }
 
@@ -232,6 +299,7 @@ function setupTabs() {
             tabActive.classList.add('hidden')
             tabHistory.classList.add('hidden')
             if (tabProducts) tabProducts.classList.add('hidden')
+            if (tabAnalytics) tabAnalytics.classList.add('hidden')
 
             if (target === 'active') {
                 tabActive.classList.remove('hidden')
@@ -242,9 +310,30 @@ function setupTabs() {
             } else if (target === 'products') {
                 tabProducts.classList.remove('hidden')
                 loadProducts()
+            } else if (target === 'analytics') {
+                tabAnalytics.classList.remove('hidden')
+                loadOperatorAnalytics()
             }
         })
     })
+}
+
+async function loadOperatorAnalytics() {
+    if (!currentBusiness) return
+    try {
+        const startDate = '2020-01-01'
+        const endDate = new Date().toISOString().split('T')[0]
+        const [orders, prods, cats] = await Promise.all([
+            ordersService.getOrdersForExport(currentBusiness.id, { startDate, endDate, status: 'all' }),
+            productService.getByBusiness(currentBusiness.id),
+            categoryService.getByBusiness(currentBusiness.id)
+        ])
+        const completedOrders = (orders || []).filter(o => o.status === 'completed')
+        initAnalytics(completedOrders, prods || [], cats || [])
+    } catch (error) {
+        console.error('Error loading analytics:', error)
+        notify.error('Error al cargar analíticas')
+    }
 }
 
 function setupHistoryFilters() {

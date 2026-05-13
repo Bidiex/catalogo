@@ -154,7 +154,7 @@ const populateDynamicFilters = () => {
     const years = [...new Set(analyticsState.orders.map(o => new Date(o.created_at).getFullYear()))].sort((a, b) => b - a);
     if (elements.filterYear) {
         const currentVal = elements.filterYear.value;
-        elements.filterYear.innerHTML = '<option value="all">Todo el tiempo</option>';
+        elements.filterYear.innerHTML = '<option value="all">Todos los años</option>';
         years.forEach(y => {
             const opt = document.createElement('option');
             opt.value = y;
